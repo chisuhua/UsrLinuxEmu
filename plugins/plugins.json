@@ -1,0 +1,14 @@
+{
+  "plugins": [
+    {
+      "name": "memory",
+      "path": "drivers/sample_memory.so",
+      "depends": []
+    },
+    {
+      "name": "serial",
+      "path": "drivers/sample_serial.so",
+      "depends": []
+    }
+  ]
+}
