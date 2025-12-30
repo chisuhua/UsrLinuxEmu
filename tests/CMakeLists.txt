@@ -1,45 +1,35 @@
 # 查找所有 test/test_*.cpp 文件
+enable_testing()
+set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 file(GLOB TEST_SOURCES "test_*.cpp")
 
 # 遍历每个测试源文件，创建可执行文件和链接 kernel 库
-foreach(src ${TEST_SOURCES})
+function(add_catch_test TEST_NAME)
     # 获取文件名（不带路径和扩展名）
-    get_filename_component(testname ${src} NAME_WE)
+    set(SOURCES ${ARGN})
+
+    list(APPEND SOURCES ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp)
     
     # 添加可执行目标
-    add_executable(${testname} ${src})
+    add_executable(${TEST_NAME} ${SOURCES})
     
     # 链接 kernel 模块
-    target_link_libraries(${testname} 
+    target_link_libraries(${TEST_NAME} 
         PRIVATE kernel)
-    #            kernel sample_memory sample_serial)
-endforeach()
+    
+    # 添加测试
+    add_test(NAME ${TEST_NAME} COMMAND ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/${TEST_NAME})
 
-# 创建一键运行所有测试的目标
-add_custom_target(run_all_tests
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all_tests_run
-)
+    # 设置包含目录
+    target_include_directories(${TEST_NAME} PRIVATE 
+        ${PROJECT_SOURCE_DIR}/include 
+        ${PROJECT_SOURCE_DIR}/include/kernel
+        ${PROJECT_SOURCE_DIR}/include/linux_compat)
+endfunction()
 
-# 创建一个伪目标，用于运行所有测试
-add_custom_target(all_tests_run ALL)
-
-# 为每个测试添加运行命令
+# 为每个测试源文件创建测试
 foreach(src ${TEST_SOURCES})
     get_filename_component(testname ${src} NAME_WE)
-    add_custom_command(
-        TARGET all_tests_run
-        POST_BUILD
-        COMMAND $<TARGET_FILE:${testname}>
-        COMMENT "Running test: ${testname}"
-    )
+    add_catch_test(${testname} ${src})
 endforeach()
-
-#enable_testing()
-#find_package(GTest REQUIRED)
-
-#foreach(src ${TEST_SOURCES})
-#    get_filename_component(testname ${src} NAME_WE)
-#    add_executable(${testname} ${src})
-#    target_link_libraries(${testname} PRIVATE kernel GTest::GTest GTest::Main)
-#    add_test(NAME ${testname} COMMAND ${testname})
-#endforeach()

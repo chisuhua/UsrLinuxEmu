@@ -1,8 +1,8 @@
 #pragma once
 #include "ioctl.h"
-
 #include "gpu_command_packet.h"
 #include "address_space.h"
+#include "kernel/device/gpgpu_device.h"
 
 #define GPGPU_IOC_MAGIC 'g'
 
@@ -13,13 +13,6 @@
 
 // 统一提交接口
 #define GPGPU_SUBMIT_PACKET _IOW(GPGPU_IOC_MAGIC, 5, struct GpuCommandRequest)
-
-struct GpuMemoryRequest {
-    size_t size;
-    uint64_t phys_addr;
-    void* user_ptr;
-    AddressSpaceType type;
-};
 
 struct GpuCommandRequest {
     const void* packet_ptr;

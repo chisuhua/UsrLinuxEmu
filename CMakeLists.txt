@@ -12,9 +12,11 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include/kernel)
 include_directories(${PROJECT_SOURCE_DIR}/include/kernel/device)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
+include_directories(${PROJECT_SOURCE_DIR}/external/json)
+include_directories(${PROJECT_SOURCE_DIR}/simulator)
 
 # 添加子模块
 add_subdirectory(src)
 add_subdirectory(drivers)
-add_subdirectory(test)
+add_subdirectory(tests)
 add_subdirectory(tools/cli)

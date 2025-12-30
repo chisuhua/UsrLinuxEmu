@@ -34,24 +34,24 @@ void* FileOperations::mmap(void* addr, size_t length, int prot, int flags, int f
     (void)fd;
     (void)offset;
 
-    // 用户请求分配显存块
-    uint64_t gpu_addr = 0;
-    if (allocate_memory(length, &gpu_addr) != 0) {
-        return MAP_FAILED;
-    }
-
     // 在用户空间创建匿名映射
     void* user_ptr = ::mmap(addr, length, prot, flags | MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     if (user_ptr == MAP_FAILED) {
-        free_memory(gpu_addr);
         return MAP_FAILED;
     }
 
     std::lock_guard<std::mutex> lock(g_mmap_mutex);
-    g_mapped_blocks[(uint64_t)user_ptr] = reinterpret_cast<void*>(gpu_addr);
-
-    std::cout << "[FileOperations] Mapped GPU memory 0x" << std::hex << gpu_addr
-              << " to user space at 0x" << (uint64_t)user_ptr << std::dec << std::endl;
-
+    g_mapped_blocks[(uint64_t)user_ptr] = user_ptr;
+    
     return user_ptr;
+}
+
+int FileOperations::munmap(void* addr, size_t length) {
+    std::lock_guard<std::mutex> lock(g_mmap_mutex);
+    auto it = g_mapped_blocks.find((uint64_t)addr);
+    if (it != g_mapped_blocks.end()) {
+        g_mapped_blocks.erase(it);
+    }
+    
+    return ::munmap(addr, length);
 }

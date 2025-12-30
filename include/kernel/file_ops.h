@@ -23,6 +23,7 @@ public:
     virtual long ioctl(int fd, unsigned long request, void* argp) = 0;
 
     virtual void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset) ;
+    virtual int munmap(void* addr, size_t length);
 
 protected:
     WaitQueue wait_queue_;

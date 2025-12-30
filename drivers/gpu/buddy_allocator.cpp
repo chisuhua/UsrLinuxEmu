@@ -1,5 +1,6 @@
 #include "buddy_allocator.h"
 #include <iostream>
+#include <cassert>
 
 BuddyAllocator::BuddyAllocator(uint64_t base, size_t total_size)
     : base_(base), total_size_(total_size) {
@@ -44,7 +45,7 @@ int BuddyAllocator::allocate(size_t size, uint64_t* addr_out) {
     }
 
     blocks_[idx].is_free = false;
-    *addr_out = blocks_[idx].address;
+    *addr_out = blocks_[idx].addr;
 
     std::cout << "[BuddyAllocator] Allocated: 0x" << std::hex << *addr_out
               << " (" << std::dec << aligned_size << " bytes)" << std::endl;
@@ -88,12 +89,12 @@ void BuddyAllocator::split(int index) {
 void BuddyAllocator::merge(int index) {
     int buddy_index = -1;
     size_t size = blocks_[index].size;
-    uint64_t addr = blocks_[index].address;
+    uint64_t addr = blocks_[index].addr;
 
     for (int i = 0; i < blocks_.size(); ++i) {
         if (i == index) continue;
         uint64_t buddy_addr = addr ^ size;
-        if (blocks_[i].address == buddy_addr && blocks_[i].size == size && blocks_[i].is_free) {
+        if (blocks_[i].addr == buddy_addr && blocks_[i].size == size && blocks_[i].is_free) {
             buddy_index = i;
             break;
         }

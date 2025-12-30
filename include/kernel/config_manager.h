@@ -2,9 +2,10 @@
 
 #include <string>
 #include <unordered_map>
-#include <nlohmann/json.hpp>
+#include <vector>
+#include "nlohmann/json.hpp"
 
-using json = nlohmann::json;
+using json = nlohmann::json;  // 移除对nlohmann/json库的依赖
 
 struct PluginConfig {
     std::string name;

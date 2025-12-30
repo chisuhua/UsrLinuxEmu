@@ -1,6 +1,7 @@
 #include "module.h"
 #include <iostream>
 
+#ifdef __cplusplus
 int module::load() {
     if (loaded) return 0;
     std::cout << "[Module] Loading module: " << name << std::endl;
@@ -15,3 +16,4 @@ void module::unload() {
     if (exit) exit();
     loaded = false;
 }
+#endif

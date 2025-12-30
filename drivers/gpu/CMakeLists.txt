@@ -1,11 +1,16 @@
-add_library(gpu_driver STATIC
+# GPU驱动模块
+add_library(driver_gpu MODULE
     gpu_driver.cpp
-)
-
-add_library(plugin_gpu MODULE
+    address_space.cpp
+    buddy_allocator.cpp
+    ring_buffer.cpp
     plugin_gpu.cpp
 )
 
-target_link_libraries(plugin_gpu PRIVATE kernel gpu_driver)
-set_target_properties(plugin_gpu PROPERTIES PREFIX "" SUFFIX ".so")
-set_target_properties(plugin_gpu PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(driver_gpu PROPERTIES PREFIX "" SUFFIX ".so")
+target_link_libraries(driver_gpu PRIVATE kernel)
+target_include_directories(driver_gpu PRIVATE 
+    ${PROJECT_SOURCE_DIR}/include 
+    ${PROJECT_SOURCE_DIR}/include/kernel
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/simulator)

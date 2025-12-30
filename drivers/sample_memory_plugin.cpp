@@ -1,7 +1,7 @@
 #include "sample_memory.h"
 #include <iostream>
 #include <memory>
-#include "kernel/device.h"
+#include "kernel/device/device.h"
 #include "kernel/vfs.h"
 #include "kernel/module_loader.h"
 

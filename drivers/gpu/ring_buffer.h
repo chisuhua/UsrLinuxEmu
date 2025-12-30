@@ -4,6 +4,7 @@
 #include <mutex>
 #include "kernel/pcie/pcie_emu.h"
 #include "gpu_command_packet.h"
+#include "kernel/wait_queue.h"  // 添加WaitQueue的包含
 
 class RingBuffer {
 public:

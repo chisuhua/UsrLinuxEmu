@@ -1,5 +1,10 @@
-add_executable(cli main.cpp)
-target_link_libraries(cli PRIVATE kernel)
+# CLI工具可执行文件
+add_executable(cli 
+    main.cpp
+)
 
-# 可选：添加 JSON 头文件路径（如果你把 json.hpp 放在第三方目录）
-# target_include_directories(cli PRIVATE ${PROJECT_SOURCE_DIR}/third_party/json)
+target_link_libraries(cli PRIVATE kernel)
+target_include_directories(cli PRIVATE 
+    ${PROJECT_SOURCE_DIR}/include 
+    ${PROJECT_SOURCE_DIR}/include/kernel
+    ${PROJECT_SOURCE_DIR}/include/linux_compat)
