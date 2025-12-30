@@ -17,8 +17,8 @@ function(add_catch_test TEST_NAME)
     target_link_libraries(${TEST_NAME} 
         PRIVATE kernel)
     
-    # 添加测试
-    add_test(NAME ${TEST_NAME} COMMAND ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/${TEST_NAME})
+    # 添加测试，指定完整路径到可执行文件
+    add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
 
     # 设置包含目录
     target_include_directories(${TEST_NAME} PRIVATE 
@@ -37,7 +37,8 @@ function(add_standalone_test TEST_NAME TEST_SOURCE)
         ${PROJECT_SOURCE_DIR}/include/kernel
         ${PROJECT_SOURCE_DIR}/include/linux_compat
         ${PROJECT_SOURCE_DIR}/drivers)
-    add_test(NAME ${TEST_NAME} COMMAND ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>/${TEST_NAME})
+    # 添加测试，这样ctest可以运行它
+    add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
 endfunction()
 
 # 定义独立测试的列表（包含自定义main函数的测试）
@@ -67,6 +68,7 @@ set(CATCH2_TESTS
 
 foreach(src ${STANDALONE_TESTS})
     get_filename_component(testname ${src} NAME_WE)
+    string(APPEND testname "_standalone")
     add_standalone_test(${testname} ${src})
 endforeach()
 
