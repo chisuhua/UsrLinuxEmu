@@ -6,7 +6,7 @@
 
 #include "kernel/vfs.h"
 #include "kernel/module_loader.h"
-#include "kernel/ioctl_gpgpu.h"
+#include "gpu/ioctl_gpgpu.h"
 #include "kernel/device/gpgpu_device.h"
 
 int main() {
@@ -20,7 +20,7 @@ int main() {
 
     int fd = 0;
 
-    const size_t alloc_size = 128 * 1024;
+    size_t alloc_size = 128 * 1024;  // 移除const，因为ioctl需要修改它
     uint64_t gpu_addr = 0;
 
     // 分配显存

@@ -6,8 +6,9 @@
 
 #include "kernel/vfs.h"
 #include "kernel/module_loader.h"
-#include "kernel/ioctl_gpgpu.h"
+#include "gpu/ioctl_gpgpu.h"
 #include "kernel/device/gpgpu_device.h"
+#include "gpu/gpu_command_packet.h"
 
 int main() {
     ModuleLoader::load_plugins("plugins");
@@ -33,18 +34,33 @@ int main() {
     memcpy(&gpu_addr, &alloc_size, sizeof(gpu_addr));
     std::cout << "[TestGPU] Allocated at: 0x" << std::hex << gpu_addr << std::dec << std::endl;
 
-    // 提交任务
-    GpuTask task{};
-    task.kernel_addr = 0xdeadbeef;
-    task.args_addr = 0xcafebabe;
-    task.shared_mem = 1024;
-    task.grid[0] = 1;
-    task.block[0] = 128;
+    // 提交任务 - 使用正确的命令包结构
+    // 为了解决union成员的析构问题，我们创建一个简单的结构体来模拟命令
+    struct SimpleKernelCommand {
+        uint64_t kernel_addr;
+        uint64_t args_addr;
+        size_t shared_mem;
+        unsigned int grid[3];
+        unsigned int block[3];
+    };
 
-    dev->fops->ioctl(fd, GPGPU_SUBMIT_TASK, &task);
+    SimpleKernelCommand simple_cmd{};
+    simple_cmd.kernel_addr = 0xdeadbeef;
+    simple_cmd.args_addr = 0xcafebabe;
+    simple_cmd.shared_mem = 1024;
+    simple_cmd.grid[0] = 1;
+    simple_cmd.grid[1] = 1;
+    simple_cmd.grid[2] = 1;
+    simple_cmd.block[0] = 128;
+    simple_cmd.block[1] = 1;
+    simple_cmd.block[2] = 1;
 
-    // 等待任务完成
-    dev->fops->ioctl(fd, GPGPU_WAIT_TASK, nullptr);
+    // 创建一个GpuCommandRequest结构体
+    GpuCommandRequest cmd_request{};
+    cmd_request.packet_ptr = &simple_cmd;
+    cmd_request.packet_size = sizeof(simple_cmd);
+
+    dev->fops->ioctl(fd, GPGPU_SUBMIT_PACKET, &cmd_request);
 
     // 释放显存
     dev->fops->ioctl(fd, GPGPU_FREE_MEM, &gpu_addr);
@@ -52,4 +68,3 @@ int main() {
     ModuleLoader::unload_plugins();
     return 0;
 }
-

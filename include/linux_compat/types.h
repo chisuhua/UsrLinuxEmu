@@ -30,10 +30,12 @@ typedef uint32_t __kernel_size_t;
 typedef int32_t __kernel_ssize_t;
 typedef uint64_t __kernel_loff_t;
 
-// 与内核兼容的布尔类型
+// Linux内核中的布尔类型定义，避免与C++内置bool冲突
+#ifndef __cplusplus
 typedef int bool;
 #define true 1
 #define false 0
+#endif
 
 // 常用的NULL定义
 #ifndef NULL
@@ -45,7 +47,9 @@ typedef int bool;
 #define __kernel    // 内核空间指针标记（在用户态模拟中不需要特殊处理）
 
 // 用于兼容的offsetof和container_of
+#ifndef offsetof
 #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
 
 #define container_of(ptr, type, member) ({                      \
         const typeof(((type *)0)->member) * __mptr = (ptr);    \

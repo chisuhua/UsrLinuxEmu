@@ -1,7 +1,10 @@
-#include "../include/linux_compat/compat.h"
+// 避免与系统头文件冲突，先包含系统头文件
 #include <iostream>
 #include <cassert>
 #include <cstring>
+
+// 然后包含我们的兼容性头文件
+#include "../include/linux_compat/compat.h"
 
 // 测试kmalloc/kfree
 void test_kmalloc_kfree() {

@@ -3,10 +3,13 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <cstring>
 
 #include "kernel/vfs.h"
 #include "kernel/module_loader.h"
-#include "kernel/ioctl_gpgpu.h"
+#include "gpu/ioctl_gpgpu.h"
+#include "kernel/device/gpgpu_device.h"
+#include "gpu/gpu_command_packet.h"
 
 int main() {
     ModuleLoader::load_plugins("plugins");
@@ -26,7 +29,7 @@ int main() {
     std::cout << "[TestGPU] Memory Size: " << (info.memory_size / (1024 * 1024)) << "MB" << std::endl;
 
     // 分配显存
-    const size_t alloc_size = 1024 * 1024; // 1MB
+    size_t alloc_size = 1024 * 1024; // 1MB，移除const
     uint64_t gpu_addr = 0;
     dev->fops->ioctl(fd, GPGPU_ALLOC_MEM, &alloc_size);
     memcpy(&gpu_addr, &alloc_size, sizeof(gpu_addr));
@@ -40,21 +43,28 @@ int main() {
     }
     std::cout << "[TestGPU] Mapped to user space at: " << user_ptr << std::endl;
 
-    // 写入 GPU 内核代码（模拟）
+    // 写入一些数据到GPU内存
     char* ptr = static_cast<char*>(user_ptr);
-    strcpy(ptr, "__device__ void my_kernel(...) { ... }");
-    std::cout << "[TestGPU] Wrote kernel code to mapped memory." << std::endl;
+    strcpy(ptr, "Hello from user space!");
+    std::cout << "[TestGPU] Wrote data to mapped memory." << std::endl;
 
-    // 提交内核
-    GpuKernel kernel{};
-    kernel.kernel_addr = reinterpret_cast<uint64_t>(user_ptr);
-    kernel.args_addr = reinterpret_cast<uint64_t>(ptr + 0x100);
-    kernel.code_size = strlen(ptr) + 1;
+    // 提交内核 - 使用正确的结构体
+    KernelCommand kernel_cmd{};
+    kernel_cmd.kernel_addr = reinterpret_cast<uint64_t>(user_ptr);
+    kernel_cmd.args_addr = reinterpret_cast<uint64_t>(ptr + 0x100);
+    kernel_cmd.shared_mem = 1024;
+    kernel_cmd.grid[0] = 1;
+    kernel_cmd.grid[1] = 1;
+    kernel_cmd.grid[2] = 1;
+    kernel_cmd.block[0] = 128;
+    kernel_cmd.block[1] = 1;
+    kernel_cmd.block[2] = 1;
 
-    dev->fops->ioctl(fd, GPGPU_SUBMIT_KERNEL, &kernel);
+    GpuCommandRequest cmd_request{};
+    cmd_request.packet_ptr = &kernel_cmd;
+    cmd_request.packet_size = sizeof(kernel_cmd);
 
-    // 等待执行完成
-    dev->fops->ioctl(fd, GPGPU_WAIT_TASK, nullptr);
+    dev->fops->ioctl(fd, GPGPU_SUBMIT_PACKET, &cmd_request);
 
     // 释放资源
     munmap(user_ptr, alloc_size);
