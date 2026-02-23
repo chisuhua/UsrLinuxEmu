@@ -318,19 +318,144 @@ endforeach()
 - **兼容性验证不足**: API行为可能与真实内核不一致
   - *缓解措施*: 建立详细的行为对比测试，记录差异
 
-## 7. 成功标准
+## 7. GPU 驱动仿真插件开发计划
 
-### 7.1 功能标准
+> 对应架构文档：[GPU 驱动仿真架构](gpu_driver_architecture.md)
+
+### 7.1 第一子任务：共享接口契约与 DRM/GEM/TTM 层
+
+**目标**: 建立插件骨架，实现符合 DRM 标准的设备节点和内存管理接口
+
+**任务列表**:
+1. 验证 `plugins/gpu_driver/shared/` 符号链接已正确配置（`ln -sf ../../../../TaskRunner/shared plugins/gpu_driver/shared`，需与 TaskRunner 仓库平级克隆）
+2. 创建 `plugins/gpu_driver/plugin.cpp` — 插件入口，注册 `/dev/gpgpu0`
+3. 实现 `plugins/gpu_driver/drm/drm_driver.cpp` — `drm_driver` 结构体与 ioctl 分发
+   - 处理 `GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH`（命令提交）
+   - 处理 `GPU_IOCTL_REGISTER_MMU_EVENT_CB`（MMU 事件回调注册）
+   - 处理 `GPU_IOCTL_REGISTER_FIRMWARE_CB`（固件回调注册）
+4. 实现 `plugins/gpu_driver/drm/gem_object.cpp` — GEM object 生命周期
+5. 实现 `plugins/gpu_driver/ttm/ttm_bo_driver.cpp` — TTM BO 驱动接口
+6. 实现 `plugins/gpu_driver/ttm/ttm_bo_move.cpp` — 页迁移主路径
+   - 注入 `GPU_MMU_EVENT_PAGE_INVALIDATE` 事件
+   - 执行数据迁移（Device Memory 内 memcpy）
+   - 注入 `GPU_MMU_EVENT_PAGE_REMAP` 事件
+
+**测试任务**:
+- 创建 `plugins/gpu_driver/test/test_ttm_migration.cpp`
+
+**验收标准**: TTM 页迁移触发正确的 `PAGE_INVALIDATE → PAGE_REMAP` 事件序列
+
+---
+
+### 7.2 第二子任务：MMU 事件分发器与 CXL.cache 仿真
+
+**目标**: 实现硬件级 TLB coherence 仿真和 CXL.cache MESI 状态机
+
+**任务列表**:
+1. 实现 `plugins/gpu_driver/mmu/mmu_event_dispatcher.cpp`
+   - 事件注入接口：`inject_event(type, ctx)`
+   - TaskRunner 回调分发
+   - 硬件操作触发：`trigger_tlb_invalidate`, `trigger_cache_flush`
+2. 实现 `plugins/gpu_driver/mmu/page_table_emu.cpp` — 页表（CPU/GPU 共享地址空间）
+3. 实现 `plugins/gpu_driver/mmu/tlb_emu.cpp` — TLB 硬件级 coherence（非简单哈希表）
+4. 实现 `plugins/gpu_driver/mmu/cxl_cache_emu.cpp` — CXL.cache MESI 状态机
+   - 页级一致性状态跟踪
+   - 64 缓存行/页的精确 MESI 状态机
+   - 页迁移时的缓存行自动无效化
+
+**测试任务**:
+- 创建 `plugins/gpu_driver/test/test_cxl_coherence.cpp`
+
+**验收标准**: CXL.cache 状态机转换符合 MESI 规范，通过多核并发访问迁移页测试
+
+---
+
+### 7.3 第三子任务：Hardware Puller 与 PCIe 仿真
+
+**目标**: 实现 GPFIFO 硬件状态机和 PCIe DMA/MSI-X 仿真
+
+**任务列表**:
+1. 实现 `plugins/gpu_driver/hardware/hardware_puller_emu.cpp`
+   - GPFIFO 状态机（IDLE → FETCH_ENTRY → DECODE_METHOD → EXECUTE → WAIT_SEMAPHORE）
+   - `OP_LAUNCH_KERNEL`：触发 GPU 计算单元仿真
+   - `OP_LAUNCH_CPU_TASK`：触发固件回调，通知 TaskRunner
+   - Semaphore 写入仿真（任务完成通知）
+2. 实现 `plugins/gpu_driver/hardware/pcie_bus_emu.cpp`
+   - DMA Write（Host → Device）
+   - DMA Read（Device → Host）
+   - MSI-X 中断注入
+3. 实现 `plugins/gpu_driver/hardware/unified_mmu_emu.cpp` — 统一 MMU（fused device）
+4. 实现 `plugins/gpu_driver/hardware/gpu_core_emu.cpp` — GPU 计算单元仿真
+5. 实现 `plugins/gpu_driver/hardware/cpu_core_emu.cpp` — Device CPU 核仿真
+
+**测试任务**:
+- 创建 `plugins/gpu_driver/test/test_pcie_dma.cpp`
+- 创建 `plugins/gpu_driver/test/test_portability.sh`（用户态/内核态行为一致性比对）
+
+**验收标准**: `OP_LAUNCH_CPU_TASK` 正确触发固件回调；`test_portability.sh` 验证事件流一致性
+
+---
+
+### 7.4 第四子任务：算法核心库 libgpu_core（平台无关）
+
+**目标**: 提炼可复用算法核心，确保 ≥70% 代码可直接用于真实内核驱动
+
+**任务列表**:
+1. 创建 `plugins/gpu_driver/libgpu_core/include/gpu_buddy.h` — Buddy Allocator（纯地址运算）
+2. 创建 `plugins/gpu_driver/libgpu_core/include/gpu_ring.h` — Ring Buffer（纯指针运算）
+3. 创建 `plugins/gpu_driver/libgpu_core/include/gpu_mmu_events.h` — 事件处理接口
+4. 实现 `plugins/gpu_driver/libgpu_core/src/buddy.cpp`
+5. 实现 `plugins/gpu_driver/libgpu_core/src/mmu_events.cpp`
+
+**约束**:
+- 库内禁止直接调用 `malloc`/`free`（仅操作地址范围）
+- 所有接口纯 C 兼容（便于内核驱动直接使用）
+
+**验收标准**: `cloc plugins/gpu_driver/libgpu_core/` 代码量 ≥ 插件总代码量的 70%；可编译为独立静态库
+
+---
+
+### 7.5 第五子任务：TaskRunner 集成验证
+
+**目标**: 端到端验证 UsrLinuxEmu 与 TaskRunner 的零耦合协同
+
+**任务列表**:
+1. 在 CI 流程中加入 `tools/verify_symlinks.sh` 作为构建前预检
+2. 创建 `plugins/gpu_driver/test/test_cpu_gpu_task_fork.cpp` — `OP_LAUNCH_CPU_TASK` 端到端测试
+3. 端到端集成测试：TaskRunner 通过 `GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH` 提交 GPFIFO 命令批次
+4. 验证 `ldd libgpu_plugin.so` 无 TaskRunner 二进制依赖
+
+**验收标准**:
+- TaskRunner 可通过 ioctl 提交命令并获得正确响应
+- 插件与 TaskRunner 无二进制耦合
+- 所有集成测试通过
+
+---
+
+### 7.6 里程碑与时间估算
+
+| 子任务 | 预计工期 | 关键产出 |
+|--------|---------|---------|
+| 7.1 DRM/GEM/TTM 层 | 2-3 周 | 可加载的 `/dev/gpgpu0` 插件 |
+| 7.2 MMU 事件分发器 + CXL.cache | 2 周 | MESI 状态机，TLB coherence |
+| 7.3 Hardware Puller + PCIe | 2-3 周 | GPFIFO 状态机，固件回调 |
+| 7.4 算法核心库 libgpu_core | 1-2 周 | ≥70% 可复用代码 |
+| 7.5 TaskRunner 集成验证 | 1-2 周 | 端到端集成测试 |
+| **合计** | **8-12 周** | 完整 GPU 驱动仿真插件 |
+
+## 8. 成功标准
+
+### 8.1 功能标准
 - 实现至少80%的常用Linux内核API
 - 所有兼容层API通过单元测试
 - 现有GPU驱动可使用兼容层API重构
 
-### 7.2 质量标准
+### 8.2 质量标准
 - 代码覆盖率≥80%
 - 所有测试通过
 - 性能开销≤30%
 
-### 7.3 文档标准
+### 8.3 文档标准
 - 提供完整的API参考
 - 提供迁移指南
 - 提供示例代码
