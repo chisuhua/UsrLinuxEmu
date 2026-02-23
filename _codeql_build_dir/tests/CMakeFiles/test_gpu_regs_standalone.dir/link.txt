@@ -1,0 +1,1 @@
+/home/runner/work/UsrLinuxEmu/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_gpu_regs_standalone.dir/link.d CMakeFiles/test_gpu_regs_standalone.dir/test_gpu_regs.cpp.o -o ../bin/test_gpu_regs_standalone  ../src/libkernel.a -ldl -lpthread

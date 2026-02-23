@@ -1,0 +1,1 @@
+/home/runner/work/UsrLinuxEmu/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/plugin_sample_serial.dir/link.d -shared  -o plugin_sample_serial.so CMakeFiles/plugin_sample_serial.dir/sample_serial.cpp.o CMakeFiles/plugin_sample_serial.dir/__/src/kernel/device/serial_device.cpp.o  ../src/libkernel.a -ldl -lpthread
