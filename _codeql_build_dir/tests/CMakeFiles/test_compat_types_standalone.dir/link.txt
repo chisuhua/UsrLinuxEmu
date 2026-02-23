@@ -1,0 +1,1 @@
+/home/runner/work/UsrLinuxEmu/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_compat_types_standalone.dir/link.d CMakeFiles/test_compat_types_standalone.dir/test_compat_types.cpp.o -o ../bin/test_compat_types_standalone  ../src/libkernel.a -ldl -lpthread
