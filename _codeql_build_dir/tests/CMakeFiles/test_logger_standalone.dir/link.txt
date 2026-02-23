@@ -1,0 +1,1 @@
+/home/runner/work/UsrLinuxEmu/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_logger_standalone.dir/link.d CMakeFiles/test_logger_standalone.dir/test_logger.cpp.o -o ../bin/test_logger_standalone  ../src/libkernel.a -ldl -lpthread
