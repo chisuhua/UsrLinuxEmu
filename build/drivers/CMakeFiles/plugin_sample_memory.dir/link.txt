@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC -g -Wl,--dependency-file=CMakeFiles/plugin_sample_memory.dir/link.d -shared  -o plugin_sample_memory.so CMakeFiles/plugin_sample_memory.dir/sample_memory.cpp.o CMakeFiles/plugin_sample_memory.dir/sample_memory_plugin.cpp.o  ../src/libkernel.a -ldl -lpthread

@@ -1,1 +1,0 @@
-/usr/bin/c++ -g -Wl,--dependency-file=CMakeFiles/test_plugin_standalone.dir/link.d CMakeFiles/test_plugin_standalone.dir/test_plugin.cpp.o -o ../bin/test_plugin_standalone  ../src/libkernel.a -ldl -lpthread

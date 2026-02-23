@@ -1,1 +1,0 @@
-/usr/bin/c++ -g -Wl,--dependency-file=CMakeFiles/test_gpu_mmap_standalone.dir/link.d CMakeFiles/test_gpu_mmap_standalone.dir/test_gpu_mmap.cpp.o -o ../bin/test_gpu_mmap_standalone  ../src/libkernel.a -ldl -lpthread
