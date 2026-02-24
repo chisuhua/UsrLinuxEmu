@@ -11,19 +11,23 @@
 3. **[架构决策记录](ADR.md)** - 重要架构决策的记录和说明
 4. **[构建系统](build_system.md)** - 构建配置和编译说明
 
+### 🖥️ GPU 驱动文档
+
+5. **[GPU 驱动仿真架构](gpu_driver_architecture.md)** - 面向 TaskRunner 协同开发的可移植驱动仿真框架，涵盖 DRM/GEM/TTM、MMU 事件分发、CXL.cache 一致性仿真和 Hardware Puller 设计
+
 ### 🛠️ 开发文档
 
-5. **[开发指南](development_guide.md)** - 环境搭建、代码规范和开发流程
-6. **[贡献指南](../CONTRIBUTING.md)** - 如何为项目做贡献
-7. **[API 参考](api_reference.md)** - 核心 API 接口说明
-8. **[测试指南](testing_guide.md)** - 测试框架、编写测试和运行测试
+6. **[开发指南](development_guide.md)** - 环境搭建、代码规范和开发流程
+7. **[贡献指南](../CONTRIBUTING.md)** - 如何为项目做贡献
+8. **[API 参考](api_reference.md)** - 核心 API 接口说明
+9. **[测试指南](testing_guide.md)** - 测试框架、编写测试和运行测试
 
 ### 📋 计划文档
 
-9. **[开发路线图](ROADMAP.md)** - 项目愿景、短期和长期计划
-10. **[开发实施计划](development_implementation_plan.md)** - 详细的开发计划和时间表
-11. **[Linux 驱动兼容性计划](linux_driver_compatibility_plan.md)** - Linux 内核驱动兼容层设计
-12. **[Linux 驱动兼容性测试计划](linux_driver_compatibility_test_plan.md)** - 兼容性测试方案
+10. **[开发路线图](ROADMAP.md)** - 项目愿景、短期和长期计划
+11. **[开发实施计划](development_implementation_plan.md)** - 详细的开发计划和时间表
+12. **[Linux 驱动兼容性计划](linux_driver_compatibility_plan.md)** - Linux 内核驱动兼容层设计
+13. **[Linux 驱动兼容性测试计划](linux_driver_compatibility_test_plan.md)** - 兼容性测试方案
 
 ## 快速开始
 
