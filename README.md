@@ -159,15 +159,29 @@ GPU Simulator 执行
 
 ## 文档
 
-详细文档请参阅 [docs/](docs/) 目录：
+完整文档集请参阅 [docs/](docs/) 目录。文档已按主题分类：
 
-- 📖 [项目概述](docs/overview.md) - 项目详细介绍
-- 🏗️ [架构设计](docs/architecture.md) - 系统架构和设计
-- 🗺️ [开发路线图](docs/ROADMAP.md) - 项目规划和里程碑
-- 👨‍💻 [开发指南](docs/development_guide.md) - 开发环境和代码规范
-- 📘 [API 参考](docs/api_reference.md) - API 接口文档
-- 🧪 [测试指南](docs/testing_guide.md) - 测试编写和运行
-- 🔧 [构建系统](docs/build_system.md) - 构建配置说明
+### 快速开始（新手必读）
+- 🚀 [安装指南](docs/01-quickstart/installation.md) - 系统要求和依赖安装
+- 🔨 [构建指南](docs/01-quickstart/building.md) - 编译项目
+- 💻 [第一个示例](docs/01-quickstart/first-example.md) - 运行 GPU 示例
+
+### 核心文档
+- 📖 [项目概述](docs/02-core/overview.md) - 项目详细介绍
+- 🏗️ [架构设计](docs/02-core/architecture.md) - 系统架构和设计
+- 📘 [API 参考](docs/06-reference/api-reference.md) - API 接口文档
+
+### 开发指南
+- 👨‍💻 [开发指南](docs/03-development/guide.md) - 开发环境和代码规范
+- 📝 [代码风格](docs/03-development/coding-style.md) - 编码规范
+- 🧪 [测试指南](docs/04-building/testing-guide.md) - 测试编写和运行
+- 🔧 [构建系统](docs/04-building/build-system.md) - 构建配置说明
+
+### 高级主题
+- 🎮 [GPU 驱动架构](docs/05-advanced/gpu-driver-architecture.md) - GPU 驱动仿真架构详细设计
+
+### 完整文档导航
+访问 [docs/README.md](docs/README.md) 查看所有文档分类和导航。
 
 ## 示例代码
 

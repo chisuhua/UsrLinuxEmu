@@ -1,132 +1,194 @@
 # UsrLinuxEmu 项目文档
 
-欢迎阅读 UsrLinuxEmu 项目文档。本文档集提供了项目的完整说明，包括架构设计、开发指南和使用说明。
+欢迎来到 UsrLinuxEmu 项目文档中心。本文档集提供了完整的开发指南、API 参考和架构说明。
 
-## 文档导航
+## 📖 文档导航
 
-### 📚 基础文档
+### 快速开始（新手必读）
 
-1. **[项目概述](overview.md)** - 项目简介、目标和核心功能
-2. **[架构设计](architecture.md)** - 系统架构、模块设计和数据流
-3. **[架构决策记录](ADR.md)** - 重要架构决策的记录和说明
-4. **[构建系统](build_system.md)** - 构建配置和编译说明
+如果你是第一次使用 UsrLinuxEmu，从这里开始：
 
-### 🖥️ GPU 驱动文档
+| 文档 | 说明 | 预计时间 |
+|------|------|----------|
+| [安装指南](01-quickstart/installation.md) | 系统要求和依赖安装 | 10 分钟 |
+| [构建指南](01-quickstart/building.md) | 编译项目和插件 | 5 分钟 |
+| [第一个示例](01-quickstart/first-example.md) | 运行 GPU 示例程序 | 15 分钟 |
 
-5. **[GPU 驱动仿真架构](gpu_driver_architecture.md)** - 面向 TaskRunner 协同开发的可移植驱动仿真框架，涵盖 DRM/GEM/TTM、MMU 事件分发、CXL.cache 一致性仿真和 Hardware Puller 设计
+**总计**: 约 30 分钟上手
 
-### 🛠️ 开发文档
+### 核心文档（理解项目）
 
-6. **[开发指南](development_guide.md)** - 环境搭建、代码规范和开发流程
-7. **[贡献指南](../CONTRIBUTING.md)** - 如何为项目做贡献
-8. **[API 参考](api_reference.md)** - 核心 API 接口说明
-9. **[测试指南](testing_guide.md)** - 测试框架、编写测试和运行测试
+深入理解项目架构和核心概念：
 
-### 📋 计划文档
+| 文档 | 说明 |
+|------|------|
+| [项目概述](02-core/overview.md) | 项目简介、目标和核心功能 |
+| [架构设计](02-core/architecture.md) | 系统架构、模块设计和数据流 |
+| [API 参考](06-reference/api-reference.md) | 核心 API 接口文档 |
 
-10. **[开发路线图](ROADMAP.md)** - 项目愿景、短期和长期计划
-11. **[开发实施计划](development_implementation_plan.md)** - 详细的开发计划和时间表
-12. **[Linux 驱动兼容性计划](linux_driver_compatibility_plan.md)** - Linux 内核驱动兼容层设计
-13. **[Linux 驱动兼容性测试计划](linux_driver_compatibility_test_plan.md)** - 兼容性测试方案
+### 开发指南（日常开发）
 
-## 快速开始
+开发者的主要参考文档：
 
-### 构建项目
+| 文档 | 说明 |
+|------|------|
+| [开发指南](03-development/guide.md) | 环境搭建、代码规范和开发流程 |
+| [代码风格](03-development/coding-style.md) | 编码规范和最佳实践 |
+| [添加新设备](03-development/adding-devices.md) | 如何扩展新设备类型（待添加） |
+| [调试指南](03-development/debugging.md) | 调试技巧和工具（待添加） |
 
-```bash
-# 克隆仓库
-git clone <repository-url>
-cd UsrLinuxEmu
+### 构建和测试
 
-# 构建项目
-./build.sh
+编译、测试和 CI/CD 相关：
 
-# 或手动构建
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-```
+| 文档 | 说明 |
+|------|------|
+| [构建系统](04-building/build-system.md) | CMake 配置和编译选项 |
+| [测试指南](04-building/testing-guide.md) | 编写和运行测试 |
+| [CI/CD](04-building/ci-cd.md) | 持续集成和部署（待添加） |
 
-### 运行测试
+### 高级主题
 
-```bash
-cd build
-make test
+深入理解系统的高级特性：
 
-# 或运行特定测试
-./bin/test_gpu_submit
-```
+| 文档 | 说明 |
+|------|------|
+| [GPU 驱动架构](05-advanced/gpu-driver-architecture.md) | GPU 驱动仿真架构详细设计 |
+| [插件开发](05-advanced/plugin-development.md) | 开发自定义设备插件（待添加） |
+| [性能优化](05-advanced/performance.md) | 性能分析和优化技巧（待添加） |
 
-### 运行 CLI 工具
+### 参考资料
 
-```bash
-./run_cli.sh
-# 或
-./build/bin/cli_tool
-```
+快速查阅的 API 和术语：
 
-## 项目结构速览
+| 文档 | 说明 |
+|------|------|
+| [API 参考](06-reference/api-reference.md) | 完整的 API 接口文档 |
+| [IOCTL 命令](06-reference/ioctl-commands.md) | 所有 IOCTL 命令参考（待添加） |
+| [术语表](06-reference/glossary.md) | 技术术语解释（待添加） |
+| [架构决策记录](06-reference/adr.md) | 重要架构决策记录 |
 
-```
-UsrLinuxEmu/
-├── docs/                   # 项目文档
-├── include/                # 头文件
-│   ├── kernel/            # 内核框架头文件
-│   └── linux_compat/      # Linux 兼容层头文件
-├── src/                    # 源代码
-│   └── kernel/            # 内核框架实现
-├── drivers/                # 设备驱动实现
-│   └── gpu/               # GPU 驱动
-├── simulator/              # 设备模拟器
-│   └── gpu/               # GPU 模拟器
-├── tests/                  # 测试代码
-├── tools/                  # 工具程序
-│   └── cli/               # CLI 工具
-└── plugins/                # 插件示例
-```
+### 🗄️ 归档文档
 
-## 核心概念
+历史文档和参考资料：
 
-### 设备抽象框架
-UsrLinuxEmu 提供了统一的设备抽象接口，支持多种设备类型：
-- 串口设备 (Serial Device)
-- 内存设备 (Memory Device)
-- GPGPU 设备 (GPGPU Device)
+| 文档 | 说明 |
+|------|------|
+| [归档说明](archive/README.md) | 归档文档使用说明 |
+| [规划文档](archive/planning/) | 项目路线图、开发计划等 |
+| [其他归档](archive/misc/) | 其他历史文档 |
 
-### 虚拟文件系统 (VFS)
-模拟 Linux 内核的 VFS 机制，支持设备节点的注册和查找。
+## 🎯 按角色查找文档
 
-### 插件化架构
-支持动态加载设备插件，实现模块化和可扩展性。
+### 新手用户
 
-### GPGPU 支持
-完整的 GPU 驱动模拟，包括：
-- 内存管理 (Buddy Allocator)
-- 命令队列 (Ring Buffer)
-- 地址空间管理
-- GPU 指令模拟
+1. [安装指南](01-quickstart/installation.md)
+2. [构建指南](01-quickstart/building.md)
+3. [第一个示例](01-quickstart/first-example.md)
+4. [项目概述](02-core/overview.md)
 
-## 技术栈
+### 应用开发者
 
-- **语言**: C++17
-- **构建系统**: CMake 3.14+
-- **测试框架**: 自定义测试 (计划迁移到 GTest)
-- **日志**: 自定义日志系统
+1. [快速开始](01-quickstart/)
+2. [API 参考](06-reference/api-reference.md)
+3. [第一个示例](01-quickstart/first-example.md)
+4. [调试指南](03-development/debugging.md)
 
-## 贡献指南
+### 驱动开发工程师
 
-请参阅 [开发指南](development_guide.md) 了解如何为项目做贡献。
+1. [架构设计](02-core/architecture.md)
+2. [GPU 驱动架构](05-advanced/gpu-driver-architecture.md)
+3. [开发指南](03-development/guide.md)
+4. [代码风格](03-development/coding-style.md)
+5. [添加新设备](03-development/adding-devices.md)
 
-## 许可证
+### 系统架构师
 
-请参阅项目根目录的 LICENSE 文件。
+1. [架构设计](02-core/architecture.md)
+2. [GPU 驱动架构](05-advanced/gpu-driver-architecture.md)
+3. [架构决策记录](06-reference/adr.md)
+4. [项目概述](02-core/overview.md)
 
-## 联系方式
+### 测试工程师
 
-如有问题或建议，请通过以下方式联系：
-- 提交 GitHub Issue
-- 发送邮件到项目维护者
+1. [测试指南](04-building/testing-guide.md)
+2. [构建系统](04-building/build-system.md)
+3. [代码风格](03-development/coding-style.md)
+
+## 📊 文档状态
+
+| 分类 | 文档数 | 完成度 | 最后更新 |
+|------|--------|--------|----------|
+| 快速开始 | 4 | 75% | 2026-03-23 |
+| 核心文档 | 3 | 100% | 2026-03-23 |
+| 开发指南 | 4 | 50% | 2026-03-23 |
+| 构建和测试 | 3 | 67% | 2026-03-23 |
+| 高级主题 | 3 | 33% | 2026-03-23 |
+| 参考资料 | 4 | 50% | 2026-03-23 |
+| 归档文档 | 5 | 100% | 2026-03-23 |
+
+**总体进度**: 约 65% 完成
+
+## 🔧 文档维护
+
+### 添加新文档
+
+1. 确定文档类型（快速开始/核心/开发/等）
+2. 放到对应目录
+3. 更新该目录的 `index.md`
+4. 更新本文档（`README.md`）
+
+### 更新现有文档
+
+1. 在文档末尾更新"最后更新日期"
+2. 如有重大变更，在文档开头添加变更日志
+3. 更新相关索引文件
+
+### 文档规范
+
+- 使用 Markdown 格式
+- 文件命名使用 `kebab-case`（如 `coding-style.md`）
+- 每个目录包含 `index.md` 作为导航
+- 所有文档必须有"最后更新"日期
+- 代码示例必须可编译运行（如适用）
+
+## 📝 变更日志
+
+### 2026-03-23 - 文档架构重构
+
+**重大变更**: 完成文档系统重构，采用分类导航结构
+
+**新增**:
+- 创建 6 个分类目录（01-quickstart 到 06-reference）
+- 新增快速开始系列（安装、构建、第一个示例）
+- 新增代码风格指南
+- 创建完整的导航索引系统
+
+**移动**:
+- ROADMAP.md 等规划文档移至 archive/planning/
+- SUMMARY_CN.md 移至 archive/misc/
+
+**修复**:
+- 移除所有 file:///mnt/ubuntu/... 链接
+- 统一文档格式和命名规范
+
+### 2026-02-10 - 初始文档集
+
+**新增**:
+- 基础文档集（architecture.md, overview.md, 等）
+- GPU 驱动架构文档
+- 架构决策记录
+
+## 📞 反馈和支持
+
+如有文档相关问题：
+
+- 📧 邮件：项目维护者
+- 🐛 Issue: [GitHub Issues](https://github.com/chisuhua/UsrLinuxEmu/issues)
+- 💬 讨论：[GitHub Discussions](https://github.com/chisuhua/UsrLinuxEmu/discussions)
 
 ---
 
-**最后更新**: 2026-02-10
+**文档维护者**: UsrLinuxEmu Team  
+**最后更新**: 2026-03-23  
+**文档版本**: 2.0（重构版）
