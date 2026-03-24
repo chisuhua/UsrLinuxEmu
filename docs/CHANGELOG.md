@@ -148,19 +148,44 @@ docs/
 - 归档文档：5 个
 - 完成度：约 65%（截至 2026-03-23）
 
-### 待办事项
+### 2026-03-24 - 补充缺失文档（版本 2.1）
 
-以下文档标记为"待添加"：
+**类型**: 文档补充  
+**影响范围**: 开发指南、参考资料  
+**执行者**: Sisyphus Agent
 
-- `03-development/adding-devices.md`
-- `03-development/debugging.md`
-- `04-building/ci-cd.md`
-- `05-advanced/plugin-development.md`
-- `05-advanced/performance.md`
-- `06-reference/ioctl-commands.md`
-- `06-reference/glossary.md`
+#### 新增文档（7 个）
 
-### 后续计划
+**开发指南**:
+- `03-development/adding-devices.md` - 如何添加新设备（完整步骤、示例代码）
+- `03-development/debugging.md` - 调试指南（GDB、ASan、Valgrind、日志系统）
+
+**构建和测试**:
+- `04-building/ci-cd.md` - CI/CD 配置（GitHub Actions、clang-tidy、测试覆盖率）
+
+**高级主题**:
+- `05-advanced/plugin-development.md` - 插件开发指南（热加载、模块结构）
+- `05-advanced/performance.md` - 性能优化（perf、gprof、优化技巧）
+
+**参考资料**:
+- `06-reference/ioctl-commands.md` - IOCTL 命令参考（GPGPU、Serial、Memory 设备）
+- `06-reference/glossary.md` - 术语表（A-Z 技术术语定义）
+
+#### 文档状态更新
+
+| 分类 | 文档数 | 完成度 | 变更 |
+|------|--------|--------|------|
+| 快速开始 | 4 | 100% | - |
+| 核心文档 | 3 | 100% | - |
+| 开发指南 | 4 | 100% | +2 |
+| 构建和测试 | 3 | 100% | +1 |
+| 高级主题 | 3 | 100% | +2 |
+| 参考资料 | 4 | 100% | +2 |
+| 归档文档 | 5 | 100% | - |
+
+**总体进度**: 100% 完成（所有规划文档已创建）
+
+#### 后续计划
 
 **短期（1-2 周）**:
 - [ ] 完成标注为"待添加"的文档
