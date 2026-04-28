@@ -7,7 +7,7 @@
  * TaskRunner projects. It ensures ABI compatibility when migrating from user-space
  * emulation to a real kernel driver.
  *
- * Shared via symlink: UsrLinuxEmu/plugins/gpu_driver/shared -> TaskRunner/shared
+ * Shared via symlink: TaskRunner/UsrLinuxEmu/plugins/gpu_driver/shared → ../../UsrLinuxEmu/plugins/gpu_driver/shared
  */
 
 #include <stdint.h>
@@ -56,3 +56,12 @@ struct gpu_gpfifo_entry {
 #define GPU_SUBMIT_FENCE        0x1    /* Wait for fence before execution */
 #define GPU_SUBMIT_INTERRUPT    0x2    /* Generate MSI-X interrupt on completion */
 #define GPU_SUBMIT_PRIORITY_HIGH 0x4   /* High-priority submission */
+
+/* Memory domain definitions (AMD ROCm compatible) */
+#define GPU_MEM_DOMAIN_VRAM     0x1    /* GPU local video memory */
+#define GPU_MEM_DOMAIN_GTT      0x2    /* GPU-mappable system memory (GART) */
+#define GPU_MEM_DOMAIN_CPU      0x4    /* System memory (CPU accessible only) */
+
+/* Handle types for VA Space and Queue abstractions */
+typedef u64 gpu_va_space_handle_t;   /* VA Space handle */
+typedef u64 gpu_queue_handle_t;        /* Queue handle */

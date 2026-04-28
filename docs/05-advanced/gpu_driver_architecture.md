@@ -91,12 +91,24 @@ UsrLinuxEmu/
     └── shared -> ../../../../TaskRunner/shared  # 符号链接（关键！）
 ```
 
+> **符号链接说明**: 当前 `TaskRunner/UsrLinuxEmu` 是指向同级 `../UsrLinuxEmu/` 的符号链接。这意味着 TaskRunner 可以直接访问 UsrLinuxEmu 的文件。
+>
+> **接口定义位置**: `gpu_ioctl.h` 等 canonical 接口头文件位于 `UsrLinuxEmu/plugins/gpu_driver/shared/`。符号链接 `TaskRunner/UsrLinuxEmu/plugins/gpu_driver/shared/` 指向 `../../UsrLinuxEmu/plugins/gpu_driver/shared/`（即 `../UsrLinuxEmu/plugins/gpu_driver/shared/`）。
+>
+> **架构原则**: UsrLinuxEmu（驱动实现者）定义接口，TaskRunner（消费者）使用接口。符合零耦合原则。
+>
 > **符号链接验证脚本** (`tools/verify_symlinks.sh`):
 > ```bash
 > #!/bin/bash
-> if [ ! -L "plugins/gpu_driver/shared" ]; then
->   echo "❌ shared/ 不是符号链接！必须执行："
->   echo "ln -sf ../../../../TaskRunner/shared plugins/gpu_driver/shared"
+> # 验证 TaskRunner 能通过 UsrLinuxEmu 符号链接访问 shared 头文件
+> if [ ! -L "TaskRunner/UsrLinuxEmu" ]; then
+>   echo "❌ TaskRunner/UsrLinuxEmu 不是符号链接！必须执行："
+>   echo "ln -sf ../UsrLinuxEmu TaskRunner/UsrLinuxEmu"
+>   exit 1
+> fi
+> if [ ! -L "TaskRunner/UsrLinuxEmu/plugins/gpu_driver/shared" ]; then
+>   echo "❌ shared/ 符号链接不存在！必须执行："
+>   echo "ln -sf ../../UsrLinuxEmu/plugins/gpu_driver/shared TaskRunner/UsrLinuxEmu/plugins/gpu_driver/shared"
 >   exit 1
 > fi
 > echo "✅ 符号链接验证通过"
@@ -222,7 +234,7 @@ UsrLinuxEmu/
     │       ├── buddy.cpp
     │       └── mmu_events.cpp
     │
-    ├── shared -> ../../../../TaskRunner/shared  # ⚠️ 符号链接（关键！）
+    │   ├── shared -> ../../../../UsrLinuxEmu/plugins/gpu_driver/shared  # ⚠️ 符号链接（指向 canonical 接口）
     │
     └── test/                        # ✅ 必需：驱动/硬件仿真测试
         ├── test_ttm_migration.cpp   # 页迁移仿真验证
@@ -232,7 +244,7 @@ UsrLinuxEmu/
 ```
 
 **关键约束**：
-- `shared/` 必须为符号链接，指向 TaskRunner 的 `shared/` 目录
+- `shared/` 目录中的 `gpu_ioctl.h` 等头文件是 canonical 接口定义源
 - `libgpu_core/` 必须为纯算法实现（无 `malloc`/`free`，仅操作地址范围）
 - 所有硬件仿真必须通过专用仿真器类（`*_emu.cpp`）封装
 
@@ -289,12 +301,11 @@ UsrLinuxEmu/
 git clone https://github.com/chisuhua/TaskRunner.git
 git clone https://github.com/chisuhua/UsrLinuxEmu.git
 
-# 2. 建立共享头文件符号链接（关键！）
-cd UsrLinuxEmu/plugins/gpu_driver
-ln -sf ../../../../TaskRunner/shared ./shared
+# 2. 建立符号链接（关键！）— TaskRunner 通过 UsrLinuxEmu 访问 canonical 接口
+cd TaskRunner
+ln -sf ../UsrLinuxEmu ./UsrLinuxEmu
 
-# 3. 构建 TaskRunner
-cd ../../../TaskRunner
+# 3. 构建 TaskRunner（通过 UsrLinuxEmu 符号链接访问 shared 头文件）
 mkdir build && cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=/opt/taskrunner
 make -j$(nproc) && make install

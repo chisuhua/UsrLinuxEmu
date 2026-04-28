@@ -1,3 +1,6 @@
 [submodule "zpoline"]
 	path = zpoline
 	url = git@github.com:chisuhua/zpoline.git
+[submodule "external/TaskRunner"]
+	path = external/TaskRunner
+	url = ../TaskRunner

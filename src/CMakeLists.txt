@@ -14,7 +14,12 @@ add_library(kernel
     kernel/device/serial_device.cpp
     kernel/device/memory_device.cpp
     kernel/device/gpgpu_device.cpp
+    kernel/device/cuda_compat_ioctl.cpp
 )
+
+# 添加 TaskRunner 头文件路径（用于 CudaStub）
+include_directories(${PROJECT_SOURCE_DIR}/../TaskRunner/include)
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
 target_link_libraries(kernel PRIVATE dl pthread)
 set_target_properties(kernel PROPERTIES POSITION_INDEPENDENT_CODE ON)
