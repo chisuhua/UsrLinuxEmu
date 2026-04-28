@@ -102,7 +102,7 @@ typedef uint64_t gpu_queue_handle_t;
 enum gpu_queue_type {
     GPU_QUEUE_COMPUTE = 0,  // 计算队列
     GPU_QUEUE_COPY = 1,     // 拷贝队列 (SDMA)
-    GPU_QUEUEGraphics = 2,  // 图形队列 (未来)
+    GPU_QUEUE_GRAPHICS = 2,  // 图形队列 (未来)
 };
 
 // Queue 创建/销毁
