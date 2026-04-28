@@ -41,6 +41,8 @@ AMD GPU 驱动使用以下 domain（来自 `amdgpu_drm.h`）：
 - `AMDGPU_GEM_DOMAIN_GTT` (0x2): GPU 可映射的系统内存
 - `AMDGPU_GEM_DOMAIN_CPU` (0x1): 系统内存（CPU 直接访问）
 
+**注意**：GPU 系统使用 **bitmask** 而非序数，以便支持多 domain 组合（如 VRAM | GTT）。
+
 ### 与 NVIDIA UVM 对齐
 
 NVIDIA UVM 有类似的分类：
@@ -85,14 +87,14 @@ ALLOC_BO (用户请求)
 
 ```cpp
 enum gpu_mem_domain {
-    GPU_MEM_DOMAIN_VRAM = 0,
-    GPU_MEM_DOMAIN_GTT = 1,
-    GPU_MEM_DOMAIN_CPU = 2,
+    GPU_MEM_DOMAIN_VRAM = 0x1,   // Bitmask: 本地 GPU 内存
+    GPU_MEM_DOMAIN_GTT  = 0x2,   // Bitmask: GPU 可映射系统内存
+    GPU_MEM_DOMAIN_CPU  = 0x4,   // Bitmask: 仅 CPU 访问系统内存
 };
 
 struct gpu_alloc_bo_args {
     uint64_t size;
-    uint32_t domain;       // GPU_MEM_DOMAIN_*
+    uint32_t domain;       // GPU_MEM_DOMAIN_* (bitmask)
     uint32_t flags;        // allocation flags
     uint32_t handle;      // OUT
     uint64_t gpu_va;      // OUT
