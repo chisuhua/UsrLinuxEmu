@@ -21,5 +21,9 @@ include_directories(${PROJECT_SOURCE_DIR}/simulator)
 # 添加子模块
 add_subdirectory(src)
 add_subdirectory(drivers)
+add_subdirectory(plugins)
 add_subdirectory(tests)
 add_subdirectory(tools/cli)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+

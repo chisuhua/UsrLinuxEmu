@@ -1,4 +1,4 @@
-add_library(kernel 
+add_library(kernel SHARED 
     kernel/types.cpp
     kernel/module.cpp
     kernel/vfs.cpp
@@ -14,11 +14,9 @@ add_library(kernel
     kernel/device/serial_device.cpp
     kernel/device/memory_device.cpp
     kernel/device/gpgpu_device.cpp
-    kernel/device/cuda_compat_ioctl.cpp
 )
 
-# 添加 TaskRunner 头文件路径（用于 CudaStub）
-include_directories(${PROJECT_SOURCE_DIR}/../TaskRunner/include)
+# 添加 UsrLinuxEmu 头文件路径
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 target_link_libraries(kernel PRIVATE dl pthread)
