@@ -9,34 +9,36 @@ function(add_catch_test TEST_NAME)
     set(SOURCES ${ARGN})
 
     list(APPEND SOURCES ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp)
-    
+
     # 添加可执行目标
     add_executable(${TEST_NAME} ${SOURCES})
-    
+
     # 链接 kernel 模块
-    target_link_libraries(${TEST_NAME} 
+    target_link_libraries(${TEST_NAME}
         PRIVATE kernel)
-    
+
     # 添加测试，指定完整路径到可执行文件
     add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
 
     # 设置包含目录
-    target_include_directories(${TEST_NAME} PRIVATE 
-        ${PROJECT_SOURCE_DIR}/include 
+    target_include_directories(${TEST_NAME} PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/include/kernel
         ${PROJECT_SOURCE_DIR}/include/linux_compat
-        ${PROJECT_SOURCE_DIR}/drivers)
+        ${PROJECT_SOURCE_DIR}/drivers
+        ${PROJECT_SOURCE_DIR}/plugins)
 endfunction()
 
 # 定义创建独立测试目标的函数
 function(add_standalone_test TEST_NAME TEST_SOURCE)
     add_executable(${TEST_NAME} ${TEST_SOURCE})
     target_link_libraries(${TEST_NAME} PRIVATE kernel)
-    target_include_directories(${TEST_NAME} PRIVATE 
-        ${PROJECT_SOURCE_DIR}/include 
+    target_include_directories(${TEST_NAME} PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/include/kernel
         ${PROJECT_SOURCE_DIR}/include/linux_compat
-        ${PROJECT_SOURCE_DIR}/drivers)
+        ${PROJECT_SOURCE_DIR}/drivers
+        ${PROJECT_SOURCE_DIR}/plugins)
     # 添加测试，这样ctest可以运行它
     add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
 endfunction()
@@ -64,6 +66,7 @@ set(STANDALONE_TESTS
 set(CATCH2_TESTS
     test_gpu_memory.cpp
     test_gpu_mmap_bar.cpp
+    test_gpu_plugin.cpp
 )
 
 foreach(src ${STANDALONE_TESTS})
