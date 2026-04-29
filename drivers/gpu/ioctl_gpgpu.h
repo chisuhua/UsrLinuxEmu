@@ -4,6 +4,12 @@
 #include "address_space.h"
 #include "kernel/device/gpgpu_device.h"
 
+/**
+ * @deprecated System B (GPGPU_*) is deprecated. Use System C (GPU_IOCTL_*)
+ *             defined in plugins/gpu_driver/shared/gpu_ioctl.h instead.
+ *             See ADR-015 for migration details.
+ */
+
 #define GPGPU_IOC_MAGIC 'g'
 
 #define GPGPU_GET_DEVICE_INFO _IOR(GPGPU_IOC_MAGIC, 0, struct GpuDeviceInfo)
