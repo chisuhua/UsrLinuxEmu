@@ -9,6 +9,11 @@
       "name": "serial",
       "path": "drivers/sample_serial.so",
       "depends": []
+    },
+    {
+      "name": "gpu_driver",
+      "path": "plugins/gpu_driver/gpu_driver_plugin.so",
+      "depends": []
     }
   ]
 }
