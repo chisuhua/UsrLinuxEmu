@@ -6,9 +6,10 @@
 
 #include "kernel/vfs.h"
 #include "kernel/module_loader.h"
-#include "gpu/ioctl_gpgpu.h"
-#include "kernel/device/gpgpu_device.h"
-#include "gpu/gpu_command_packet.h"
+#include "kernel/file_ops.h"
+#include "gpu_driver/shared/gpu_ioctl.h"
+#include "gpu_driver/shared/gpu_types.h"
+#include "gpu_driver/shared/gpu_events.h"
 
 int main() {
     ModuleLoader::load_plugins("plugins");
@@ -22,48 +23,82 @@ int main() {
     int fd = 0;
 
     // 获取设备信息
-    GpuDeviceInfo info{};
-    dev->fops->ioctl(fd, GPGPU_GET_DEVICE_INFO, &info);
-    std::cout << "[TestGPU] Device Name: " << info.name << std::endl;
-    std::cout << "[TestGPU] Memory Size: " << info.memory_size / (1024 * 1024) << "MB" << std::endl;
+    struct gpu_device_info info{};
+    int ret = dev->fops->ioctl(fd, GPU_IOCTL_GET_DEVICE_INFO, &info);
+    if (ret == 0) {
+        std::cout << "[TestGPU] Vendor: 0x" << std::hex << info.vendor_id << std::dec << std::endl;
+        std::cout << "[TestGPU] Device: 0x" << std::hex << info.device_id << std::dec << std::endl;
+        std::cout << "[TestGPU] VRAM: " << info.vram_size / (1024 * 1024) << "MB" << std::endl;
+        std::cout << "[TestGPU] Compute Units: " << info.compute_units << std::endl;
+    } else {
+        std::cerr << "[TestGPU] GET_DEVICE_INFO failed: " << ret << std::endl;
+    }
 
     // 分配显存
-    size_t alloc_size = 128 * 1024; // 128KB
-    uint64_t gpu_addr = 0;
-    dev->fops->ioctl(fd, GPGPU_ALLOC_MEM, &alloc_size);
-    memcpy(&gpu_addr, &alloc_size, sizeof(gpu_addr));
-    std::cout << "[TestGPU] Allocated at: 0x" << std::hex << gpu_addr << std::dec << std::endl;
-
-    // 提交任务 - 使用正确的命令包结构
-    // 为了解决union成员的析构问题，我们创建一个简单的结构体来模拟命令
-    struct SimpleKernelCommand {
-        uint64_t kernel_addr;
-        uint64_t args_addr;
-        size_t shared_mem;
-        unsigned int grid[3];
-        unsigned int block[3];
+    struct gpu_alloc_bo_args alloc_args = {
+        .size = 128 * 1024,  // 128KB
+        .domain = GPU_MEM_DOMAIN_VRAM,
+        .flags = 0,
+        .handle = 0,
+        .gpu_va = 0
     };
 
-    SimpleKernelCommand simple_cmd{};
-    simple_cmd.kernel_addr = 0xdeadbeef;
-    simple_cmd.args_addr = 0xcafebabe;
-    simple_cmd.shared_mem = 1024;
-    simple_cmd.grid[0] = 1;
-    simple_cmd.grid[1] = 1;
-    simple_cmd.grid[2] = 1;
-    simple_cmd.block[0] = 128;
-    simple_cmd.block[1] = 1;
-    simple_cmd.block[2] = 1;
+    ret = dev->fops->ioctl(fd, GPU_IOCTL_ALLOC_BO, &alloc_args);
+    if (ret == 0) {
+        std::cout << "[TestGPU] Allocated BO: handle=" << alloc_args.handle
+                  << " va=0x" << std::hex << alloc_args.gpu_va << std::dec << std::endl;
+    } else {
+        std::cerr << "[TestGPU] ALLOC_BO failed: " << ret << std::endl;
+    }
 
-    // 创建一个GpuCommandRequest结构体
-    GpuCommandRequest cmd_request{};
-    cmd_request.packet_ptr = &simple_cmd;
-    cmd_request.packet_size = sizeof(simple_cmd);
+    // 提交内存拷贝命令
+    struct gpu_gpfifo_entry entry = {};
+    entry.valid = 1;
+    entry.priv = 0;
+    entry.method = GPU_OP_MEMCPY;  // 0x102
+    entry.subchannel = 0;
+    entry.payload[0] = 0x1000;      // src
+    entry.payload[1] = alloc_args.gpu_va;  // dst
+    entry.payload[2] = 128 * 1024;   // size
 
-    dev->fops->ioctl(fd, GPGPU_SUBMIT_PACKET, &cmd_request);
+    struct gpu_pushbuffer_args pb_args = {
+        .stream_id = 0,
+        .entries = &entry,
+        .count = 1,
+        .flags = 0
+    };
+
+    ret = dev->fops->ioctl(fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb_args);
+    if (ret == 0) {
+        std::cout << "[TestGPU] PUSHBUFFER_SUBMIT_BATCH succeeded" << std::endl;
+    } else {
+        std::cerr << "[TestGPU] PUSHBUFFER_SUBMIT_BATCH failed: " << ret << std::endl;
+    }
+
+    // 等待 fence
+    struct gpu_wait_fence_args fence_args = {
+        .fence_id = 1,
+        .timeout_ms = 1000,
+        .status = 0
+    };
+
+    ret = dev->fops->ioctl(fd, GPU_IOCTL_WAIT_FENCE, &fence_args);
+    if (ret == 0) {
+        std::cout << "[TestGPU] WAIT_FENCE: status=" << fence_args.status << std::endl;
+    } else {
+        std::cerr << "[TestGPU] WAIT_FENCE failed: " << ret << std::endl;
+    }
 
     // 释放显存
-    dev->fops->ioctl(fd, GPGPU_FREE_MEM, &gpu_addr);
+    if (alloc_args.handle != 0) {
+        u32 handle = alloc_args.handle;
+        ret = dev->fops->ioctl(fd, GPU_IOCTL_FREE_BO, &handle);
+        if (ret == 0) {
+            std::cout << "[TestGPU] FREE_BO: handle=" << handle << " freed" << std::endl;
+        } else {
+            std::cerr << "[TestGPU] FREE_BO failed: " << ret << std::endl;
+        }
+    }
 
     ModuleLoader::unload_plugins();
     return 0;
