@@ -551,11 +551,12 @@ struct FenceInfo {
                      break;
                  }
 case GPU_OP_FENCE: {
-                      u64 fence_id = ++fence_counter_;
-                      fences_[fence_id].signaled.store(true, std::memory_order_release);
-                      std::cout << "[GpgpuDevice] FENCE: created id=" << fence_id << "\n";
-                      break;
-                  }
+                       u64 fence_id = ++fence_counter_;
+                       fences_[fence_id].signaled.store(true, std::memory_order_release);
+                       args->fence_id = fence_id;
+                       std::cout << "[GpgpuDevice] FENCE: created id=" << fence_id << "\n";
+                       break;
+                   }
                  default:
                      std::cerr << "[GpgpuDevice] PUSHBUFFER: unknown method 0x" << std::hex << e.method << "\n";
                      break;
