@@ -22,8 +22,8 @@
 
 | 文档 | 说明 |
 |------|------|
-| [项目概述](02-core/overview.md) | 项目简介、目标和核心功能 |
-| [架构设计](02-core/architecture.md) | 系统架构、模块设计和数据流 |
+| [项目概述](02_architecture/overview.md) | 项目简介、目标和核心功能 |
+| [架构设计](02_architecture/architecture.md) | 系统架构、模块设计和数据流 |
 | [API 参考](06-reference/api-reference.md) | 核心 API 接口文档 |
 
 ### 开发指南（日常开发）
@@ -34,8 +34,8 @@
 |------|------|
 | [开发指南](03-development/guide.md) | 环境搭建、代码规范和开发流程 |
 | [代码风格](03-development/coding-style.md) | 编码规范和最佳实践 |
-| [添加新设备](03-development/adding-devices.md) | 如何扩展新设备类型（待添加） |
-| [调试指南](03-development/debugging.md) | 调试技巧和工具（待添加） |
+| [添加新设备](03-development/adding-devices.md) | 如何扩展新设备类型 |
+| [调试指南](03-development/debugging.md) | 调试技巧和工具 |
 
 ### 构建和测试
 
@@ -45,7 +45,7 @@
 |------|------|
 | [构建系统](04-building/build-system.md) | CMake 配置和编译选项 |
 | [测试指南](04-building/testing-guide.md) | 编写和运行测试 |
-| [CI/CD](04-building/ci-cd.md) | 持续集成和部署（待添加） |
+| [CI/CD](04-building/ci-cd.md) | 持续集成和部署 |
 
 ### 高级主题
 
@@ -54,8 +54,8 @@
 | 文档 | 说明 |
 |------|------|
 | [GPU 驱动架构](05-advanced/gpu-driver-architecture.md) | GPU 驱动仿真架构详细设计 |
-| [插件开发](05-advanced/plugin-development.md) | 开发自定义设备插件（待添加） |
-| [性能优化](05-advanced/performance.md) | 性能分析和优化技巧（待添加） |
+| [插件开发](05-advanced/plugin-development.md) | 开发自定义设备插件 |
+| [性能优化](05-advanced/performance.md) | 性能分析和优化技巧 |
 
 ### 参考资料
 
@@ -64,9 +64,9 @@
 | 文档 | 说明 |
 |------|------|
 | [API 参考](06-reference/api-reference.md) | 完整的 API 接口文档 |
-| [IOCTL 命令](06-reference/ioctl-commands.md) | 所有 IOCTL 命令参考（待添加） |
-| [术语表](06-reference/glossary.md) | 技术术语解释（待添加） |
-| [架构决策记录](06-reference/adr.md) | 重要架构决策记录 |
+| [IOCTL 命令](06-reference/ioctl-commands.md) | 所有 IOCTL 命令参考 |
+| [术语表](06-reference/glossary.md) | 技术术语解释 |
+| [架构决策记录](00_adr/) | 重要架构决策记录 |
 
 ### 🗄️ 归档文档
 
@@ -85,7 +85,7 @@
 1. [安装指南](01-quickstart/installation.md)
 2. [构建指南](01-quickstart/building.md)
 3. [第一个示例](01-quickstart/first-example.md)
-4. [项目概述](02-core/overview.md)
+4. [项目概述](02_architecture/overview.md)
 
 ### 应用开发者
 
@@ -96,7 +96,7 @@
 
 ### 驱动开发工程师
 
-1. [架构设计](02-core/architecture.md)
+1. [架构设计](02_architecture/architecture.md)
 2. [GPU 驱动架构](05-advanced/gpu-driver-architecture.md)
 3. [开发指南](03-development/guide.md)
 4. [代码风格](03-development/coding-style.md)
@@ -104,10 +104,10 @@
 
 ### 系统架构师
 
-1. [架构设计](02-core/architecture.md)
+1. [架构设计](02_architecture/architecture.md)
 2. [GPU 驱动架构](05-advanced/gpu-driver-architecture.md)
 3. [架构决策记录](06-reference/adr.md)
-4. [项目概述](02-core/overview.md)
+4. [项目概述](02_architecture/overview.md)
 
 ### 测试工程师
 

@@ -263,7 +263,7 @@ Goodbye!
 
 - 阅读 [开发指南](../03-development/guide.md) 学习如何开发自己的设备
 - 查看 [API 参考](../06-reference/api-reference.md) 了解完整的 API
-- 探索 [架构设计](../02-core/architecture.md) 理解系统内部工作原理
+- 探索 [架构设计](../02_architecture/architecture.md) 理解系统内部工作原理
 
 ---
 

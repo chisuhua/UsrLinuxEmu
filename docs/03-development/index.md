@@ -17,7 +17,7 @@
 | 了解代码规范 | [代码风格](coding-style.md) |
 | 添加新设备 | [添加新设备](adding-devices.md) |
 | 调试问题 | [调试指南](debugging.md) |
-| 了解架构 | [架构设计](../02-core/architecture.md) |
+| 了解架构 | [架构设计](../02_architecture/architecture.md) |
 | 查阅 API | [API 参考](../06-reference/api-reference.md) |
 
 ## 开发工作流

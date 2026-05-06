@@ -6,7 +6,7 @@
 
 - [构建系统](build-system.md) - CMake 配置和编译选项
 - [测试指南](testing-guide.md) - 编写和运行测试
-- [CI/CD](ci-cd.md) - 持续集成和部署（待添加）
+- [CI/CD](ci-cd.md) - 持续集成和部署
 
 ## 快速导航
 

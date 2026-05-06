@@ -15,7 +15,7 @@
 | 安装项目 | [安装指南](installation.md) |
 | 编译代码 | [构建指南](building.md) |
 | 运行示例 | [第一个示例](first-example.md) |
-| 了解项目 | [项目概述](../02-core/overview.md) |
+| 了解项目 | [项目概述](../02_architecture/overview.md) |
 | 开始开发 | [开发指南](../03-development/guide.md) |
 
 ## 预计时间

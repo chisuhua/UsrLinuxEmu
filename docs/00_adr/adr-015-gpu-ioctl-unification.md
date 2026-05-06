@@ -18,7 +18,7 @@
 
 通过联合分析 TaskRunner 和 UsrLinuxEmu 代码库，发现当前存在**三套互不兼容的 ioctl 体系**：
 
-### 体系 A: CUDA_IOCTL_\* (magic='C')
+### 体系 A: CUDA_IOCTL_* (magic='C')
 
 | 属性 | 值 |
 |------|-----|
@@ -28,7 +28,7 @@
 | **转译层** | `cuda_compat_ioctl.cpp` → 连接到 CudaStub (非真实 GPU) |
 | **设计意图** | Phase 1 过渡方案 (见 `cuda_compat_ioctl.cpp` 头注释) |
 
-### 体系 B: GPGPU_\* (magic='g')
+### 体系 B: GPGPU_* (magic='g')
 
 | 属性 | 值 |
 |------|-----|
@@ -38,7 +38,7 @@
 | **关键问题** | `GPGPU_SUBMIT_PACKET` 为空实现 (仅 `break;`) |
 | **缺少功能** | WAIT_FENCE / QUERY_FENCE 等同步命令 |
 
-### 体系 C: GPU_IOCTL_\* (magic='G')
+### 体系 C: GPU_IOCTL_* (magic='G')
 
 | 属性 | 值 |
 |------|-----|
