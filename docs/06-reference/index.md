@@ -5,9 +5,9 @@
 ## 导航
 
 - [API 参考](api-reference.md) - 完整的 API 接口文档
-- [IOCTL 命令](ioctl-commands.md) - 所有 IOCTL 命令参考（待添加）
-- [术语表](glossary.md) - 技术术语解释（待添加）
-- [架构决策记录](adr.md) - 重要架构决策记录
+- [IOCTL 命令](ioctl-commands.md) - 所有 IOCTL 命令参考
+- [术语表](glossary.md) - 技术术语解释
+- [架构决策记录](../00_adr/) - 重要架构决策记录
 
 ## 快速查阅
 

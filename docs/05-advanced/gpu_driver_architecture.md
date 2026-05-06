@@ -1,8 +1,8 @@
 # UsrLinuxEmu GPU 驱动仿真架构文档
 *——面向 TaskRunner 协同开发的可移植驱动仿真框架*
 
-**版本**: 1.0
-**最后更新**: 2026-02-13
+**版本**: 1.1
+**最后更新**: 2026-05-06
 **适用对象**: GPU 驱动开发工程师、硬件仿真工程师、TaskRunner 调度器开发团队
 
 ---
@@ -16,7 +16,7 @@
 > - ✅ **DRM/GEM/TTM 标准对齐**：即使用户态仿真，也严格遵循 Linux 内核 DRM 子系统接口规范
 > - ✅ **硬件行为精确仿真**：MMU/TLB/CXL.cache 行为必须与真实硬件语义一致（非功能模拟）
 > - ✅ **零耦合协同**：与 TaskRunner 仅通过标准 ioctl + 事件回调交互，无二进制依赖
-> - ✅ **迁移就绪**：≥70% 核心算法代码可直接复用于真实内核驱动（`.ko`）
+> - ⚠️ **架构对齐，渐进迁移**：实际可复用性约 25-35%（见 ADR-015 评估），核心算法可验证但需适配层改写
 
 ### 1.2 与 TaskRunner 的职责边界
 
@@ -41,26 +41,33 @@ Application Layer
         │
         │ GPU_IOCTL_* / DRM_IOCTL_*
         ▼
-UsrLinuxEmu Runtime Backend（平台专属，<15% 代码）
+UsrLinuxEmu Runtime Backend（平台专属）
   ├── VFS Emulation (/dev/gpgpu0)
   ├── PCIe Bus Emulation (DMA/MSI-X)
   └── Hardware Puller (GPFIFO Decoder)
         │
         │ inject_event / dma_complete / gpfifo_decode
         ▼
-Adaptation Layer（事件桥接，30% 代码）
+Adaptation Layer（事件桥接）
   ├── DRM/GEM Adapter (TTM BO Manager)
   ├── MMU Event Dispatcher (页迁移事件流)
   └── CXL.cache Adapter (MESI 状态机桥接)
         │
         │ handle_event / bo_move / cxl_transaction
         ▼
-Algorithm Core（平台无关，>70% 代码）
+Algorithm Core（平台无关，约 25-35% 可复用）
   ├── Buddy Allocator（纯地址运算）
   ├── Ring Buffer（纯指针运算）
   ├── MMU Event Handler（页迁移/TLB 算法）
   └── CXL Coherence FSM（MESI/MOESI 状态机）
 ```
+
+> **可复用性说明**: 根据 ADR-015 评估，核心算法实际可复用性约 25-35%。具体分析：
+> - ioctl dispatch 模式: ~70%
+> - 内存分配路径（Buddy Allocator）: ~20%
+> - 命令提交路径: ~15%
+> - 同步原语: ~10%
+> - VA Space 管理: ~0%（System C 暂无此抽象）
 
 ### 2.2 架构核心原则
 
@@ -174,7 +181,7 @@ enum gpu_mmu_event_type {
 
 **核心设计**：隔离算法层与运行时层
 
-- `algorithm_core_` 为纯算法逻辑（`libgpu_core/`），100% 可复用于内核驱动
+- `algorithm_core_` 为纯算法逻辑（`libgpu_core/`），约 25-35% 可复用（见 ADR-015 评估）
 - `runtime_adapter_` 封装用户态/内核态差异（仿真 TLB vs 硬件寄存器）
 - 事件流完全解耦，TaskRunner 仅需注册回调，无需了解仿真细节
 
@@ -225,7 +232,7 @@ UsrLinuxEmu/
     │   ├── gpu_core_emu.cpp         # GPU 计算单元仿真
     │   └── cpu_core_emu.cpp         # Device CPU 核仿真（提供执行环境）
     │
-    ├── libgpu_core/                 # 算法核心（>70% 可复用）
+    ├── libgpu_core/                 # 算法核心（约 25-35% 可复用，见 ADR-015）
     │   ├── include/
     │   │   ├── gpu_buddy.h          # Buddy Allocator (纯地址运算)
     │   │   ├── gpu_ring.h           # Ring Buffer (纯指针运算)
@@ -273,22 +280,29 @@ UsrLinuxEmu/
 
 ### 7.1 迁移路径规划
 
+> ⚠️ **重要更新**: 根据 ADR-015 分析，原"≥70% 可复用"评估过于乐观。实际可复用性约 25-35%。
+
 | 阶段 | 仿真环境 (UsrLinuxEmu) | 真实内核驱动 | 迁移工作量 | 风险等级 |
 |------|------------------------|-------------|-----------|----------|
 | **Phase 1** 算法验证 | `libgpu_core/` 完整实现 | 无 | 0% | 低 |
-| **Phase 2** 适配层开发 | `adapt/` 事件桥接 | `drivers/gpu/drm/your_gpu/` | 重实现适配层（30%） | 中 |
-| **Phase 3** 硬件集成 | 移除 `hardware/` 仿真 | 硬件寄存器访问 | 仅替换仿真器为寄存器操作 | 低 |
-| **Phase 4** 生产部署 | 全功能仿真 | 真实硬件 + `.ko` | 验证通过后直接部署 | 极低 |
+| **Phase 2** 适配层开发 | `adapt/` 事件桥接 | `drivers/gpu/drm/your_gpu/` | 重实现适配层（65-75%） | 中 |
+| **Phase 3** 硬件集成 | 移除 `hardware/` 仿真 | 硬件寄存器访问 | 替换仿真器为寄存器操作 | 中 |
+| **Phase 4** 生产部署 | 全功能仿真 | 真实硬件 + `.ko` | 验证通过后直接部署 | 中 |
+
+> **评估依据**: 真实驱动涉及 PMM、chunk、DMA、NUMA 等复杂逻辑，VA Space/Queue 抽象完全缺失，需大量适配工作。
 
 ### 7.2 可复用组件清单
 
+> ⚠️ **评估修正**: 根据 ADR-015，以下复用率为保守估计，实际复用需大量适配工作。
+
 | 组件 | 复用率 | 修改点 | 验证方法 |
-|------|--------|--------|----------|
-| `libgpu_core/buddy.cpp` | 100% | 无 | `test_buddy.cpp` 通过 |
-| `libgpu_core/mmu_events.cpp` | 100% | 无 | `test_mmu_events.cpp` 通过 |
-| `mmu/mmu_event_dispatcher.cpp` | 90% | 替换 `memcpy` → `dma_sync` | `test_portability.sh` 事件流一致 |
-| `ttm/ttm_bo_move.cpp` | 85% | 替换仿真迁移 → TTM 标准 API | `test_ttm_migration.cpp` 通过 |
-| `hardware/hardware_puller_emu.cpp` | 0% | 完全替换为硬件寄存器操作 | 硬件功能测试 |
+|------|--------|--------|---------|
+| `libgpu_core/buddy.cpp` | ~70% | 需适配 DMA/NUMA 路径 | `test_buddy.cpp` 通过 |
+| `libgpu_core/mmu_events.cpp` | ~70% | 需适配内核事件机制 | `test_mmu_events.cpp` 通过 |
+| `mmu/mmu_event_dispatcher.cpp` | ~20% | 重写事件传递机制 | `test_portability.sh` 事件流一致 |
+| `ttm/ttm_bo_move.cpp` | ~15% | 替换为真实 TTM API | `test_ttm_migration.cpp` 通过 |
+| `hardware/hardware_puller_emu.cpp` | ~0% | 完全替换为硬件寄存器操作 | 硬件功能测试 |
+| **ioctl dispatch 模式** | ~70% | 基本可直接复用 | 接口一致 |
 
 ---
 
@@ -380,18 +394,20 @@ make -j$(nproc) && make install
 | **页迁移可验证** | 事件流与内核 `mmu_notifier` 100% 一致 | `test_portability.sh` 通过 |
 | **CXL.cache 仿真** | 精确仿真页级 + 缓存行级一致性 | `test_cxl_coherence.cpp` 通过 |
 | **TaskRunner 零耦合** | 仅通过 ioctl 交互，无二进制依赖 | `ldd libgpu_plugin.so` 无 TaskRunner 依赖 |
-| **迁移就绪** | ≥70% 核心算法代码可直接复用 | `cloc libgpu_core/` 统计 |
+| **架构对齐** | 核心算法约 25-35% 可复用（ADR-015） | `cloc libgpu_core/` 统计 |
 
 **最终交付物**：
 - ✅ **UsrLinuxEmu 插件**：提供符合 DRM 标准的 `/dev/gpgpu0` 仿真设备
 - ✅ **接口契约**：通过 `shared/` 符号链接确保两项目零耦合
-- ✅ **验证保障**：`test_portability.sh` 证明仿真/真实驱动行为 100% 一致
-- ✅ **迁移路径**：70%+ 仿真代码可直接用于真实内核驱动
+- ✅ **验证保障**：`test_portability.sh` 证明仿真/真实驱动行为一致
+- ⚠️ **渐进迁移**：约 25-35% 核心算法可直接复用，其余需适配层改写（见 ADR-015）
 
-本架构已在 **AMDGPU SVM 仿真开发** 中验证有效性，特别适合 **CPU/GPU fused device** 的复杂场景，确保从仿真到真实硬件的**平滑、低风险迁移**。
+> **重要说明**: 原"≥70% 可复用"承诺已根据 ADR-015 分析修正为"约 25-35%"。这是更现实的评估，核心价值在于**架构对齐**和**算法验证**，而非代码直接复用。
+
+本架构适合 **CPU/GPU fused device** 的复杂场景，通过事件驱动和标准接口实现与 TaskRunner 的零耦合协同。
 
 ---
 
-**文档版本**: 1.0
-**最后更新**: 2026-02-13
+**文档版本**: 1.1
+**最后更新**: 2026-05-06
 **维护者**: UsrLinuxEmu Team

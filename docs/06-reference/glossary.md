@@ -426,7 +426,7 @@ valgrind --leak-check=full ./program
 
 ## 相关文档
 
-- [项目概述](../02-core/overview.md) - 项目介绍
+- [项目概述](../02_architecture/overview.md) - 项目介绍
 - [API 参考](api-reference.md) - API 文档
 - [开发指南](../03-development/guide.md) - 开发入门
 
