@@ -21,29 +21,24 @@ struct drm_file;
 
 /* GEM object — basic lifecycle fields only */
 struct drm_gem_object {
-    struct drm_device *dev;
-    size_t size;
-    int refcount;       /* atomic in kernel, int in user-space sim */
-    unsigned int handle; /* GEM handle (maps to user-space fd/ioctl) */
-    void *priv;          /* driver-private data (BO info, etc.) */
+  struct drm_device *dev;
+  size_t size;
+  int refcount;        /* atomic in kernel, int in user-space sim */
+  unsigned int handle; /* GEM handle (maps to user-space fd/ioctl) */
+  void *priv;          /* driver-private data (BO info, etc.) */
 };
 
 /* GEM handle management */
-int drm_gem_handle_create(struct drm_device *dev,
-                          struct drm_gem_object *obj,
-                          unsigned int *handle);
-int drm_gem_handle_delete(struct drm_device *dev,
-                          unsigned int handle);
-struct drm_gem_object *drm_gem_object_lookup(struct drm_device *dev,
-                                              unsigned int handle);
+int drm_gem_handle_create(struct drm_device *dev, struct drm_gem_object *obj, unsigned int *handle);
+int drm_gem_handle_delete(struct drm_device *dev, unsigned int handle);
+struct drm_gem_object *drm_gem_object_lookup(struct drm_device *dev, unsigned int handle);
 
 /* Object lifecycle */
 void drm_gem_object_get(struct drm_gem_object *obj);
 void drm_gem_object_put(struct drm_gem_object *obj);
 
 /* Object creation — driver override via gem_create_object */
-struct drm_gem_object *drm_gem_object_create(struct drm_device *dev,
-                                              size_t size);
+struct drm_gem_object *drm_gem_object_create(struct drm_device *dev, size_t size);
 
 #ifdef __cplusplus
 }

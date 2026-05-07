@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include <linux_compat/types.h>
 #include <linux_compat/drm/drm_ioctl.h>
+#include <linux_compat/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,24 +24,24 @@ struct file_operations;
 
 /* DRM driver structure — minimalist Phase 1 version */
 struct drm_driver {
-    const char *name;
-    const char *desc;
-    const char *date;
-    unsigned long driver_features;
+  const char *name;
+  const char *desc;
+  const char *date;
+  unsigned long driver_features;
 
-    /* ioctl table (array indexed by DRM_IOCTL_NR) */
-    const struct drm_ioctl_desc *ioctls;
-    unsigned int num_ioctls;
+  /* ioctl table (array indexed by DRM_IOCTL_NR) */
+  const struct drm_ioctl_desc *ioctls;
+  unsigned int num_ioctls;
 
-    /* file operations (registered with VFS) */
-    const struct file_operations *fops;
+  /* file operations (registered with VFS) */
+  const struct file_operations *fops;
 
-    /* GEM hooks (Phase 1: stub, Phase 2: full) */
-    void *(*gem_create_object)(struct drm_device *dev, size_t size);
+  /* GEM hooks (Phase 1: stub, Phase 2: full) */
+  void *(*gem_create_object)(struct drm_device *dev, size_t size);
 };
 
 /* Minor/Major/Node type constants (user-space simulation) */
-#define DRM_NODE_RENDER  2
+#define DRM_NODE_RENDER 2
 
 #ifdef __cplusplus
 }

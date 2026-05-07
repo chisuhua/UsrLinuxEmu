@@ -1,7 +1,7 @@
 #pragma once
-#include "ioctl.h"
-#include "gpu_command_packet.h"
 #include "address_space.h"
+#include "gpu_command_packet.h"
+#include "ioctl.h"
 #include "kernel/device/gpgpu_device.h"
 
 /**
@@ -21,6 +21,6 @@
 #define GPGPU_SUBMIT_PACKET _IOW(GPGPU_IOC_MAGIC, 5, struct GpuCommandRequest)
 
 struct GpuCommandRequest {
-    const void* packet_ptr;
-    size_t packet_size;
+  const void* packet_ptr;
+  size_t packet_size;
 };

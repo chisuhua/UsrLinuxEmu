@@ -7,33 +7,38 @@
  * - 错误码返回路径
  * - 弹射式操作（void 返回）调用正常
  */
-#include "gpu_hal.h"
-#include "hal_mock.h"
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include "gpu_hal.h"
+#include "hal_mock.h"
 
 static int tests_passed = 0;
 static int tests_total = 0;
 
-#define TEST(name) do { \
-    tests_total++; \
+#define TEST(name)                   \
+  do {                               \
+    tests_total++;                   \
     printf("  TEST: %s ... ", name); \
-} while (0)
+  } while (0)
 
-#define PASS() do { \
-    tests_passed++; \
+#define PASS()        \
+  do {                \
+    tests_passed++;   \
     printf("PASS\n"); \
-} while (0)
+  } while (0)
 
-#define FAIL(msg) do { \
+#define FAIL(msg)              \
+  do {                         \
     printf("FAIL: %s\n", msg); \
-    return 1; \
-} while (0)
+    return 1;                  \
+  } while (0)
 
-#define ASSERT(cond, msg) do { \
-    if (!(cond)) FAIL(msg); \
-} while (0)
+#define ASSERT(cond, msg) \
+  do {                    \
+    if (!(cond))          \
+      FAIL(msg);          \
+  } while (0)
 
 /* ── 测试 1: 基本函数指针调用 ──────────────────────── */
 
@@ -115,12 +120,12 @@ static int test_error_return() {
   struct hal_mock_state state;
   hal_mock_init(&hal, &state);
 
-  state.register_read_result = -14;  /* -EFAULT */
+  state.register_read_result = -14; /* -EFAULT */
   uint64_t val = 0;
   int ret = hal_register_read(&hal, 0, &val);
   ASSERT(ret == -14, "expected -EFAULT");
 
-  state.mem_alloc_result = -12;  /* -ENOMEM */
+  state.mem_alloc_result = -12; /* -ENOMEM */
   uint64_t addr = 0;
   ret = hal_mem_alloc(&hal, 4096, &addr);
   ASSERT(ret == -12, "expected -ENOMEM");
@@ -207,7 +212,7 @@ static int test_inject_errors() {
   state.mem_read_result = -14;
   state.mem_write_result = -14;
   state.mem_alloc_result = -12;
-  state.mem_free_result = -5;   /* -EIO */
+  state.mem_free_result = -5; /* -EIO */
   state.fence_create_result = -22;
   state.fence_read_result = -22;
 
@@ -301,7 +306,7 @@ static int test_user_fire_and_forget() {
 
   hal_doorbell_ring(&hal, 5);
   hal_interrupt_raise(&hal, 3);
-  hal_time_wait(&hal, 1);  /* 1us */
+  hal_time_wait(&hal, 1); /* 1us */
 
   /* 无法验证时间，但确保不崩溃 */
   PASS();

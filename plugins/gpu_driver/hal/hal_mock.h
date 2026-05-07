@@ -46,5 +46,4 @@ struct hal_mock_state {
   uint64_t last_time_wait_us;
 };
 
-void hal_mock_init(struct gpu_hal_ops *hal,
-                   struct hal_mock_state *state);
+void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state);

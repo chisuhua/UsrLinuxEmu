@@ -5,40 +5,40 @@
  * 提供锁保护和日志输出（C 核心不提供的功能）。
  */
 
-#include "gpu_buddy.h"
-#include <mutex>
 #include <iostream>
+#include <mutex>
+#include "gpu_buddy.h"
 
 class SimBuddyAllocator {
-public:
-    SimBuddyAllocator(uint64_t base, uint64_t size) {
-        gpu_buddy_init(&buddy_, base, size);
-    }
+ public:
+  SimBuddyAllocator(uint64_t base, uint64_t size) {
+    gpu_buddy_init(&buddy_, base, size);
+  }
 
-    uint64_t allocate(uint64_t size) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        uint64_t addr;
-        int ret = gpu_buddy_alloc(&buddy_, size, &addr);
-        if (ret == 0) {
-            std::cout << "[SimBuddy] allocate: 0x" << std::hex << addr
-                      << " size=" << std::dec << size << "\n";
-            return addr;
-        }
-        std::cerr << "[SimBuddy] allocate FAILED: size=" << size << "\n";
-        return 0;
+  uint64_t allocate(uint64_t size) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    uint64_t addr;
+    int ret = gpu_buddy_alloc(&buddy_, size, &addr);
+    if (ret == 0) {
+      std::cout << "[SimBuddy] allocate: 0x" << std::hex << addr << " size=" << std::dec << size
+                << "\n";
+      return addr;
     }
+    std::cerr << "[SimBuddy] allocate FAILED: size=" << size << "\n";
+    return 0;
+  }
 
-    void free(uint64_t addr) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        std::cout << "[SimBuddy] free: 0x" << std::hex << addr << "\n";
-        gpu_buddy_free(&buddy_, addr);
-    }
+  void free(uint64_t addr) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::cout << "[SimBuddy] free: 0x" << std::hex << addr << "\n";
+    gpu_buddy_free(&buddy_, addr);
+  }
 
-    uint64_t freeSize() const {
-        return gpu_buddy_free_size(&buddy_);
-    }
+  uint64_t freeSize() const {
+    return gpu_buddy_free_size(&buddy_);
+  }
 
-private:
-    struct gpu_buddy buddy_;
-    mutable std::mutex mutex_;
+ private:
+  struct gpu_buddy buddy_;
+  mutable std::mutex mutex_;
 };

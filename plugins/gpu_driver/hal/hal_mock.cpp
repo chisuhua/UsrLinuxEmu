@@ -12,7 +12,8 @@
 static int mock_reg_read(void *ctx, uint64_t offset, uint64_t *out_val) {
   auto *state = static_cast<struct hal_mock_state *>(ctx);
   state->register_read_count++;
-  if (out_val) *out_val = state->register_read_out;
+  if (out_val)
+    *out_val = state->register_read_out;
   return state->register_read_result;
 }
 
@@ -23,26 +24,24 @@ static int mock_reg_write(void *ctx, uint64_t offset, uint64_t val) {
   return state->register_write_result;
 }
 
-static int mock_mem_read(void *ctx, uint64_t dev_addr, void *host_buf,
-                         uint64_t size) {
+static int mock_mem_read(void *ctx, uint64_t dev_addr, void *host_buf, uint64_t size) {
   auto *state = static_cast<struct hal_mock_state *>(ctx);
   state->mem_read_count++;
   return state->mem_read_result;
 }
 
-static int mock_mem_write(void *ctx, uint64_t dev_addr,
-                          const void *host_buf, uint64_t size) {
+static int mock_mem_write(void *ctx, uint64_t dev_addr, const void *host_buf, uint64_t size) {
   auto *state = static_cast<struct hal_mock_state *>(ctx);
   state->mem_write_count++;
   state->last_mem_write_addr = dev_addr;
   return state->mem_write_result;
 }
 
-static int mock_mem_alloc(void *ctx, uint64_t size,
-                          uint64_t *out_dev_addr) {
+static int mock_mem_alloc(void *ctx, uint64_t size, uint64_t *out_dev_addr) {
   auto *state = static_cast<struct hal_mock_state *>(ctx);
   state->mem_alloc_count++;
-  if (out_dev_addr) *out_dev_addr = state->mem_alloc_out_addr;
+  if (out_dev_addr)
+    *out_dev_addr = state->mem_alloc_out_addr;
   return state->mem_alloc_result;
 }
 
@@ -55,15 +54,16 @@ static int mock_mem_free(void *ctx, uint64_t dev_addr) {
 static int mock_fence_create(void *ctx, uint64_t *out_fence_id) {
   auto *state = static_cast<struct hal_mock_state *>(ctx);
   state->fence_create_count++;
-  if (out_fence_id) *out_fence_id = state->fence_create_out_id;
+  if (out_fence_id)
+    *out_fence_id = state->fence_create_out_id;
   return state->fence_create_result;
 }
 
-static int mock_fence_read(void *ctx, uint64_t fence_id,
-                           uint64_t *out_val) {
+static int mock_fence_read(void *ctx, uint64_t fence_id, uint64_t *out_val) {
   auto *state = static_cast<struct hal_mock_state *>(ctx);
   state->fence_read_count++;
-  if (out_val) *out_val = state->fence_read_out_val;
+  if (out_val)
+    *out_val = state->fence_read_out_val;
   return state->fence_read_result;
 }
 
@@ -87,8 +87,7 @@ static void mock_time_wait(void *ctx, uint64_t us) {
 
 /* ── 公开初始化函数 ────────────────────────────────── */
 
-void hal_mock_init(struct gpu_hal_ops *hal,
-                   struct hal_mock_state *state) {
+void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
   /* 清零状态 */
   *state = {};
 

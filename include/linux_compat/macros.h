@@ -20,7 +20,7 @@
 #define PAGE_ALIGN(addr) (((addr) + PAGE_SIZE - 1) & PAGE_MASK)
 
 // 编译器相关宏
-#define likely(x)   __builtin_expect(!!(x), 1)
+#define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
 #define barrier() __asm__ __volatile__("" : : : "memory")
@@ -33,40 +33,50 @@
 
 // 条件检查宏
 #ifndef min
-#define min(x, y) ({                \
-    typeof(x) _min1 = (x);          \
-    typeof(y) _min2 = (y);          \
-    (void) (&_min1 == &_min2);      \
-    _min1 < _min2 ? _min1 : _min2; })
+#define min(x, y)                  \
+  ({                               \
+    typeof(x) _min1 = (x);         \
+    typeof(y) _min2 = (y);         \
+    (void)(&_min1 == &_min2);      \
+    _min1 < _min2 ? _min1 : _min2; \
+  })
 #endif
 
 #ifndef max
-#define max(x, y) ({                \
-    typeof(x) _max1 = (x);          \
-    typeof(y) _max2 = (y);          \
-    (void) (&_max1 == &_max2);      \
-    _max1 > _max2 ? _max1 : _max2; })
+#define max(x, y)                  \
+  ({                               \
+    typeof(x) _max1 = (x);         \
+    typeof(y) _max2 = (y);         \
+    (void)(&_max1 == &_max2);      \
+    _max1 > _max2 ? _max1 : _max2; \
+  })
 #endif
 
 #ifndef clamp
-#define clamp(val, min_val, max_val) ({         \
-    typeof(val) __val = (val);                  \
-    typeof(min_val) __min = (min_val);          \
-    typeof(max_val) __max = (max_val);          \
-    (void) (&__val == &__min);                  \
-    (void) (&__val == &__max);                  \
-    __val = __val < __min ? __min : __val;      \
-    __val > __max ? __max : __val; })
+#define clamp(val, min_val, max_val)       \
+  ({                                       \
+    typeof(val) __val = (val);             \
+    typeof(min_val) __min = (min_val);     \
+    typeof(max_val) __max = (max_val);     \
+    (void)(&__val == &__min);              \
+    (void)(&__val == &__max);              \
+    __val = __val < __min ? __min : __val; \
+    __val > __max ? __max : __val;         \
+  })
 #endif
 
 // 交换宏
-#define swap(a, b) \
-    do { typeof(a) __tmp = (a); (a) = (b); (b) = __tmp; } while (0)
+#define swap(a, b)         \
+  do {                     \
+    typeof(a) __tmp = (a); \
+    (a) = (b);             \
+    (b) = __tmp;           \
+  } while (0)
 
 // 常用常量定义
-#define U8_MAX  ((uint8_t)~0U)
-#define S8_MAX  ((int8_t)(U8_MAX >> 1))
-#define S8_MIN  ((int8_t)(-S8_MAX - 1))
+#define U8_MAX ((uint8_t)~0U)
+#define S8_MAX ((int8_t)(U8_MAX >> 1))
+#define S8_MIN ((int8_t)(-S8_MAX - 1))
 #define U16_MAX ((uint16_t)~0U)
 #define S16_MAX ((int16_t)(U16_MAX >> 1))
 #define S16_MIN ((int16_t)(-S16_MAX - 1))
@@ -78,5 +88,5 @@
 #define S64_MIN ((int64_t)(-S64_MAX - 1))
 
 // 内核版本相关宏
-#define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
+#define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
 #define LINUX_VERSION_CODE KERNEL_VERSION(4, 4, 0)

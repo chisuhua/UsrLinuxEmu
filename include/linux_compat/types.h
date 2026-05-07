@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cstdint>
-#include <cstddef>
 #include <sys/types.h>
+#include <cstddef>
+#include <cstdint>
 
 // 基础数据类型定义，兼容Linux内核类型
 using u8 = uint8_t;
@@ -43,44 +43,46 @@ typedef int bool;
 #endif
 
 // Linux内核中的常用宏定义
-#define __user      // 用户空间指针标记（在用户态模拟中不需要特殊处理）
-#define __kernel    // 内核空间指针标记（在用户态模拟中不需要特殊处理）
+#define __user    // 用户空间指针标记（在用户态模拟中不需要特殊处理）
+#define __kernel  // 内核空间指针标记（在用户态模拟中不需要特殊处理）
 
 // 用于兼容的offsetof和container_of
 #ifndef offsetof
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#define offsetof(TYPE, MEMBER) ((size_t) & ((TYPE *)0)->MEMBER)
 #endif
 
-#define container_of(ptr, type, member) ({                      \
-        const typeof(((type *)0)->member) * __mptr = (ptr);    \
-        (type *)((char *)__mptr - offsetof(type, member)); })
+#define container_of(ptr, type, member)                \
+  ({                                                   \
+    const typeof(((type *)0)->member) *__mptr = (ptr); \
+    (type *)((char *)__mptr - offsetof(type, member)); \
+  })
 
 // Linux内核中的链表结构
 struct list_head {
-    struct list_head *next, *prev;
+  struct list_head *next, *prev;
 };
 
 // Linux内核中常用的错误码
-#define MAX_ERRNO   4095
+#define MAX_ERRNO 4095
 #define IS_ERR_VALUE(x) ((x) >= (unsigned long)-MAX_ERRNO)
 
 static inline void *ERR_PTR(long error) {
-    return (void *)error;
+  return (void *)error;
 }
 
 static inline long PTR_ERR(const void *ptr) {
-    return (long)ptr;
+  return (long)ptr;
 }
 
 static inline bool IS_ERR(const void *ptr) {
-    return IS_ERR_VALUE((unsigned long)ptr);
+  return IS_ERR_VALUE((unsigned long)ptr);
 }
 
 static inline bool IS_ERR_OR_NULL(const void *ptr) {
-    return (!ptr) || IS_ERR_VALUE((unsigned long)ptr);
+  return (!ptr) || IS_ERR_VALUE((unsigned long)ptr);
 }
 
 // 内核内存分配相关的错误码
-#define ENOMEM          12  /* Out of memory */
-#define EFAULT          14  /* Bad address */
-#define EINVAL          22  /* Invalid argument */
+#define ENOMEM 12 /* Out of memory */
+#define EFAULT 14 /* Bad address */
+#define EINVAL 22 /* Invalid argument */
