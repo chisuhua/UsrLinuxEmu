@@ -24,6 +24,7 @@ add_subdirectory(drivers)
 add_subdirectory(plugins)
 add_subdirectory(tests)
 add_subdirectory(tools/cli)
+add_subdirectory(libgpu_core)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
