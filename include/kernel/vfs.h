@@ -21,8 +21,11 @@ public:
     // 模拟 open 系统调用（支持路径解析）
     std::shared_ptr<Device> open(const std::string& path, int flags);
 
-    // 获取所有已注册设备名称列表
     std::vector<std::string> list_devices() const;
+
+    int unregister_device(const std::string& name);
+    void clear_devices();
+    static void shutdown();
 
 private:
     VFS() = default;

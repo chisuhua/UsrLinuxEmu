@@ -63,7 +63,7 @@ int main() {
 
     struct gpu_pushbuffer_args pb_args = {
         .stream_id = 0,
-        .entries = &entry,
+        .entries_addr = reinterpret_cast<u64>(&entry),
         .count = 1,
         .flags = 0
     };
@@ -100,6 +100,7 @@ int main() {
         }
     }
 
+    dev.reset();
     ModuleLoader::unload_plugins();
     return 0;
 }

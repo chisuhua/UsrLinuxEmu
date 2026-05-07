@@ -7,7 +7,7 @@
 
 int main() {
     auto dev1 = VFS::instance().lookup_device("sample");
-    ModuleLoader::load_plugins("../drivers");
+    ModuleLoader::load_plugins("build/drivers");
 
     auto dev = VFS::instance().lookup_device("sample");
     if (!dev) {
@@ -28,6 +28,8 @@ int main() {
 
     t.join();
 
+    dev.reset();
+    dev1.reset();
     ModuleLoader::unload_plugins();
     return 0;
 }

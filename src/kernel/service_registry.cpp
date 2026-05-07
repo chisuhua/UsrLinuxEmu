@@ -15,3 +15,11 @@ std::shared_ptr<Device> ServiceRegistry::lookup_service(const std::string& name)
     auto it = services_.find(name);
     return it != services_.end() ? it->second : nullptr;
 }
+
+void ServiceRegistry::unregister_service(const std::string& name) {
+    services_.erase(name);
+}
+
+void ServiceRegistry::clear_services() {
+    services_.clear();
+}

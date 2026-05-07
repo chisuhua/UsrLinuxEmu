@@ -1,8 +1,9 @@
 #include <iostream>
 #include "kernel/vfs.h"
 #include "kernel/module_loader.h"
-#include "kernel/device/gpgpu_device.h"
-#include "kernel/pcie_device.h"
+#include "kernel/file_ops.h"
+#include "gpu_driver/shared/gpu_ioctl.h"
+#include "gpu_driver/shared/gpu_types.h"
 
 int main() {
     ModuleLoader::load_plugins("plugins");
@@ -13,24 +14,19 @@ int main() {
         return -1;
     }
 
-    PciDevice* pci_dev = dynamic_cast<PciDevice*>(dev->fops.get());
-    if (!pci_dev) {
-        std::cerr << "[TestPCIE] Device does not support PCIe interface." << std::endl;
+    struct gpu_device_info info{};
+    long ret = dev->fops->ioctl(0, GPU_IOCTL_GET_DEVICE_INFO, &info);
+    if (ret != 0) {
+        std::cerr << "[TestPCIE] GET_DEVICE_INFO failed: " << ret << std::endl;
         return -1;
     }
 
-    std::cout << "[TestPCIE] Vendor ID: 0x" << std::hex << pci_dev->get_vendor_id() << std::dec << std::endl;
-    std::cout << "[TestPCIE] Device ID: 0x" << std::hex << pci_dev->get_device_id() << std::dec << std::endl;
+    std::cout << "[TestPCIE] Vendor ID: 0x" << std::hex << info.vendor_id << std::dec << std::endl;
+    std::cout << "[TestPCIE] Device ID: 0x" << std::hex << info.device_id << std::dec << std::endl;
+    std::cout << "[TestPCIE] VRAM: " << (info.vram_size / (1024 * 1024)) << "MB" << std::endl;
+    std::cout << "[TestPCIE] BAR0 size: " << (info.bar0_size / (1024)) << "KB" << std::endl;
 
-    // PCIe 配置空间读写
-    std::cout << "[TestPCIE] Reading config dword at offset 0x00: 0x" << std::hex
-              << pci_dev->read_config_dword(0x00) << std::dec << std::endl;
-
-    // 启用总线主控
-    pci_dev->enable_bus_master();
-
-    // 用户态 IOCTL 测试（略）
-
+    dev.reset();
     ModuleLoader::unload_plugins();
     return 0;
 }

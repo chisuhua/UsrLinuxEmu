@@ -1,13 +1,13 @@
 #include <iostream>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/mman.h>
 #include <cstring>
 
 #include "kernel/vfs.h"
 #include "kernel/module_loader.h"
-#include "gpu/ioctl_gpgpu.h"
-#include "kernel/device/gpgpu_device.h"
+#include "kernel/file_ops.h"
+#include "gpu_driver/shared/gpu_ioctl.h"
+#include "gpu_driver/shared/gpu_types.h"
 
 int main() {
     ModuleLoader::load_plugins("plugins");
@@ -20,34 +20,46 @@ int main() {
 
     int fd = 0;
 
-    size_t alloc_size = 128 * 1024;  // 移除const，因为ioctl需要修改它
-    uint64_t gpu_addr = 0;
+    struct gpu_alloc_bo_args alloc_args = {
+        .size = 128 * 1024,
+        .domain = GPU_MEM_DOMAIN_VRAM,
+        .flags = GPU_BO_DEVICE_LOCAL,
+        .handle = 0,
+        .gpu_va = 0
+    };
 
-    // 分配显存
-    dev->fops->ioctl(fd, GPGPU_ALLOC_MEM, &alloc_size);
-    memcpy(&gpu_addr, &alloc_size, sizeof(gpu_addr));
-    std::cout << "[TestGPU] GPU Memory allocated at: 0x" << std::hex << gpu_addr << std::dec << std::endl;
-
-    // mmap 显存
-    void* user_ptr = dev->fops->mmap(nullptr, alloc_size, PROT_READ | PROT_WRITE, MAP_SHARED, 0, 0);
-    if (user_ptr == MAP_FAILED) {
-        std::cerr << "[TestGPU] mmap failed!" << std::endl;
+    long ret = dev->fops->ioctl(fd, GPU_IOCTL_ALLOC_BO, &alloc_args);
+    if (ret != 0) {
+        std::cerr << "[TestGPU] ALLOC_BO failed: " << ret << std::endl;
         return -1;
     }
 
-    std::cout << "[TestGPU] Mapped to user space at: " << user_ptr << std::endl;
+    std::cout << "[TestGPU] GPU Memory allocated: handle=" << alloc_args.handle
+              << " va=0x" << std::hex << alloc_args.gpu_va << std::dec << std::endl;
 
-    // 写入数据
-    char* ptr = static_cast<char*>(user_ptr);
-    strcpy(ptr, "Hello from CPU to GPU!");
+    struct gpu_map_bo_args map_args = {
+        .handle = alloc_args.handle,
+        .flags = 0,
+        .gpu_va = 0
+    };
 
-    // 打印写入内容
-    std::cout << "[TestGPU] Data written: " << ptr << std::endl;
+    ret = dev->fops->ioctl(fd, GPU_IOCTL_MAP_BO, &map_args);
+    if (ret != 0) {
+        std::cerr << "[TestGPU] MAP_BO failed: " << ret << std::endl;
+        u32 handle = alloc_args.handle;
+        dev->fops->ioctl(fd, GPU_IOCTL_FREE_BO, &handle);
+        return -1;
+    }
 
-    // 释放资源
-    munmap(user_ptr, alloc_size);
-    dev->fops->ioctl(fd, GPGPU_FREE_MEM, &gpu_addr);
+    std::cout << "[TestGPU] GPU VA: 0x" << std::hex << map_args.gpu_va << std::dec << std::endl;
 
+    u32 handle = alloc_args.handle;
+    ret = dev->fops->ioctl(fd, GPU_IOCTL_FREE_BO, &handle);
+    if (ret == 0) {
+        std::cout << "[TestGPU] BO freed successfully" << std::endl;
+    }
+
+    dev.reset();
     ModuleLoader::unload_plugins();
     return 0;
 }

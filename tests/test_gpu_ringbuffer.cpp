@@ -5,13 +5,9 @@
 
 #include "kernel/vfs.h"
 #include "kernel/module_loader.h"
-#include "kernel/device/gpgpu_device.h"
-#include "gpu/ioctl_gpgpu.h"
-
-void test_submit_dma_with_space_type(int space_type) {
-    // 这里我们简化测试，因为原代码中使用了一些不存在的类型
-    std::cout << "[TestGPU] Testing DMA with space type: " << space_type << std::endl;
-}
+#include "kernel/file_ops.h"
+#include "gpu_driver/shared/gpu_ioctl.h"
+#include "gpu_driver/shared/gpu_types.h"
 
 int main() {
     ModuleLoader::load_plugins("plugins");
@@ -24,14 +20,16 @@ int main() {
 
     int fd = 0;
 
-    // 获取设备信息
-    GpuDeviceInfo info{};
-    dev->fops->ioctl(fd, GPGPU_GET_DEVICE_INFO, &info);
-    std::cout << "[TestGPU] Device: " << info.name
-              << ", Memory Size: " << info.memory_size / (1024 * 1024) << "MB" << std::endl;
+    struct gpu_device_info info{};
+    long ret = dev->fops->ioctl(fd, GPU_IOCTL_GET_DEVICE_INFO, &info);
+    if (ret == 0) {
+        std::cout << "[TestGPU] Device vendor=0x" << std::hex << info.vendor_id
+                  << " device=0x" << info.device_id << std::dec << std::endl;
+        std::cout << "[TestGPU] VRAM: " << (info.vram_size / (1024 * 1024)) << "MB" << std::endl;
+        std::cout << "[TestGPU] GPFIFO capacity: " << info.gpfifo_capacity << std::endl;
+    }
 
-    test_submit_dma_with_space_type(1); // 使用整数代替不存在的枚举值
-
+    dev.reset();
     ModuleLoader::unload_plugins();
     return 0;
 }

@@ -5,9 +5,10 @@
 
 #include "kernel/vfs.h"
 #include "kernel/module_loader.h"
-#include "kernel/device/gpgpu_device.h"
-#include "gpu/ioctl_gpgpu.h"
-#include "gpu/gpu_command_packet.h"
+#include "kernel/file_ops.h"
+#include "gpu_driver/shared/gpu_ioctl.h"
+#include "gpu_driver/shared/gpu_types.h"
+#include "gpu_driver/shared/gpu_events.h"
 
 int main() {
     ModuleLoader::load_plugins("plugins");
@@ -15,24 +16,51 @@ int main() {
     auto dev = VFS::instance().open("/dev/gpgpu0", O_RDWR);
     if (!dev || !dev->fops) return -1;
 
-    // 构造一个简单的命令
-    KernelCommand kernel_cmd{};
-    kernel_cmd.kernel_addr = 0xdeadbeef;
-    kernel_cmd.args_addr = 0xcafebabe;
-    kernel_cmd.shared_mem = 1024;
-    kernel_cmd.grid[0] = 1;
-    kernel_cmd.grid[1] = 1;
-    kernel_cmd.grid[2] = 1;
-    kernel_cmd.block[0] = 128;
-    kernel_cmd.block[1] = 1;
-    kernel_cmd.block[2] = 1;
+    struct gpu_device_info info{};
+    long ret = dev->fops->ioctl(0, GPU_IOCTL_GET_DEVICE_INFO, &info);
+    if (ret == 0) {
+        std::cout << "[TestGPU] Device vendor=0x" << std::hex << info.vendor_id
+                  << " device=0x" << info.device_id << std::dec << std::endl;
+    }
 
-    GpuCommandRequest req{};
-    req.packet_ptr = &kernel_cmd;
-    req.packet_size = sizeof(kernel_cmd);
+    struct gpu_alloc_bo_args alloc_args = {
+        .size = 4096,
+        .domain = GPU_MEM_DOMAIN_VRAM,
+        .flags = GPU_BO_DEVICE_LOCAL,
+        .handle = 0,
+        .gpu_va = 0
+    };
 
-    dev->fops->ioctl(0, GPGPU_SUBMIT_PACKET, &req);
+    ret = dev->fops->ioctl(0, GPU_IOCTL_ALLOC_BO, &alloc_args);
+    if (ret == 0) {
+        std::cout << "[TestGPU] BO allocated: handle=" << alloc_args.handle << std::endl;
 
+        struct gpu_gpfifo_entry entry = {};
+        entry.valid = 1;
+        entry.priv = 0;
+        entry.method = GPU_OP_LAUNCH_KERNEL;
+        entry.subchannel = 0;
+        entry.payload[0] = 0;
+        entry.payload[1] = 0x10;
+        entry.payload[2] = 0x20;
+
+        struct gpu_pushbuffer_args pb_args = {
+            .stream_id = 0,
+            .entries_addr = reinterpret_cast<u64>(&entry),
+            .count = 1,
+            .flags = 0
+        };
+
+        ret = dev->fops->ioctl(0, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb_args);
+        if (ret == 0) {
+            std::cout << "[TestGPU] PUSHBUFFER_SUBMIT_BATCH succeeded" << std::endl;
+        }
+
+        u32 handle = alloc_args.handle;
+        dev->fops->ioctl(0, GPU_IOCTL_FREE_BO, &handle);
+    }
+
+    dev.reset();
     ModuleLoader::unload_plugins();
     return 0;
 }

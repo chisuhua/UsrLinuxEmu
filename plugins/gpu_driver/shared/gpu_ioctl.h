@@ -39,13 +39,11 @@
     _IOW(GPU_IOCTL_BASE, 0x01, struct gpu_pushbuffer_args)
 
 struct gpu_pushbuffer_args {
-    u32 stream_id;                          /* CUDA stream ID or Vulkan queue ID */
-    const struct gpu_gpfifo_entry *entries; /* User-space pointer (built by TaskRunner) */
-    u32 count;                              /* Number of entries */
-    u32 flags;                              /* GPU_SUBMIT_FENCE | GPU_SUBMIT_INTERRUPT */
-
-    // Phase 1.5 新增
-    u64 fence_id;                           /* OUT: 如果批次包含 FENCE 操作，返回创建的 fence_id */
+    u32 stream_id;
+    u64 entries_addr;
+    u32 count;
+    u32 flags;
+    u64 fence_id;
 };
 
 /* ========================================================================
