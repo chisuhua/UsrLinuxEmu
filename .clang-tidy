@@ -1,0 +1,43 @@
+---
+Checks: '-*,bugprone-*,cppcoreguidelines-*,google-*,misc-*,modernize-*,performance-*,portability-*,readability-*'
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+FormatStyle: google
+CheckOptions:
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+  - key: readability-identifier-naming.MemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  - key: readability-identifier-naming.TemplateParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.TemplateParameterSuffix
+    value: '_T'
+  - key: cppcoreguidelines-avoid-magic-numbers.CodeViolationThreshold
+    value: '0'
+  - key: cppcoreguidelines-owning-memory.DeleteInRelease
+    value: '0'
+  - key: google-runtime-references.NonConstParameter
+    value: '0'
+  - key: modernize-use-trailing-return-type.TrailingReturnType
+    value: '0'
+  - key: readability-magic-numbers.MagicNumberThreshold
+    value: '0'
+  - key: readability-uppercase-literal-suffix.IntegerLiteralSuffix
+    value: '0'
+...
