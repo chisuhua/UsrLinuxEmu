@@ -1,6 +1,6 @@
 /**
  * cuda_compat_ioctl.h - CUDA ioctl 转译层接口
- * 
+ *
  * DDS v1.2 架构定义：
  * - 将 TaskRunner 的 CUDA ioctl 命令转译为 UsrLinuxEmu 内部调用
  * - Phase 1: CUDA 专用接口
@@ -14,7 +14,7 @@
 
 // 前向声明
 namespace taskrunner {
-    class CudaStub;
+class CudaStub;
 }
 
 #ifdef __cplusplus
@@ -23,7 +23,7 @@ extern "C" {
 
 /**
  * CUDA ioctl 转译入口
- * 
+ *
  * @param request ioctl 命令号（CUDA_IOCTL_*）
  * @param argp 参数指针
  * @return 0 成功，-errno 失败
@@ -39,4 +39,4 @@ void cuda_compat_cleanup(void);
 }
 #endif
 
-#endif // _USR_LINUX_EMU_CUDA_COMPAT_IOCTL_H
+#endif  // _USR_LINUX_EMU_CUDA_COMPAT_IOCTL_H

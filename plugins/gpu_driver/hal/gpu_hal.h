@@ -26,10 +26,8 @@ struct gpu_hal_ops {
   int (*register_write)(void *ctx, uint64_t offset, uint64_t val);
 
   /* 设备内存 DMA 读/写 */
-  int (*mem_read)(void *ctx, uint64_t dev_addr, void *host_buf,
-                  uint64_t size);
-  int (*mem_write)(void *ctx, uint64_t dev_addr, const void *host_buf,
-                   uint64_t size);
+  int (*mem_read)(void *ctx, uint64_t dev_addr, void *host_buf, uint64_t size);
+  int (*mem_write)(void *ctx, uint64_t dev_addr, const void *host_buf, uint64_t size);
 
   /* 设备内存（VRAM）分配/释放 */
   int (*mem_alloc)(void *ctx, uint64_t size, uint64_t *out_dev_addr);
@@ -48,28 +46,24 @@ struct gpu_hal_ops {
 
 /* ── inline 包装函数：零开销简化调用 ──────────────────────── */
 
-static inline int hal_register_read(struct gpu_hal_ops *hal, uint64_t off,
-                                    uint64_t *out) {
+static inline int hal_register_read(struct gpu_hal_ops *hal, uint64_t off, uint64_t *out) {
   return hal->register_read(hal->ctx, off, out);
 }
 
-static inline int hal_register_write(struct gpu_hal_ops *hal, uint64_t off,
-                                     uint64_t val) {
+static inline int hal_register_write(struct gpu_hal_ops *hal, uint64_t off, uint64_t val) {
   return hal->register_write(hal->ctx, off, val);
 }
 
-static inline int hal_mem_read(struct gpu_hal_ops *hal, uint64_t dev,
-                               void *hst, uint64_t sz) {
+static inline int hal_mem_read(struct gpu_hal_ops *hal, uint64_t dev, void *hst, uint64_t sz) {
   return hal->mem_read(hal->ctx, dev, hst, sz);
 }
 
-static inline int hal_mem_write(struct gpu_hal_ops *hal, uint64_t dev,
-                                const void *hst, uint64_t sz) {
+static inline int hal_mem_write(struct gpu_hal_ops *hal, uint64_t dev, const void *hst,
+                                uint64_t sz) {
   return hal->mem_write(hal->ctx, dev, hst, sz);
 }
 
-static inline int hal_mem_alloc(struct gpu_hal_ops *hal, uint64_t sz,
-                                uint64_t *out) {
+static inline int hal_mem_alloc(struct gpu_hal_ops *hal, uint64_t sz, uint64_t *out) {
   return hal->mem_alloc(hal->ctx, sz, out);
 }
 
@@ -77,23 +71,19 @@ static inline int hal_mem_free(struct gpu_hal_ops *hal, uint64_t addr) {
   return hal->mem_free(hal->ctx, addr);
 }
 
-static inline int hal_fence_create(struct gpu_hal_ops *hal,
-                                   uint64_t *out_id) {
+static inline int hal_fence_create(struct gpu_hal_ops *hal, uint64_t *out_id) {
   return hal->fence_create(hal->ctx, out_id);
 }
 
-static inline int hal_fence_read(struct gpu_hal_ops *hal, uint64_t id,
-                                 uint64_t *out) {
+static inline int hal_fence_read(struct gpu_hal_ops *hal, uint64_t id, uint64_t *out) {
   return hal->fence_read(hal->ctx, id, out);
 }
 
-static inline void hal_doorbell_ring(struct gpu_hal_ops *hal,
-                                     uint32_t qid) {
+static inline void hal_doorbell_ring(struct gpu_hal_ops *hal, uint32_t qid) {
   hal->doorbell_ring(hal->ctx, qid);
 }
 
-static inline void hal_interrupt_raise(struct gpu_hal_ops *hal,
-                                       uint32_t vec) {
+static inline void hal_interrupt_raise(struct gpu_hal_ops *hal, uint32_t vec) {
   hal->interrupt_raise(hal->ctx, vec);
 }
 

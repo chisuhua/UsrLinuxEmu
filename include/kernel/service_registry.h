@@ -1,19 +1,19 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
-#include <memory>
 #include "device.h"
 
 class ServiceRegistry {
-public:
-    static ServiceRegistry& instance();
+ public:
+  static ServiceRegistry& instance();
 
-    void register_service(const std::string& name, const std::shared_ptr<Device>& dev);
-    std::shared_ptr<Device> lookup_service(const std::string& name);
-    void unregister_service(const std::string& name);
-    void clear_services();
+  void register_service(const std::string& name, const std::shared_ptr<Device>& dev);
+  std::shared_ptr<Device> lookup_service(const std::string& name);
+  void unregister_service(const std::string& name);
+  void clear_services();
 
-private:
-    std::unordered_map<std::string, std::shared_ptr<Device>> services_;
+ private:
+  std::unordered_map<std::string, std::shared_ptr<Device>> services_;
 };

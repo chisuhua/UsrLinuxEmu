@@ -9,14 +9,14 @@
  */
 #pragma once
 
-#include "gpu_hal.h"
-#include "gpu_buddy.h"
 #include <cstddef>
 #include <mutex>
+#include "gpu_buddy.h"
+#include "gpu_hal.h"
 
-#define HAL_REGS_COUNT    256
-#define HAL_HEAP_SIZE     (256ULL * 1024 * 1024)
-#define HAL_MAX_FENCES    128
+#define HAL_REGS_COUNT 256
+#define HAL_HEAP_SIZE (256ULL * 1024 * 1024)
+#define HAL_MAX_FENCES 128
 
 struct hal_user_context {
   /* 以下是内部实现细节，调用者不应直接访问 */
@@ -36,6 +36,5 @@ struct hal_user_context {
   uint64_t interrupt_count;
 };
 
-void hal_user_init(struct gpu_hal_ops *hal,
-                   struct hal_user_context *ctx);
+void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx);
 void hal_user_destroy(struct hal_user_context *ctx);

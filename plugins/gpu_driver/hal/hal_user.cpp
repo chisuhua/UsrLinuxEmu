@@ -33,8 +33,7 @@ static int user_reg_write(void *ctx, uint64_t offset, uint64_t val) {
   return 0;
 }
 
-static int user_mem_read(void *ctx, uint64_t dev_addr,
-                         void *host_buf, uint64_t size) {
+static int user_mem_read(void *ctx, uint64_t dev_addr, void *host_buf, uint64_t size) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
   uint64_t heap_off = dev_addr - HAL_HEAP_BASE;
   if (heap_off + size > HAL_HEAP_SIZE || host_buf == nullptr)
@@ -44,8 +43,7 @@ static int user_mem_read(void *ctx, uint64_t dev_addr,
   return 0;
 }
 
-static int user_mem_write(void *ctx, uint64_t dev_addr,
-                          const void *host_buf, uint64_t size) {
+static int user_mem_write(void *ctx, uint64_t dev_addr, const void *host_buf, uint64_t size) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
   uint64_t heap_off = dev_addr - HAL_HEAP_BASE;
   if (heap_off + size > HAL_HEAP_SIZE || host_buf == nullptr)
@@ -55,8 +53,7 @@ static int user_mem_write(void *ctx, uint64_t dev_addr,
   return 0;
 }
 
-static int user_mem_alloc(void *ctx, uint64_t size,
-                          uint64_t *out_dev_addr) {
+static int user_mem_alloc(void *ctx, uint64_t size, uint64_t *out_dev_addr) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
   std::lock_guard<std::mutex> lock(hc->heap_lock);
 
@@ -84,7 +81,7 @@ static int user_fence_create(void *ctx, uint64_t *out_fence_id) {
   std::lock_guard<std::mutex> lock(hc->fence_lock);
   for (int i = 0; i < HAL_MAX_FENCES; i++) {
     if (!hc->fence_signaled[i]) {
-      hc->fence_signaled[i] = true;  /* 占用槽位 */
+      hc->fence_signaled[i] = true; /* 占用槽位 */
       *out_fence_id = i;
       return 0;
     }
@@ -92,8 +89,7 @@ static int user_fence_create(void *ctx, uint64_t *out_fence_id) {
   return -12; /* -ENOMEM */
 }
 
-static int user_fence_read(void *ctx, uint64_t fence_id,
-                           uint64_t *out_val) {
+static int user_fence_read(void *ctx, uint64_t fence_id, uint64_t *out_val) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
   if (fence_id >= HAL_MAX_FENCES)
     return -22;
@@ -121,8 +117,7 @@ static void user_time_wait(void *ctx, uint64_t us) {
 
 /* ── 公开初始化函数 ────────────────────────────────── */
 
-void hal_user_init(struct gpu_hal_ops *hal,
-                   struct hal_user_context *ctx) {
+void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   /* 清零上下文 */
   memset(ctx, 0, sizeof(*ctx));
 
@@ -131,17 +126,17 @@ void hal_user_init(struct gpu_hal_ops *hal,
 
   /* 挂载回调 */
   hal->ctx = ctx;
-  hal->register_read   = user_reg_read;
-  hal->register_write  = user_reg_write;
-  hal->mem_read        = user_mem_read;
-  hal->mem_write       = user_mem_write;
-  hal->mem_alloc       = user_mem_alloc;
-  hal->mem_free        = user_mem_free;
-  hal->fence_create    = user_fence_create;
-  hal->fence_read      = user_fence_read;
-  hal->doorbell_ring   = user_doorbell_ring;
+  hal->register_read = user_reg_read;
+  hal->register_write = user_reg_write;
+  hal->mem_read = user_mem_read;
+  hal->mem_write = user_mem_write;
+  hal->mem_alloc = user_mem_alloc;
+  hal->mem_free = user_mem_free;
+  hal->fence_create = user_fence_create;
+  hal->fence_read = user_fence_read;
+  hal->doorbell_ring = user_doorbell_ring;
   hal->interrupt_raise = user_interrupt_raise;
-  hal->time_wait       = user_time_wait;
+  hal->time_wait = user_time_wait;
 }
 
 void hal_user_destroy(struct hal_user_context *ctx) {

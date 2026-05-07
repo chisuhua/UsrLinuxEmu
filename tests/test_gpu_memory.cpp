@@ -1,16 +1,20 @@
 #include <catch_amalgamated.hpp>
 
-#include "kernel/vfs.h"
-#include "kernel/module_loader.h"
-#include "kernel/file_ops.h"
 #include "gpu_driver/shared/gpu_ioctl.h"
 #include "gpu_driver/shared/gpu_types.h"
+#include "kernel/file_ops.h"
+#include "kernel/module_loader.h"
+#include "kernel/vfs.h"
 
 // 全局插件生命周期管理：加载一次，统一卸载
 // 避免反复 dlopen/dlclose 导致动态链接器缓存问题
 struct PluginLifecycle {
-  PluginLifecycle() { ModuleLoader::load_plugins("plugins"); }
-  ~PluginLifecycle() { ModuleLoader::unload_plugins(); }
+  PluginLifecycle() {
+    ModuleLoader::load_plugins("plugins");
+  }
+  ~PluginLifecycle() {
+    ModuleLoader::unload_plugins();
+  }
 };
 static PluginLifecycle plugin_lifecycle;
 
@@ -19,7 +23,7 @@ TEST_CASE("GPU memory allocation and free", "[gpu][memory]") {
   REQUIRE(dev != nullptr);
   REQUIRE(dev->fops != nullptr);
 
-  struct gpu_device_info info{};
+  struct gpu_device_info info {};
   long ret = dev->fops->ioctl(0, GPU_IOCTL_GET_DEVICE_INFO, &info);
   REQUIRE(ret == 0);
   REQUIRE(info.vendor_id == 0x1000);
@@ -46,8 +50,10 @@ TEST_CASE("GPU memory multiple allocations", "[gpu][memory]") {
   auto dev = VFS::instance().open("/dev/gpgpu0", 0);
   REQUIRE(dev != nullptr);
 
-  struct gpu_alloc_bo_args alloc1 = {.size = 4096, .domain = GPU_MEM_DOMAIN_VRAM, .flags = 0, .handle = 0, .gpu_va = 0};
-  struct gpu_alloc_bo_args alloc2 = {.size = 8192, .domain = GPU_MEM_DOMAIN_VRAM, .flags = 0, .handle = 0, .gpu_va = 0};
+  struct gpu_alloc_bo_args alloc1 = {
+      .size = 4096, .domain = GPU_MEM_DOMAIN_VRAM, .flags = 0, .handle = 0, .gpu_va = 0};
+  struct gpu_alloc_bo_args alloc2 = {
+      .size = 8192, .domain = GPU_MEM_DOMAIN_VRAM, .flags = 0, .handle = 0, .gpu_va = 0};
 
   long ret = dev->fops->ioctl(0, GPU_IOCTL_ALLOC_BO, &alloc1);
   REQUIRE(ret == 0);

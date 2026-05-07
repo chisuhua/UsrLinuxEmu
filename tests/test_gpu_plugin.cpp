@@ -1,13 +1,13 @@
-#include <iostream>
 #include <cstring>
+#include <iostream>
 #include <vector>
 
 #include "catch_amalgamated.hpp"
-#include "kernel/vfs.h"
-#include "kernel/module_loader.h"
-#include "kernel/file_ops.h"
 #include "gpu_driver/shared/gpu_ioctl.h"
 #include "gpu_driver/shared/gpu_types.h"
+#include "kernel/file_ops.h"
+#include "kernel/module_loader.h"
+#include "kernel/vfs.h"
 
 // 全局插件生命周期管理：加载一次，统一卸载
 // 避免反复 dlopen/dlclose 导致动态链接器缓存问题
@@ -22,7 +22,7 @@ struct PluginLifecycle {
 static PluginLifecycle plugin_lifecycle;
 
 class GpuPluginTestFixture {
-public:
+ public:
   GpuPluginTestFixture() : device_(nullptr), fd_(0) {
     device_ = VFS::instance().open("/dev/gpgpu0", 0);
   }
@@ -70,7 +70,8 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_ALLOC_BO basic", "[gpu][ioctl]
   REQUIRE(result == 0);
 }
 
-TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_ALLOC_BO handle range", "[gpu][ioctl][alloc][handle]") {
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_ALLOC_BO handle range",
+                 "[gpu][ioctl][alloc][handle]") {
   std::vector<u32> handles;
   struct gpu_alloc_bo_args args = {};
   args.size = 4096;
@@ -170,7 +171,8 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MAP_BO invalid handle", "[gpu]
   REQUIRE(result != 0);
 }
 
-TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH MEMCPY", "[gpu][ioctl][submit]") {
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH MEMCPY",
+                 "[gpu][ioctl][submit]") {
   struct gpu_gpfifo_entry entry = {};
   entry.valid = 1;
   entry.priv = 0;
@@ -190,7 +192,8 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH MEMCPY
   REQUIRE(result == 0);
 }
 
-TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH LAUNCH_KERNEL", "[gpu][ioctl][submit]") {
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH LAUNCH_KERNEL",
+                 "[gpu][ioctl][submit]") {
   struct gpu_gpfifo_entry entry = {};
   entry.valid = 1;
   entry.priv = 0;
@@ -210,7 +213,8 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH LAUNCH
   REQUIRE(result == 0);
 }
 
-TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH FENCE", "[gpu][ioctl][submit]") {
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH FENCE",
+                 "[gpu][ioctl][submit]") {
   struct gpu_gpfifo_entry entry = {};
   entry.valid = 1;
   entry.priv = 0;
@@ -227,7 +231,8 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH FENCE"
   REQUIRE(result == 0);
 }
 
-TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH invalid count", "[gpu][ioctl][submit]") {
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH invalid count",
+                 "[gpu][ioctl][submit]") {
   struct gpu_pushbuffer_args args = {};
   args.stream_id = 0;
   args.entries_addr = 0;
@@ -269,7 +274,8 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_WAIT_FENCE", "[gpu][ioctl][fen
   REQUIRE(wait_args.status == 1);
 }
 
-TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_WAIT_FENCE nonexistent fence", "[gpu][ioctl][fence]") {
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_WAIT_FENCE nonexistent fence",
+                 "[gpu][ioctl][fence]") {
   struct gpu_wait_fence_args args = {};
   args.fence_id = 99999;
   args.timeout_ms = 10;
