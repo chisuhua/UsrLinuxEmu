@@ -23,6 +23,11 @@
 | [adr-015](adr-015-gpu-ioctl-unification.md) | GPU IOCTL 接口统一 | ✅ 已接受 | 2026-04 |
 | [adr-016](adr-016-gpu-memory-domain.md) | GPU Memory Domain 模型 | ✅ 已接受 | 2026-04 |
 | [adr-017](adr-017-gpfifo-queue-abstraction.md) | GPFIFO/Queue 抽象 | ✅ 已接受 | 2026-04 |
+| [adr-018](adr-018-driver-sim-separation.md) | 驱动/仿真代码分离策略 | ✅ 已接受 | 2026-05 |
+| [adr-019](adr-019-drm-gem-ttm-alignment.md) | DRM/GEM/TTM 标准接口对齐路径 | ✅ 已接受 | 2026-05 |
+| [adr-020](adr-020-libgpu-core-extraction.md) | libgpu_core 算法核心提取 | ✅ 已接受 | 2026-05 |
+| [adr-021](adr-021-hardware-puller.md) | Hardware Puller GPFIFO 状态机构架 | ✅ 已接受 | 2026-05 |
+| [adr-023](adr-023-hal-interface.md) | 仿真层接口契约 (HAL) | ✅ 已接受 | 2026-05 |
 
 ## ADR 状态说明
 
@@ -67,14 +72,25 @@ adr-001 (用户态模拟)
             ├── adr-013 (错误处理)
             └── adr-014 (日志系统)
 
-    └── GPU 相关 (adr-015/016/017)
+    └── GPU 相关 (adr-015/016/017/018/019/020/021)
             │
             ├── adr-004 (Buddy Allocator - 内存子分配)
             ├── adr-005 (Ring Buffer - 命令队列)
             │
-            └── adr-015 (IOCTL 统一)
-                    ├── adr-016 (Memory Domain)
-                    └── adr-017 (GPFIFO/Queue)
+            ├── adr-015 (IOCTL 统一)
+            │       ├── adr-016 (Memory Domain)
+            │       └── adr-017 (GPFIFO/Queue)
+            │
+            ├── adr-018 (驱动/仿真分离)
+            │       ├── adr-019 (DRM/GEM/TTM 对齐)
+            │       ├── adr-020 (libgpu_core 提取)
+            │       ├── adr-021 (Hardware Puller)
+            │       └── adr-023 (HAL 接口契约)
+            │
+            └── (规划中)
+                    ├── adr-022 (GPU 计算单元仿真)
+                    ├── adr-023 (HAL 接口契约)
+                    └── adr-024～031 (其余待讨论议题)
 ```
 
 ## 维护指南
@@ -101,4 +117,4 @@ adr-001 (用户态模拟)
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
-**最后更新**: 2026-05-06
+**最后更新**: 2026-05-07
