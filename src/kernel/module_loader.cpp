@@ -37,10 +37,11 @@ void ModuleLoader::decrease_ref(const char* name) {
     auto it = loaded_plugins_.find(name);
     if (it != loaded_plugins_.end()) {
         if (--it->second->ref_count <= 0) {
-            //module* mod = it->second->mod.get();
             module* mod = it->second->mod;
             if (mod->exit)
                 mod->exit();
+            VFS::instance().clear_devices();
+            VFS::shutdown();
             dlclose(it->second->handle);
             loaded_plugins_.erase(it);
         }
@@ -130,7 +131,11 @@ int ModuleLoader::load_plugins(const std::string& dir_path) {
 
 void ModuleLoader::unload_plugins() {
     std::cout << "[ModuleLoader] Unloading all plugins..." << std::endl;
-    for (auto& [name, info] : loaded_plugins_) {
+    std::vector<std::string> names;
+    for (const auto& [name, info] : loaded_plugins_) {
+        names.push_back(name);
+    }
+    for (const auto& name : names) {
         decrease_ref(name.c_str());
     }
 }

@@ -516,7 +516,7 @@ struct FenceInfo {
              return -EINVAL;
          }
 
-         const struct gpu_gpfifo_entry* entries = args->entries;
+         const struct gpu_gpfifo_entry* entries = reinterpret_cast<const struct gpu_gpfifo_entry*>(args->entries_addr);
 
          for (u32 i = 0; i < args->count; ++i) {
              const auto& e = entries[i];
@@ -623,6 +623,7 @@ extern "C" {
 
   static void plugin_fini_internal() {
       std::cout << "[GpuPlugin] Shutting down...\n";
+      VFS::instance().unregister_device("gpgpu0");
   }
 
   module mod = {

@@ -1,59 +1,64 @@
-#include <iostream>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <cstring>
+#include <catch_amalgamated.hpp>
 
 #include "kernel/vfs.h"
 #include "kernel/module_loader.h"
-#include "kernel/device/gpgpu_device.h"
-#include "gpu/ioctl_gpgpu.h"
-#include "gpu/gpu_command_packet.h"
+#include "kernel/file_ops.h"
+#include "gpu_driver/shared/gpu_ioctl.h"
+#include "gpu_driver/shared/gpu_types.h"
 
-int cudaMalloc(void** devPtr, size_t size) {
-    int fd = 0;
-    size_t alloc_size = size;
+// 全局插件生命周期管理：加载一次，统一卸载
+// 避免反复 dlopen/dlclose 导致动态链接器缓存问题
+struct PluginLifecycle {
+  PluginLifecycle() { ModuleLoader::load_plugins("plugins"); }
+  ~PluginLifecycle() { ModuleLoader::unload_plugins(); }
+};
+static PluginLifecycle plugin_lifecycle;
 
-    auto dev = VFS::instance().open("/dev/gpgpu0", 0);
-    if (!dev || !dev->fops) return -1;
+TEST_CASE("GPU memory allocation and free", "[gpu][memory]") {
+  auto dev = VFS::instance().open("/dev/gpgpu0", 0);
+  REQUIRE(dev != nullptr);
+  REQUIRE(dev->fops != nullptr);
 
-    if (dev->fops->ioctl(fd, GPGPU_ALLOC_MEM, &alloc_size) != 0) {
-        return -1;
-    }
+  struct gpu_device_info info{};
+  long ret = dev->fops->ioctl(0, GPU_IOCTL_GET_DEVICE_INFO, &info);
+  REQUIRE(ret == 0);
+  REQUIRE(info.vendor_id == 0x1000);
+  REQUIRE(info.device_id == 0x1001);
 
-    *devPtr = reinterpret_cast<void*>(alloc_size);  // 这里应该返回设备指针
-    return 0;
+  struct gpu_alloc_bo_args alloc_args = {};
+  alloc_args.size = 1024 * 1024;
+  alloc_args.domain = GPU_MEM_DOMAIN_VRAM;
+  alloc_args.flags = GPU_BO_DEVICE_LOCAL;
+  alloc_args.handle = 0;
+  alloc_args.gpu_va = 0;
+
+  ret = dev->fops->ioctl(0, GPU_IOCTL_ALLOC_BO, &alloc_args);
+  REQUIRE(ret == 0);
+  REQUIRE(alloc_args.handle != 0);
+  REQUIRE(alloc_args.gpu_va != 0);
+
+  u32 handle = alloc_args.handle;
+  ret = dev->fops->ioctl(0, GPU_IOCTL_FREE_BO, &handle);
+  REQUIRE(ret == 0);
 }
 
-int cudaMemcpy(void* dst, const void* src, size_t size, int direction) {
-    (void)direction;
-    memcpy(dst, src, size);
-    return 0;
-}
+TEST_CASE("GPU memory multiple allocations", "[gpu][memory]") {
+  auto dev = VFS::instance().open("/dev/gpgpu0", 0);
+  REQUIRE(dev != nullptr);
 
-int cudaFree(void* devPtr) {
-    int fd = 0;
-    uint64_t addr_to_free = reinterpret_cast<uint64_t>(devPtr);
+  struct gpu_alloc_bo_args alloc1 = {.size = 4096, .domain = GPU_MEM_DOMAIN_VRAM, .flags = 0, .handle = 0, .gpu_va = 0};
+  struct gpu_alloc_bo_args alloc2 = {.size = 8192, .domain = GPU_MEM_DOMAIN_VRAM, .flags = 0, .handle = 0, .gpu_va = 0};
 
-    auto dev = VFS::instance().open("/dev/gpgpu0", 0);
-    return dev->fops->ioctl(fd, GPGPU_FREE_MEM, &addr_to_free);
-}
+  long ret = dev->fops->ioctl(0, GPU_IOCTL_ALLOC_BO, &alloc1);
+  REQUIRE(ret == 0);
 
-int cudaSubmitKernel(uint64_t kernel_addr, uint64_t args_addr, size_t shared_mem,
-                     unsigned int* grid, unsigned int* block) {
-    // 使用正确的结构体
-    KernelCommand kernel_cmd{};
-    kernel_cmd.kernel_addr = kernel_addr;
-    kernel_cmd.args_addr = args_addr;
-    kernel_cmd.shared_mem = shared_mem;
-    if (grid) memcpy(kernel_cmd.grid, grid, sizeof(kernel_cmd.grid));
-    if (block) memcpy(kernel_cmd.block, block, sizeof(kernel_cmd.block));
+  ret = dev->fops->ioctl(0, GPU_IOCTL_ALLOC_BO, &alloc2);
+  REQUIRE(ret == 0);
 
-    GpuCommandRequest cmd_request{};
-    cmd_request.packet_ptr = &kernel_cmd;
-    cmd_request.packet_size = sizeof(kernel_cmd);
+  REQUIRE(alloc1.handle != alloc2.handle);
 
-    int fd = 0;
-    auto dev = VFS::instance().open("/dev/gpgpu0", 0);
-    return dev->fops->ioctl(fd, GPGPU_SUBMIT_PACKET, &cmd_request);
+  u32 h1 = alloc1.handle;
+  u32 h2 = alloc2.handle;
+  dev->fops->ioctl(0, GPU_IOCTL_FREE_BO, &h1);
+  dev->fops->ioctl(0, GPU_IOCTL_FREE_BO, &h2);
 }

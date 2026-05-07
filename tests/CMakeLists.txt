@@ -19,6 +19,7 @@ function(add_catch_test TEST_NAME)
 
     # 添加测试，指定完整路径到可执行文件
     add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
+    set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
     # 设置包含目录
     target_include_directories(${TEST_NAME} PRIVATE
@@ -26,7 +27,8 @@ function(add_catch_test TEST_NAME)
         ${PROJECT_SOURCE_DIR}/include/kernel
         ${PROJECT_SOURCE_DIR}/include/linux_compat
         ${PROJECT_SOURCE_DIR}/drivers
-        ${PROJECT_SOURCE_DIR}/plugins)
+        ${PROJECT_SOURCE_DIR}/plugins
+        ${CMAKE_CURRENT_SOURCE_DIR})
 endfunction()
 
 # 定义创建独立测试目标的函数
@@ -41,6 +43,7 @@ function(add_standalone_test TEST_NAME TEST_SOURCE)
         ${PROJECT_SOURCE_DIR}/plugins)
     # 添加测试，这样ctest可以运行它
     add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
+    set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endfunction()
 
 # 定义独立测试的列表（包含自定义main函数的测试）

@@ -3,9 +3,21 @@
 #include <iostream>
 #include <algorithm>
 
+namespace {
+VFS* instance_ptr = nullptr;
+}
+
 VFS& VFS::instance() {
     static VFS vfs;
+    instance_ptr = &vfs;
     return vfs;
+}
+
+void VFS::shutdown() {
+    if (instance_ptr) {
+        instance_ptr->devices_.clear();
+        instance_ptr = nullptr;
+    }
 }
 
 int VFS::register_device(const std::shared_ptr<Device>& dev) {
@@ -16,7 +28,6 @@ int VFS::register_device(const std::shared_ptr<Device>& dev) {
 
     devices_[dev->name] = dev;
 
-    // 同时注册到服务注册中心
     ServiceRegistry::instance().register_service(dev->name, dev);
 
     std::cout << "[VFS] Registered device: /dev/" << dev->name << std::endl;
@@ -59,4 +70,19 @@ std::vector<std::string> VFS::list_devices() const {
         names.push_back(name);
     }
     return names;
+}
+
+int VFS::unregister_device(const std::string& name) {
+    auto it = devices_.find(name);
+    if (it == devices_.end()) {
+        return -1;
+    }
+    devices_.erase(it);
+    ServiceRegistry::instance().unregister_service(name);
+    return 0;
+}
+
+void VFS::clear_devices() {
+    devices_.clear();
+    ServiceRegistry::instance().clear_services();
 }

@@ -19,22 +19,15 @@ class FileOperations;
  */
 class Device {
 public:
-    /**
-     * @brief 构造函数
-     * @param name 设备名称（如 "ttyS0"）
-     * @param id 设备号（dev_t 格式）
-     * @param ops 设备操作集合
-     * @param handle 插件句柄（用于 dlclose）
-     */
     Device(const std::string& name, dev_t id,
            std::shared_ptr<FileOperations> ops, void* handle);
 
     virtual ~Device() = default;
 
-    std::string name;                ///< 设备名称（例如 "ttyS0"）
-    dev_t dev_id;                   ///< 设备号（主设备号 << 8 | 次设备号）
-    void* plugin_handle = nullptr;  ///< 插件句柄（dlopen 返回值）
+    std::string name;
+    dev_t dev_id;
+    void* plugin_handle = nullptr;
 
-    std::shared_ptr<FileOperations> fops; ///< 文件操作接口
+    std::shared_ptr<FileOperations> fops;
 };
 

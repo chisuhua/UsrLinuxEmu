@@ -1,15 +1,14 @@
 #include <iostream>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
 #include <cstring>
 
 #include "kernel/vfs.h"
 #include "kernel/module_loader.h"
-#include "gpu/ioctl_gpgpu.h"
-#include "kernel/device/gpgpu_device.h"
-#include "gpu/gpu_command_packet.h"
+#include "kernel/file_ops.h"
+#include "gpu_driver/shared/gpu_ioctl.h"
+#include "gpu_driver/shared/gpu_types.h"
+#include "gpu_driver/shared/gpu_events.h"
 
 int main() {
     ModuleLoader::load_plugins("plugins");
@@ -22,54 +21,60 @@ int main() {
 
     int fd = 0;
 
-    // 获取设备信息
-    GpuDeviceInfo info{};
-    dev->fops->ioctl(fd, GPGPU_GET_DEVICE_INFO, &info);
-    std::cout << "[TestGPU] Device Name: " << info.name << std::endl;
-    std::cout << "[TestGPU] Memory Size: " << (info.memory_size / (1024 * 1024)) << "MB" << std::endl;
+    struct gpu_device_info info{};
+    long ret = dev->fops->ioctl(fd, GPU_IOCTL_GET_DEVICE_INFO, &info);
+    if (ret == 0) {
+        std::cout << "[TestGPU] Device vendor=0x" << std::hex << info.vendor_id
+                  << " device=0x" << info.device_id << std::dec << std::endl;
+        std::cout << "[TestGPU] VRAM: " << (info.vram_size / (1024 * 1024)) << "MB" << std::endl;
+    }
 
-    // 分配显存
-    size_t alloc_size = 1024 * 1024; // 1MB，移除const
-    uint64_t gpu_addr = 0;
-    dev->fops->ioctl(fd, GPGPU_ALLOC_MEM, &alloc_size);
-    memcpy(&gpu_addr, &alloc_size, sizeof(gpu_addr));
-    std::cout << "[TestGPU] Allocated GPU memory at: 0x" << std::hex << gpu_addr << std::dec << std::endl;
+    struct gpu_alloc_bo_args alloc_args = {
+        .size = 1024 * 1024,
+        .domain = GPU_MEM_DOMAIN_VRAM,
+        .flags = GPU_BO_DEVICE_LOCAL,
+        .handle = 0,
+        .gpu_va = 0
+    };
 
-    // mmap 到用户空间
-    void* user_ptr = dev->fops->mmap(nullptr, alloc_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (user_ptr == MAP_FAILED) {
-        std::cerr << "[TestGPU] mmap failed!" << std::endl;
+    ret = dev->fops->ioctl(fd, GPU_IOCTL_ALLOC_BO, &alloc_args);
+    if (ret != 0) {
+        std::cerr << "[TestGPU] ALLOC_BO failed: " << ret << std::endl;
         return -1;
     }
-    std::cout << "[TestGPU] Mapped to user space at: " << user_ptr << std::endl;
+    std::cout << "[TestGPU] Allocated GPU memory: handle=" << alloc_args.handle
+              << " va=0x" << std::hex << alloc_args.gpu_va << std::dec << std::endl;
 
-    // 写入一些数据到GPU内存
-    char* ptr = static_cast<char*>(user_ptr);
-    strcpy(ptr, "Hello from user space!");
-    std::cout << "[TestGPU] Wrote data to mapped memory." << std::endl;
+    struct gpu_gpfifo_entry entry = {};
+    entry.valid = 1;
+    entry.priv = 0;
+    entry.method = GPU_OP_LAUNCH_KERNEL;
+    entry.subchannel = 0;
+    entry.payload[0] = 0;
+    entry.payload[1] = 0x10;
+    entry.payload[2] = 0x20;
 
-    // 提交内核 - 使用正确的结构体
-    KernelCommand kernel_cmd{};
-    kernel_cmd.kernel_addr = reinterpret_cast<uint64_t>(user_ptr);
-    kernel_cmd.args_addr = reinterpret_cast<uint64_t>(ptr + 0x100);
-    kernel_cmd.shared_mem = 1024;
-    kernel_cmd.grid[0] = 1;
-    kernel_cmd.grid[1] = 1;
-    kernel_cmd.grid[2] = 1;
-    kernel_cmd.block[0] = 128;
-    kernel_cmd.block[1] = 1;
-    kernel_cmd.block[2] = 1;
+    struct gpu_pushbuffer_args pb_args = {
+        .stream_id = 0,
+        .entries_addr = reinterpret_cast<u64>(&entry),
+        .count = 1,
+        .flags = 0
+    };
 
-    GpuCommandRequest cmd_request{};
-    cmd_request.packet_ptr = &kernel_cmd;
-    cmd_request.packet_size = sizeof(kernel_cmd);
+    ret = dev->fops->ioctl(fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb_args);
+    if (ret == 0) {
+        std::cout << "[TestGPU] PUSHBUFFER_SUBMIT_BATCH succeeded" << std::endl;
+    } else {
+        std::cerr << "[TestGPU] PUSHBUFFER_SUBMIT_BATCH failed: " << ret << std::endl;
+    }
 
-    dev->fops->ioctl(fd, GPGPU_SUBMIT_PACKET, &cmd_request);
+    u32 handle = alloc_args.handle;
+    ret = dev->fops->ioctl(fd, GPU_IOCTL_FREE_BO, &handle);
+    if (ret == 0) {
+        std::cout << "[TestGPU] BO freed successfully" << std::endl;
+    }
 
-    // 释放资源
-    munmap(user_ptr, alloc_size);
-    dev->fops->ioctl(fd, GPGPU_FREE_MEM, &gpu_addr);
-
+    dev.reset();
     ModuleLoader::unload_plugins();
     return 0;
 }

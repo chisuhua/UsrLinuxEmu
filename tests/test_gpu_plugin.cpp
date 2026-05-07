@@ -9,16 +9,22 @@
 #include "gpu_driver/shared/gpu_ioctl.h"
 #include "gpu_driver/shared/gpu_types.h"
 
+// 全局插件生命周期管理：加载一次，统一卸载
+// 避免反复 dlopen/dlclose 导致动态链接器缓存问题
+struct PluginLifecycle {
+  PluginLifecycle() {
+    ModuleLoader::load_plugins("plugins");
+  }
+  ~PluginLifecycle() {
+    ModuleLoader::unload_plugins();
+  }
+};
+static PluginLifecycle plugin_lifecycle;
+
 class GpuPluginTestFixture {
 public:
   GpuPluginTestFixture() : device_(nullptr), fd_(0) {
-    ModuleLoader::load_plugins("plugins");
     device_ = VFS::instance().open("/dev/gpgpu0", 0);
-  }
-
-  ~GpuPluginTestFixture() {
-    device_ = nullptr;
-    ModuleLoader::unload_plugins();
   }
 
   long ioctl(unsigned long request, void* arg) {
@@ -176,7 +182,7 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH MEMCPY
 
   struct gpu_pushbuffer_args args = {};
   args.stream_id = 0;
-  args.entries = &entry;
+  args.entries_addr = reinterpret_cast<u64>(&entry);
   args.count = 1;
   args.flags = 0;
 
@@ -196,7 +202,7 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH LAUNCH
 
   struct gpu_pushbuffer_args args = {};
   args.stream_id = 0;
-  args.entries = &entry;
+  args.entries_addr = reinterpret_cast<u64>(&entry);
   args.count = 1;
   args.flags = 0;
 
@@ -213,7 +219,7 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH FENCE"
 
   struct gpu_pushbuffer_args args = {};
   args.stream_id = 0;
-  args.entries = &entry;
+  args.entries_addr = reinterpret_cast<u64>(&entry);
   args.count = 1;
   args.flags = 0;
 
@@ -224,7 +230,7 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH FENCE"
 TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH invalid count", "[gpu][ioctl][submit]") {
   struct gpu_pushbuffer_args args = {};
   args.stream_id = 0;
-  args.entries = nullptr;
+  args.entries_addr = 0;
   args.count = 0;
   args.flags = 0;
 
@@ -245,15 +251,16 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_WAIT_FENCE", "[gpu][ioctl][fen
 
   struct gpu_pushbuffer_args submit_args = {};
   submit_args.stream_id = 0;
-  submit_args.entries = &fence_entry;
+  submit_args.entries_addr = reinterpret_cast<u64>(&fence_entry);
   submit_args.count = 1;
   submit_args.flags = 0;
 
   long result = ioctl(GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &submit_args);
   REQUIRE(result == 0);
+  REQUIRE(submit_args.fence_id > 0);  // 使用 handler 返回的 fence_id
 
   struct gpu_wait_fence_args wait_args = {};
-  wait_args.fence_id = 1;
+  wait_args.fence_id = submit_args.fence_id;  // 使用实际 fence_id，而非硬编码
   wait_args.timeout_ms = 100;
   wait_args.status = 0;
 
