@@ -301,3 +301,4 @@ long GpgpuDevice::handleWaitFence(void* argp) {
             << "ms\n";
   return 0;
 }
+
