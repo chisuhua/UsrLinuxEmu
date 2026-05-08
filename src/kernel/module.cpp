@@ -2,6 +2,9 @@
 #include <iostream>
 
 #ifdef __cplusplus
+extern "C" {
+#endif
+
 int module::load() {
   if (loaded)
     return 0;
@@ -19,5 +22,8 @@ void module::unload() {
   if (exit)
     exit();
   loaded = false;
+}
+
+#ifdef __cplusplus
 }
 #endif

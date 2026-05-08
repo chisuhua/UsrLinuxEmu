@@ -17,6 +17,8 @@ struct HalHolder {
 static HalHolder* g_hal = nullptr;
 }
 
+using namespace usr_linux_emu;
+
 extern "C" {
 
 static int plugin_init_internal() {
