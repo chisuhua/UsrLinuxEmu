@@ -29,6 +29,15 @@ CTestTestfile.cmake
 # macOS
 .DS_Store
 
+# CTest output
+Testing/
+
+# clangd/LSP
+compile_commands.json
+
+# Runtime logs
+plugin.log
+
 # Temporary files
 /tmp/
 .aider*
