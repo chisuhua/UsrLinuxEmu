@@ -8,8 +8,10 @@
 #include "gpu/buddy_allocator.h"
 #include "kernel/vfs.h"
 
+using namespace usr_linux_emu;
+
 SampleGpuDriver::SampleGpuDriver()
-    : memory_pool_(0x100000000UL, 512 * 1024 * 1024) {  // 从0x100000000开始的512MB内存池
+    : memory_pool_(0x100000000UL, 512 * 1024 * 1024) {
   std::cout << "[SampleGpu] GPU device initialized." << std::endl;
 }
 
@@ -37,9 +39,8 @@ long SampleGpuDriver::ioctl(int fd, unsigned long request, void* argp) {
       free_memory(handle);
       break;
     }
-    case GPGPU_SUBMIT_PACKET: {  // 使用正确的ioctl命令
+    case GPGPU_SUBMIT_PACKET: {
       auto task = static_cast<struct GpuCommandRequest*>(argp);
-      // 暂时忽略这个命令，因为可能没有定义GpuCommandRequest
       std::cout << "[SampleGpu] Submit packet command received" << std::endl;
       break;
     }
@@ -56,7 +57,7 @@ int SampleGpuDriver::allocate_memory(size_t size, GpuMemoryHandle* addr_out) {
   if (ret == 0) {
     addr_out->phys_addr = addr;
     addr_out->size = size;
-    addr_out->user_ptr = nullptr;  // 实际使用时需要mmap映射
+    addr_out->user_ptr = nullptr;
   }
   return ret;
 }
@@ -67,8 +68,7 @@ int SampleGpuDriver::free_memory(GpuMemoryHandle addr) {
 
 void SampleGpuDriver::submit_task(const GpuTask& task) {
   std::cout << "[SampleGpu] Submitting task..." << std::endl;
-  // 模拟执行
-  usleep(500000);  // 500ms
+  usleep(500000);
   wait_queue_.wake_up();
 }
 
@@ -76,14 +76,13 @@ void SampleGpuDriver::submit_kernel(const GpuKernel& kernel) {
   std::cout << "[SampleGpu] Submitting kernel at: 0x" << std::hex << kernel.kernel_addr
             << " with args at: 0x" << kernel.args_addr << std::dec << std::endl;
 
-  // 模拟执行时间
-  usleep(800000);  // 800ms
+  usleep(800000);
   wait_queue_.wake_up();
 }
 
 void SampleGpuDriver::fill_info(struct GpuDeviceInfo* info) {
   info->name = "sample_gpu";
-  info->memory_size = 512ULL * 1024 * 1024;  // 512MB
+  info->memory_size = 512ULL * 1024 * 1024;
   info->max_queues = 4;
   info->compute_units = 16;
   std::cout << "[SampleGpu] Device info requested." << std::endl;

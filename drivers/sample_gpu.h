@@ -3,6 +3,8 @@
 #include "gpu/buddy_allocator.h"
 #include "kernel/device/gpgpu_device.h"
 
+namespace usr_linux_emu {
+
 class SampleGpuDriver : public GpuDevice {
  public:
   SampleGpuDriver();
@@ -13,17 +15,17 @@ class SampleGpuDriver : public GpuDevice {
   int free_memory(GpuMemoryHandle addr) override;
   void submit_task(const GpuTask& task) override;
 
-  // 添加缺失的纯虚函数实现
   ssize_t read(int fd, void* buf, size_t count) override;
 
   void submit_kernel(const GpuKernel& kernel);
   void fill_info(struct GpuDeviceInfo* info);
   void wait_for_tasks();
 
-  // 从FileOperations继承的mmap方法
   void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset) override;
 
  private:
-  BuddyAllocator memory_pool_;  // 512 MB 显存池
+  BuddyAllocator memory_pool_;
   WaitQueue wait_queue_;
 };
+
+}  // namespace usr_linux_emu

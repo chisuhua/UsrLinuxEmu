@@ -5,18 +5,13 @@
 #include "kernel/vfs.h"
 #include "sample_memory.h"
 
-// const char* sample_depends[] = { "base_module", NULL };
-//  sample_driver.cpp
+using namespace usr_linux_emu;
 
-// 模块定义
-// extern "C"
 module mod = {.name = "sample",
               .depends = nullptr,
               .init = []() -> int {
-                // 创建设备实例
                 auto mydev = std::make_shared<Device>("sample", 12345,
                                                       std::make_shared<SampleMemory>(), nullptr);
-                // 注册设备到虚拟文件系统
                 VFS::instance().register_device(mydev);
                 std::cout << "[SampleMemory] Module initialized." << std::endl;
                 return 0;

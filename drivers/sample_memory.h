@@ -2,10 +2,11 @@
 #include "kernel/device/memory_device.h"
 #include "kernel/ioctl.h"
 
-// 自定义 ioctl 命令
 #define SAMPLE_IOC_MAGIC 'k'
 #define SAMPLE_SET_MODE _IOW(SAMPLE_IOC_MAGIC, 1, int)
 #define SAMPLE_GET_STATUS _IOR(SAMPLE_IOC_MAGIC, 2, int)
+
+namespace usr_linux_emu {
 
 class SampleMemory : public MemoryDevice {
  public:
@@ -21,3 +22,5 @@ class SampleMemory : public MemoryDevice {
   int mode_ = 0;
   int status_ = 0;
 };
+
+}  // namespace usr_linux_emu
