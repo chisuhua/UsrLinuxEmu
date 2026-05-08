@@ -13,7 +13,6 @@ target_include_directories(gpu_hal PUBLIC
 )
 
 target_link_libraries(gpu_hal PUBLIC
-    gpu_sim
     gpu_core
 )
 

@@ -20,11 +20,11 @@ target_include_directories(gpu_driver_plugin PRIVATE
     ${PROJECT_SOURCE_DIR}/include/kernel
 )
 
-target_link_libraries(gpu_driver_plugin PRIVATE kernel)
+# drv/ 和 hal/ 总是编译（plugin.cpp 依赖它们）
+add_subdirectory(drv)
+add_subdirectory(hal)
 
-if(ENABLE_GPU_SHADOW)
-  target_link_libraries(gpu_driver_plugin PRIVATE gpu_hal gpu_core)
-endif()
+target_link_libraries(gpu_driver_plugin PRIVATE kernel gpu_hal gpu_core gpu_drv)
 
 set_target_properties(gpu_driver_plugin PROPERTIES
     PREFIX ""
@@ -38,7 +38,5 @@ set_target_properties(gpu_driver_plugin PROPERTIES
 option(ENABLE_GPU_SHADOW "启用 GPU 驱动影子编译（drv/sim/hal）" OFF)
 
 if(ENABLE_GPU_SHADOW)
-  add_subdirectory(drv)
   add_subdirectory(sim)
-  add_subdirectory(hal)
 endif()

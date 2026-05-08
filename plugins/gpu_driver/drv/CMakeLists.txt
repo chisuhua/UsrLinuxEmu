@@ -4,6 +4,10 @@ add_library(gpu_drv STATIC
     gpgpu_device.cpp
 )
 
+set_target_properties(gpu_drv PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
+
 target_include_directories(gpu_drv PUBLIC
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/kernel
