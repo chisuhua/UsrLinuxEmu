@@ -1,6 +1,8 @@
 #include <iostream>
 #include "kernel/module_loader.h"
 
+using namespace usr_linux_emu;
+
 int main() {
   std::cout << "[KernelEmu] Starting user-space kernel emulator..." << std::endl;
 

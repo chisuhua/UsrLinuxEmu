@@ -7,6 +7,7 @@
 #include "kernel/vfs.h"
 
 using namespace std;
+using namespace usr_linux_emu;
 
 void test_ioctl() {
   auto dev = VFS::instance().open("/dev/sample", 0);

@@ -4,6 +4,8 @@
 #include "kernel/device/serial_device.h"
 #include "kernel/vfs.h"
 
+using namespace usr_linux_emu;
+
 void reader_thread() {
   auto dev = VFS::instance().open("/dev/ttyS0", 0);
   char buf[100];

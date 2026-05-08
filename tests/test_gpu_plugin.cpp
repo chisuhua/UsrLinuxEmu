@@ -9,6 +9,8 @@
 #include "kernel/module_loader.h"
 #include "kernel/vfs.h"
 
+using namespace usr_linux_emu;
+
 // 全局插件生命周期管理：加载一次，统一卸载
 // 避免反复 dlopen/dlclose 导致动态链接器缓存问题
 struct PluginLifecycle {
