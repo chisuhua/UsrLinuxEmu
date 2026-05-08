@@ -2,6 +2,8 @@
 #include "kernel/device/serial_device.h"
 #include "kernel/vfs.h"
 
+using namespace usr_linux_emu;
+
 int main() {
   // 创建串口设备
   auto serial_dev =

@@ -9,6 +9,8 @@
 #include "kernel/module_loader.h"
 #include "kernel/vfs.h"
 
+using namespace usr_linux_emu;
+
 int main() {
   ModuleLoader::load_plugins("plugins");
 

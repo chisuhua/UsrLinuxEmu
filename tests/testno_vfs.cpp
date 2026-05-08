@@ -3,6 +3,8 @@
 #include "kernel/device/memory_device.h"
 #include "kernel/vfs.h"
 
+using namespace usr_linux_emu;
+
 int main() {
   auto mem_dev =
       std::make_shared<Device>("mem0", 12344, std::make_shared<SampleMemory>(4096), nullptr);
