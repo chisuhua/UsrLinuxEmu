@@ -10,7 +10,6 @@ class ServiceRegistry {
   static ServiceRegistry& instance();
 
   void register_service(const std::string& name, const std::shared_ptr<Device>& dev);
-  std::shared_ptr<Device> lookup_service(const std::string& name);
   void unregister_service(const std::string& name);
   void clear_services();
 
