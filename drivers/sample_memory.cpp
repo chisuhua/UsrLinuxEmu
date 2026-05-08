@@ -5,6 +5,8 @@
 #include "kernel/module_loader.h"
 #include "kernel/vfs.h"
 
+using namespace usr_linux_emu;
+
 SampleMemory::SampleMemory(size_t size) : MemoryDevice(size) {}
 
 int SampleMemory::open(const char* path, int flags) {

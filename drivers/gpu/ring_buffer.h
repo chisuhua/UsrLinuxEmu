@@ -4,7 +4,9 @@
 #include <mutex>
 #include "gpu_command_packet.h"
 #include "kernel/pcie/pcie_emu.h"
-#include "kernel/wait_queue.h"  // 添加WaitQueue的包含
+#include "kernel/wait_queue.h"
+
+namespace usr_linux_emu {
 
 class RingBuffer {
  public:
@@ -33,3 +35,5 @@ class RingBuffer {
   std::mutex mtx_;
   WaitQueue wait_queue_;
 };
+
+}  // namespace usr_linux_emu

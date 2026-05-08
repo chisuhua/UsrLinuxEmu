@@ -4,6 +4,8 @@
 #include "kernel/module_loader.h"
 #include "kernel/vfs.h"
 
+using namespace usr_linux_emu;
+
 module mod = {.name = "serial",
               .depends = nullptr,
               .init = []() -> int {

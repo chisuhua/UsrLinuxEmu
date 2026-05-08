@@ -5,12 +5,12 @@
 #include "kernel/module.h"
 #include "kernel/vfs.h"
 
+using namespace usr_linux_emu;
+
 extern "C" {
-// 声明模块结构体
 module mod;
 }
 
-// 初始化模块结构体
 __attribute__((constructor)) void init_module() {
   mod.name = "gpu";
   mod.depends = nullptr;
