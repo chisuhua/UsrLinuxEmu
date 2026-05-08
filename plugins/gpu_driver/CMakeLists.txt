@@ -9,6 +9,8 @@ add_library(gpu_driver_plugin MODULE
 target_include_directories(gpu_driver_plugin PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
     ${PROJECT_SOURCE_DIR}/libgpu_core/include
 )
 

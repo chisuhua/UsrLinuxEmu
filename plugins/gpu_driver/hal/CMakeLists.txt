@@ -35,6 +35,7 @@ add_executable(test_hal
 target_link_libraries(test_hal PRIVATE
     gpu_hal_mock
     gpu_hal
+    gpu_drv
 )
 
 target_include_directories(test_hal PRIVATE

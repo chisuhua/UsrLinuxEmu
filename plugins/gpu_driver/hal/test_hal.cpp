@@ -342,12 +342,91 @@ static int test_doorbell_emu() {
   return 0;
 }
 
-static int test_puller_emu() {
+/* ── T10: HardwarePullerEmu 状态机测试 ───────────────── */
+
+static int test_puller_initial_state() {
   TEST("sim: HardwarePullerEmu initial state");
   HardwarePullerEmu puller;
   ASSERT(strcmp(puller.currentState(), "IDLE") == 0, "initial state is IDLE");
   gpu_gpfifo_entry entry;
   ASSERT(puller.pull(0, &entry) == false, "pull returns false (no entries)");
+  PASS();
+  return 0;
+}
+
+static int test_puller_submit_and_pull_one() {
+  TEST("sim: HardwarePullerEmu submitBatch then pull returns entry");
+  HardwarePullerEmu puller;
+  gpu_gpfifo_entry entries[1] = {};
+  entries[0].valid = 1;
+  entries[0].method = GPU_OP_LAUNCH_KERNEL;
+  puller.submitBatch(entries, 1);
+  gpu_gpfifo_entry out = {};
+  bool has_entry = puller.pull(0, &out);
+  ASSERT(has_entry == true, "pull should return true after submitBatch");
+  ASSERT(out.valid == 1, "entry should be valid");
+  ASSERT(out.method == GPU_OP_LAUNCH_KERNEL, "method should match");
+  PASS();
+  return 0;
+}
+
+static int test_puller_multiple_entries() {
+  TEST("sim: HardwarePullerEmu pull returns all entries sequentially");
+  HardwarePullerEmu puller;
+  gpu_gpfifo_entry entries[3] = {};
+  entries[0].valid = 1;
+  entries[0].method = GPU_OP_LAUNCH_KERNEL;
+  entries[1].valid = 1;
+  entries[1].method = GPU_OP_MEMCPY;
+  entries[2].valid = 1;
+  entries[2].method = GPU_OP_FENCE;
+  puller.submitBatch(entries, 3);
+  gpu_gpfifo_entry out = {};
+  ASSERT(puller.pull(0, &out) == true, "entry 1");
+  ASSERT(out.method == GPU_OP_LAUNCH_KERNEL, "method 1");
+  ASSERT(puller.pull(0, &out) == true, "entry 2");
+  ASSERT(out.method == GPU_OP_MEMCPY, "method 2");
+  ASSERT(puller.pull(0, &out) == true, "entry 3");
+  ASSERT(out.method == GPU_OP_FENCE, "method 3");
+  PASS();
+  return 0;
+}
+
+static int test_puller_returns_to_idle() {
+  TEST("sim: HardwarePullerEmu done state returns to IDLE");
+  HardwarePullerEmu puller;
+  gpu_gpfifo_entry entries[2] = {};
+  entries[0].valid = 1;
+  entries[0].method = GPU_OP_LAUNCH_KERNEL;
+  entries[1].valid = 1;
+  entries[1].method = GPU_OP_MEMCPY;
+  puller.submitBatch(entries, 2);
+  gpu_gpfifo_entry out = {};
+  ASSERT(puller.pull(0, &out) == true, "first entry");
+  ASSERT(puller.pull(0, &out) == true, "second entry");
+  ASSERT(puller.pull(0, &out) == false, "no more entries");
+  ASSERT(strcmp(puller.currentState(), "IDLE") == 0, "back to IDLE after done");
+  PASS();
+  return 0;
+}
+
+/* ── T9: ioctl 表驱动测试 ─────────────────────────── */
+
+#include "drv/gpgpu_device.h"
+
+static int test_ioctl_dispatch_table() {
+  TEST("drv: GpgpuDevice ioctl dispatch table covers all GPU_IOCTL_*");
+  GpgpuDevice dev(nullptr);
+  ASSERT(dev.dispatchCount() == 6, "should have 6 ioctl entries");
+  PASS();
+  return 0;
+}
+
+static int test_ioctl_unknown_returns_einval() {
+  TEST("drv: GpgpuDevice unknown ioctl returns -EINVAL");
+  GpgpuDevice dev(nullptr);
+  long ret = dev.ioctl(0, 0x9999, nullptr);
+  ASSERT(ret == -EINVAL, "unknown ioctl should return -EINVAL");
   PASS();
   return 0;
 }
@@ -375,7 +454,14 @@ int main() {
   rc |= test_user_mem_bad_params();
 
   rc |= test_doorbell_emu();
-  rc |= test_puller_emu();
+
+  rc |= test_puller_initial_state();
+  rc |= test_puller_submit_and_pull_one();
+  rc |= test_puller_multiple_entries();
+  rc |= test_puller_returns_to_idle();
+
+  rc |= test_ioctl_dispatch_table();
+  rc |= test_ioctl_unknown_returns_einval();
 
   printf("\n结果: %d/%d 通过\n", tests_passed, tests_total);
   return rc;
