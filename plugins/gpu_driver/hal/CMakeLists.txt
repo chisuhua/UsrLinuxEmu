@@ -40,6 +40,8 @@ target_link_libraries(test_hal PRIVATE
 target_include_directories(test_hal PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
 )
 
 # 注册测试

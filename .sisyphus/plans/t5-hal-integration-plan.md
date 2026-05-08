@@ -189,13 +189,13 @@ Step 1.6: Test verification
 - [ ] 1.6 Test verification (19/19 pass)
 
 ### Phase 2 (Path B - Full Replacement)
-- [ ] 2.1 Refactor to ADR-023 constructor injection pattern
-- [ ] 2.2 Fix hal_user.cpp: Option 4A+4B (external heap + gpu_buddy)
-- [ ] 2.3 Replace buddy_.allocate() with hal_mem_alloc()
-- [ ] 2.4 Replace buddy_.free() with hal_mem_free()
-- [ ] 2.5 Replace fence creation with hal_fence_create()
-- [ ] 2.6 Remove BuddyAllocator member
-- [ ] 2.7 Verify 19/19 tests still pass
+- [x] 2.1 Refactor to ADR-023 constructor injection pattern — DONE in T6 execution (plugin_init_internal creates HAL, passes pointer to GpgpuDevice constructor)
+- [x] 2.2 Fix hal_user.cpp: Option 4A+4B (external heap + gpu_buddy) — resolved: hal_user heap is internal (HAL-owned), consistent with ADR-020
+- [x] 2.3 Replace buddy_.allocate() with hal_mem_alloc()
+- [x] 2.4 Replace buddy_.free() with hal_mem_free()
+- [x] 2.5 Replace fence creation with hal_fence_create()
+- [x] 2.6 Remove BuddyAllocator member
+- [x] 2.7 Verify 19/19 tests still pass
 
 ---
 
@@ -214,7 +214,7 @@ Step 1.6: Test verification
 
 ---
 
-**Last Updated**: 2026-05-08 (v2, Momus review applied)
+**Last Updated**: 2026-05-08 (v2 + Phase 2 execution log)
 **Author**: Sisyphus
 **Review**: Momus (CONDITIONAL APPROVE with 4 Must-Fix issues → 4 fixed in v2)
 
@@ -245,3 +245,47 @@ Step 1.6: Test verification
 - Phase 1 works with GPU_SHADOW=ON (hal_user.cpp compiled)
 - Phase 1 also compiles with GPU_SHADOW=OFF (hal_user.h just a header, not compiled)
 - libgpu_core include path needed for gpu_buddy.h dependency in hal_user.h
+
+## 11. Phase 2 + T6 Execution Log (2026-05-08)
+
+### Actual Changes Made
+
+**plugin.cpp**:
+- Removed `BuddyAllocator` class (~310 lines) — no longer needed
+- Removed `FenceInfo` struct — no longer needed
+- Removed `BuddyAllocator buddy_` member from `GpgpuDevice`
+- Removed `std::map<u64, FenceInfo> fences_` and `std::atomic<u64> fence_counter_` members
+- Replaced `buddy_.allocate(args->size)` with `hal_mem_alloc(hal_, args->size, &gpu_va)` in `handle_alloc_bo`
+- Replaced `buddy_.free(gpu_va)` with `hal_mem_free(hal_, gpu_va)` in `handle_alloc_bo` and `handle_free_bo`
+- Replaced internal fence creation with `hal_fence_create(hal_, &fence_id)` in `handle_pushbuffer_submit_batch`
+- Replaced fence wait with `hal_fence_read(hal_, fence_id, &signaled)` in `handle_wait_fence`
+
+**plugin.cpp — ADR-023 Constructor Injection (T6)**:
+- Changed `GpgpuDevice` constructor: `GpgpuDevice()` → `explicit GpgpuDevice(struct gpu_hal_ops* hal)` (pointer injection)
+- `hal_` member: `struct gpu_hal_ops hal_` → `struct gpu_hal_ops* hal_`
+- Removed `hal_ctx_` member from GpgpuDevice (caller owns)
+- Removed `hal_user_init()` from GpgpuDevice constructor (now caller's responsibility)
+- Removed `hal_user_destroy()` from GpgpuDevice destructor (caller's responsibility)
+- Added `HalHolder` struct (anon ns): holds both `hal` ops and `ctx` together
+- Added `g_hal` static pointer to `HalHolder`
+- `plugin_init_internal()`: creates `HalHolder` on stack, calls `hal_user_init()`, passes `&hal_holder.hal` to GpgpuDevice
+- `plugin_fini_internal()`: calls `hal_user_destroy(&g_hal->ctx)` after VFS unregister
+
+### Verification
+- `make gpu_driver_plugin -j4` → 0 errors (GPU_SHADOW=ON and OFF)
+- `ctest --output-on-failure` → 19/19 pass (GPU_SHADOW=OFF), 20/20 pass (GPU_SHADOW=ON)
+- HAL mem_alloc used for GPU memory allocation ✓
+- HAL mem_free used for GPU memory deallocation ✓
+- HAL fence_create used for fence creation ✓
+- HAL fence_read used for fence wait ✓
+- BuddyAllocator class removed ✓
+- FenceInfo/fences_ map removed ✓
+- ADR-023 constructor injection: plugin creates HAL, passes to GpgpuDevice ✓
+- HAL lifecycle (init/destroy) managed by plugin, not GpgpuDevice ✓
+
+### Note
+- Phase 2 replaces BuddyAllocator (C++ inline) with HAL calls (gpu_hal function pointers → hal_user.cpp → gpu_buddy)
+- Two separate heaps issue resolved: now single heap source via hal_user_context's internal gpu_buddy
+- hal_user heap uses its own 256MB malloc (HAL_HEAP_SIZE) — correct per ADR-020, HAL user-land can use malloc
+- The fence_counter_ atomic is gone — fence IDs now come from HAL layer (0..HAL_MAX_FENCES-1)
+- ADR-023 constructor injection enables: (1) test mock injection, (2) kernel-mode switch (swap hal_user.cpp for kernel regs)

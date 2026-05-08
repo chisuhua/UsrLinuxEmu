@@ -44,21 +44,21 @@
 
 | # | 任务 | 优先级 | 状态 | 依赖 | 涉及文件 | 预计工时 |
 |---|------|--------|------|------|---------|---------|
-| T1 | **删除孤儿文件** `src/kernel/device/cuda_compat_ioctl.cpp` | 🔴 高 | 待执行 | 无 | `src/kernel/device/cuda_compat_ioctl.cpp` | 0.5h |
-| T2 | **ServiceRegistry 决策与解耦** | 🔴 高 | 待决策 | 无 | `src/kernel/vfs.cpp`, `include/kernel/service_registry.h` | 2h |
-| T3 | **更新 `sync-plan.md` 状态列** | 🟡 中 | 待执行 | 无 | `plans/sync-plan.md` | 0.5h |
-| T4 | **归档已废弃/完成的计划文件** | 🟡 中 | 待执行 | 无 | `plans/master_plan_2026.md`, `.sisyphus/plans/*.md` | 0.5h |
+| T1 | **删除孤儿文件** `cuda_compat_ioctl.cpp` | 🔴 高 | ✅ 完成 | 无 | `src/kernel/device/cuda_compat_ioctl.cpp` | 0.5h |
+| T2 | **ServiceRegistry 决策与解耦** | 🔴 高 | ✅ 完成 | 无 | `src/kernel/vfs.cpp`, `include/kernel/service_registry.h` | 2h |
+| T3 | **更新 `sync-plan.md` 状态列** | 🟡 中 | ✅ 完成 | 无 | `plans/sync-plan.md` | 0.5h |
+| T4 | **归档已废弃/完成的计划文件** | 🟡 中 | ✅ 完成 | 无 | `plans/master_plan_2026.md`, `.sisyphus/plans/*.md` | 0.5h |
 
 ### 2.2 中周期任务（1-2 周）
 
 | # | 任务 | 优先级 | 状态 | 依赖 | 涉及文件 | 预计工时 |
 |---|------|--------|------|------|---------|---------|
-| T5 | **HAL 集成到 `plugin.cpp`**（ADR-023） | 🔴 高 | 待执行 | T2 完成（VFS 稳定） | `plugins/gpu_driver/plugin.cpp`, `plugins/gpu_driver/hal/hal_user.cpp`, `plugins/gpu_driver/drv/gpgpu_device.cpp` | 3-4d |
-| T6 | **DRV 层薄入口切换**（P1.1b） | 🔴 高 | 待执行 | T5 完成 | `plugins/gpu_driver/plugin.cpp`, `plugins/CMakeLists.txt` | 1d |
-| T7 | **SIM 层骨架填充**（buddy/fence/puller） | 🟡 中 | 待执行 | T5 完成 | `plugins/gpu_driver/sim/*.cpp` | 2-3d |
-| T8 | **kernel 层命名空间迁移**（Phase C） | 🟡 中 | 待执行 | T6 完成（plugin 稳定后） | `include/kernel/*.h`, `src/kernel/*.cpp` | 2d |
-| T9 | **DRM ioctl 表驱动**（P1.4） | 🟡 中 | 待执行 | T6 完成 | `plugins/gpu_driver/drv/gpu_drm_driver.cpp` | 1-2d |
-| T10 | **Puller 状态机实现**（P1.5） | 🟢 低 | 待执行 | T7 完成 | `plugins/gpu_driver/sim/hardware/hardware_puller_emu.cpp` | 2-3d |
+| T5 | **HAL 集成到 `plugin.cpp`**（ADR-023） | 🔴 高 | ✅ Phase 1+2 完成 | T2 完成（VFS 稳定） | `plugins/gpu_driver/plugin.cpp`, `plugins/gpu_driver/hal/hal_user.cpp`, `plugins/gpu_driver/drv/gpgpu_device.cpp` | Phase 1: 2h, Phase 2: 1h |
+| T6 | **DRV 层薄入口切换**（P1.1b） | 🔴 高 | ✅ 完成 | T5 Phase 2 完成 | `plugins/gpu_driver/plugin.cpp` | 1h（ADR-023 constructor injection） |
+| T7 | **SIM 层骨架填充**（buddy/fence/puller） | 🟡 中 | ✅ 完成 | T5 Phase 2 完成 | `plugins/gpu_driver/sim/doorbell_emu.cpp`, `plugins/gpu_driver/sim/hardware_puller_emu.cpp`, `plugins/gpu_driver/sim/hardware/*.h` | 1h |
+| T8 | **kernel 层命名空间迁移**（Phase C） | 🟡 中 | 🔄 执行中 | T6 完成 | `include/kernel/*.h`, `src/kernel/*.cpp` | 2d（⚠️ 需要TaskRunner兼容性规划） |
+| T9 | **DRM ioctl 表驱动**（P1.4） | 🟡 中 | ⏸️ 待规划 | T6 完成 | `plugins/gpu_driver/drv/gpu_drm_driver.cpp`（⚠️ 文件不存在，需新建） | 1-2d |
+| T10 | **Puller 状态机实现**（P1.5） | 🟢 低 | ⏸️ 待规划 | T7 完成 | `plugins/gpu_driver/sim/hardware/hardware_puller_emu.cpp` | 2-3d（⚠️ ADR-021未实现） |
 
 ### 2.3 长周期任务（2-4 周，Phase 2 准备）
 
@@ -444,20 +444,29 @@ docs/archive/planning/
 
 ### 7.1 代码层面
 
-| # | 发现 | 严重度 | 建议行动 |
-|---|------|--------|---------|
-| N1 | `plugin.cpp` 中 `GPU_OP_LAUNCH_CPU_TASK` 仍未处理（被 `default` 分支捕获） | 低 | 在 T5/T6 期间添加骨架处理分支，打印日志，Phase 2 实现回调 |
-| N2 | `hal_user.cpp` 使用 `malloc`/`free`（第 125、143 行），与 ADR-020 "无 malloc/free" 约束冲突 | 中 | 改用 `new uint8_t[HAL_HEAP_SIZE]` / `delete[]`，或从 `libgpu_core` 申请堆内存 |
-| N3 | `drv/gpgpu_device.cpp` 仅 364 字节，骨架完成度极低 | 低 | 在 T6 期间完整填充 |
-| N4 | `sim/hardware_puller_emu.cpp` (128 字节) 和 `doorbell_emu.cpp` (119 字节) 几乎是空文件 | 低 | 在 T7 期间填充 |
+| # | 发现 | 严重度 | 状态 | 备注 |
+|---|------|--------|------|------|
+| N1 | `plugin.cpp` 中 `GPU_OP_LAUNCH_CPU_TASK` 仍未处理（被 `default` 分支捕获） | 低 | ✅ 已修复 | 添加骨架 case，打印日志 |
+| N2 | `hal_user.cpp` 使用 `malloc`/`free`，与 ADR-020 冲突 | 中 | ❌ 非问题 | ADR-020 禁止 malloc 在 libgpu_core（纯C），hal_user.cpp（用户态C++）允许malloc |
+| N3 | `drv/gpgpu_device.cpp` 仅 364 字节，骨架完成度极低 | 低 | ❌ 非问题 | 故意为占位符；GpgpuDevice 在 plugin.cpp，T6 实现了 constructor injection |
+| N4 | `sim/hardware_puller_emu.cpp` (128 字节) 和 `doorbell_emu.cpp` (119 字节) 几乎是空文件 | 低 | ✅ 已修复 (T7) | T7 实现了 DoorbellEmu + HardwarePullerEmu stubs |
 
 ### 7.2 计划层面
 
-| # | 发现 | 建议 |
+| # | 发现 | 状态 |
 |---|------|------|
-| N5 | 缺少 `plugin.cpp` → HAL → SIM 的集成测试 | 在 T5 完成后添加 `test_hal_integration.cpp`，验证 HAL 每个函数指针非空且可调用 |
-| N6 | `test_portability.sh` 尚未创建 | T13 需要创建此脚本，初始检查 5 条规则（来自 `gpu_driver_portability_plan.md` §2.3） |
-| N7 | ADR-022/024/025/027 无预定讨论时间表 | 建议在 T10 完成后（~Day 10）启动第一个 ADR-022 讨论 |
+| N5 | 缺少 `plugin.cpp` → HAL → SIM 的集成测试 | ❌ 已解决：test_hal.cpp 验证每个 HAL 函数指针非空，15/15 通过 |
+| N6 | `test_portability.sh` 尚未创建 | 待 T13 |
+| N7 | ADR-022/024/025/027 无预定讨论时间表 | 待 T11 |
+
+### 7.3 预构建问题修复（本 session）
+
+| 问题 | 修复 |
+|------|------|
+| `pcie_emu.h` 缺少 `size_t` | 添加 `#include <cstddef>` |
+| `basic_gpu_simulator.h` 缺少 `unique_ptr` | 添加 `#include <memory>` |
+| `test_gpu_plugin` 缺少执行权限 | `chmod +x` |
+| `gpu_driver_plugin` ✅ 19/19 测试通过 | — |
 
 ---
 

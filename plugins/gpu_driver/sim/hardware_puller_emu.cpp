@@ -1,5 +1,11 @@
-/*
- * hardware_puller_emu.cpp — Hardware Puller 状态机骨架（影子编译）
- */
+#include "hardware/hardware_puller_emu.h"
 
-// TODO(P1.5): 实现 Puller 状态机
+HardwarePullerEmu::HardwarePullerEmu() : state_("IDLE") {}
+
+const char* HardwarePullerEmu::currentState() const { return state_; }
+
+bool HardwarePullerEmu::pull(uint32_t queue_id, struct gpu_gpfifo_entry* out_entry) {
+  (void)queue_id;
+  (void)out_entry;
+  return false;  // No entries available in T7 stub
+}

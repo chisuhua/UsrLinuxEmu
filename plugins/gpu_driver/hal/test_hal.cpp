@@ -12,6 +12,8 @@
 #include <cstring>
 #include "gpu_hal.h"
 #include "hal_mock.h"
+#include "sim/hardware/doorbell_emu.h"
+#include "sim/hardware/hardware_puller_emu.h"
 
 static int tests_passed = 0;
 static int tests_total = 0;
@@ -327,6 +329,29 @@ static int test_user_mem_bad_params() {
   return 0;
 }
 
+static int test_doorbell_emu() {
+  TEST("sim: DoorbellEmu ring and query");
+  DoorbellEmu emu;
+  ASSERT(emu.getRingCount(0) == 0, "initial count is 0");
+  emu.ring(0);
+  ASSERT(emu.getRingCount(0) == 1, "count is 1 after ring");
+  emu.ring(5);
+  ASSERT(emu.getRingCount(5) == 1, "queue 5 count is 1");
+  ASSERT(emu.getRingCount(0) == 1, "queue 0 count still 1");
+  PASS();
+  return 0;
+}
+
+static int test_puller_emu() {
+  TEST("sim: HardwarePullerEmu initial state");
+  HardwarePullerEmu puller;
+  ASSERT(strcmp(puller.currentState(), "IDLE") == 0, "initial state is IDLE");
+  gpu_gpfifo_entry entry;
+  ASSERT(puller.pull(0, &entry) == false, "pull returns false (no entries)");
+  PASS();
+  return 0;
+}
+
 /* ── 主入口 ────────────────────────────────────────── */
 
 int main() {
@@ -343,12 +368,14 @@ int main() {
   rc |= test_fence_ops();
   rc |= test_inject_errors();
 
-  /* 用户态 HAL 实现测试 */
   rc |= test_user_register_rw();
   rc |= test_user_mem_alloc_free();
   rc |= test_user_fence();
   rc |= test_user_fire_and_forget();
   rc |= test_user_mem_bad_params();
+
+  rc |= test_doorbell_emu();
+  rc |= test_puller_emu();
 
   printf("\n结果: %d/%d 通过\n", tests_passed, tests_total);
   return rc;
