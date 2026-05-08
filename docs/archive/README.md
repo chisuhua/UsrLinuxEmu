@@ -18,7 +18,9 @@ archive/
 │   ├── ROADMAP.md
 │   ├── development_implementation_plan.md
 │   ├── linux_driver_compatibility_plan.md
-│   └── linux_driver_compatibility_test_plan.md
+│   ├── linux_driver_compatibility_test_plan.md
+│   ├── master_plan_2026.md              # ← 已废弃 (2026-05-08)
+│   └── phase0_env_setup.md              # ← 已完成 (2026-05-08)
 └── misc/              # 其他归档文档
     └── SUMMARY_CN.md
 ```
