@@ -2,6 +2,8 @@
 #include <iostream>
 #include "poll_watcher.h"
 
+namespace usr_linux_emu {
+
 int SerialDevice::open(const char* path, int flags) {
   std::cout << "[SerialDevice] Opened: " << path << std::endl;
   return 0;
@@ -72,6 +74,7 @@ void SerialDevice::push_data(const std::string& data) {
     std::lock_guard<std::mutex> lock(mtx_);
     rx_buffer_.push(c);
   }
-  // PollWatcher::instance().trigger_event(0, EventType::Readable);
   wait_queue_.wake_up();
 }
+
+}  // namespace usr_linux_emu

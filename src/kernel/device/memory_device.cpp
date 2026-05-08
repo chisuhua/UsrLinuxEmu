@@ -2,6 +2,8 @@
 #include <cstring>
 #include <iostream>
 
+namespace usr_linux_emu {
+
 MemoryDevice::MemoryDevice(size_t size) : size_(size), buffer_(size, 0) {}
 
 int MemoryDevice::open(const char* path, int flags) {
@@ -23,3 +25,5 @@ ssize_t MemoryDevice::write(int fd, const void* buf, size_t count) {
   memcpy(buffer_.data(), buf, actual);
   return actual;
 }
+
+}  // namespace usr_linux_emu
