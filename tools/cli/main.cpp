@@ -1,8 +1,10 @@
 #include <iostream>
 #include <string>
-#include "../kernel/plugin_manager.h"
-#include "../kernel/config_manager.h"
-#include "../kernel/logger.h"
+#include "kernel/plugin_manager.h"
+#include "kernel/config_manager.h"
+#include "kernel/logger.h"
+
+using namespace usr_linux_emu;
 
 void show_usage() {
     std::cout << "Usage: cli [command]\n"
