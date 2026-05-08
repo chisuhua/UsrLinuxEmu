@@ -16,6 +16,8 @@
 #include "shared/gpu_events.h"
 #include "shared/gpu_ioctl.h"
 #include "shared/gpu_types.h"
+#include "hal/gpu_hal.h"
+#include "hal/hal_user.h"
 
 constexpr u32 VENDOR_SIMULATED = 0x1000;
 constexpr u32 DEVICE_SIMULATED_V1 = 0x1001;
@@ -387,6 +389,11 @@ class GpgpuDevice : public FileOperations {
   GpgpuDevice() : buddy_(0x100000000ULL, SIMULATED_VRAM_SIZE) {
     registered_kernels_["simple_kernel"] = 0;
     registered_kernels_["matmul_kernel"] = 1;
+    hal_user_init(&hal_, &hal_ctx_);
+  }
+
+  ~GpgpuDevice() {
+    hal_user_destroy(&hal_ctx_);
   }
 
   long ioctl(int fd, unsigned long request, void* argp) override {
@@ -624,6 +631,8 @@ class GpgpuDevice : public FileOperations {
   std::map<u64, FenceInfo> fences_;
   std::atomic<u64> fence_counter_{1};
   std::map<std::string, u32> registered_kernels_;
+  struct gpu_hal_ops hal_;
+  struct hal_user_context hal_ctx_;
 };
 
 extern "C" {
