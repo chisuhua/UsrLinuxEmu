@@ -101,9 +101,8 @@ UsrLinuxEmu 团队                          TaskRunner 团队
 |------|------|------|--------|
 | ✅ 已完成 | `GPU_IOCTL_WAIT_FENCE` 已定义 (gpu_ioctl.h:137) | - | - |
 | ⬜ 待执行 | 在 `ioctl_gpgpu.h` 添加 `[[deprecated]]` | - | - |
-| ⬜ 待执行 | 在 `cuda_ioctl.h` 添加 `[[deprecated]]` | - | - |
+| ✅ 已完成 (2026-05-08) | 废弃 `cuda_compat_ioctl.cpp` + `cuda_compat_ioctl.h` + `cuda_ioctl.h` | S0 确认后 | - |
 | ⬜ 待执行 | 确认符号链接方向 | TaskRunner 确认 | **S0** |
-| ⬜ 待执行 | 废弃 `cuda_compat_ioctl.cpp` | S0 确认后 | - |
 | ⬜ 待执行 | 废弃 `CudaStub` | S0 确认后 | - |
 | ⬜ 待执行 | 修正 `gpu_driver_architecture.md` 符号链接说明 | - | - |
 | ⬜ 待执行 | Master Plan 插入里程碑 3.0 (P0 快速通道) | - | - |
@@ -229,7 +228,7 @@ UsrLinuxEmu 团队                          TaskRunner 团队
 
 | 状态 | 任务 | 验证方式 |
 |------|------|----------|
-| ⬜ 待执行 | 删除 `cuda_compat_ioctl.cpp` | 文件不存在 |
+| ✅ 已完成 (2026-05-08) | 删除 `cuda_compat_ioctl.cpp` + `cuda_compat_ioctl.h` + `cuda_ioctl.h` | 文件不存在 |
 | ⬜ 待执行 | 删除 `CudaStub` 相关代码 | 无引用 |
 | ⬜ 待执行 | 运行 `test_portability.sh` | 行为一致性验证 |
 | ⬜ 待执行 | 运行 `verify_symlinks.sh` | 符号链接验证 |
@@ -250,13 +249,13 @@ UsrLinuxEmu 团队                          TaskRunner 团队
 
 | Phase | 总任务数 | 已完成 | 待处理 | 需同步点 |
 |-------|----------|--------|--------|----------|
-| Phase 0 | 7 | 1 | 6 | 1 (S0) |
+| Phase 0 | 7 | 2 | 5 | 1 (S0) |
 | Phase 1 (定义) | 6 | 6 | 0 | 0 |
 | Phase 1 (实现) | 7 | 0 | 7 | 3 (S1,S2,S3) |
 | Phase 2 (定义) | 5 | 0 | 5 | 1 (S5) |
 | Phase 2 (实现) | 5 | 0 | 5 | 0 |
-| Phase 3 | 5 | 0 | 5 | 0 |
-| **总计** | **35** | **7** | **28** | **5** |
+| Phase 3 | 5 | 1 | 4 | 0 |
+| **总计** | **35** | **9** | **26** | **5** |
 
 ### 6.2 同步点汇总
 
@@ -324,5 +323,5 @@ UsrLinuxEmu 运行测试
 
 ---
 
-**最后更新**: 2026-04-28
+**最后更新**: 2026-05-08
 **下次审查**: 每次同步点完成后
