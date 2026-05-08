@@ -2,6 +2,8 @@
 
 #include "kernel/pcie/pcie_emu.h"
 #include "gpu/gpu_command_packet.h"
+#include <cstddef>
+#include <memory>
 #include <vector>
 
 // 前向声明或添加缺失的类型定义
