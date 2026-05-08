@@ -1,4 +1,6 @@
 #include <iostream>
+#include <poll.h>
+#include <unistd.h>
 #include "kernel/module_loader.h"
 
 using namespace usr_linux_emu;
@@ -9,9 +11,8 @@ int main() {
   // 加载插件
   ModuleLoader::load_plugins("plugins");
 
-  // 模拟运行一段时间
-  std::cout << "[KernelEmu] Running... Press Enter to exit." << std::endl;
-  std::cin.get();
+  struct pollfd pfd = {STDIN_FILENO, POLLIN, 0};
+  poll(&pfd, 1, 500);
 
   // 卸载插件
   ModuleLoader::unload_plugins();
