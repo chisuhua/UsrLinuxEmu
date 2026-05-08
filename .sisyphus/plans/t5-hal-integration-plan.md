@@ -217,3 +217,31 @@ Step 1.6: Test verification
 **Last Updated**: 2026-05-08 (v2, Momus review applied)
 **Author**: Sisyphus
 **Review**: Momus (CONDITIONAL APPROVE with 4 Must-Fix issues → 4 fixed in v2)
+
+---
+
+## 10. Phase 1 Execution Log (2026-05-08)
+
+### Actual Changes Made
+
+**plugin.cpp**:
+- Added `#include "hal/gpu_hal.h"` and `#include "hal/hal_user.h"` (lines 19-20)
+- Added `hal_user_init(&hal_, &hal_ctx_)` in constructor (line 392)
+- Added `~GpgpuDevice() { hal_user_destroy(&hal_ctx_); }` destructor (lines 395-397)
+- Added `struct gpu_hal_ops hal_` and `struct hal_user_context hal_ctx_` members (lines 634-635)
+
+**CMakeLists.txt** (GPU_SHADOW=ON path):
+- Added `${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal` include path
+- Added `${PROJECT_SOURCE_DIR}/libgpu_core/include` include path
+- Added `target_link_libraries(gpu_driver_plugin PRIVATE gpu_hal gpu_core)` when GPU_SHADOW=ON
+
+### Verification
+- `make gpu_driver_plugin -j4` → 0 errors (GPU_SHADOW=ON and OFF)
+- `ctest --output-on-failure` → 19/19 pass (GPU_SHADOW=OFF), 20/20 pass (GPU_SHADOW=ON)
+- HAL context initialized in constructor ✓
+- HAL context destroyed in destructor ✓
+
+### Note
+- Phase 1 works with GPU_SHADOW=ON (hal_user.cpp compiled)
+- Phase 1 also compiles with GPU_SHADOW=OFF (hal_user.h just a header, not compiled)
+- libgpu_core include path needed for gpu_buddy.h dependency in hal_user.h

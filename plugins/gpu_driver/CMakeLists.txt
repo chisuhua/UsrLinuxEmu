@@ -8,6 +8,8 @@ add_library(gpu_driver_plugin MODULE
 # 添加 shared 目录（canonical 接口）
 target_include_directories(gpu_driver_plugin PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/libgpu_core/include
 )
 
 # 添加 kernel 框架头文件
@@ -17,6 +19,10 @@ target_include_directories(gpu_driver_plugin PRIVATE
 )
 
 target_link_libraries(gpu_driver_plugin PRIVATE kernel)
+
+if(ENABLE_GPU_SHADOW)
+  target_link_libraries(gpu_driver_plugin PRIVATE gpu_hal gpu_core)
+endif()
 
 set_target_properties(gpu_driver_plugin PROPERTIES
     PREFIX ""
