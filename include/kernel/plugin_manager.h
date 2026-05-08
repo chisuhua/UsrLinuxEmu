@@ -7,17 +7,14 @@
 
 struct module;
 
+namespace usr_linux_emu {
+
 class PluginManager {
  public:
   static PluginManager& instance();
 
-  // 运行时加载指定路径的插件
   int load_plugin(const std::string& path);
-
-  // 卸载指定名称的插件
   int unload_plugin(const std::string& name);
-
-  // 列出当前已加载插件
   void list_plugins() const;
 
  private:
@@ -32,3 +29,5 @@ class PluginManager {
 
   PluginManager() = default;
 };
+
+}  // namespace usr_linux_emu

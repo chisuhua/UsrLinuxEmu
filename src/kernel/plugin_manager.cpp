@@ -7,6 +7,8 @@
 
 using namespace std;
 
+namespace usr_linux_emu {
+
 PluginManager& PluginManager::instance() {
   static PluginManager manager;
   return manager;
@@ -34,7 +36,6 @@ int PluginManager::load_plugin(const string& path) {
 
   cout << "[PluginManager] Loading plugin: " << mod->name << endl;
 
-  // 解析依赖（复用 ModuleLoader 的 resolve_dependencies）
   if (ModuleLoader::resolve_dependencies(mod) != 0) {
     dlclose(handle);
     return -1;
@@ -87,3 +88,5 @@ void PluginManager::list_plugins() const {
     cout << " - " << name << endl;
   }
 }
+
+}  // namespace usr_linux_emu

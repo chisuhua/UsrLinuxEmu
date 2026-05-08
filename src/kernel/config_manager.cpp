@@ -2,6 +2,8 @@
 #include <fstream>
 #include <iostream>
 
+namespace usr_linux_emu {
+
 std::unordered_map<std::string, PluginConfig> ConfigManager::configs_;
 
 int ConfigManager::load_from_file(const std::string& filename) {
@@ -31,3 +33,5 @@ int ConfigManager::load_from_file(const std::string& filename) {
 const std::unordered_map<std::string, PluginConfig>& ConfigManager::get_configs() {
   return configs_;
 }
+
+}  // namespace usr_linux_emu

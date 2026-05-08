@@ -4,6 +4,8 @@
 #include <mutex>
 #include <unordered_map>
 
+namespace usr_linux_emu {
+
 ssize_t FileOperations::read(int fd, void* buf, size_t count) {
   if (!has_data_) {
     if ((fd & O_NONBLOCK)) {
@@ -33,7 +35,6 @@ void* FileOperations::mmap(void* addr, size_t length, int prot, int flags, int f
   (void)fd;
   (void)offset;
 
-  // 在用户空间创建匿名映射
   void* user_ptr = ::mmap(addr, length, prot, flags | MAP_SHARED | MAP_ANONYMOUS, -1, 0);
   if (user_ptr == MAP_FAILED) {
     return MAP_FAILED;
@@ -54,3 +55,5 @@ int FileOperations::munmap(void* addr, size_t length) {
 
   return ::munmap(addr, length);
 }
+
+}  // namespace usr_linux_emu

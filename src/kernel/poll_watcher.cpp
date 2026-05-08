@@ -1,5 +1,7 @@
 #include "poll_watcher.h"
 
+namespace usr_linux_emu {
+
 PollWatcher& PollWatcher::instance() {
   static PollWatcher watcher;
   return watcher;
@@ -27,3 +29,5 @@ void PollWatcher::trigger_event(int fd, EventType type) {
     }
   }
 }
+
+}  // namespace usr_linux_emu

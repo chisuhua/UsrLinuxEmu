@@ -7,8 +7,9 @@
 #include "ioctl.h"
 #include "wait_queue.h"
 
-// constexpr int O_NONBLOCK = 0x0004; // 模拟 Linux 非阻塞标志
-#define O_NONBLOCK 0x0004  // 模拟 Linux 非阻塞标志
+namespace usr_linux_emu {
+
+#define O_NONBLOCK 0x0004
 
 class FileOperations {
  public:
@@ -33,3 +34,5 @@ class FileOperations {
   WaitQueue wait_queue_;
   bool has_data_ = false;
 };
+
+}  // namespace usr_linux_emu

@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include "device.h"
 
+namespace usr_linux_emu {
+
 class ServiceRegistry {
  public:
   static ServiceRegistry& instance();
@@ -16,3 +18,5 @@ class ServiceRegistry {
  private:
   std::unordered_map<std::string, std::shared_ptr<Device>> services_;
 };
+
+}  // namespace usr_linux_emu

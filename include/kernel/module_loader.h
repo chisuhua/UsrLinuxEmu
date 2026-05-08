@@ -6,8 +6,6 @@
 #include <unordered_map>
 #include <vector>
 
-// struct module;
-
 extern "C" {
 typedef struct module {
   const char* name;      // 插件名称
@@ -16,6 +14,8 @@ typedef struct module {
   void (*exit)(void);    // 卸载函数
 } module;
 }
+
+namespace usr_linux_emu {
 
 class ModuleLoader {
  public:
@@ -26,7 +26,6 @@ class ModuleLoader {
   struct PluginInfo {
     std::string path;
     void* handle = nullptr;
-    // std::shared_ptr<module> mod;
     module* mod;
     int ref_count = 0;
   };
@@ -41,3 +40,5 @@ class ModuleLoader {
   static void decrease_ref(const char* name);
   static void list_plugins();
 };
+
+}  // namespace usr_linux_emu

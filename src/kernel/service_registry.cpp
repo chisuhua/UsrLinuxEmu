@@ -1,6 +1,8 @@
 #include "service_registry.h"
 #include <iostream>
 
+namespace usr_linux_emu {
+
 ServiceRegistry& ServiceRegistry::instance() {
   static ServiceRegistry registry;
   return registry;
@@ -19,3 +21,5 @@ void ServiceRegistry::unregister_service(const std::string& name) {
 void ServiceRegistry::clear_services() {
   services_.clear();
 }
+
+}  // namespace usr_linux_emu

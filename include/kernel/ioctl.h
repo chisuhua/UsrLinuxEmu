@@ -2,7 +2,8 @@
 
 #include <cstdint>
 
-// 宏定义用于生成 ioctl 命令
+namespace usr_linux_emu {
+
 #define _IOC_NONE 0U
 #define _IOC_WRITE 1U
 #define _IOC_READ 2U
@@ -13,3 +14,5 @@
 #define _IOR(type, nr, size) _IOC(_IOC_READ, (type), (nr), sizeof(size))
 #define _IOW(type, nr, size) _IOC(_IOC_WRITE, (type), (nr), sizeof(size))
 #define _IOWR(type, nr, size) _IOC(_IOC_READ | _IOC_WRITE, (type), (nr), sizeof(size))
+
+}  // namespace usr_linux_emu

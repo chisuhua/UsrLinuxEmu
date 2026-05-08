@@ -5,6 +5,8 @@
 #include <vector>
 #include "nlohmann/json.hpp"
 
+namespace usr_linux_emu {
+
 using json = nlohmann::json;  // 移除对nlohmann/json库的依赖
 
 struct PluginConfig {
@@ -21,3 +23,5 @@ class ConfigManager {
  private:
   static std::unordered_map<std::string, PluginConfig> configs_;
 };
+
+}  // namespace usr_linux_emu
