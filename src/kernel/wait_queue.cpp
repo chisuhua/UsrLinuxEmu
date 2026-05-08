@@ -1,6 +1,8 @@
 #include "wait_queue.h"
 #include <chrono>
 
+namespace usr_linux_emu {
+
 void WaitQueue::wait() {
   std::unique_lock<std::mutex> lock(mtx_);
   cv_.wait(lock, [this] {
@@ -21,3 +23,5 @@ bool WaitQueue::wait_for(int timeout_ms) {
     return flag_;
   });
 }
+
+}  // namespace usr_linux_emu

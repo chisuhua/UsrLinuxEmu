@@ -6,6 +6,8 @@
 #include <mutex>
 #include <string>
 
+namespace usr_linux_emu {
+
 class Logger {
  public:
   enum Level { DEBUG, INFO, WARN, ERROR };
@@ -31,3 +33,5 @@ class Logger {
   static std::ofstream log_file_;
   static std::mutex mtx_;
 };
+
+}  // namespace usr_linux_emu

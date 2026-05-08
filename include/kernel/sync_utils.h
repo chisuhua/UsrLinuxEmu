@@ -4,6 +4,8 @@
 #include <thread>
 #include <unordered_map>
 
+namespace usr_linux_emu {
+
 class ThreadLocalStorage {
  public:
   template <typename T>
@@ -23,3 +25,5 @@ class MutexLock {
     mtx.unlock();
   }
 };
+
+}  // namespace usr_linux_emu

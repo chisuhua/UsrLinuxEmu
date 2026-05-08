@@ -7,7 +7,8 @@
 #include "kernel/device/device.h"
 #include "kernel/file_ops.h"
 
-// 添加GpuTask结构体定义
+namespace usr_linux_emu {
+
 struct GpuTask {
   uint64_t task_id;
   uint64_t cmd_buffer_addr;
@@ -63,3 +64,5 @@ class GpuDevice : public FileOperations {
   // virtual void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
   // override;
 };
+
+}  // namespace usr_linux_emu

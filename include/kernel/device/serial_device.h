@@ -5,7 +5,8 @@
 #include "kernel/file_ops.h"
 #include "wait_queue.h"
 
-// 自定义串口命令
+namespace usr_linux_emu {
+
 #define SERIAL_IOC_MAGIC 's'
 #define SERIAL_SET_BAUDRATE _IOW(SERIAL_IOC_MAGIC, 0, int)
 #define SERIAL_GET_BAUDRATE _IOR(SERIAL_IOC_MAGIC, 1, int)
@@ -27,3 +28,5 @@ class SerialDevice : public FileOperations {
   WaitQueue wait_queue_;
   int baud_rate_ = 9600;
 };
+
+}  // namespace usr_linux_emu

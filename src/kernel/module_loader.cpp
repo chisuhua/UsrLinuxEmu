@@ -7,6 +7,8 @@
 
 namespace fs = std::filesystem;
 
+namespace usr_linux_emu {
+
 std::unordered_map<std::string, std::shared_ptr<ModuleLoader::PluginInfo>>
     ModuleLoader::loaded_plugins_;
 
@@ -65,7 +67,6 @@ int ModuleLoader::load_plugin(const std::string& path) {
 
   std::cout << "[ModuleLoader] Found plugin: " << mod->name << std::endl;
 
-  // 解析依赖
   if (resolve_dependencies(mod) != 0) {
     dlclose(handle);
     return -1;
@@ -81,7 +82,6 @@ int ModuleLoader::load_plugin(const std::string& path) {
   info->path = path;
   info->handle = handle;
   info->mod = mod;
-  // info->mod.reset(mod);
   info->ref_count = 0;
 
   loaded_plugins_[mod->name] = info;
@@ -102,22 +102,18 @@ int ModuleLoader::load_plugins(const std::string& dir_path) {
       continue;
 
     if (path.filename().string().rfind("plugin_", 0) != 0) {
-      // std::cerr << "[ModuleLoader] Plugin name must start with 'plugin_': " <<
-      // path.filename().string() << std::endl;
       continue;
     }
 
-    // 尝试打开 .so 文件
     void* handle = dlopen(path.c_str(), RTLD_LAZY);
     if (!handle) {
       std::cerr << "[ModuleLoader] Failed to open plugin: " << dlerror() << std::endl;
       continue;
     }
 
-    // 查找 mod 符号
     struct module* mod = (struct module*)dlsym(handle, "mod");
     const char* dlsym_error = dlerror();
-    dlclose(handle);  // 先关闭，后面再重新打开
+    dlclose(handle);
 
     if (dlsym_error || !mod) {
       std::cerr << "[ModuleLoader] File is not a valid plugin: " << path.filename().string()
@@ -125,7 +121,6 @@ int ModuleLoader::load_plugins(const std::string& dir_path) {
       continue;
     }
 
-    // 是合法插件，正式加载
     load_plugin(path.string());
   }
 
@@ -158,3 +153,5 @@ void ModuleLoader::list_plugins() {
     std::cout << " - " << name << std::endl;
   }
 }
+
+}  // namespace usr_linux_emu

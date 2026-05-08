@@ -4,6 +4,8 @@
 #include <map>
 #include <mutex>
 
+namespace usr_linux_emu {
+
 enum class EventType {
   Readable,
   Writable,
@@ -23,3 +25,5 @@ class PollWatcher {
   std::map<int, std::map<EventType, EventCallback>> events_;
   std::mutex mtx_;
 };
+
+}  // namespace usr_linux_emu

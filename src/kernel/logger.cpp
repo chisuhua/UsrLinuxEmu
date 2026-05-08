@@ -2,6 +2,8 @@
 #include <ctime>
 #include <sstream>
 
+namespace usr_linux_emu {
+
 Logger::Level Logger::level_ = Logger::INFO;
 std::ofstream Logger::log_file_("plugin.log");
 std::mutex Logger::mtx_;
@@ -38,3 +40,5 @@ void Logger::log(Level level, const std::string& msg) {
 
   log_file_ << "[" << level_str << "] " << ss.str() << " - " << msg << std::endl;
 }
+
+}  // namespace usr_linux_emu

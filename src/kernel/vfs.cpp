@@ -3,6 +3,8 @@
 #include <iostream>
 #include "file_ops.h"
 
+namespace usr_linux_emu {
+
 namespace {
 VFS* instance_ptr = nullptr;
 }
@@ -42,9 +44,8 @@ std::shared_ptr<Device> VFS::lookup_device(const std::string& name) {
 std::shared_ptr<Device> VFS::open(const std::string& path, int flags) {
   std::string dev_name;
 
-  // 支持 "/dev/ttyS0" -> "ttyS0"
   if (path.rfind("/dev/", 0) == 0) {
-    dev_name = path.substr(5);  // 去掉 "/dev/"
+    dev_name = path.substr(5);
   } else {
     dev_name = path;
   }
@@ -55,7 +56,6 @@ std::shared_ptr<Device> VFS::open(const std::string& path, int flags) {
     return nullptr;
   }
 
-  // 调用设备的 open 方法
   if (dev->fops->open(path.c_str(), flags) < 0) {
     std::cerr << "[VFS] Failed to open device: " << path << std::endl;
     return nullptr;
@@ -86,3 +86,5 @@ void VFS::clear_devices() {
   devices_.clear();
   ServiceRegistry::instance().clear_services();
 }
+
+}  // namespace usr_linux_emu

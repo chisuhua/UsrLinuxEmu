@@ -3,6 +3,8 @@
 #include <vector>
 #include "../file_ops.h"
 
+namespace usr_linux_emu {
+
 class MemoryDevice : public FileOperations {
  public:
   explicit MemoryDevice(size_t size = 4096);
@@ -15,3 +17,5 @@ class MemoryDevice : public FileOperations {
   std::vector<char> buffer_;
   size_t size_;
 };
+
+}  // namespace usr_linux_emu
