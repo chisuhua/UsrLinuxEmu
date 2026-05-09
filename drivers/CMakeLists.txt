@@ -24,18 +24,3 @@ target_include_directories(plugin_sample_serial PRIVATE ${PROJECT_SOURCE_DIR}/in
 #arget_link_libraries(sample_serial PRIVATE kernel)
 target_link_libraries(plugin_sample_memory PRIVATE kernel)
 target_link_libraries(plugin_sample_serial PRIVATE kernel)
-
-
-add_library(plugin_gpu MODULE
-    sample_gpu.cpp
-    plugin_sample_gpu.cpp
-    # 移除这一行，因为buddy_allocator.cpp已经包含在kernel库中
-    # ../src/kernel/device/buddy_allocator.cpp
-)
-
-set_target_properties(plugin_gpu PROPERTIES PREFIX "" SUFFIX ".so")
-target_include_directories(plugin_gpu PRIVATE 
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/simulator)
-target_link_libraries(plugin_gpu PRIVATE kernel)
-add_subdirectory(gpu)
