@@ -2,6 +2,7 @@
 
 add_library(gpu_drv STATIC
     gpu_drm_driver.cpp
+    gpgpu_device.cpp
 )
 
 set_target_properties(gpu_drv PROPERTIES
@@ -21,4 +22,5 @@ target_include_directories(gpu_drv PUBLIC
 target_link_libraries(gpu_drv PUBLIC
     kernel
     gpu_hal
+    gpu_sim
 )

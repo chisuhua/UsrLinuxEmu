@@ -2,26 +2,51 @@
 
 #include <cstdint>
 #include <array>
+#include <functional>
+
+using u32 = uint32_t;
+using u64 = uint64_t;
 
 class DoorbellEmu {
  public:
-  static constexpr uint32_t MAX_QUEUES = 32;
+  static constexpr u32 MAX_QUEUES = 32;
+
+  using DoorbellCallback = std::function<void(u32 queue_id)>;
 
   DoorbellEmu() {
     counts_.fill(0);
+    pending_.fill(false);
   }
 
-  void ring(uint32_t queue_id) {
-    if (queue_id < MAX_QUEUES) {
-      counts_[queue_id]++;
+  void write(u32 queue_id) {
+    if (queue_id >= MAX_QUEUES) return;
+    counts_[queue_id]++;
+    pending_[queue_id] = true;
+    if (callback_) {
+      callback_(queue_id);
     }
   }
 
-  uint64_t getRingCount(uint32_t queue_id) const {
+  bool poll(u32 queue_id) const {
+    if (queue_id >= MAX_QUEUES) return false;
+    return pending_[queue_id];
+  }
+
+  void acknowledge(u32 queue_id) {
+    if (queue_id < MAX_QUEUES) {
+      pending_[queue_id] = false;
+    }
+  }
+
+  void setCallback(DoorbellCallback cb) { callback_ = std::move(cb); }
+
+  u64 getRingCount(u32 queue_id) const {
     if (queue_id >= MAX_QUEUES) return 0;
     return counts_[queue_id];
   }
 
  private:
-  std::array<uint64_t, MAX_QUEUES> counts_ = {};
+  std::array<u64, MAX_QUEUES> counts_ = {};
+  std::array<bool, MAX_QUEUES> pending_ = {};
+  DoorbellCallback callback_;
 };

@@ -46,10 +46,30 @@ function(add_standalone_test TEST_NAME TEST_SOURCE)
     set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endfunction()
 
+# 定义创建 sim 相关测试的函数 (链接 gpu_sim)
+function(add_sim_test TEST_NAME TEST_SOURCE)
+    add_executable(${TEST_NAME} ${TEST_SOURCE})
+    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim)
+    target_include_directories(${TEST_NAME} PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include/kernel
+        ${PROJECT_SOURCE_DIR}/include/linux_compat
+        ${PROJECT_SOURCE_DIR}/drivers
+        ${PROJECT_SOURCE_DIR}/plugins
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal)
+    add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
+    set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endfunction()
+
 # 定义独立测试的列表（包含自定义main函数的测试）
 set(STANDALONE_TESTS
     test_compat_memory.cpp
     test_compat_types.cpp
+    test_doorbell_emu.cpp
     test_gpu_ioctl.cpp
     test_gpu_mmap.cpp
     test_gpu_mmap_and_submit.cpp
@@ -72,6 +92,12 @@ set(CATCH2_TESTS
     test_gpu_plugin.cpp
 )
 
+# 定义 sim 相关测试的列表（链接 gpu_sim）
+set(SIM_TESTS
+    test_hardware_puller_emu.cpp
+    test_global_scheduler.cpp
+)
+
 foreach(src ${STANDALONE_TESTS})
     get_filename_component(testname ${src} NAME_WE)
     string(APPEND testname "_standalone")
@@ -82,4 +108,11 @@ endforeach()
 foreach(src ${CATCH2_TESTS})
     get_filename_component(testname ${src} NAME_WE)
     add_catch_test(${testname} ${src})
+endforeach()
+
+# 为每个 sim 测试源文件创建测试
+foreach(src ${SIM_TESTS})
+    get_filename_component(testname ${src} NAME_WE)
+    string(APPEND testname "_standalone")
+    add_sim_test(${testname} ${src})
 endforeach()
