@@ -8,6 +8,7 @@
 #include <thread>
 #include "drv/gpgpu_device.h"
 #include "kernel/vfs.h"
+#include "sim/hardware/hardware_puller_emu.h"
 #include "shared/gpu_events.h"
 #include "shared/gpu_ioctl.h"
 #include "shared/gpu_types.h"
@@ -22,6 +23,7 @@ constexpr u32 SIMULATED_MAX_CHANNELS = 32;
 constexpr u32 SIMULATED_COMPUTE_UNITS = 64;
 constexpr u32 SIMULATED_GPFIFO_CAPACITY = 1024;
 constexpr u32 SIMULATED_CACHE_LINE_SIZE = 64;
+constexpr u64 GPFIFO_BASE = 0x10000000ULL;
 
 constexpr size_t GpgpuDevice::kNumIoctls;
 
@@ -32,6 +34,10 @@ GpgpuDevice::GpgpuDevice(struct gpu_hal_ops* hal)
 }
 
 GpgpuDevice::~GpgpuDevice() = default;
+
+void GpgpuDevice::setPuller(std::shared_ptr<HardwarePullerEmu> puller) {
+  puller_ = std::move(puller);
+}
 
 u32 GpgpuDevice::HandleManager::allocate() {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -210,8 +216,29 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
     return -EINVAL;
   }
 
+  // 检查是否包含 FENCE 操作（需要同步返回 fence_id）
   const struct gpu_gpfifo_entry* entries =
       reinterpret_cast<const struct gpu_gpfifo_entry*>(args->entries_addr);
+  bool has_fence = false;
+  for (u32 i = 0; i < args->count; ++i) {
+    if (entries[i].valid && entries[i].method == GPU_OP_FENCE) {
+      has_fence = true;
+      break;
+    }
+  }
+
+  if (puller_ && !has_fence) {
+    u64 gpfifo_addr = GPFIFO_BASE;
+    puller_->submitBatch(gpfifo_addr, args->count);
+    hal_doorbell_ring(hal_, 0);
+    std::cout << "[GpgpuDevice] PUSHBUFFER: puller path, gpfifo=0x" << std::hex << gpfifo_addr
+              << " count=" << std::dec << args->count << "\n";
+    return 0;
+  } else if (has_fence) {
+    std::cerr << "[GpgpuDevice] PUSHBUFFER: FENCE in batch, using sync path\n";
+  } else {
+    std::cerr << "[GpgpuDevice] PUSHBUFFER: puller_ is null, using sync path\n";
+  }
 
   for (u32 i = 0; i < args->count; ++i) {
     const auto& e = entries[i];

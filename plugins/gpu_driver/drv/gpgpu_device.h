@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <mutex>
 #include <string>
 #include "kernel/file_ops.h"
@@ -10,12 +11,16 @@ using namespace usr_linux_emu;
 
 struct gpu_hal_ops;
 
+class HardwarePullerEmu;
+
 class GpgpuDevice : public FileOperations {
  public:
   static constexpr size_t kNumIoctls = 6;
 
   explicit GpgpuDevice(struct gpu_hal_ops* hal);
   ~GpgpuDevice();
+
+  void setPuller(std::shared_ptr<HardwarePullerEmu> puller);
 
   long ioctl(int fd, unsigned long request, void* argp) override;
   int open(const char* path, int flags) override;
@@ -45,6 +50,7 @@ class GpgpuDevice : public FileOperations {
   };
   std::map<u32, BoInfo> bo_map_;
   std::map<std::string, u32> registered_kernels_;
+  std::shared_ptr<HardwarePullerEmu> puller_;
 
  private:
   long handleGetDeviceInfo(void* argp);
