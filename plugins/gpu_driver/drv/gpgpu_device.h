@@ -25,22 +25,6 @@ class GpgpuDevice : public FileOperations {
 
   std::string name;
 
- private:
-  long handleGetDeviceInfo(void* argp);
-  long handleAllocBo(void* argp);
-  long handleFreeBo(void* argp);
-  long handleMapBo(void* argp);
-  long handlePushbufferSubmitBatch(void* argp);
-  long handleWaitFence(void* argp);
-
-  struct IoctlEntry {
-    unsigned long request;
-    const char* name;
-    long (GpgpuDevice::*handler)(void*);
-  };
-
-  static const IoctlEntry& getIoctlTable();
-
   struct gpu_hal_ops* hal_;
   class HandleManager {
    public:
@@ -61,4 +45,20 @@ class GpgpuDevice : public FileOperations {
   };
   std::map<u32, BoInfo> bo_map_;
   std::map<std::string, u32> registered_kernels_;
+
+ private:
+  long handleGetDeviceInfo(void* argp);
+  long handleAllocBo(void* argp);
+  long handleFreeBo(void* argp);
+  long handleMapBo(void* argp);
+  long handlePushbufferSubmitBatch(void* argp);
+  long handleWaitFence(void* argp);
+
+  struct IoctlEntry {
+    unsigned long request;
+    const char* name;
+    long (GpgpuDevice::*handler)(void*);
+  };
+
+  static const IoctlEntry& getIoctlTable();
 };
