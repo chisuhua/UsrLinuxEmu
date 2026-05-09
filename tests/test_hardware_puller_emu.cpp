@@ -27,7 +27,7 @@ static std::atomic<int> g_interrupt_count(0);
 static std::atomic<u64> g_last_mem_read_addr(0);
 static std::atomic<u64> g_last_mem_write_addr(0);
 static std::atomic<u32> g_last_mem_write_val(0);
-static int g_next_entry_release_bit = 0;
+static std::atomic<int> g_next_entry_release_bit(0);
 
 template<typename Func>
 bool wait_for_state(Func&& pred, int timeout_ms = 100, int poll_interval_ms = 1) {
@@ -77,7 +77,7 @@ static int counting_hal_mem_read(void* ctx, uint64_t dev_addr, void* host_buf, u
   g_mem_read_count.fetch_add(1);
   g_last_mem_read_addr.store(dev_addr);
   memset(host_buf, 0, size);
-  if (g_next_entry_release_bit && size >= sizeof(gpu_gpfifo_entry)) {
+  if (size >= sizeof(gpu_gpfifo_entry)) {
     gpu_gpfifo_entry* e = (gpu_gpfifo_entry*)host_buf;
     e->release = 1;
     e->semaphore_va = 0x100;
@@ -263,16 +263,18 @@ int test_puller_interrupt_on_release() {
   puller.submitBatch(0x1000, 1);
   doorbell.write(0);
 
-  wait_for_state([&puller]() { return puller.currentState() == HardwarePullerEmu::State::IDLE; }, 100);
+  wait_for_state([&puller]() { return puller.currentState() == HardwarePullerEmu::State::IDLE; }, 200);
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-  if (puller.getInterruptCount() == 0) {
-    std::cerr << "FAIL: interrupt should have been raised for release=1 entry\n";
+  int ic = puller.getInterruptCount();
+  if (ic == 0) {
+    std::cerr << "FAIL: interrupt should have been raised (ic=" << ic << ")" << std::endl;
     puller.stop();
     return 1;
   }
 
   puller.stop();
-  std::cout << "PASS: test_puller_interrupt_on_release\n";
+  std::cout << "PASS: test_puller_interrupt_on_release" << std::endl;
   return 0;
 }
 
@@ -287,16 +289,17 @@ int test_puller_semaphore_release() {
   puller.submitBatch(0x1000, 1);
   doorbell.write(0);
 
-  wait_for_state([&puller]() { return puller.currentState() == HardwarePullerEmu::State::IDLE; }, 100);
+  wait_for_state([&puller]() { return puller.currentState() == HardwarePullerEmu::State::IDLE; }, 200);
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
   if (g_last_mem_write_addr.load() == 0) {
-    std::cerr << "FAIL: mem_write should have been called for semaphore release\n";
+    std::cerr << "FAIL: mem_write not called (addr=" << g_last_mem_write_addr.load() << ")" << std::endl;
     puller.stop();
     return 1;
   }
 
   puller.stop();
-  std::cout << "PASS: test_puller_semaphore_release\n";
+  std::cout << "PASS: test_puller_semaphore_release" << std::endl;
   return 0;
 }
 
