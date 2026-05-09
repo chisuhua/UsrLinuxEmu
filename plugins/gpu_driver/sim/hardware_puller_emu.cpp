@@ -1,34 +1,198 @@
 #include "hardware/hardware_puller_emu.h"
 
-HardwarePullerEmu::HardwarePullerEmu()
-    : state_(IDLE), entries_(), current_index_(0) {}
+#include <cstring>
 
-const char* HardwarePullerEmu::currentState() const {
-  return state_ == IDLE ? "IDLE" : "PROCESSING";
+#include "scheduler/global_scheduler.h"
+
+HardwarePullerEmu::HardwarePullerEmu(struct gpu_hal_ops* hal,
+                                     DoorbellEmu* doorbell,
+                                     GlobalScheduler* scheduler)
+    : hal_(hal),
+      doorbell_(doorbell),
+      scheduler_(scheduler),
+      state_(State::IDLE),
+      current_gpfifo_addr_(0),
+      current_index_(0),
+      total_entries_(0),
+      interrupt_count_(0) {
+  doorbell_->setCallback([this](u32 qid) { onDoorbell(qid); });
 }
 
-void HardwarePullerEmu::submitBatch(const struct gpu_gpfifo_entry* entries,
-                                    size_t count) {
-  entries_.clear();
-  for (size_t i = 0; i < count; ++i) {
-    entries_.push_back(entries[i]);
+HardwarePullerEmu::~HardwarePullerEmu() { stop(); }
+
+void HardwarePullerEmu::start() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (running_.load()) return;
+  running_.store(true);
+  thread_ = std::thread(&HardwarePullerEmu::runLoop, this);
+}
+
+void HardwarePullerEmu::stop() {
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!running_.load()) return;
+    running_.store(false);
+    cv_.notify_all();
   }
-  current_index_ = 0;
-  state_ = PROCESSING;
+  if (thread_.joinable()) {
+    thread_.join();
+  }
 }
 
-bool HardwarePullerEmu::pull(uint32_t queue_id,
-                             struct gpu_gpfifo_entry* out_entry) {
+void HardwarePullerEmu::onDoorbell(u32 queue_id) {
   (void)queue_id;
-  if (state_ == IDLE) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  cv_.notify_one();
+}
+
+bool HardwarePullerEmu::fetchEntry(gpu_gpfifo_entry* out_entry) {
+  if (current_index_ >= total_entries_) {
     return false;
   }
-  if (current_index_ >= entries_.size()) {
-    state_ = IDLE;
-    entries_.clear();
-    current_index_ = 0;
-    return false;
-  }
-  *out_entry = entries_[current_index_++];
+  u64 entry_addr = current_gpfifo_addr_ + current_index_ * sizeof(gpu_gpfifo_entry);
+  int ret = hal_->mem_read(hal_->ctx, entry_addr, out_entry, sizeof(gpu_gpfifo_entry));
+  (void)ret;
   return true;
+}
+
+void HardwarePullerEmu::runLoop() {
+  while (running_.load()) {
+    State local_state;
+    {
+      std::unique_lock<std::mutex> lock(mutex_);
+      cv_.wait(lock, [this] {
+        return !running_.load() ||
+               (state_ == State::IDLE && doorbell_->poll(0)) ||
+               (state_ != State::IDLE);
+      });
+      if (!running_.load()) break;
+      local_state = state_;
+    }
+
+    switch (local_state) {
+      case State::IDLE:
+        if (doorbell_->poll(0)) {
+          doorbell_->acknowledge(0);
+          transitionTo(State::FETCH);
+        }
+        break;
+      case State::FETCH: {
+        gpu_gpfifo_entry entry;
+        if (!fetchEntry(&entry)) {
+          transitionTo(State::IDLE);
+        } else {
+          std::memcpy(&current_entry_, &entry, sizeof(entry));
+          transitionTo(State::DECODE);
+        }
+        break;
+      }
+      case State::DECODE:
+        transitionTo(current_entry_.release ? State::SEMAPHORE : State::SCHEDULE);
+        break;
+      case State::SCHEDULE:
+        transitionTo(State::DISPATCH);
+        break;
+      case State::DISPATCH:
+        transitionTo(State::COMPLETE);
+        break;
+      case State::SEMAPHORE:
+        if (current_entry_.release) {
+          releaseSemaphore();
+          transitionTo(State::COMPLETE);
+        } else {
+          if (waitSemaphore()) {
+            transitionTo(State::DISPATCH);
+          } else {
+            transitionTo(State::IDLE);
+          }
+        }
+        break;
+      case State::COMPLETE:
+        handleComplete();
+        current_index_++;
+        if (current_index_ >= total_entries_) {
+          transitionTo(State::IDLE);
+        } else {
+          transitionTo(State::FETCH);
+        }
+        break;
+    }
+  }
+}
+
+bool HardwarePullerEmu::waitSemaphore() {
+  waiting_semaphore_va_ = current_entry_.semaphore_va;
+  waiting_semaphore_value_ = current_entry_.semaphore_value;
+  semaphore_signaled_.store(false);
+
+  std::unique_lock<std::mutex> lock(mutex_);
+  cv_.wait(lock, [this] {
+    if (semaphore_signaled_.load()) {
+      return true;
+    }
+    u32 sem_val = 0;
+    hal_->mem_read(hal_->ctx, waiting_semaphore_va_, &sem_val, sizeof(sem_val));
+    if (sem_val >= waiting_semaphore_value_) {
+      semaphore_signaled_.store(true);
+      return true;
+    }
+    return !running_.load();
+  });
+
+  waiting_semaphore_va_ = 0;
+  return semaphore_signaled_.load();
+}
+
+void HardwarePullerEmu::releaseSemaphore() {
+  u32 sem_val = current_entry_.semaphore_value;
+  hal_->mem_write(hal_->ctx, current_entry_.semaphore_va,
+                  &sem_val, sizeof(sem_val));
+  signalSemaphore(current_entry_.semaphore_va, sem_val);
+}
+
+void HardwarePullerEmu::handleComplete() {
+  if (current_entry_.release) {
+    hal_->interrupt_raise(hal_->ctx, 0);
+    interrupt_count_.fetch_add(1);
+  }
+}
+
+void HardwarePullerEmu::transitionTo(State next) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  state_ = next;
+  cv_.notify_one();
+}
+
+const char* HardwarePullerEmu::stateName() const {
+  switch (state_) {
+    case State::IDLE:      return "IDLE";
+    case State::FETCH:     return "FETCH";
+    case State::DECODE:    return "DECODE";
+    case State::SCHEDULE:  return "SCHEDULE";
+    case State::DISPATCH:  return "DISPATCH";
+    case State::SEMAPHORE: return "SEMAPHORE";
+    case State::COMPLETE:  return "COMPLETE";
+    default:              return "UNKNOWN";
+  }
+}
+
+void HardwarePullerEmu::submitBatch(u64 gpfifo_gpu_addr, u32 entry_count) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  current_gpfifo_addr_ = gpfifo_gpu_addr;
+  current_index_ = 0;
+  total_entries_ = entry_count;
+  waiting_semaphore_va_ = 0;
+  semaphore_signaled_.store(false);
+}
+
+int HardwarePullerEmu::getInterruptCount() const {
+  return interrupt_count_.load();
+}
+
+void HardwarePullerEmu::signalSemaphore(u64 addr, u32 value) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (addr == waiting_semaphore_va_ && value >= waiting_semaphore_value_) {
+    semaphore_signaled_.store(true);
+    cv_.notify_one();
+  }
 }
