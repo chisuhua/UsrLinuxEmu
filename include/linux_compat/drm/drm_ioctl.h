@@ -48,11 +48,14 @@ struct drm_ioctl_desc {
   {DRM_IOCTL_##ioctl, (enum drm_ioctl_flags)(_flags), (_func), #ioctl}
 
 /* ioctl dispatch helper — 线性扫描匹配 cmd */
-static inline long drm_ioctl_compat(const struct drm_ioctl_desc *ioctls, unsigned int n_ioctls,
-                                    unsigned long cmd, void *argp) {
+static inline long drm_ioctl_compat(struct drm_device *dev,
+                                    const struct drm_ioctl_desc *ioctls,
+                                    unsigned int n_ioctls,
+                                    unsigned long cmd,
+                                    void *argp) {
   for (unsigned int i = 0; i < n_ioctls; i++) {
     if (ioctls[i].cmd == cmd && ioctls[i].func)
-      return ioctls[i].func(NULL, argp, NULL);
+      return ioctls[i].func(dev, argp, NULL);
   }
   return -EINVAL;
 }
