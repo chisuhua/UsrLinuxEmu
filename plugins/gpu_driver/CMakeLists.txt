@@ -11,6 +11,9 @@ target_include_directories(gpu_driver_plugin PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
     ${PROJECT_SOURCE_DIR}/libgpu_core/include
 )
 
@@ -24,7 +27,10 @@ target_include_directories(gpu_driver_plugin PRIVATE
 add_subdirectory(drv)
 add_subdirectory(hal)
 
-target_link_libraries(gpu_driver_plugin PRIVATE kernel gpu_hal gpu_core gpu_drv)
+# sim/ 总是编译（gpu_sim 提供 doorbell/puller/scheduler 仿真）
+add_subdirectory(sim)
+
+target_link_libraries(gpu_driver_plugin PRIVATE kernel gpu_hal gpu_core gpu_drv gpu_sim)
 
 set_target_properties(gpu_driver_plugin PROPERTIES
     PREFIX ""
@@ -33,10 +39,4 @@ set_target_properties(gpu_driver_plugin PROPERTIES
 )
 
 # ── P1.1a 影子编译目标 ──────────────────────────
-# 这些目标编译但不链接到 gpu_driver_plugin.so。
-# 启用 ENABLE_GPU_SHADOW=ON 来激活它们（默认关闭）。
 option(ENABLE_GPU_SHADOW "启用 GPU 驱动影子编译（drv/sim/hal）" OFF)
-
-if(ENABLE_GPU_SHADOW)
-  add_subdirectory(sim)
-endif()
