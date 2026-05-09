@@ -1,0 +1,5 @@
+add_library(basic_gpu_simulator STATIC basic_gpu_simulator.cpp)
+target_include_directories(basic_gpu_simulator PUBLIC ${PROJECT_SOURCE_DIR}/simulator)
+
+add_library(pcie_gpu_simulator STATIC pcie_gpu_simulator.cpp)
+target_link_libraries(pcie_gpu_simulator PRIVATE basic_gpu_simulator)
