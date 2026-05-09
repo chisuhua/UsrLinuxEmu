@@ -13,7 +13,7 @@ add_library(kernel SHARED
     kernel/poll_watcher.cpp
     kernel/device/serial_device.cpp
     kernel/device/memory_device.cpp
-    kernel/device/gpgpu_device.cpp
+
 )
 
 # 添加 UsrLinuxEmu 头文件路径
