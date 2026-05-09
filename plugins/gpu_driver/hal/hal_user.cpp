@@ -101,7 +101,9 @@ static int user_fence_read(void *ctx, uint64_t fence_id, uint64_t *out_val) {
 static void user_doorbell_ring(void *ctx, uint32_t queue_id) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
   hc->doorbell_count++;
-  (void)queue_id;
+  if (hc->doorbell_ring_cb) {
+    hc->doorbell_ring_cb(hc->doorbell_ring_cb_ctx, queue_id);
+  }
 }
 
 static void user_interrupt_raise(void *ctx, uint32_t vector) {
@@ -142,4 +144,15 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
 void hal_user_destroy(struct hal_user_context *ctx) {
   free(ctx->heap);
   ctx->heap = nullptr;
+}
+
+int hal_user_set_doorbell_cb(struct hal_user_context* ctx,
+                                void (*cb)(void*, uint32_t),
+                                void* cb_ctx) {
+  if (ctx->doorbell_ring_cb != nullptr) {
+    return -EBUSY;
+  }
+  ctx->doorbell_ring_cb = cb;
+  ctx->doorbell_ring_cb_ctx = cb_ctx;
+  return 0;
 }

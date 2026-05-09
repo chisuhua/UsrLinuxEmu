@@ -34,7 +34,14 @@ struct hal_user_context {
   std::mutex fence_lock;
   uint64_t doorbell_count;
   uint64_t interrupt_count;
+
+  /* Doorbell 回调（由仿真层设置，HAL 在 doorbell_ring 时调用） */
+  void (*doorbell_ring_cb)(void* cb_ctx, uint32_t queue_id);
+  void* doorbell_ring_cb_ctx;
 };
 
 void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx);
 void hal_user_destroy(struct hal_user_context *ctx);
+int hal_user_set_doorbell_cb(struct hal_user_context* ctx,
+                               void (*cb)(void*, uint32_t),
+                               void* cb_ctx);
