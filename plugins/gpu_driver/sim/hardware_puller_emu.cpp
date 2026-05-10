@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "scheduler/global_scheduler.h"
+#include "scheduler/translator/gpfifo_translator.h"
 
 HardwarePullerEmu::HardwarePullerEmu(struct gpu_hal_ops* hal,
                                      DoorbellEmu* doorbell,
@@ -92,9 +93,14 @@ void HardwarePullerEmu::runLoop() {
       case State::SCHEDULE:
         transitionTo(State::DISPATCH);
         break;
-      case State::DISPATCH:
+      case State::DISPATCH: {
+        if (scheduler_) {
+          EngineType engine = scheduler_->selectEngine(current_entry_);
+          scheduler_->enqueue(current_entry_, engine);
+        }
         transitionTo(State::COMPLETE);
         break;
+      }
       case State::SEMAPHORE:
         if (current_entry_.release) {
           releaseSemaphore();
