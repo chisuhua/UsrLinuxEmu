@@ -7,8 +7,6 @@
 #include "kernel/file_ops.h"
 #include "shared/gpu_types.h"
 
-using namespace usr_linux_emu;
-
 struct gpu_hal_ops;
 
 class HardwarePullerEmu;

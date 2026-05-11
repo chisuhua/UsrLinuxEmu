@@ -42,8 +42,8 @@ void ModuleLoader::decrease_ref(const char* name) {
       module* mod = it->second->mod;
       if (mod->exit)
         mod->exit();
-      VFS::instance().clear_devices();
-      VFS::shutdown();
+      // 修复 P0 bug: 移除 clear_devices() 和 shutdown()
+      // 插件的 exit() 已经清理了自己的设备，不需要全局清除
       dlclose(it->second->handle);
       loaded_plugins_.erase(it);
     }
