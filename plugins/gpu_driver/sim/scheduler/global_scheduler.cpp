@@ -10,6 +10,7 @@ void GlobalScheduler::setDispatchCallback(EngineDispatchFn fn) {
 
 void GlobalScheduler::enqueue(const gpu_gpfifo_entry& entry, EngineType engine) {
   std::lock_guard<std::mutex> lock(mutex_);
+  translator_.translate(entry);  // Translate GPFIFO → LaunchParams
   WorkItem item;
   item.entry = entry;
   item.engine = engine;
