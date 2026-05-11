@@ -90,12 +90,14 @@ set(CATCH2_TESTS
     test_gpu_memory.cpp
     test_gpu_mmap_bar.cpp
     test_gpu_plugin.cpp
+    test_module_loader_isolation.cpp
 )
 
 # 定义 sim 相关测试的列表（链接 gpu_sim）
 set(SIM_TESTS
     test_hardware_puller_emu.cpp
     test_global_scheduler.cpp
+    test_gpfifo_translator.cpp
 )
 
 foreach(src ${STANDALONE_TESTS})
