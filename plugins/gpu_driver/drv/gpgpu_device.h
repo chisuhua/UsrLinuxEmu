@@ -11,7 +11,7 @@ struct gpu_hal_ops;
 
 class HardwarePullerEmu;
 
-class GpgpuDevice : public FileOperations {
+class GpgpuDevice : public usr_linux_emu::FileOperations {
  public:
   static constexpr size_t kNumIoctls = 6;
 

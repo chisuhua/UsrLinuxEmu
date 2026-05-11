@@ -145,6 +145,7 @@ int ModuleLoader::unload_plugin(const std::string& name) {
     return -1;
   }
   decrease_ref(name.c_str());
+  return 0;
 }
 
 void ModuleLoader::list_plugins() {
