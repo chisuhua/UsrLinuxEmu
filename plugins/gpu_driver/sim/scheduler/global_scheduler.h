@@ -8,6 +8,7 @@
 
 #include "gpu_types.h"
 #include "gpu_hal.h"
+#include "scheduler/translator/gpfifo_translator.h"
 
 enum class EngineType {
   COMPUTE,
@@ -30,6 +31,14 @@ class GlobalScheduler {
 
   void setDispatchCallback(EngineDispatchFn fn);
 
+  void setLaunchCallback(::usr_linux_emu::GpfifoToLaunchParamsTranslator::LaunchParamsCallback cb) {
+    translator_.setLaunchCallback(std::move(cb));
+  }
+
+  void registerKernel(uint32_t kernel_idx, const char* kernel_name) {
+    translator_.registerKernel(kernel_idx, kernel_name);
+  }
+
   void enqueue(const gpu_gpfifo_entry& entry, EngineType engine);
   bool dequeue(WorkItem* out_item);
 
@@ -39,6 +48,7 @@ class GlobalScheduler {
   EngineType selectEngine(const gpu_gpfifo_entry& entry);
 
  private:
+  ::usr_linux_emu::GpfifoToLaunchParamsTranslator translator_;
   EngineDispatchFn dispatch_fn_;
   std::queue<WorkItem> queue_;
   mutable std::mutex mutex_;
