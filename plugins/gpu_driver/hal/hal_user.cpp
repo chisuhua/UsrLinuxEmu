@@ -5,6 +5,7 @@
  * 上下文定义在 hal_user.h（调用者需要分配内存）。
  */
 #include "hal_user.h"
+#include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <thread>
@@ -16,8 +17,8 @@
 static int user_reg_read(void *ctx, uint64_t offset, uint64_t *out_val) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
   if (offset >= HAL_REGS_COUNT * sizeof(uint64_t))
-    return -22; /* -EINVAL */
-  unsigned idx = (unsigned)(offset / sizeof(uint64_t));
+    return -EINVAL;
+  auto idx = static_cast<size_t>(offset / sizeof(uint64_t));
   std::lock_guard<std::mutex> lock(hc->regs_lock);
   *out_val = hc->regs[idx];
   return 0;
@@ -26,8 +27,8 @@ static int user_reg_read(void *ctx, uint64_t offset, uint64_t *out_val) {
 static int user_reg_write(void *ctx, uint64_t offset, uint64_t val) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
   if (offset >= HAL_REGS_COUNT * sizeof(uint64_t))
-    return -22;
-  unsigned idx = (unsigned)(offset / sizeof(uint64_t));
+    return -EINVAL;
+  auto idx = static_cast<size_t>(offset / sizeof(uint64_t));
   std::lock_guard<std::mutex> lock(hc->regs_lock);
   hc->regs[idx] = val;
   return 0;
@@ -37,7 +38,7 @@ static int user_mem_read(void *ctx, uint64_t dev_addr, void *host_buf, uint64_t 
   auto *hc = static_cast<struct hal_user_context *>(ctx);
   uint64_t heap_off = dev_addr - HAL_HEAP_BASE;
   if (heap_off + size > HAL_HEAP_SIZE || host_buf == nullptr)
-    return -22;
+    return -EINVAL;
   std::lock_guard<std::mutex> lock(hc->heap_lock);
   memcpy(host_buf, hc->heap + heap_off, size);
   return 0;
@@ -47,7 +48,7 @@ static int user_mem_write(void *ctx, uint64_t dev_addr, const void *host_buf, ui
   auto *hc = static_cast<struct hal_user_context *>(ctx);
   uint64_t heap_off = dev_addr - HAL_HEAP_BASE;
   if (heap_off + size > HAL_HEAP_SIZE || host_buf == nullptr)
-    return -22;
+    return -EINVAL;
   std::lock_guard<std::mutex> lock(hc->heap_lock);
   memcpy(hc->heap + heap_off, host_buf, size);
   return 0;
@@ -86,13 +87,13 @@ static int user_fence_create(void *ctx, uint64_t *out_fence_id) {
       return 0;
     }
   }
-  return -12; /* -ENOMEM */
+  return -ENOMEM;
 }
 
 static int user_fence_read(void *ctx, uint64_t fence_id, uint64_t *out_val) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
   if (fence_id >= HAL_MAX_FENCES)
-    return -22;
+    return -EINVAL;
   std::lock_guard<std::mutex> lock(hc->fence_lock);
   *out_val = hc->fence_signaled[fence_id] ? 1 : 0;
   return 0;
@@ -124,7 +125,7 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   memset(ctx, 0, sizeof(*ctx));
 
   /* 分配设备内存堆 */
-  ctx->heap = (uint8_t *)malloc(HAL_HEAP_SIZE);
+  ctx->heap = static_cast<uint8_t*>(std::malloc(HAL_HEAP_SIZE));
 
   /* 挂载回调 */
   hal->ctx = ctx;
