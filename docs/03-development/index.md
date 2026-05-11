@@ -8,6 +8,7 @@
 - [代码风格](coding-style.md) - 编码规范和最佳实践
 - [添加新设备](adding-devices.md) - 如何扩展新设备类型
 - [调试指南](debugging.md) - 调试技巧和工具
+- [架构对齐报告](architecture-alignment-report.md) - 代码与架构一致性审查
 
 ## 快速导航
 
