@@ -167,18 +167,18 @@ GPU Simulator 执行
 - 💻 [第一个示例](docs/01-quickstart/first-example.md) - 运行 GPU 示例
 
 ### 核心文档
-- 📖 [项目概述](docs/02-core/overview.md) - 项目详细介绍
-- 🏗️ [架构设计](docs/02-core/architecture.md) - 系统架构和设计
+- 📖 [项目概述](docs/02_architecture/overview.md) - 项目详细介绍
+- 🏗️ [架构设计](docs/02_architecture/architecture.md) - 系统架构和设计
 - 📘 [API 参考](docs/06-reference/api-reference.md) - API 接口文档
 
 ### 开发指南
 - 👨‍💻 [开发指南](docs/03-development/guide.md) - 开发环境和代码规范
 - 📝 [代码风格](docs/03-development/coding-style.md) - 编码规范
-- 🧪 [测试指南](docs/04-building/testing-guide.md) - 测试编写和运行
+- 🧪 [测试指南](docs/04-building/testing_guide.md) - 测试编写和运行
 - 🔧 [构建系统](docs/04-building/build-system.md) - 构建配置说明
 
 ### 高级主题
-- 🎮 [GPU 驱动架构](docs/05-advanced/gpu-driver-architecture.md) - GPU 驱动仿真架构详细设计
+- 🎮 [GPU 驱动架构](docs/05-advanced/gpu_driver_architecture.md) - GPU 驱动仿真架构详细设计
 
 ### 完整文档导航
 访问 [docs/README.md](docs/README.md) 查看所有文档分类和导航。
