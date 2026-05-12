@@ -5,6 +5,7 @@ add_library(gpu_sim STATIC
     fence_sim.cpp
     hardware_puller_emu.cpp
     doorbell_emu.cpp
+    gpu_queue_emu.cpp
     scheduler/global_scheduler.cpp
     scheduler/translator/gpfifo_translator.cpp
 )
