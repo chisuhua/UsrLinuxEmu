@@ -1,7 +1,9 @@
 #include "hardware/hardware_puller_emu.h"
 
 #include <cstring>
+#include <iostream>
 
+#include "gpu_queue_emu.h"
 #include "scheduler/global_scheduler.h"
 #include "scheduler/translator/gpfifo_translator.h"
 
@@ -42,9 +44,27 @@ void HardwarePullerEmu::stop() {
 
 void HardwarePullerEmu::onDoorbell(u32 queue_id) {
   (void)queue_id;
+  doorbell_pending_.store(true);
   std::lock_guard<std::mutex> lock(mutex_);
   cv_.notify_one();
 }
+
+// ========== Queue 管理 (Phase 2.5) ==========
+
+void HardwarePullerEmu::registerQueue(GpuQueueEmu* queue) {
+  if (!queue) return;
+  std::lock_guard<std::mutex> lock(mutex_);
+  uint32_t qid = queue->queueId();
+  active_queues_[qid] = queue;
+  queue->setDoorbellCallback([this](uint32_t qid) { onDoorbell(qid); });
+}
+
+void HardwarePullerEmu::unregisterQueue(uint32_t queue_id) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  active_queues_.erase(queue_id);
+}
+
+// ========== Fetch 阶段 ==========
 
 bool HardwarePullerEmu::fetchEntry(gpu_gpfifo_entry* out_entry) {
   if (current_index_ >= total_entries_) {
@@ -56,6 +76,34 @@ bool HardwarePullerEmu::fetchEntry(gpu_gpfifo_entry* out_entry) {
   return true;
 }
 
+bool HardwarePullerEmu::fetchFromQueue(uint32_t queue_id, gpu_gpfifo_entry* out_entry) {
+  auto it = active_queues_.find(queue_id);
+  if (it == active_queues_.end() || !it->second) return false;
+  return it->second->dequeue(out_entry);
+}
+
+bool HardwarePullerEmu::scanQueues(uint32_t* out_queue_id, gpu_gpfifo_entry* out_entry) {
+  for (auto& [qid, queue] : active_queues_) {
+    if (queue && queue->hasPending()) {
+      if (queue->dequeue(out_entry)) {
+        *out_queue_id = qid;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool HardwarePullerEmu::anyDoorbellPending() const {
+  for (const auto& [qid, queue] : active_queues_) {
+    (void)queue;
+    if (doorbell_->poll(qid)) return true;
+  }
+  return false;
+}
+
+// ========== 主循环 ==========
+
 void HardwarePullerEmu::runLoop() {
   while (running_.load()) {
     State local_state;
@@ -63,20 +111,32 @@ void HardwarePullerEmu::runLoop() {
       std::unique_lock<std::mutex> lock(mutex_);
       cv_.wait(lock, [this] {
         return !running_.load() ||
-               (state_ == State::IDLE && doorbell_->poll(0)) ||
-               (state_ != State::IDLE);
+               state_ != State::IDLE ||
+               doorbell_pending_.load() ||
+               doorbell_->poll(0);
       });
       if (!running_.load()) break;
       local_state = state_;
     }
 
     switch (local_state) {
-      case State::IDLE:
-        if (doorbell_->poll(0)) {
+      case State::IDLE: {
+        // 消费 queue 中的 entries (Doorbell + polling)
+        if (scanQueues(&current_queue_id_, &current_entry_)) {
+          transitionTo(State::DECODE);
+          break;
+        }
+
+        // fallback: GPFIFO 路径 (向后兼容)
+        if (doorbell_pending_.exchange(false) || doorbell_->poll(0)) {
           doorbell_->acknowledge(0);
           transitionTo(State::FETCH);
+          break;
         }
+
+        transitionTo(State::IDLE);
         break;
+      }
       case State::FETCH: {
         gpu_gpfifo_entry entry;
         if (!fetchEntry(&entry)) {
@@ -117,6 +177,7 @@ void HardwarePullerEmu::runLoop() {
         handleComplete();
         current_index_++;
         if (current_index_ >= total_entries_) {
+          // GPFIFO batch 结束, 回到 IDLE
           transitionTo(State::IDLE);
         } else {
           transitionTo(State::FETCH);
