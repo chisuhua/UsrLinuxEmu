@@ -75,7 +75,6 @@ set(STANDALONE_TESTS
     test_gpu_mmap_and_submit.cpp
     test_gpu_register.cpp
     test_gpu_regs.cpp
-    test_gpu_ringbuffer.cpp
     test_gpu_submit.cpp
     test_ioctl.cpp
     test_logger.cpp
@@ -95,6 +94,8 @@ set(CATCH2_TESTS
 
 # 定义 sim 相关测试的列表（链接 gpu_sim）
 set(SIM_TESTS
+    test_gpu_ringbuffer.cpp
+    test_queue_puller_integration.cpp
     test_hardware_puller_emu.cpp
     test_global_scheduler.cpp
     test_gpfifo_translator.cpp

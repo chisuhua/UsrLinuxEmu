@@ -124,17 +124,17 @@ int test_doorbell_out_of_bounds() {
   DoorbellEmu db;
 
   // 超出范围的 queue_id 应该被忽略
-  db.write(100);  // MAX_QUEUES = 32
-  db.write(32);   // 边界情况
+  db.write(9999);  // >= MAX_QUEUES = 1024
+  db.write(1024);   // 边界情况
 
   // 不应该崩溃，计数保持为 0
-  if (db.getRingCount(100) != 0 || db.getRingCount(32) != 0) {
+  if (db.getRingCount(9999) != 0 || db.getRingCount(1024) != 0) {
     std::cerr << "FAIL: out-of-bounds write should be ignored\n";
     return 1;
   }
 
   // poll 超出范围应返回 false
-  if (db.poll(100) != false || db.poll(32) != false) {
+  if (db.poll(9999) != false || db.poll(1024) != false) {
     std::cerr << "FAIL: poll out-of-bounds should return false\n";
     return 1;
   }
