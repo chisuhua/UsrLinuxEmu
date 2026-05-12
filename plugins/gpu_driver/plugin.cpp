@@ -10,13 +10,14 @@
 #include "hal/hal_user.h"
 #include "sim/hardware/doorbell_emu.h"
 #include "sim/hardware/hardware_puller_emu.h"
+#include "sim/scheduler/global_scheduler.h"
 
 namespace {
 struct HalHolder {
   struct gpu_hal_ops hal;
   struct hal_user_context ctx;
   DoorbellEmu doorbell;
-  // TODO(Phase2): GlobalScheduler scheduler;  // Phase 2 feature
+  GlobalScheduler scheduler;
   std::shared_ptr<HardwarePullerEmu> puller;
 };
 static HalHolder* g_hal = nullptr;
@@ -35,7 +36,7 @@ static int plugin_init_internal() {
 
   hal_holder.puller = std::make_shared<HardwarePullerEmu>(&hal_holder.hal,
                                                           &hal_holder.doorbell,
-                                                          nullptr);
+                                                          &hal_holder.scheduler);
 
   int ret = hal_user_set_doorbell_cb(&hal_holder.ctx,
       [](void* cb_ctx, uint32_t queue_id) {

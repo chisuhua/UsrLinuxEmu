@@ -21,6 +21,7 @@
 #endif
 
 #include "gpu_types.h"
+#include "gpu_queue.h"
 
 /* ioctl magic number - must not conflict with other drivers */
 #define GPU_IOCTL_BASE 'G'
@@ -175,7 +176,7 @@ struct gpu_register_gpu_args {
 };
 
 /* ========================================================================
- * Queue Management (Phase 2)
+ * Queue Management (Phase 2 - ADR-024)
  * ======================================================================== */
 
 /**
@@ -183,6 +184,7 @@ struct gpu_register_gpu_args {
  *
  * Queues belong to a VA Space and are used for command submission.
  * Phase 1 uses implicit default queue; Phase 2 exposes explicit queues.
+ * Returns queue_handle + doorbell_pgoff for mmap.
  */
 #define GPU_IOCTL_CREATE_QUEUE _IOWR(GPU_IOCTL_BASE, 0x40, struct gpu_queue_args)
 
@@ -190,14 +192,30 @@ struct gpu_queue_args {
   gpu_va_space_handle_t va_space_handle; /* VA Space (input) */
   u32 queue_type;                        /* GPU_QUEUE_COMPUTE/COPY/GRAPHICS (input) */
   u32 priority;                          /* Queue priority 0-100 (input) */
-  u64 ring_buffer_size;                  /* Ring buffer size in bytes (input) */
+  u64 ring_buffer_size;                  /* Ring buffer size in entries (input) */
   gpu_queue_handle_t queue_handle;       /* OUT: Queue handle */
+  u64 doorbell_pgoff;                    /* OUT: Doorbell mmap page offset */
 };
 
 /**
  * GPU_IOCTL_DESTROY_QUEUE - Destroy a GPU command queue
  */
 #define GPU_IOCTL_DESTROY_QUEUE _IOW(GPU_IOCTL_BASE, 0x41, gpu_queue_handle_t)
+
+/**
+ * GPU_IOCTL_MAP_QUEUE_RING - Map Ring Buffer to user-space
+ *
+ * TaskRunner passes queue_handle and a shared memory address.
+ * UsrLinuxEmu maps the shared memory and uses it as the Ring Buffer.
+ */
+#define GPU_IOCTL_MAP_QUEUE_RING _IOWR(GPU_IOCTL_BASE, 0x42, struct gpu_queue_map_ring_args)
+
+/**
+ * GPU_IOCTL_QUERY_QUEUE - Query queue information
+ *
+ * Returns queue state including pending count and fence value.
+ */
+#define GPU_IOCTL_QUERY_QUEUE _IOWR(GPU_IOCTL_BASE, 0x43, struct gpu_queue_info_args)
 
 /* Queue type definitions */
 #define GPU_QUEUE_COMPUTE 0x0  /* Compute queue (GFX/SDMA) */
