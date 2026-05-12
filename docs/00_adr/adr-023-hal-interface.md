@@ -226,6 +226,73 @@ static inline void hal_time_wait(struct gpu_hal_ops *hal, u64 us) {
 
 ---
 
+## ADR-024 修订: Doorbell 映射模型分层
+
+**修订日期**: 2026-05-12
+**修订依据**: ADR-024 (用户态队列命令提交架构)
+
+### 修订内容
+
+`doorbell_ring` 操作从单一路径（内核 HAL 调用）扩展为**双层模型**：
+
+```
+Doorbell 操作分层:
+
+用户态 MMIO 直写（快速路径 — ADR-024 新增）:
+  TaskRunner           *(volatile u32*)doorbell_ptr = queue_id;
+    │                       └── mmap'd BAR 地址，零 syscall
+    │                          │
+    ▼                          ▼
+                        DoorbellEmu::write(queue_id)
+
+内核 HAL 调用（回退路径 — 现有）:
+  drv/ 代码           hal_doorbell_ring(hal_, queue_id);
+    │                       └── 通过函数指针调用
+    │                          │
+    ▼                          ▼
+                        hal->doorbell_ring(hal->ctx, qid)
+                            ↓
+                        DoorbellEmu::write(queue_id)
+```
+
+### 更新后的 doorbell 接口
+
+```cpp
+/* doorbell.h — doorbell 仿真寄存器（新）*/
+
+// Doorbell 寄存器映射（用于用户态 mmap）
+struct gpu_doorbell_region {
+  volatile u32 doorbell[32];  // 每 queue 一个 doorbell slot
+};
+
+// Doorbell mmap handler（在 plugin.cpp 中）
+void* mmap_doorbell_region(DoorbellEmu* doorbell) {
+  auto* region = new (std::nothrow) gpu_doorbell_region{};
+  // 对每个 slot，写操作触发 DoorbellEmu::write()
+  // ...
+  return region;
+}
+```
+
+### 影响的 HAL 接口
+
+| 接口 | 变更 |
+|------|------|
+| `doorbell_ring` | 新增说明：该接口由驱动调用，**不用于用户态 MMIO 直写路径** |
+| — | 新增概念：Doorbell 的"用户态 mmap 写"直接触发 DoorbellEmu，绕过 HAL |
+
+### 与真实硬件的映射
+
+```
+用户态模拟:        用户态写 mmap doorbell → DoorbellEmu::write(queue_id)
+真实 AMD GPU:    用户态写 PCIe BAR → GPU CP firmware doorbell handler
+真实 NVIDIA GPU: 用户态写 userd mapping → GPU PBDMA doorbell handler
+
+三者语义完全一致：用户态写一个内存地址 → GPU 硬件/固件收到 doorbell → 开始处理
+```
+
+---
+
 **维护者**: UsrLinuxEmu Architecture Team
 
-**最后更新**: 2026-05-07 (v2 — Oracle 审查修正: 8→10 接口)
+**最后更新**: 2026-05-12 (ADR-024 修订)

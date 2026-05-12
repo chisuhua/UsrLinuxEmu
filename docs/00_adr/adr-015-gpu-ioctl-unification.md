@@ -375,8 +375,71 @@ UsrLinuxEmu/plugins/gpu_driver/shared/  # Canonical 接口定义源
 
 ---
 
+## ADR-024 修订: 新增 Queue 相关 IOCTL
+
+**修订日期**: 2026-05-12
+**修订依据**: ADR-024 (用户态队列命令提交架构)
+
+### 新增 IOCTL 命令
+
+在 System C 接口中新增以下 Queue 管理命令：
+
+```cpp
+/* ========================================================================
+ * Queue Management (User Mode Queue - ADR-024)
+ * ======================================================================== */
+
+#define GPU_IOCTL_CREATE_QUEUE       _IOWR(GPU_IOCTL_BASE, 0x33, struct gpu_create_queue_args)
+#define GPU_IOCTL_DESTROY_QUEUE      _IOW(GPU_IOCTL_BASE, 0x34, u64)  // queue_handle
+#define GPU_IOCTL_MAP_QUEUE_RING     _IOWR(GPU_IOCTL_BASE, 0x35, struct gpu_queue_map_ring_args)
+```
+
+### 数据结构
+
+```cpp
+struct gpu_create_queue_args {
+  u32 queue_type;        // GPU_QUEUE_COMPUTE / COPY
+  u32 priority;          // 0-100
+  u32 ring_size;         // Ring Buffer 大小（页对齐）
+  u32 reserved;
+  u64 queue_handle;      // OUT: Queue 句柄
+  u64 doorbell_pgoff;    // OUT: Doorbell mmap page offset
+};
+
+struct gpu_queue_map_ring_args {
+  u64 queue_handle;      // INPUT: 由 CREATE_QUEUE 返回
+  u64 ring_addr;         // INPUT: 用户态指定的共享内存地址
+};
+```
+
+### 接口层级变更
+
+```
+提交路径分层:
+
+快速路径（新增）:
+  用户态 → 写 Ring Buffer (共享内存) → *(volatile u32*)doorbell_ptr = queue_id
+  (零 syscall)
+
+回退路径（现有）:
+  用户态 → ioctl(GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, ...) → GpgpuDevice handler
+  (1 syscall)
+```
+
+### IOCTL 编号范围
+
+| 范围 | 用途 | 状态 |
+|------|------|------|
+| 0x01-0x03 | 命令提交 + 事件注册 | ✅ 已定义 |
+| 0x10-0x13 | BO 管理 + Fence | ✅ 已定义 |
+| 0x20 | ~~LAUNCH_CB~~ | ❌ **待删除** |
+| 0x30-0x32 | VA Space + GPU 注册 | ✅ 已定义 |
+| **0x33-0x35** | **Queue 管理 (ADR-024)** | **🆕 新增** |
+
+---
+
 **维护者**: UsrLinuxEmu Architecture Team + TaskRunner Team
 
-**最后更新**: 2026-04-28
+**最后更新**: 2026-05-12 (ADR-024 修订)
 
 **评审截止**: 2026-05-04
