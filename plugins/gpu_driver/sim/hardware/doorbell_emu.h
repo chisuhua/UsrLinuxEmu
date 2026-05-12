@@ -9,7 +9,7 @@ using u64 = uint64_t;
 
 class DoorbellEmu {
  public:
-  static constexpr u32 MAX_QUEUES = 32;
+  static constexpr u32 MAX_QUEUES = 1024;
 
   using DoorbellCallback = std::function<void(u32 queue_id)>;
 
