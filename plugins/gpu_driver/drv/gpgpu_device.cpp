@@ -9,6 +9,7 @@
 #include "drv/gpgpu_device.h"
 #include "kernel/vfs.h"
 #include "sim/hardware/hardware_puller_emu.h"
+#include "sim/gpu_queue_emu.h"
 #include "shared/gpu_events.h"
 #include "shared/gpu_ioctl.h"
 #include "shared/gpu_types.h"
@@ -72,7 +73,11 @@ const GpgpuDevice::IoctlEntry& GpgpuDevice::getIoctlTable() {
       {GPU_IOCTL_MAP_BO, "MAP_BO", &GpgpuDevice::handleMapBo},
       {GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, "PUSHBUFFER_SUBMIT_BATCH",
        &GpgpuDevice::handlePushbufferSubmitBatch},
-      {GPU_IOCTL_WAIT_FENCE, "WAIT_FENCE", &GpgpuDevice::handleWaitFence},
+       {GPU_IOCTL_WAIT_FENCE, "WAIT_FENCE", &GpgpuDevice::handleWaitFence},
+      {GPU_IOCTL_CREATE_QUEUE, "CREATE_QUEUE", &GpgpuDevice::handleCreateQueue},
+      {GPU_IOCTL_DESTROY_QUEUE, "DESTROY_QUEUE", &GpgpuDevice::handleDestroyQueue},
+      {GPU_IOCTL_MAP_QUEUE_RING, "MAP_QUEUE_RING", &GpgpuDevice::handleMapQueueRing},
+      {GPU_IOCTL_QUERY_QUEUE, "QUERY_QUEUE", &GpgpuDevice::handleQueryQueue},
   };
   return kTable[0];
 }
@@ -230,9 +235,9 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
   if (puller_ && !has_fence) {
     u64 gpfifo_addr = GPFIFO_BASE;
     puller_->submitBatch(gpfifo_addr, args->count);
-    hal_doorbell_ring(hal_, 0);
+    hal_doorbell_ring(hal_, args->stream_id);  // Use stream_id as queue_id
     std::cout << "[GpgpuDevice] PUSHBUFFER: puller path, gpfifo=0x" << std::hex << gpfifo_addr
-              << " count=" << std::dec << args->count << "\n";
+              << " count=" << std::dec << args->count << " queue=" << args->stream_id << "\n";
     return 0;
   } else if (has_fence) {
     std::cerr << "[GpgpuDevice] PUSHBUFFER: FENCE in batch, using sync path\n";
@@ -327,5 +332,146 @@ long GpgpuDevice::handleWaitFence(void* argp) {
   std::cout << "[GpgpuDevice] WAIT_FENCE: id=" << fence_id << " timeout after " << elapsed_ms
             << "ms\n";
   return 0;
+}
+
+// ========== Queue 管理 (ADR-024) ==========
+
+long GpgpuDevice::handleCreateQueue(void* argp) {
+  auto* args = static_cast<struct gpu_queue_args*>(argp);
+  if (!args) return -EFAULT;
+  if (args->queue_type > GPU_QUEUE_GRAPHICS) return -EINVAL;
+
+  std::lock_guard<std::mutex> lock(queue_mutex_);
+
+  uint64_t handle = next_queue_handle_++;
+  auto queue = std::make_shared<GpuQueueEmu>(
+      static_cast<uint32_t>(handle),
+      args->queue_type,
+      args->priority,
+      args->ring_buffer_size > 0 ? static_cast<uint32_t>(args->ring_buffer_size) : GPU_MAX_RING_ENTRIES);
+
+  queues_[handle] = queue;
+  args->queue_handle = handle;
+  args->doorbell_pgoff = DOORBELL_MMAP_OFFSET;
+
+  // Phase 2.5: 注册到 Puller
+  if (puller_) {
+    puller_->registerQueue(queue.get());
+  }
+
+  std::cout << "[GpgpuDevice] CREATE_QUEUE: handle=" << handle
+            << " type=" << args->queue_type
+            << " ring=" << args->ring_buffer_size
+            << " doorbell_pgoff=0x" << std::hex << args->doorbell_pgoff << "\n";
+  return 0;
+}
+
+long GpgpuDevice::handleDestroyQueue(void* argp) {
+  if (!argp) return -EFAULT;
+  uint64_t handle = *static_cast<uint64_t*>(argp);
+
+  std::lock_guard<std::mutex> lock(queue_mutex_);
+  auto it = queues_.find(handle);
+  if (it == queues_.end()) return -ENOENT;
+
+  // Phase 2.5: 从 Puller 注销
+  if (puller_) {
+    puller_->unregisterQueue(static_cast<uint32_t>(handle));
+  }
+
+  queues_.erase(it);
+  std::cout << "[GpgpuDevice] DESTROY_QUEUE: handle=" << handle << "\n";
+  return 0;
+}
+
+long GpgpuDevice::handleMapQueueRing(void* argp) {
+  auto* args = static_cast<struct gpu_queue_map_ring_args*>(argp);
+  if (!args) return -EFAULT;
+
+  std::lock_guard<std::mutex> lock(queue_mutex_);
+  auto it = queues_.find(args->queue_handle);
+  if (it == queues_.end()) return -ENOENT;
+
+  // Phase 2.5: 将共享内存绑定到 Queue
+  // 使用 Queue 创建时指定的 ring_size 计算所需内存
+  size_t ring_mem_size = sizeof(gpu_ring_header) +
+      it->second->ringSize() * sizeof(gpu_gpfifo_entry);
+  int ret = it->second->attachSharedMemory(
+      reinterpret_cast<void*>(args->ring_addr), ring_mem_size);
+  if (ret != 0) {
+    std::cerr << "[GpgpuDevice] MAP_QUEUE_RING: attachSharedMemory failed\n";
+    return -ENOMEM;
+  }
+
+  std::cout << "[GpgpuDevice] MAP_QUEUE_RING: handle=" << args->queue_handle
+            << " addr=0x" << std::hex << args->ring_addr << "\n";
+  return 0;
+}
+
+long GpgpuDevice::handleQueryQueue(void* argp) {
+  auto* args = static_cast<struct gpu_queue_info_args*>(argp);
+  if (!args) return -EFAULT;
+
+  std::lock_guard<std::mutex> lock(queue_mutex_);
+  auto it = queues_.find(args->queue_handle);
+  if (it == queues_.end()) return -ENOENT;
+
+  auto& queue = it->second;
+  args->queue_type = queue->queueType();
+  args->queue_id = queue->queueId();
+  args->doorbell_offset = DOORBELL_MMAP_OFFSET;
+  args->ring_size = queue->ringHeader() ? queue->ringHeader()->capacity : 0;
+  args->pending_count = queue->pendingCount();
+  return 0;
+}
+
+std::shared_ptr<GpuQueueEmu> GpgpuDevice::getQueue(uint64_t queue_handle) {
+  std::lock_guard<std::mutex> lock(queue_mutex_);
+  auto it = queues_.find(queue_handle);
+  if (it != queues_.end()) return it->second;
+  return nullptr;
+}
+
+bool GpgpuDevice::removeQueue(uint64_t queue_handle) {
+  std::lock_guard<std::mutex> lock(queue_mutex_);
+  return queues_.erase(queue_handle) > 0;
+}
+
+void* GpgpuDevice::mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset) {
+  (void)addr;
+  (void)length;
+  (void)prot;
+  (void)flags;
+  (void)fd;
+
+  if (offset == DOORBELL_MMAP_OFFSET) {
+    // Doorbell 区域: 返回一个可写页
+    // 每次写 *((volatile uint32_t*)addr) = queue_id 触发 doorbell
+    void* page = MAP_FAILED;
+    int ret = posix_memalign(&page, 4096, 4096);
+    if (ret != 0 || !page) return MAP_FAILED;
+
+    // 标记为可写
+    memset(page, 0, 4096);
+
+    // 通过 mprotect 确保可写性已在 mmap flags 中处理
+    // 实际 doorbell 写操作由硬件模拟层捕获
+    // 在仿真中，用户态直接写这个地址不会触发任何动作
+    // 真正的 doorbell 触发仍通过 ioctl 或 HAL 路径
+    // mmap 区域仅用于对齐硬件接口规范
+    return page;
+  }
+
+  if (offset >= QUEUE_RING_MMAP_BASE) {
+    // Ring Buffer 区域
+    // 当前方案：共享内存由 TaskRunner 管理
+    // GpuQueueEmu::attachSharedMemory() 在 MAP_QUEUE_RING 中处理
+    // 返回 MAP_FAILED 让 TaskRunner fallback 到 ioctl 路径
+    std::cerr << "[GpgpuDevice] mmap QUEUE_RING: falling back to user-shared shm\n";
+    return MAP_FAILED;
+  }
+
+  std::cerr << "[GpgpuDevice] mmap: unknown offset 0x" << std::hex << offset << "\n";
+  return MAP_FAILED;
 }
 
