@@ -247,8 +247,80 @@ GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH {
 
 ---
 
+## ADR-024 修订: 队列提交路径规范
+
+**修订日期**: 2026-05-12
+**修订依据**: ADR-024 (用户态队列命令提交架构)
+
+### 修订内容
+
+明确 Queue 的命令提交流程包含**两条路径**：
+
+```
+Queue Descriptor
+├── ring_buffer_addr  (共享内存/设备内存)
+├── doorbell_offset   (MMIO 偏移)
+├── queue_type        (COMPUTE/COPY)
+├── priority
+└── fence_ptr         (完成通知)
+
+提交路径 1 — 快速路径（用户态直接提交）:
+  TaskRunner → 写 Ring Buffer → Doorbell mmap 写入
+  └── 零 syscall，仅队列创建时通过 ioctl
+
+提交路径 2 — 回退路径（内核 ioctl）:
+  TaskRunner → ioctl(PUSHBUFFER_SUBMIT_BATCH)
+  └── 1 syscall，兼容保留
+```
+
+### Queue 生命周期
+
+```
+CREATE_QUEUE (ioctl)
+    │
+    ├── 分配 Queue ID + Doorbell offset
+    ├── 分配 Ring Buffer 共享内存
+    └── 初始化 write_idx = read_idx = 0
+    │
+    ├── MAP_QUEUE_RING (ioctl)
+    │   └── 用户态 mmap Ring Buffer
+    │
+    ├── [运行时: 多次提交]
+    │   ├── 快速路径: 写 Ring Buffer → Doorbell
+    │   └── 回退路径: ioctl SUBMIT_BATCH
+    │
+    ├── WAIT_FENCE (ioctl)
+    │   └── 等待完成通知
+    │
+    └── DESTROY_QUEUE (ioctl)
+        └── 释放队列资源
+```
+
+### Queue Descriptor 结构更新
+
+```cpp
+struct gpu_queue_descriptor {
+  u64 queue_handle;        // Queue 句柄
+  u32 queue_type;          // COMPUTE / COPY
+  u32 priority;            // 0-100
+  u32 queue_id;            // 内部队列 ID
+  u32 doorbell_id;         // Doorbell ID (对应 queue_id)
+  u64 doorbell_pgoff;      // Doorbell mmap page offset
+  u64 ring_addr;           // Ring Buffer 共享内存地址
+  u32 ring_size;           // Ring Buffer 大小
+  u64 fence_value;         // 当前 fence 值
+  u64 completion_fence;    // 完成 fence 地址
+};
+```
+
+### 影响
+
+修复 ADR-017 的一个隐含假设：**Queue 的"提交"和"执行"不是通过同一 ioctl 完成的**。在真实硬件中，提交是用户态直接操作，执行是 GPU 硬件自主行为。驱动只负责队列的创建/销毁/异常处理。
+
+---
+
 **维护者**: UsrLinuxEmu Architecture Team + TaskRunner Team
 
-**最后更新**: 2026-04-28 (Phase 0 修复：VA Space/Queue ioctl 已定义于 gpu_ioctl.h)
+**最后更新**: 2026-05-12 (ADR-024 修订)
 
 **评审截止**: 2026-05-11

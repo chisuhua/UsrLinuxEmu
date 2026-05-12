@@ -28,6 +28,7 @@
 | [adr-020](adr-020-libgpu-core-extraction.md) | libgpu_core 算法核心提取 | ✅ 已接受 | 2026-05 |
 | [adr-021](adr-021-hardware-puller.md) | Hardware Puller GPFIFO 状态机构架 | ✅ 已接受 | 2026-05 |
 | [adr-023](adr-023-hal-interface.md) | 仿真层接口契约 (HAL) | ✅ 已接受 | 2026-05 |
+| [adr-024](adr-024-user-mode-queue-submission.md) | 用户态队列命令提交架构 | 🔄 提议中 | 2026-05 |
 
 ## ADR 状态说明
 
