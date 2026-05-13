@@ -228,12 +228,47 @@ struct gpu_queue_args {
 #define GPU_IOCTL_GET_DEVICE_INFO _IOR(GPU_IOCTL_BASE, 0x20, struct gpu_device_info)
 
 struct gpu_device_info {
-  u32 vendor_id;       /* PCI vendor ID */
-  u32 device_id;       /* PCI device ID */
-  u64 vram_size;       /* Total device-local memory in bytes */
-  u64 bar0_size;       /* BAR0 (register space) size in bytes */
-  u32 max_channels;    /* Maximum number of GPU channels */
-  u32 compute_units;   /* Number of compute units */
-  u32 gpfifo_capacity; /* Maximum GPFIFO entries per channel */
-  u32 cache_line_size; /* Cache line size in bytes (for CXL.cache) */
+  u32 vendor_id;               /* PCI vendor ID */
+  u32 device_id;               /* PCI device ID */
+  u64 vram_size;               /* Total device-local memory in bytes */
+  u64 bar0_size;               /* BAR0 (register space) size in bytes */
+  u32 max_channels;            /* Maximum number of GPU channels */
+  u32 compute_units;           /* Number of compute units (CUs or SMs) */
+  u32 gpfifo_capacity;          /* Maximum GPFIFO entries per channel */
+  u32 cache_line_size;          /* Cache line size in bytes (for CXL.cache) */
+
+  /* ── Phase 1.5 扩展 ── */
+
+  /** Warp 大小: NVIDIA=32, AMD CDNA=64, AMD RDNA=32 */
+  u32 warp_size;
+
+  /** 最大引擎时钟频率 (MHz) */
+  u32 max_clock_frequency;
+
+  /** 驱动版本号 (主.次.修订, 如 0x000500 = v0.5.0) */
+  u32 driver_version;
+
+  /** Firmware/PSP 版本号 (主.次) */
+  u32 firmware_version;
+
+  /** SIMD 单元数量 (AMD CU 或 NVIDIA SM) */
+  u32 simd_count;
+
+  /** 最大内存时钟频率 (MHz) */
+  u32 max_memory_clock_frequency;
+
+  /** 内存位宽 (bits) */
+  u32 memory_bus_width;
+
+  /** 峰值 FP32 理论性能 (GFLOPS) */
+  u32 peak_fp32_gflops;
+
+  /** PCIe 带宽 (Mbps, 如 16000 = PCIe 4.0 x16) */
+  u32 pcie_bandwidth;
+
+  /** 架构标识符 (厂商特定: AMD family 或 NVIDIA compute capability) */
+  u32 architecture_id;
+
+  /** 市场营销名称 (UTF-8, 以 null 结尾) */
+  char marketing_name[64];
 };

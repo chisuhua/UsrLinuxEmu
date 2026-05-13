@@ -6,6 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include <thread>
+#include <unistd.h>
 #include "drv/gpgpu_device.h"
 #include "kernel/vfs.h"
 #include "sim/hardware/hardware_puller_emu.h"
@@ -24,6 +25,19 @@ constexpr u32 SIMULATED_MAX_CHANNELS = 32;
 constexpr u32 SIMULATED_COMPUTE_UNITS = 64;
 constexpr u32 SIMULATED_GPFIFO_CAPACITY = 1024;
 constexpr u32 SIMULATED_CACHE_LINE_SIZE = 64;
+
+/* ── Phase 1.5 模拟常量 ── */
+constexpr u32 SIMULATED_WARP_SIZE = 32;                  /* NVIDIA 风格 */
+constexpr u32 SIMULATED_MAX_CLOCK_FREQ = 1500;            /* 1500 MHz */
+constexpr u32 SIMULATED_DRIVER_VERSION = 0x000500;       /* v0.5.0 */
+constexpr u32 SIMULATED_FIRMWARE_VERSION = 0x000100;      /* v0.1.0 */
+constexpr u32 SIMULATED_SIMD_COUNT = 64;                   /* 64 CUs */
+constexpr u32 SIMULATED_MAX_MEM_CLOCK_FREQ = 2000;         /* 2000 MHz */
+constexpr u32 SIMULATED_MEM_BUS_WIDTH = 256;               /* 256-bit */
+constexpr u32 SIMULATED_PEAK_FP32_GFLOPS = 17000;          /* 17 TFLOPS */
+constexpr u32 SIMULATED_PCIE_BANDWIDTH = 16000;           /* PCIe 4.0 x16 */
+constexpr u32 SIMULATED_ARCH_ID = 0x1001;                  /* 模拟架构 ID */
+constexpr const char* SIMULATED_MARKETING_NAME = "UsrLinuxEmu Simulator v1";
 constexpr u64 GPFIFO_BASE = 0x10000000ULL;
 
 constexpr size_t GpgpuDevice::kNumIoctls;
@@ -73,31 +87,51 @@ const GpgpuDevice::IoctlEntry& GpgpuDevice::getIoctlTable() {
       {GPU_IOCTL_MAP_BO, "MAP_BO", &GpgpuDevice::handleMapBo},
       {GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, "PUSHBUFFER_SUBMIT_BATCH",
        &GpgpuDevice::handlePushbufferSubmitBatch},
-       {GPU_IOCTL_WAIT_FENCE, "WAIT_FENCE", &GpgpuDevice::handleWaitFence},
+      {GPU_IOCTL_WAIT_FENCE, "WAIT_FENCE", &GpgpuDevice::handleWaitFence},
       {GPU_IOCTL_CREATE_QUEUE, "CREATE_QUEUE", &GpgpuDevice::handleCreateQueue},
       {GPU_IOCTL_DESTROY_QUEUE, "DESTROY_QUEUE", &GpgpuDevice::handleDestroyQueue},
       {GPU_IOCTL_MAP_QUEUE_RING, "MAP_QUEUE_RING", &GpgpuDevice::handleMapQueueRing},
       {GPU_IOCTL_QUERY_QUEUE, "QUERY_QUEUE", &GpgpuDevice::handleQueryQueue},
   };
-  return kTable[0];
+  return kTable[0];  // BUG: This only returns FIRST element!
+}
+
+const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
+  static const IoctlEntry kTable[kNumIoctls] = {
+      {GPU_IOCTL_GET_DEVICE_INFO, "GET_DEVICE_INFO", &GpgpuDevice::handleGetDeviceInfo},
+      {GPU_IOCTL_ALLOC_BO, "ALLOC_BO", &GpgpuDevice::handleAllocBo},
+      {GPU_IOCTL_FREE_BO, "FREE_BO", &GpgpuDevice::handleFreeBo},
+      {GPU_IOCTL_MAP_BO, "MAP_BO", &GpgpuDevice::handleMapBo},
+      {GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, "PUSHBUFFER_SUBMIT_BATCH",
+       &GpgpuDevice::handlePushbufferSubmitBatch},
+      {GPU_IOCTL_WAIT_FENCE, "WAIT_FENCE", &GpgpuDevice::handleWaitFence},
+      {GPU_IOCTL_CREATE_QUEUE, "CREATE_QUEUE", &GpgpuDevice::handleCreateQueue},
+      {GPU_IOCTL_DESTROY_QUEUE, "DESTROY_QUEUE", &GpgpuDevice::handleDestroyQueue},
+      {GPU_IOCTL_MAP_QUEUE_RING, "MAP_QUEUE_RING", &GpgpuDevice::handleMapQueueRing},
+      {GPU_IOCTL_QUERY_QUEUE, "QUERY_QUEUE", &GpgpuDevice::handleQueryQueue},
+  };
+  return kTable;
 }
 
 long GpgpuDevice::ioctl(int fd, unsigned long request, void* argp) {
   (void)fd;
-  const IoctlEntry* entry = nullptr;
+  // Use unbuffered write to ensure output appears immediately
+  char buf[256];
+  int len = snprintf(buf, sizeof(buf), "[ioctl] request=0x%lx GPU_IOCTL_GET_DEVICE_INFO=0x%lx equal=%d\n",
+                    request, (unsigned long)GPU_IOCTL_GET_DEVICE_INFO, request == GPU_IOCTL_GET_DEVICE_INFO);
+  write(STDERR_FILENO, buf, len);
+  if (request == GPU_IOCTL_GET_DEVICE_INFO) {
+    return handleGetDeviceInfo(argp);
+  }
+  const IoctlEntry* table = getIoctlTablePtr();
   for (size_t i = 0; i < kNumIoctls; ++i) {
-    const IoctlEntry* e = &getIoctlTable() + i;
-    if (e->request == request) {
-      entry = e;
-      break;
+    if (table[i].request == request) {
+      return (this->*table[i].handler)(argp);
     }
   }
-  if (entry == nullptr) {
-    std::cerr << "[GpgpuDevice] Unknown ioctl: 0x" << std::hex << request << std::dec
-              << "\n";
-    return -EINVAL;
-  }
-  return (this->*entry->handler)(argp);
+  snprintf(buf, sizeof(buf), "[Unknown] request=0x%lx\n", request);
+  write(STDERR_FILENO, buf, strlen(buf));
+  return -EINVAL;
 }
 
 int GpgpuDevice::open(const char* path, int flags) {
@@ -126,6 +160,20 @@ long GpgpuDevice::handleGetDeviceInfo(void* argp) {
   info->compute_units = SIMULATED_COMPUTE_UNITS;
   info->gpfifo_capacity = SIMULATED_GPFIFO_CAPACITY;
   info->cache_line_size = SIMULATED_CACHE_LINE_SIZE;
+
+  /* Phase 1.5 新增字段 */
+  info->warp_size = SIMULATED_WARP_SIZE;
+  info->max_clock_frequency = SIMULATED_MAX_CLOCK_FREQ;
+  info->driver_version = SIMULATED_DRIVER_VERSION;
+  info->firmware_version = SIMULATED_FIRMWARE_VERSION;
+  info->simd_count = SIMULATED_SIMD_COUNT;
+  info->max_memory_clock_frequency = SIMULATED_MAX_MEM_CLOCK_FREQ;
+  info->memory_bus_width = SIMULATED_MEM_BUS_WIDTH;
+  info->peak_fp32_gflops = SIMULATED_PEAK_FP32_GFLOPS;
+  info->pcie_bandwidth = SIMULATED_PCIE_BANDWIDTH;
+  info->architecture_id = SIMULATED_ARCH_ID;
+  std::strncpy(info->marketing_name, SIMULATED_MARKETING_NAME, sizeof(info->marketing_name) - 1);
+  info->marketing_name[sizeof(info->marketing_name) - 1] = '\0';
 
   std::cout << "[GpgpuDevice] GET_DEVICE_INFO: vendor=0x" << std::hex << info->vendor_id
             << " device=0x" << info->device_id << " vram=" << std::dec << info->vram_size
