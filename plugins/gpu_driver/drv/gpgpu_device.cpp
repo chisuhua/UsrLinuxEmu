@@ -281,11 +281,21 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
   }
 
   if (puller_ && !has_fence) {
+    // S3.5: 即使在 puller path 中也创建 fence 并返回
+    u64 fence_id = 0;
+    int ret = hal_fence_create(hal_, &fence_id);
+    if (ret != 0) {
+      std::cerr << "[GpgpuDevice] PUSHBUFFER: hal_fence_create failed (ret=" << ret << ")\n";
+      return -ENOMEM;
+    }
+
     u64 gpfifo_addr = GPFIFO_BASE;
     puller_->submitBatch(gpfifo_addr, args->count);
     hal_doorbell_ring(hal_, args->stream_id);  // Use stream_id as queue_id
+    args->fence_id = fence_id;  // S3.5: 返回 fence_id 给调用者
     std::cout << "[GpgpuDevice] PUSHBUFFER: puller path, gpfifo=0x" << std::hex << gpfifo_addr
-              << " count=" << std::dec << args->count << " queue=" << args->stream_id << "\n";
+              << " count=" << std::dec << args->count << " queue=" << args->stream_id
+              << " fence_id=" << fence_id << "\n";
     return 0;
   } else if (has_fence) {
     std::cerr << "[GpgpuDevice] PUSHBUFFER: FENCE in batch, using sync path\n";
