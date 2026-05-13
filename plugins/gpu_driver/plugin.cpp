@@ -38,6 +38,21 @@ static int plugin_init_internal() {
                                                           &hal_holder.doorbell,
                                                           &hal_holder.scheduler);
 
+  // 注册内核到 GlobalScheduler (与 GpgpuDevice 保持一致)
+  hal_holder.scheduler.registerKernel(0, "simple_kernel");
+  hal_holder.scheduler.registerKernel(1, "matmul_kernel");
+
+  // 设置 launch callback - 当 GPFIFO translator 解析出 kernel 启动参数时调用
+  hal_holder.scheduler.setLaunchCallback(
+      [](const char* kernel_name, uint32_t grid_x, uint32_t grid_y, uint32_t grid_z,
+         uint32_t block_x, uint32_t block_y, uint32_t block_z, uint32_t shared_mem) {
+        std::cout << "[GpuPlugin] LaunchCallback: kernel=" << kernel_name
+                  << " grid=(" << grid_x << "," << grid_y << "," << grid_z << ")"
+                  << " block=(" << block_x << "," << block_y << "," << block_z << ")"
+                  << std::endl;
+        (void)shared_mem;
+      });
+
   int ret = hal_user_set_doorbell_cb(&hal_holder.ctx,
       [](void* cb_ctx, uint32_t queue_id) {
         auto* dh = static_cast<HalHolder*>(cb_ctx);
