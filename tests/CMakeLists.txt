@@ -100,6 +100,7 @@ set(SIM_TESTS
     test_hardware_puller_emu.cpp
     test_global_scheduler.cpp
     test_gpfifo_translator.cpp
+    test_gpu_callback_integration.cpp
 )
 
 foreach(src ${STANDALONE_TESTS})
