@@ -109,6 +109,9 @@ const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
       {GPU_IOCTL_DESTROY_QUEUE, "DESTROY_QUEUE", &GpgpuDevice::handleDestroyQueue},
       {GPU_IOCTL_MAP_QUEUE_RING, "MAP_QUEUE_RING", &GpgpuDevice::handleMapQueueRing},
       {GPU_IOCTL_QUERY_QUEUE, "QUERY_QUEUE", &GpgpuDevice::handleQueryQueue},
+      {GPU_IOCTL_CREATE_VA_SPACE, "CREATE_VA_SPACE", &GpgpuDevice::handleCreateVASpace},
+      {GPU_IOCTL_DESTROY_VA_SPACE, "DESTROY_VA_SPACE", &GpgpuDevice::handleDestroyVASpace},
+      {GPU_IOCTL_REGISTER_GPU, "REGISTER_GPU", &GpgpuDevice::handleRegisterGPU},
   };
   return kTable;
 }
@@ -401,7 +404,16 @@ long GpgpuDevice::handleCreateQueue(void* argp) {
 
   std::lock_guard<std::mutex> lock(queue_mutex_);
 
+  // Validate VA Space exists (Phase 2 requirement)
+  if (!vaSpaceExists(args->va_space_handle)) {
+    std::cerr << "[GpgpuDevice] CREATE_QUEUE: va_space_handle not found "
+              << args->va_space_handle << "\n";
+    return -EINVAL;
+  }
+
   uint64_t handle = next_queue_handle_++;
+  if (handle == 0) return -ENOMEM;
+
   auto queue = std::make_shared<GpuQueueEmu>(
       static_cast<uint32_t>(handle),
       args->queue_type,
@@ -409,8 +421,13 @@ long GpgpuDevice::handleCreateQueue(void* argp) {
       args->ring_buffer_size > 0 ? static_cast<uint32_t>(args->ring_buffer_size) : GPU_MAX_RING_ENTRIES);
 
   queues_[handle] = queue;
+
+  // Dynamic doorbell offset: base + queue_handle * stride
   args->queue_handle = handle;
-  args->doorbell_pgoff = DOORBELL_MMAP_OFFSET;
+  args->doorbell_pgoff = DOORBELL_ALLOC_BASE + (handle * DOORBELL_ALLOC_STRIDE);
+
+  // Attach queue to VA Space
+  attachQueueToVASpace(args->va_space_handle, handle);
 
   // Phase 2.5: 注册到 Puller
   if (puller_) {
@@ -418,6 +435,7 @@ long GpgpuDevice::handleCreateQueue(void* argp) {
   }
 
   std::cout << "[GpgpuDevice] CREATE_QUEUE: handle=" << handle
+            << " va_space=" << args->va_space_handle
             << " type=" << args->queue_type
             << " ring=" << args->ring_buffer_size
             << " doorbell_pgoff=0x" << std::hex << args->doorbell_pgoff << "\n";
@@ -431,6 +449,20 @@ long GpgpuDevice::handleDestroyQueue(void* argp) {
   std::lock_guard<std::mutex> lock(queue_mutex_);
   auto it = queues_.find(handle);
   if (it == queues_.end()) return -ENOENT;
+
+  // Detach from VA Space (find which VA space has this queue)
+  {
+    std::lock_guard<std::mutex> lock_va(va_space_mutex_);
+    for (auto& kv : va_spaces_) {
+      auto& queues_vec = kv.second.attached_queues;
+      for (auto it_q = queues_vec.begin(); it_q != queues_vec.end(); ++it_q) {
+        if (*it_q == handle) {
+          queues_vec.erase(it_q);
+          break;
+        }
+      }
+    }
+  }
 
   // Phase 2.5: 从 Puller 注销
   if (puller_) {
@@ -477,8 +509,11 @@ long GpgpuDevice::handleQueryQueue(void* argp) {
   auto& queue = it->second;
   args->queue_type = queue->queueType();
   args->queue_id = queue->queueId();
-  args->doorbell_offset = DOORBELL_MMAP_OFFSET;
+  // Dynamic doorbell offset: base + queue_handle * stride
+  args->doorbell_offset = DOORBELL_ALLOC_BASE + (args->queue_handle * DOORBELL_ALLOC_STRIDE);
   args->ring_size = queue->ringHeader() ? queue->ringHeader()->capacity : 0;
+  // ring_addr: base of entries after ring header (0 if not mapped yet)
+  args->ring_addr = queue->ringHeader() ? reinterpret_cast<uint64_t>(queue->ringHeader() + 1) : 0;
   args->pending_count = queue->pendingCount();
   return 0;
 }
@@ -493,6 +528,70 @@ std::shared_ptr<GpuQueueEmu> GpgpuDevice::getQueue(uint64_t queue_handle) {
 bool GpgpuDevice::removeQueue(uint64_t queue_handle) {
   std::lock_guard<std::mutex> lock(queue_mutex_);
   return queues_.erase(queue_handle) > 0;
+}
+
+// ========== VA Space 辅助方法 (Phase 2) ==========
+
+long GpgpuDevice::createVASpace(uint32_t page_size, uint32_t flags,
+                                gpu_va_space_handle_t* out_handle) {
+  std::lock_guard<std::mutex> lock(va_space_mutex_);
+
+  gpu_va_space_handle_t handle = next_va_space_handle_++;
+  if (handle == 0) return -ENOMEM;
+
+  VASpace va_space;
+  va_space.handle = handle;
+  va_space.page_size = (page_size == 1) ? 65536 : 4096;
+  va_space.flags = flags;
+  va_space.created_at = static_cast<uint64_t>(std::time(nullptr));
+
+  va_spaces_[handle] = va_space;
+  *out_handle = handle;
+  return 0;
+}
+
+long GpgpuDevice::destroyVASpace(gpu_va_space_handle_t handle) {
+  std::lock_guard<std::mutex> lock(va_space_mutex_);
+
+  auto it = va_spaces_.find(handle);
+  if (it == va_spaces_.end()) return -ENOENT;
+  if (!it->second.attached_queues.empty()) return -EBUSY;
+
+  va_spaces_.erase(it);
+  return 0;
+}
+
+bool GpgpuDevice::vaSpaceExists(gpu_va_space_handle_t handle) const {
+  std::lock_guard<std::mutex> lock(va_space_mutex_);
+  return va_spaces_.find(handle) != va_spaces_.end();
+}
+
+long GpgpuDevice::attachQueueToVASpace(gpu_va_space_handle_t va_space_handle,
+                                       uint64_t queue_handle) {
+  std::lock_guard<std::mutex> lock(va_space_mutex_);
+
+  auto it = va_spaces_.find(va_space_handle);
+  if (it == va_spaces_.end()) return -ENOENT;
+
+  it->second.attached_queues.push_back(queue_handle);
+  return 0;
+}
+
+long GpgpuDevice::detachQueueFromVASpace(gpu_va_space_handle_t va_space_handle,
+                                        uint64_t queue_handle) {
+  std::lock_guard<std::mutex> lock(va_space_mutex_);
+
+  auto it = va_spaces_.find(va_space_handle);
+  if (it == va_spaces_.end()) return -ENOENT;
+
+  auto& queues = it->second.attached_queues;
+  for (auto it_q = queues.begin(); it_q != queues.end(); ++it_q) {
+    if (*it_q == queue_handle) {
+      queues.erase(it_q);
+      return 0;
+    }
+  }
+  return -ENOENT;
 }
 
 void* GpgpuDevice::mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset) {
@@ -531,5 +630,85 @@ void* GpgpuDevice::mmap(void* addr, size_t length, int prot, int flags, int fd, 
 
   std::cerr << "[GpgpuDevice] mmap: unknown offset 0x" << std::hex << offset << "\n";
   return MAP_FAILED;
+}
+
+// ========== VA Space 管理 (Phase 2) ==========
+
+long GpgpuDevice::handleCreateVASpace(void* argp) {
+  auto* args = static_cast<struct gpu_va_space_args*>(argp);
+  if (!args) return -EFAULT;
+
+  // Validate page_size: 0=4KB, 1=64KB
+  if (args->page_size > 1) {
+    std::cerr << "[GpgpuDevice] CREATE_VA_SPACE: invalid page_size " << args->page_size << "\n";
+    return -EINVAL;
+  }
+
+  std::lock_guard<std::mutex> lock(va_space_mutex_);
+
+  // Allocate handle
+  gpu_va_space_handle_t handle = next_va_space_handle_++;
+  if (handle == 0) {
+    std::cerr << "[GpgpuDevice] CREATE_VA_SPACE: handle overflow\n";
+    return -ENOMEM;
+  }
+
+  // Create VASpace
+  VASpace va_space;
+  va_space.handle = handle;
+  va_space.page_size = (args->page_size == 1) ? 65536 : 4096;  // 1=64KB, 0=4KB
+  va_space.flags = args->flags;
+  va_space.created_at = static_cast<uint64_t>(std::time(nullptr));
+
+  va_spaces_[handle] = va_space;
+  args->va_space_handle = handle;
+
+  std::cout << "[GpgpuDevice] CREATE_VA_SPACE: handle=" << handle
+            << " page_size=" << va_space.page_size << "KB flags=0x" << std::hex << args->flags
+            << "\n";
+  return 0;
+}
+
+long GpgpuDevice::handleDestroyVASpace(void* argp) {
+  auto handle = *static_cast<gpu_va_space_handle_t*>(argp);
+
+  std::lock_guard<std::mutex> lock(va_space_mutex_);
+
+  auto it = va_spaces_.find(handle);
+  if (it == va_spaces_.end()) {
+    std::cerr << "[GpgpuDevice] DESTROY_VA_SPACE: handle not found " << handle << "\n";
+    return -ENOENT;
+  }
+
+  // Check if any queues are attached
+  if (!it->second.attached_queues.empty()) {
+    std::cerr << "[GpgpuDevice] DESTROY_VA_SPACE: handle=" << handle
+              << " has " << it->second.attached_queues.size() << " attached queues\n";
+    return -EBUSY;
+  }
+
+  va_spaces_.erase(it);
+  std::cout << "[GpgpuDevice] DESTROY_VA_SPACE: handle=" << handle << "\n";
+  return 0;
+}
+
+long GpgpuDevice::handleRegisterGPU(void* argp) {
+  auto* args = static_cast<struct gpu_register_gpu_args*>(argp);
+  if (!args) return -EFAULT;
+
+  std::lock_guard<std::mutex> lock(va_space_mutex_);
+
+  // Validate VA Space exists
+  auto it = va_spaces_.find(args->va_space_handle);
+  if (it == va_spaces_.end()) {
+    std::cerr << "[GpgpuDevice] REGISTER_GPU: va_space_handle not found "
+              << args->va_space_handle << "\n";
+    return -ENOENT;
+  }
+
+  // For now, just acknowledge (multi-GPU support is Phase 3)
+  std::cout << "[GpgpuDevice] REGISTER_GPU: va_space=" << args->va_space_handle
+            << " gpu_id=" << args->gpu_id << " flags=0x" << std::hex << args->flags << "\n";
+  return 0;
 }
 
