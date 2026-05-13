@@ -1,0 +1,1 @@
+/home/runner/work/UsrLinuxEmu/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++ -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/plugin_gpu.dir/link.d -shared  -o plugin_gpu.so CMakeFiles/plugin_gpu.dir/sample_gpu.cpp.o CMakeFiles/plugin_gpu.dir/plugin_sample_gpu.cpp.o  ../src/libkernel.a -ldl -lpthread
