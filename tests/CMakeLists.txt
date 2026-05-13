@@ -84,6 +84,7 @@ set(STANDALONE_TESTS
     test_module_loader.cpp
     test_module_load_and_vfs.cpp
     test_plugin.cpp
+    test_va_space.cpp
 )
 
 # 定义Catch2测试的列表（使用Catch2框架的测试）
