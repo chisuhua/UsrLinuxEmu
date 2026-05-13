@@ -71,6 +71,7 @@ set(STANDALONE_TESTS
     test_compat_types.cpp
     test_doorbell_emu.cpp
     test_gpu_ioctl.cpp
+    test_gpu_ioctl_number.cpp
     test_gpu_mmap.cpp
     test_gpu_mmap_and_submit.cpp
     test_gpu_register.cpp

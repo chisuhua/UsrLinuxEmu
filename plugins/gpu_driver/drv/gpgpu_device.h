@@ -88,6 +88,7 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   };
 
   static const IoctlEntry& getIoctlTable();
+  static const IoctlEntry* getIoctlTablePtr();
 
   /** Queue 句柄 → QueueEmu 映射 */
   std::unordered_map<uint64_t, std::shared_ptr<GpuQueueEmu>> queues_;

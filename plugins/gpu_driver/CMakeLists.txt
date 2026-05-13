@@ -38,5 +38,14 @@ set_target_properties(gpu_driver_plugin PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
-# ── P1.1a 影子编译目标 ──────────────────────────
+# ── Post-build: 同步插件到 plugins/ 目录 ─────────────────────────
+# 解决 build/ vs plugins/ 两份 .so 的问题，确保 ModuleLoader 加载最新插件
+add_custom_command(TARGET gpu_driver_plugin POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:gpu_driver_plugin>
+        ${PROJECT_SOURCE_DIR}/plugins/plugin_gpu_driver.so
+    COMMENT "Copying gpu_driver_plugin.so to plugins/ directory"
+)
+
+# ── P1.1a 影子编译目标 ─────────────────────────
 option(ENABLE_GPU_SHADOW "启用 GPU 驱动影子编译（drv/sim/hal）" OFF)

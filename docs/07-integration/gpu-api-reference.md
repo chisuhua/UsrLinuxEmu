@@ -33,21 +33,56 @@ int ioctl(int fd, GPU_IOCTL_GET_DEVICE_INFO, struct gpu_device_info* info);
 
 ```cpp
 struct gpu_device_info {
-    u32 vendor_id;           // 厂商 ID (0x1000 = SIMULATED)
-    u32 device_id;           // 设备 ID (0x1001 = SIMULATED_V1)
-    u64 vram_size;           // VRAM 大小 (8GB)
-    u64 bar0_size;           // BAR0 大小 (16MB)
-    u32 max_channels;        // 最大队列数 (32)
-    u32 compute_units;       // 计算单元数 (64)
-    u32 gpfifo_capacity;    // GPFIFO 容量 (1024)
-    u32 cache_line_size;     // 缓存行大小 (64)
+    // === Phase 1.0 基础字段 ===
+    u32 vendor_id;               // 厂商 ID (0x1000 = SIMULATED)
+    u32 device_id;               // 设备 ID (0x1001 = SIMULATED_V1)
+    u64 vram_size;               // VRAM 大小 (8GB)
+    u64 bar0_size;               // BAR0 大小 (16MB)
+    u32 max_channels;            // 最大队列数 (32)
+    u32 compute_units;           // 计算单元数 (64)
+    u32 gpfifo_capacity;         // GPFIFO 容量 (1024)
+    u32 cache_line_size;         // 缓存行大小 (64)
 
-    // Phase 1.5 新增
-    u32 warp_size;           // Warp 大小 (CDNA=64, RDNA=32)
-    u32 max_clock_frequency; // 最大时钟频率 (MHz)
-    u32 driver_version;      // 驱动版本
+    // === Phase 1.5 扩展字段 (ABI 兼容，添加在末尾) ===
+    u32 warp_size;               // Warp 大小: NVIDIA=32, AMD CDNA=64, RDNA=32
+    u32 max_clock_frequency;     // 最大引擎时钟频率 (MHz)
+    u32 driver_version;          // 驱动版本号 (主.次.修订, 如 0x000500 = v0.5.0)
+    u32 firmware_version;        // Firmware/PSP 版本号 (主.次)
+    u32 simd_count;              // SIMD 单元数量 (AMD CU 或 NVIDIA SM)
+    u32 max_memory_clock_frequency;  // 最大内存时钟频率 (MHz)
+    u32 memory_bus_width;        // 内存位宽 (bits)
+    u32 peak_fp32_gflops;        // 峰值 FP32 理论性能 (GFLOPS)
+    u32 pcie_bandwidth;          // PCIe 带宽 (Mbps, 如 16000 = PCIe 4.0 x16)
+    u32 architecture_id;         // 架构标识符 (厂商特定: AMD family 或 NVIDIA compute capability)
+    char marketing_name[64];     // 市场营销名称 (UTF-8, 以 null 结尾)
 };
 ```
+
+**结构体总大小**: 144 字节 (ABI 兼容方式扩展)
+
+### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| vendor_id | u32 | PCI vendor ID (0x1000 = SIMULATED) |
+| device_id | u32 | PCI device ID (0x1001 = SIMULATED_V1) |
+| vram_size | u64 | Total device-local memory in bytes |
+| bar0_size | u64 | BAR0 (register space) size in bytes |
+| max_channels | u32 | Maximum number of GPU channels |
+| compute_units | u32 | Number of compute units (CUs or SMs) |
+| gpfifo_capacity | u32 | Maximum GPFIFO entries per channel |
+| cache_line_size | u32 | Cache line size in bytes (for CXL.cache) |
+| warp_size | u32 | Warp size: NVIDIA=32, AMD CDNA=64, RDNA=32 |
+| max_clock_frequency | u32 | Maximum engine clock frequency (MHz) |
+| driver_version | u32 | Driver version (main.minor.patch, e.g. 0x000500 = v0.5.0) |
+| firmware_version | u32 | Firmware/PSP version (main.minor) |
+| simd_count | u32 | Number of SIMD units (AMD CU or NVIDIA SM) |
+| max_memory_clock_frequency | u32 | Maximum memory clock frequency (MHz) |
+| memory_bus_width | u32 | Memory bus width (bits) |
+| peak_fp32_gflops | u32 | Peak FP32 theoretical performance (GFLOPS) |
+| pcie_bandwidth | u32 | PCIe bandwidth (Mbps, e.g. 16000 = PCIe 4.0 x16) |
+| architecture_id | u32 | Architecture identifier (vendor-specific) |
+| marketing_name | char[64] | Marketing name (UTF-8, null-terminated) |
 
 ### 返回值
 
