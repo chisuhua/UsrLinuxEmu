@@ -41,3 +41,10 @@ plugin.log
 # Temporary files
 /tmp/
 .aider*
+# Added by code-review-graph
+.code-review-graph/
+
+# Health cleanup 2026-06-15
+build_shadow/
+.sisyphus/
+.omo/run-continuation/
