@@ -48,3 +48,10 @@ plugin.log
 build_shadow/
 .sisyphus/
 .omo/run-continuation/
+
+archive/
+
+.opencode/
+.mcp.json
+.opencode.json
+.github/
