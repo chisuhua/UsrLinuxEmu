@@ -1,177 +1,182 @@
 # UsrLinuxEmu 项目概述
 
-## 项目简介
+> **最后验证**: 2026-06-16 (commit `374d463`)
+>
+> **本文档角色**: 一页式项目介绍。详细架构看 [post-refactor-architecture.md](post-refactor-architecture.md)（SSOT），开发命令看 [AGENTS.md](../../AGENTS.md)，项目说明看 [README.md](../../README.md)。
 
-UsrLinuxEmu 是一个用户态 Linux 内核模拟环境，用于在用户空间中仿真内核设备驱动行为，支持如 GPGPU 等复杂外设的建模与测试。这个项目允许开发者在不依赖真实硬件的情况下测试和验证设备驱动程序的行为。
+---
+
+## 一句话定义
+
+UsrLinuxEmu 是**用户态 Linux 内核模拟环境**，让驱动开发者在**不需要 root 权限、不需要内核编译、不需要真实硬件**的情况下开发、测试和调试设备驱动（特别是 GPGPU 驱动），并通过 TaskRunner 子模块在模拟器与真机驱动之间**零改动切换**。
+
+---
 
 ## 项目目标
 
-- 在用户态运行，无需 root 权限或内核编译
-- 模拟 Linux 内核设备行为（如 ioctl、mmap、VFS 注册等）
-- 提供可扩展的插件化设备模型，便于快速开发和验证新型设备驱动逻辑
-- 支持 GPU 类设备的内存管理、命令提交、寄存器访问等关键路径仿真
+为驱动开发者提供一条**"模拟器先跑通 → 真机再验证"**的默认工作流：
 
-## 核心功能
+1. 在普通用户身份下开发完整驱动逻辑（ioctl handler、内存管理、命令提交、调度）
+2. 用真实 GPU 工作流测试（GPFIFO 提交、VA Space、Queue、fence 同步）
+3. 把通过验证的代码零改动部署到真实内核驱动（TaskRunner 共享 IOCTL 头文件）
+4. Phase 2 起，模拟器支持**用户态队列提交**（mmap doorbell + 共享 ring buffer），对齐真实硬件行为
 
-### 设备抽象框架
-基于 [device.h](include/kernel/device/device.h) 实现统一设备接口，支持串口、内存设备、GPGPU 设备等。
+---
 
-### 文件操作抽象
-通过 [file_ops.h](include/kernel/file_ops.h) 模拟字符设备文件操作（open/ioctl/mmap/release）。
+## 关键特性
 
-### VFS 设备注册与查找
-使用 [vfs.h](include/kernel/vfs.h) 实现设备节点的注册与查找机制。
+- 🚀 **用户态运行** —— 不需要 root，不编译内核模块。驱动 bug 不会让系统 panic。
+- 🔌 **插件化架构** —— 设备作为 `.so` 通过 `dlopen` + `dlsym("mod")` 动态加载。`ModuleLoader::load_plugins("plugins")` 一行启动。
+- 🎮 **完整 GPU 支持** —— GPGPU 驱动 + 硬件仿真 + **VA Space** + **Queue** + **Ring Buffer** + Doorbell + Fence + Hardware Puller 状态机 + GlobalScheduler。
+- 🏗️ **驱动 / 仿真分离** —— `drv/`（可移植到真实内核）、`hal/`（接口契约）、`sim/`（仅用户态）、`shared/`（与 TaskRunner 共享的 ABI）。
+- 🔧 **Linux 兼容层** —— `include/linux_compat/` 提供 `u8/u32/u64`、`_IOR/_IOW/_IOWR`、`ERR_PTR`、DRM 子集等用户态实现。
+- 🧪 **Catch2 测试栈** —— `tests/catch_amalgamated.{hpp,cpp}` vendored 单文件，30+ 个独立测试二进制覆盖 IOCTL / VA Space / Queue / 插件加载。
+- 📊 **统一日志 / 配置 / 服务注册** —— 框架级组件（`Logger`、`ServiceRegistry`、`ConfigManager`、`WaitQueue`、`PollWatcher`）跨设备复用。
 
-### PCIe 设备仿真
-通过 [pcie_emu.h](include/kernel/pcie/pcie_emu.h) 模拟 PCIe 总线设备发现与配置。
+---
 
-### GPGPU 驱动模拟
-- 支持 cudaMalloc 对应的 ioctl(GPGPU_ALLOC_MEM) 内存分配
-- 使用 Buddy Allocator 管理 GPU 本地物理内存
-- Ring Buffer 管理命令队列，触发 GPU 模拟执行
-- mmap 映射设备内存供用户程序直接访问
+## 支持的设备
 
-### 插件化架构
-支持动态加载设备插件（如 [plugin_gpu.cpp](drivers/gpu/plugin_gpu.cpp)），实现模块解耦。
+| 设备 | 状态 | 路径 |
+|------|------|------|
+| GPGPU（VA Space / Queue / Pushbuffer / Doorbell / Fence / 模拟执行）| ✅ 完整 | `plugins/gpu_driver/` |
+| 内存设备（示例）| ✅ 示例 | `drivers/sample_memory/` |
+| 串口设备（示例）| ✅ 示例 | `drivers/sample_serial/` |
+| PCIe 设备 | ✅ 基础 | `include/kernel/pcie/` |
+| 网络设备 | 🔜 规划 | — |
+| 存储设备 | 🔜 规划 | — |
 
-### 日志与调试支持
-提供 [logger.h](include/kernel/logger.h) 统一日志输出，便于调试。
+---
 
-### 轮询等待机制
-[poll_watcher.h](include/kernel/poll_watcher.h) 支持 poll/select 事件通知。
+## 10 行上手示例
 
-## 项目架构
+```cpp
+#include "kernel/vfs.h"
+#include "kernel/module_loader.h"
+#include "gpu_driver/shared/gpu_ioctl.h"
+#include <fcntl.h>
 
-### 目录结构
+// 1. 加载 plugins/ 下所有插件（必须从项目根目录运行）
+ModuleLoader::load_plugins("plugins");
 
-```
-UsrLinuxEmu/
-├── CMakeLists.txt
-├── README.md
-├── build.sh
-├── run_cli.sh
-├── drivers/                 # 设备驱动实现
-│   ├── gpu/                # GPGPU 驱动实现
-│   │   ├── ring_buffer.h/cpp
-│   │   ├── buddy_allocator.h/cpp
-│   │   ├── address_space.h/cpp
-│   │   ├── gpu_command_packet.h
-│   │   ├── gpu_driver.h/cpp
-│   │   ├── ioctl_gpgpu.h
-│   │   └── plugin_gpu.cpp
-├── include/                # 核心框架头文件
-│   └── kernel/
-│       ├── device/         # 设备抽象类
-│       │   ├── device.h
-│       │   ├── gpgpu_device.h
-│       │   ├── memory_device.h
-│       │   └── serial_device.h
-│       ├── pcie/
-│       │   └── pcie_emu.h
-│       ├── config_manager.h
-│       ├── file_ops.h
-│       ├── ioctl.h
-│       ├── logger.h
-│       ├── module.h
-│       ├── module_loader.h
-│       ├── pcie_device.h
-│       ├── plugin_manager.h
-│       ├── poll_watcher.h
-│       ├── service_registry.h
-│       ├── sync_utils.h
-│       ├── types.h
-│       ├── vfs.h
-│       └── wait_queue.h
-├── plugins/                # 插件配置与构建入口
-├── simulator/              # 设备行为模拟器
-│   └── gpu/
-│       ├── basic_gpu_simulator.h/cpp
-│       ├── command_parser.h/cpp
-│       └── gpu_register.h
-├── src/                    # 框架核心实现
-│   └── kernel/
-├── tests/                  # 单元测试
-├── tools/                  # 工具
-│   └── cli/                # 命令行交互工具
-├── zpoline/                # 独立实验性代码
-└── docs/                   # 项目文档（新添加）
+// 2. 打开设备（VFS 单例）
+auto dev = VFS::instance().open("/dev/gpgpu0", O_RDWR);
+
+// 3. 查询设备信息
+gpu_device_info info{};
+dev->fops->ioctl(dev->fd, GPU_IOCTL_GET_DEVICE_INFO, &info);
+printf("GPU: %s, VRAM=%llu MB\n", info.marketing_name,
+       (unsigned long long)(info.vram_size / (1024 * 1024)));
 ```
 
-### 技术架构图
+完整流程示例（VA Space + Queue + Pushbuffer 提交）见 [README.md](../../README.md#示例代码) 与 [post-refactor-architecture.md](post-refactor-architecture.md) §1.3。
+
+---
+
+## 30 秒架构图
 
 ```
-[User App] 
-    ↓ (system call wrappers)
-[Libc → ioctl/mmap/write]
-    ↓ (redirected to emu)
-[UsrLinuxEmu Kernel Core]
-    ├── VFS → Device Lookup
-    ├── File Operations Dispatcher
-    └── Plugin Manager → Load plugin_gpu.so
-        ↓
-[GpgpuDevice] ↔ [GpuDriver] ↔ [BuddyAllocator, RingBuffer]
-        ↓
-[BasicGpuSimulator] ← command packet
-        ↓
-copy_from_device(phys_addr) → System Uncached Memory
+用户应用层
+   tests/, external/TaskRunner, 用户驱动
+       ↓ ioctl(fd, GPU_IOCTL_*, ...)
+内核模拟框架层 (SHARED 库)
+   src/kernel/  + include/kernel/
+   VFS (Meyers singleton) | ModuleLoader
+   ServiceRegistry | Logger | WaitQueue
+   include/linux_compat/
+       ↓ dlopen("plugins/*.so")
+设备驱动层
+   plugins/gpu_driver/
+   ├── drv/    GpgpuDevice (ioctl 派发表)
+   ├── hal/    struct gpu_hal_ops (11 函数指针)
+   ├── sim/    scheduler/ hardware/ gpu_queue_emu
+   └── shared/ gpu_ioctl.h, gpu_types.h, gpu_queue.h
+       ↓ HAL ops 调用
+硬件仿真层
+   plugins/gpu_driver/sim/  +  libgpu_core/ (纯 C buddy allocator)
 ```
 
-## 设计模式
+---
 
-- **抽象工厂模式**: [device.h](include/kernel/device/device.h) 定义设备基类，派生出 [gpgpu_device.h](include/kernel/device/gpgpu_device.h)、[serial_device.h](include/kernel/device/serial_device.h) 等具体设备
-- **策略模式**: [file_ops.h](include/kernel/file_ops.h) 封装不同设备的 ioctl/mmap 策略
-- **观察者模式**: [poll_watcher.h](include/kernel/poll_watcher.h) 实现事件监听与通知
-- **插件模式**: [plugin_manager.h](include/kernel/plugin_manager.h) + [module_loader.h](include/kernel/module_loader.h) 实现运行时插件加载
-- **单例模式**: [service_registry.h](include/kernel/service_registry.h) 提供全局服务注册与获取
+## 当前阶段
 
-## 技术选型
+**post-Phase 2**（2026-05-13 重构窗口完成）：
 
-- 前端: 无 GUI，纯 C++ 控制台工具
-- 后端: C++17
-- 构建系统: CMake 3.14+
-- 核心库: STL, pthread（隐式）
-- 模拟器: 自研 basic_gpu_simulator
-- 通信机制: ioctl + mmap + ring buffer
+- ✅ System C IOCTL 体系（`GPU_IOCTL_*` 0x01-0x43）
+- ✅ VA Space 抽象（`GPU_IOCTL_CREATE_VA_SPACE` 0x30）
+- ✅ Queue / Ring Buffer / Doorbell（0x40-0x43）
+- ✅ Hardware Puller FSM（IDLE → FETCH → DECODE → SCHEDULE → DISPATCH → COMPLETE）
+- ✅ GlobalScheduler 路由到 compute / copy / firmware 引擎
+- ✅ 用户态队列提交双路径（mmap doorbell 快速路径 + ioctl 回退路径，ADR-024）
+- ✅ drv/hal/sim/shared 物理分离（ADR-018/023）
+- ✅ libgpu_core 纯 C 提取（ADR-020）
+- ✅ Catch2 测试栈（30+ 独立测试）
 
-## 版本和兼容性要求
+后续计划：网络设备 / 存储设备插件（Phase 3）→ 稳定 v1.0（Phase 4）。详见 [post-refactor-architecture.md](post-refactor-architecture.md) §1.1 时间轴。
 
-- CMake ≥ 3.14
-- C++17 编译支持（set(CMAKE_CXX_STANDARD 17)）
+---
 
-## 开发环境设置
+## 该读哪些文档
 
-### 必需工具
-- CMake ≥ 3.14
-- GCC 或 Clang 支持 C++17
-- Make/Ninja
-- Linux 环境（推测，因使用 ioctl/mmap 等系统调用模拟）
+| 你是谁 | 路径 |
+|--------|------|
+| **新用户** | [README.md](../../README.md) → [AGENTS.md](../../AGENTS.md)（构建命令） |
+| **架构理解者** | [post-refactor-architecture.md](post-refactor-architecture.md)（SSOT）→ [architecture_design.md](architecture_design.md)（设计原理） |
+| **驱动开发者** | [AGENTS.md](../../AGENTS.md) → `plugins/gpu_driver/shared/gpu_ioctl.h` |
+| **贡献者** | [AGENTS.md](../../AGENTS.md)（编码风格）→ `docs/00_adr/`（架构决策） |
+| **维护者** | [post-refactor-architecture.md](post-refactor-architecture.md) §3 修复清单（32 项） |
 
-### 搭建开发环境
+---
 
-```bash
-cd /mnt/ubuntu/chisuhua/github/UsrLinuxEmu
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-```
+## 关键路径速查
 
-### 运行环境
-- 构建命令: `./build.sh`（项目根目录脚本）
-- 本地开发: 构建后运行 `./run_cli.sh` 启动 CLI 工具
-- CLI 入口: [tools/cli/main.cpp](tools/cli/main.cpp)
-- 测试命令: 编译后的测试二进制位于 `bin/`，例如 `bin/test_gpu_submit`
+| 组件 | 路径 |
+|------|------|
+| 框架入口 | `src/kernel/vfs.cpp` + `include/kernel/vfs.h` |
+| GPU 插件入口 | `plugins/gpu_driver/plugin.cpp` |
+| IOCTL 定义（System C） | `plugins/gpu_driver/shared/gpu_ioctl.h` |
+| 数据类型 | `plugins/gpu_driver/shared/gpu_types.h` |
+| Queue 定义 | `plugins/gpu_driver/shared/gpu_queue.h` |
+| HAL 接口 | `plugins/gpu_driver/hal/gpu_hal.h` |
+| 设备类 | `plugins/gpu_driver/drv/gpgpu_device.h` |
+| 纯 C 库 | `libgpu_core/include/gpu_buddy.h` |
+| Linux 兼容 | `include/linux_compat/` |
+| 权威架构说明 | `docs/02_architecture/post-refactor-architecture.md` |
 
-## 组件交互流程
+---
 
-1. 用户程序调用标准 API（如 ioctl）→ 被重定向至模拟框架
-2. VFS 根据设备名查找对应设备实例 → 调用其 file_operations 回调
-3. GPGPU 设备通过 BuddyAllocator 分配物理地址 → 返回 handle
-4. mmap 将设备内存映射到用户空间
-5. write/write_reg 触发命令写入 → GpuDriver 解析并推送到 RingBuffer
-6. 模拟器线程消费命令 → BasicGpuSimulator 执行模拟动作
+## IOCTL 速查（System C）
 
-## 已知问题
+| 编号 | 宏 | 方向 | 作用 |
+|------|------|------|------|
+| 0x01 | `GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH` | `_IOW` | 提交 GPFIFO entries |
+| 0x10 | `GPU_IOCTL_ALLOC_BO` | `_IOWR` | 分配 GPU buffer object |
+| 0x11 | `GPU_IOCTL_FREE_BO` | `_IOW` | 释放 buffer object |
+| 0x12 | `GPU_IOCTL_MAP_BO` | `_IOWR` | 映射 BO 到 GPU VA |
+| 0x13 | `GPU_IOCTL_WAIT_FENCE` | `_IOW` | 等待 fence 完成 |
+| 0x20 | `GPU_IOCTL_GET_DEVICE_INFO` | `_IOR` | 查询设备能力 |
+| 0x30 | `GPU_IOCTL_CREATE_VA_SPACE` | `_IOWR` | 创建 VA Space（Phase 2）|
+| 0x31 | `GPU_IOCTL_DESTROY_VA_SPACE` | `_IOW` | 销毁 VA Space |
+| 0x40 | `GPU_IOCTL_CREATE_QUEUE` | `_IOWR` | 创建命令队列（Phase 2）|
+| 0x42 | `GPU_IOCTL_MAP_QUEUE_RING` | `_IOWR` | mmap 共享 ring buffer |
+| 0x43 | `GPU_IOCTL_QUERY_QUEUE` | `_IOWR` | 查询队列状态 |
 
-- [zpoline/](zpoline) 目录包含独立示例代码，与主项目关系未明
-- [plugins/Makefile](plugins/Makefile) 存在但无说明文档，插件构建流程未清晰定义
-- 多线程同步细节（如 RingBuffer 并发访问）依赖 [sync_utils.h](include/kernel/sync_utils.h)，但其实现未提供
+> System A 和 System B（前两代 IOCTL 体系）已删除或归档；**当前唯一活跃的是 System C（`GPU_IOCTL_*`）**。新代码请直接使用 System C。
+
+---
+
+## 常见问题（一句话版）
+
+- **跑测试要"Device not found"** → 从项目根目录运行，插件路径是相对的（详见 [AGENTS.md](../../AGENTS.md)）
+- **ioctl 返回 `-EFAULT`** → 检查结构体是否完整初始化
+- **为什么 `kernel` 库必须是 SHARED** → `VFS::instance()` 等单例的链接模型决定（Issue #11）
+- **TaskRunner 怎么接** → 共享 `plugins/gpu_driver/shared/` 头文件，子模块符号链接访问
+- **可以跑真实 CUDA 程序吗** → 当前不能完整支持 CUDA runtime；TaskRunner 可基于 System C 提交 GPFIFO，模拟器已跑通基本调度链路
+
+详细问答见 [README.md](../../README.md#常见问题) 与 [AGENTS.md](../../AGENTS.md)。
+
+---
+
+**维护者**: UsrLinuxEmu Team
+**最后验证**: 2026-06-16
+**对应代码 commit**: `374d463`

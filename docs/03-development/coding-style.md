@@ -16,19 +16,21 @@
 使用 **CamelCase**，首字母大写：
 
 ```cpp
-class GpuDevice;
+class GpgpuDevice;
 struct MemoryBlock;
-class BuddyAllocator;
+class GpuQueueEmu;
 ```
+
+> **注**: 已删除的旧类名（`GpuDevice`、`GpuDriver`、`BuddyAllocator`）请勿使用。GPGPU 设备类在 `plugins/gpu_driver/drv/gpgpu_device.h` 中名为 `GpgpuDevice`。buddy allocator 改用 `libgpu_core/gpu_buddy.h` 纯 C 接口（`gpu_buddy_init/alloc/free`），无 C++ 类。
 
 ### 函数名
 
-使用 **camelCase**，首字母小写：
+使用 **snake_case**，全部小写，下划线分隔（与 `AGENTS.md` 保持一致）：
 
 ```cpp
-void allocateMemory();
-int submitCommand();
-size_t getTotalSize() const;
+void allocate_memory();
+int submit_command();
+size_t get_total_size() const;
 ```
 
 ### 变量名
@@ -43,14 +45,14 @@ uint32_t command_type;
 
 ### 成员变量
 
-使用 **snake_case** 加下划线后缀：
+使用 **snake_case** 加下划线后缀（与 `AGENTS.md` 保持一致）：
 
 ```cpp
-class GpuDriver {
+class GpgpuDevice {
 private:
     size_t memory_size_;
     uint64_t gpu_addr_;
-    std::unique_ptr<BuddyAllocator> allocator_;
+    std::unique_ptr<VASpace> va_space_;
 };
 ```
 

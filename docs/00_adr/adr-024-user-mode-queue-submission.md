@@ -152,13 +152,13 @@ HardwarePullerEmu runLoop()
 
 ```cpp
 // 创建命令队列 — 返回 queue handle 和 doorbell offset
-#define GPU_IOCTL_CREATE_QUEUE       _IOWR(GPU_IOCTL_BASE, 0x33, struct gpu_create_queue_args)
+#define GPU_IOCTL_CREATE_QUEUE       _IOWR(GPU_IOCTL_BASE, 0x40, struct gpu_queue_args)
 
 // 获取 Ring Buffer 的共享内存映射
-#define GPU_IOCTL_MAP_QUEUE_RING     _IOWR(GPU_IOCTL_BASE, 0x34, struct gpu_queue_ring_args)
+#define GPU_IOCTL_MAP_QUEUE_RING     _IOWR(GPU_IOCTL_BASE, 0x42, struct gpu_queue_map_ring_args)
 
-// 获取 Doorbell 的 MMIO 映射
-#define GPU_IOCTL_MAP_QUEUE_DOORBELL _IOW(GPU_IOCTL_BASE, 0x35, struct gpu_queue_doorbell_args)
+// 查询队列状态 (Phase 2 新增，替代原 MAP_QUEUE_DOORBELL；doorbell 已合并到 CREATE_QUEUE 返回的 doorbell_pgoff 字段)
+#define GPU_IOCTL_QUERY_QUEUE        _IOWR(GPU_IOCTL_BASE, 0x43, struct gpu_queue_info_args)
 ```
 
 #### 1.2 数据结构

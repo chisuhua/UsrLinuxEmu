@@ -24,6 +24,19 @@ make test
 
 **注意**: 测试必须从项目根目录运行（不是 build/bin/），因为插件路径是相对路径。
 
+## 测试框架
+
+项目使用 **Catch2**（vendored 单文件 amalgamation：`tests/catch_amalgamated.{hpp,cpp}`）。
+不要使用 GTest（`TEST()`/`TEST_F`/`EXPECT_*`/`ASSERT_*`/`gtest/gtest.h`）。
+
+Catch2 语法：
+- `TEST_CASE("name", "[tag]")`（替代 GTest `TEST(Suite, Name)`）
+- `REQUIRE(expr)`（强约束，强制求值）
+- `CHECK(expr)`（弱约束，继续执行）
+- `SECTION("name")`（嵌套子例，替代 GTest 固件）
+
+详细说明见 `docs/00_adr/adr-010-gtest-migration.md`（测试框架选型 ADR）。
+
 ## 关键架构决策
 
 ### kernel 库必须是 SHARED

@@ -162,24 +162,19 @@ g++ --version  # 需要 GCC 7+ 或 Clang 5+
 sudo apt install gcc-9 g++-9
 ```
 
-### 问题：找不到 GTest
+### 问题：测试链接不到 `catch_amalgamated.cpp`
 
 **错误信息**:
 ```
-Could not find GTest
+undefined reference to `Catch::TestRegistrar::TestRegistrar(...)'
 ```
 
 **解决方案**:
-```bash
-# Ubuntu/Debian
-sudo apt install libgtest-dev
-cd /usr/src/gtest
-sudo cmake CMakeLists.txt
-sudo make
-sudo cp *.a /usr/lib
 
-# 或者禁用测试构建
-cmake .. -DBUILD_TESTS=OFF
+`Catch2` 已经 vendored 在 `tests/catch_amalgamated.{hpp,cpp}`，正常情况下无需任何额外配置。如果出现这个错误，说明 `tests/CMakeLists.txt` 中的 `add_catch_test` 函数没有把你新加的测试文件归入 `CATCH2_TESTS` 列表。把它从 `STANDALONE_TESTS` 移到 `CATCH2_TESTS`，或在 `tests/CMakeLists.txt` 末尾追加一行：
+
+```cmake
+add_catch_test(<test_name> <test_source>.cpp)
 ```
 
 ## 下一步
@@ -187,8 +182,8 @@ cmake .. -DBUILD_TESTS=OFF
 构建完成后，继续阅读：
 
 - [第一个示例](first-example.md) - 运行你的第一个 GPU 示例
-- [测试指南](../04-building/testing-guide.md) - 了解如何运行测试
+- [测试指南](../04-building/testing_guide.md) - 了解如何运行和编写测试
 
 ---
 
-**最后更新**: 2026-03-23
+**最后更新**: 2026-06-16

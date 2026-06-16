@@ -389,9 +389,10 @@ UsrLinuxEmu/plugins/gpu_driver/shared/  # Canonical 接口定义源
  * Queue Management (User Mode Queue - ADR-024)
  * ======================================================================== */
 
-#define GPU_IOCTL_CREATE_QUEUE       _IOWR(GPU_IOCTL_BASE, 0x33, struct gpu_create_queue_args)
-#define GPU_IOCTL_DESTROY_QUEUE      _IOW(GPU_IOCTL_BASE, 0x34, u64)  // queue_handle
-#define GPU_IOCTL_MAP_QUEUE_RING     _IOWR(GPU_IOCTL_BASE, 0x35, struct gpu_queue_map_ring_args)
+#define GPU_IOCTL_CREATE_QUEUE       _IOWR(GPU_IOCTL_BASE, 0x40, struct gpu_queue_args)
+#define GPU_IOCTL_DESTROY_QUEUE      _IOW(GPU_IOCTL_BASE, 0x41, gpu_queue_handle_t)
+#define GPU_IOCTL_MAP_QUEUE_RING     _IOWR(GPU_IOCTL_BASE, 0x42, struct gpu_queue_map_ring_args)
+#define GPU_IOCTL_QUERY_QUEUE        _IOWR(GPU_IOCTL_BASE, 0x43, struct gpu_queue_info_args)
 ```
 
 ### 数据结构
@@ -432,9 +433,9 @@ struct gpu_queue_map_ring_args {
 |------|------|------|
 | 0x01-0x03 | 命令提交 + 事件注册 | ✅ 已定义 |
 | 0x10-0x13 | BO 管理 + Fence | ✅ 已定义 |
-| 0x20 | ~~LAUNCH_CB~~ | ❌ **待删除** |
+| 0x20 | ~~LAUNCH_CB~~ | ✅ **已删除 (commit `b78edc9`)** |
 | 0x30-0x32 | VA Space + GPU 注册 | ✅ 已定义 |
-| **0x33-0x35** | **Queue 管理 (ADR-024)** | **🆕 新增** |
+| **0x40-0x43** | **Queue 管理 (ADR-024)** | **✅ 已实现 (Phase 2)** |
 
 ---
 

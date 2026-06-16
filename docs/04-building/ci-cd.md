@@ -316,7 +316,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y g++ libgtest-dev
+        sudo apt-get install -y g++
     
     - name: Configure CMake (ASan)
       run: |
@@ -574,8 +574,8 @@ env:
 
 ## 相关文档
 
-- [构建系统](build-system.md) - CMake 配置
-- [测试指南](testing-guide.md) - 单元测试编写
+- [构建系统](build_system.md) - CMake 配置
+- [测试指南](testing_guide.md) - 单元测试编写
 - [代码风格](../03-development/coding-style.md) - 编码规范
 
 ---

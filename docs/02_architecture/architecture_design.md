@@ -1,773 +1,484 @@
-# UsrLinuxEmu 架构设计文档
+# UsrLinuxEmu 架构设计：决策与原理
 
-**版本**: v0.2-draft  
-**创建日期**: 2026-04-07  
-**状态**: 待老板审查  
-
----
-
-## 一、系统架构全景
-
-### 1.1 四层架构图
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      用户应用层                                   │
-│    CUDA App / Vulkan App / 自定义应用 / 测试程序                   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ ioctl(/dev/gpgpu0)
-┌─────────────────────────────────────────────────────────────────┐
-│                   UsrLinuxEmu (本项目)                            │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   GpuDriver     │  │   RingBuffer    │  │  GPU Simulator  │ │
-│  │  (ioctl 处理层)  │  │  (命令队列)      │  │  (硬件仿真)      │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │  BuddyAllocator │  │  Linux Compat   │  │   VFS/Plugin    │ │
-│  │  (内存管理)      │  │  (兼容层)        │  │   (框架层)       │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ 调用
-┌─────────────────────────────────────────────────────────────────┐
-│                   TaskRunner (运行时)                             │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   CmdStream     │  │  CmdProcessor   │  │   Barrier/      │ │
-│  │  (命令流生成)    │  │  (任务执行)      │  │   Fence(同步)   │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 1.2 ioctl 数据流
-
-```
-TaskRunner (CmdProcessor)
-         │
-         │ ioctl(fd, GPU_SUBMIT_CMD, &args)
-         ▼
-┌─────────────────────────────────────────────────────────┐
-│  GpuDriver::ioctl()                                      │
-│    ├─ switch(cmd)                                        │
-│    ├─ case GPU_SUBMIT_CMD:                               │
-│    │     └─ ring_buffer_->write(cmd_buffer, size)        │
-│    └─ case GPU_ALLOC_MEM:                                │
-│          └─ buddy_alloc_->allocate(size)                 │
-└─────────────────────────────────────────────────────────┘
-         │
-         │ notify()
-         ▼
-┌─────────────────────────────────────────────────────────┐
-│  GPU Simulator (worker thread)                           │
-│    ├─ ring_buffer_->read()                               │
-│    ├─ parse command                                      │
-│    └─ execute + memory access                            │
-└─────────────────────────────────────────────────────────┘
-```
+> **最后验证**: 2026-06-16 (commit `374d463`)
+>
+> **作者**: UsrLinuxEmu Architecture Team
+> **作用**: 本文是 `architecture.md` 的**姊妹文档**，聚焦**设计决策背后的原理**而非结构本身。
+> **配套阅读**:
+> - [architecture.md](architecture.md) —— 当前架构的**结构性总览**（分层、目录、API）
+> - [post-refactor-architecture.md](post-refactor-architecture.md) —— **SSOT**（权威架构说明 + docs 同步方案）
+> - [AGENTS.md](../../AGENTS.md) —— 开发指南与构建命令
+>
+> **引用规范**: 所有 ADR 引用遵循 `adr-XXX-title.md` 格式，路径为 `docs/00_adr/`。
 
 ---
 
-## 二、ioctl 接口设计
+## 目录
 
-### 2.1 头文件结构
+- [§0 文档定位与读者指南](#0-文档定位与读者指南)
+- [§1 顶层决策：为什么是用户态模拟](#1-顶层决策为什么是用户态模拟)
+- [§2 三大架构支柱](#2-三大架构支柱)
+  - [2.1 插件化架构（ADR-003）](#21-插件化架构adr-003)
+  - [2.2 分层架构（ADR-006）](#22-分层架构adr-006)
+  - [2.3 设备发现与 Linux 兼容（ADR-008 / ADR-009）](#23-设备发现与-linux-兼容adr-008--adr-009)
+- [§3 核心：drv / hal / sim / shared 四分（ADR-018 / ADR-023）](#3-核心drv--hal--sim--shared-四分adr-018--adr-023)
+  - [3.1 分离的动机](#31-分离的动机)
+  - [3.2 依赖方向：drv → hal → sim](#32-依赖方向drv--hal--sim)
+  - [3.3 HAL 接口契约的形式选择](#33-hal-接口契约的形式选择)
+  - [3.4 构造注入而不是单例](#34-构造注入而不是单例)
+- [§4 算法核心提取：为什么 libgpu_core 是纯 C（ADR-020）](#4-算法核心提取为什么-libgpu_core-是纯-cadr-020)
+  - [4.1 纯度的代价与回报](#41-纯度的代价与回报)
+  - [4.2 完全无锁：调用者责任](#42-完全无锁调用者责任)
+  - [4.3 与 HAL 的边界](#43-与-hal-的边界)
+- [§5 命令处理的状态机：Hardware Puller（ADR-021）](#5-命令处理的状态机hardware-pulleradr-021)
+  - [5.1 为什么必须是状态级仿真](#51-为什么必须是状态级仿真)
+  - [5.2 Doorbell 触发而非直接处理](#52-doorbell-触发而非直接处理)
+  - [5.3 Global Scheduler 的责任分配](#53-global-scheduler-的责任分配)
+- [§6 用户态队列提交：双路径架构（ADR-024）](#6-用户态队列提交双路径架构adr-024)
+  - [6.1 真实硬件的参照](#61-真实硬件的参照)
+  - [6.2 为什么是"快速路径 + 回退路径"而不是替换](#62-为什么是快速路径--回退路径而不是替换)
+  - [6.3 VA Space 作为 Queue 的归属](#63-va-space-作为-queue-的归属)
+- [§7 跨切关注：namespace、错误码、测试框架](#7-跨切关注namespace错误码测试框架)
+  - [7.1 `usr_linux_emu` 命名空间（ADR-002 衍生）](#71-usr_linux_emu-命名空间adr-002-衍生)
+  - [7.2 Linux 错误码统一](#72-linux-错误码统一)
+  - [7.3 测试框架：Catch2（ADR-010 实际结果）](#73-测试框架catch2adr-010-实际结果)
+- [§8 与真实硬件的语义对齐](#8-与真实硬件的语义对齐)
+- [§9 已识别的设计张力与开放问题](#9-已识别的设计张力与开放问题)
+- [附录 A：ADR 索引（本文引用）](#附录-aadr-索引本文引用)
+- [附录 B：变更记录](#附录-b变更记录)
+
+---
+
+## §0 文档定位与读者指南
+
+`architecture.md` 回答的是"**长什么样**"：分层、目录、API、数据流。本文回答的是"**为什么这样**"：每一个看似武断的目录划分、接口签名、依赖方向背后，源自哪条 ADR，权衡了什么代价。
+
+**新读者路径**：先读 `architecture.md` 拿到"地图"，再读本文理解"路线为什么这么走"。
+
+**架构师 / 维护者**：当收到"这个设计是否合理"的质疑时，引用本文对应的 ADR 章节回应。
+
+**贡献者**：在写新代码前，先看相关章节确认"这代码属于哪一层、用哪种依赖方向"。
+
+---
+
+## §1 顶层决策：为什么是用户态模拟
+
+> 详见 [ADR-001](../00_adr/adr-001-user-mode-emulation.md)
+
+设备驱动开发传统上要求 root 权限、内核编译、模块加载、硬件可达，**开发门槛极高**。UsrLinuxEmu 用一个激进的前提换掉了这套模型：
+
+**决策**：整套 Linux 内核设备模型在用户态模拟。开发者用普通用户身份跑一个可执行文件，就能开发、测试、调试驱动（特别是 GPU 驱动）。
+
+**原理层面的代价**：
+
+| 维度 | 收益 | 代价 |
+|------|------|------|
+| 安全性 | 驱动 bug 不会让内核 panic | 真实内核态竞态无法仿真 |
+| 迭代速度 | 改代码 → 重链接 → 重跑，无需重启 | 需要适配层 |
+| 可调试性 | GDB、Valgrind、AddressSanitizer 直接用 | 性能轨迹与真实驱动不完全一致 |
+| 跨平台潜力 | 理论上 macOS 也能跑（已部分实现） | Linux 内核 API 兼容性是天花板 |
+
+这个决策**不是为生产环境部署驱动**准备的；它是为了**缩短驱动开发者从"想清楚"到"验证过"的距离**。TaskRunner（外部子模块）通过共享的 `plugins/gpu_driver/shared/` 头文件在模拟器与真实内核驱动之间零改动切换，**让"先在模拟器跑通，再到真机验证"成为默认工作流**。
+
+---
+
+## §2 三大架构支柱
+
+### 2.1 插件化架构（ADR-003）
+
+> 详见 [ADR-003](../00_adr/adr-003-plugin-architecture.md)
+
+设备作为**动态库（`.so`）**动态加载，由 `ModuleLoader::load_plugins("plugins")` 触发（`include/kernel/module_loader.h`）。
+
+**关键细节**：
+
+- **加载机制**：标准 `dlopen` + `dlsym(handle, "mod")` 模式，插件必须导出名为 `mod` 的 `struct module` 符号（见 [AGENTS.md](../../AGENTS.md) "kernel 库必须是 SHARED" 段）
+- **配置载体**：`plugins/plugins.json` 列出所有插件
+- **生命周期**：VFS 在插件加载时注册设备节点，卸载时反注册
+
+**原理**：
+
+1. **核心框架零依赖设备类型** —— 加新设备不改 `src/kernel/` 一行代码
+2. **并行开发** —— 多个开发者可同时开发不同设备插件，无合并冲突
+3. **故障隔离** —— 某个插件 bug 不影响其他插件和框架
+4. **可选加载** —— 资源受限场景下只加载需要的插件
+
+**为什么不直接静态链接？** 静态链接会让每个测试二进制都带一份内核框架和所有设备，浪费空间且无法独立部署设备。
+
+### 2.2 分层架构（ADR-006）
+
+> 详见 [ADR-006](../00_adr/adr-006-layered-architecture.md)
+
+四层：用户应用层 / 框架层 / 设备驱动层 / 硬件模拟层。**这层的物理载体在不同阶段经历过重组**——Phase 1.5 之后，驱动层进一步被拆分为 `drv/hal/sim/shared/`（见 §3），分层没有变化，但物理分离更细。
+
+### 2.3 设备发现与 Linux 兼容（ADR-008 / ADR-009）
+
+> 详见 [ADR-008](../00_adr/adr-008-linux-api-compat.md) / [ADR-009](../00_adr/adr-009-singleton-pattern.md)
+
+**Linux 兼容层**（`include/linux_compat/`）是用户态模拟能"假装是内核"的桥梁：
+
+- `u8/u16/u32/u64` 类型
+- `ERR_PTR/PTR_ERR` 宏
+- `_IOR/_IOW/_IOWR` ioctl 编码
+- `GFP_*` 分配标志
+- DRM 子集（`drm_ioctl.h` / `drm_gem.h` / `drm_driver.h`）
+
+**单例模式**（Meyers singleton）用于 `VFS::instance()`、`ServiceRegistry::instance()` 等全局服务点。**Issue #11** 的修复（`kernel` 库必须 SHARED）直接源自此处——单例的链接模型决定了框架必须 SHARED 而非 STATIC（见 [AGENTS.md](../../AGENTS.md) 关键架构决策段）。
+
+---
+
+## §3 核心：drv / hal / sim / shared 四分（ADR-018 / ADR-023）
+
+> 详见 [ADR-018](../00_adr/adr-018-driver-sim-separation.md) / [ADR-023](../00_adr/adr-023-hal-interface.md)
+>
+> **这是 Phase 1.5 的核心架构重组**，将原本塞在 635 行 `plugin.cpp` 里的代码按"是否可移植到真实内核"重新分类。
+
+### 3.1 分离的动机
+
+原来 `plugin.cpp` 混着两类**本质不同**的代码：
+
+- **驱动代码**（移植目标）：`handle_pushbuffer_submit_batch`、`handle_alloc_bo`、GEM object 生命周期
+- **仿真代码**（仅用户态环境）：`BuddyAllocator`、fence map、`std::cout` 调试日志
+
+混在一起导致三个灾难：
+
+1. **不可移植**：驱动代码里 `std::mutex`、`std::cout` 直接用，进内核得全部重写
+2. **职责不清**：新人不知道哪些代码能动、哪些是"神圣的"
+3. **不可独立测试**：仿真逻辑和驱动逻辑绑死，没法拆开测
+
+**决策**：物理拆为四个目录：
+
+| 目录 | 角色 | 命运 |
+|------|------|------|
+| `plugins/gpu_driver/drv/` | GpgpuDevice 派发表、ioctl handler、fence tracker、VA Space 管理 | **移植到真实内核** |
+| `plugins/gpu_driver/hal/` | `struct gpu_hal_ops`（11 个函数指针）+ `hal_user` + `hal_mock` | 接口两边都编译，实现两边不同 |
+| `plugins/gpu_driver/sim/` | `GlobalScheduler`、`HardwarePullerEmu`、`DoorbellEmu`、`SimBuddyAllocator` | **仅用户态**，不移植 |
+| `plugins/gpu_driver/shared/` | `gpu_ioctl.h` / `gpu_types.h` / `gpu_queue.h` / `gpu_events.h` / `gpu_regs.h` | **ABI 契约**，与 TaskRunner 共享 |
+
+### 3.2 依赖方向：drv → hal → sim
 
 ```
-include/uapi/
-├── gpu_ioctl.h          # IOCTL 命令定义
-├── gpu_types.h          # 跨平台数据类型
-└── gpu_regs.h           # 寄存器偏移定义（与硬件设计对齐）
+drv/  ──►  hal/  ──►  sim/
+  │         │           │
+  │         │           └─  BuddyAllocator, Puller, Scheduler
+  │         └─ gpu_hal.h 定义 11 个硬件访问函数指针
+  └─ ioctl handler 调用 HAL 接口
 ```
 
-### 2.2 gpu_types.h
+**铁律**：
+
+- `drv/` **不**直接调 `sim/`，所有硬件访问走 `hal/`
+- `sim/` **不**依赖 `drv/`，可独立编译和测试
+- `shared/` **不**属于任何一边，是 ABI 契约
+
+**移植时的映射**：
+
+```
+用户态：            drv/ → hal_user.cpp → sim/（函数调用）
+真实内核：         drv/ → 真实 hal/ 实现 → 硬件寄存器（MMIO）
+单元测试：         drv/ → hal_mock.cpp → 桩函数
+```
+
+**为什么必须有这一层？** 没有 HAL，`drv/` 要么直接调 `sim/`（不可移植），要么满屏 `#ifdef CONFIG_USERMODE`（不可维护）。HAL 让"用户态函数调用"和"内核态 MMIO"在 `drv/` 看来是同一种东西。
+
+### 3.3 HAL 接口契约的形式选择
+
+**为什么是 `struct gpu_hal_ops` 函数指针表 + `static inline` 包装函数**，而不是 C++ 纯虚类？
+
+- Linux 内核模块是 C 编译，**不**支持 C++ 虚函数
+- 内核标准模式就是 `struct xxx_ops`（`struct file_operations`、`struct pci_driver_ops`、`struct drm_driver`）
+- 移植时直接替换实现函数，**零适配成本**
+
+11 个函数指针按"是否可能失败"分两类：
+
+- **`int` 返回**（失败 → Linux 错误码）：`register_read/write`、`mem_read/write/alloc/free`、`fence_create/read`
+- **`void` 返回**（弹射式）：`doorbell_ring`、`interrupt_raise`、`time_wait`
+
+**为什么这样分？** 不可能失败的操作不强迫调用方写无意义的错误检查路径，错误处理语义更干净。
+
+### 3.4 构造注入而不是单例
 
 ```cpp
-#pragma once
-#include <stdint.h>
-#include <stddef.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-// GPU 内存类型
-typedef enum {
-    GPU_MEM_FB_PUBLIC      = 0,    // 帧缓冲公共区
-    GPU_MEM_SYSTEM_CACHED  = 1,    // 系统内存（缓存）
-    GPU_MEM_SYSTEM_UNCACHED = 2,   // 系统内存（非缓存）
-} gpu_memory_type_t;
-
-// GPU 内存分配参数
-typedef struct {
-    size_t size;                    // 输入：分配大小
-    gpu_memory_type_t mem_type;     // 输入：内存类型
-    uint64_t phys_addr;             // 输出：GPU 物理地址
-    void* user_ptr;                 // 输出：用户空间映射指针
-    uint32_t flags;                 // 输入：标志位
-} gpu_mem_alloc_args_t;
-
-// GPU 命令提交参数
-typedef struct {
-    uint64_t cmd_buffer_addr;       // 输入：命令缓冲区 GPU 地址
-    size_t cmd_buffer_size;         // 输入：命令缓冲区大小
-    uint64_t fence_id;              // 输出：围栏 ID（用于同步）
-    uint32_t queue_id;              // 输入：队列 ID
-    uint32_t flags;                 // 输入：标志位
-} gpu_cmd_submit_args_t;
-
-// GPU 状态查询
-typedef struct {
-    uint64_t total_memory;          // 输出：总显存
-    uint64_t free_memory;           // 输出：可用显存
-    uint32_t gpu_load;              // 输出：GPU 负载 (0-100)
-    uint32_t temp;                  // 输出：温度（模拟值）
-} gpu_status_t;
-
-#ifdef __cplusplus
-}
-#endif
-```
-
-### 2.3 gpu_ioctl.h
-
-```cpp
-#pragma once
-#include "gpu_types.h"
-#include <linux/ioctl.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define GPU_IOCTL_MAGIC 'G'
-
-// ========== 内存管理 IOCTL ==========
-
-/**
- * GPU_ALLOC_MEM - 分配 GPU 内存
- * 
- * 参数：gpu_mem_alloc_args_t*
- * 返回：0 成功，-errno 失败
- * 
- * 行为：
- * 1. 根据 mem_type 选择分配器（FB/System）
- * 2. 使用 Buddy Allocator 分配物理地址
- * 3. 建立 mmap 映射
- * 4. 返回 phys_addr 和 user_ptr
- */
-#define GPU_ALLOC_MEM      _IOWR(GPU_IOCTL_MAGIC, 1, gpu_mem_alloc_args_t)
-
-/**
- * GPU_FREE_MEM - 释放 GPU 内存
- * 
- * 参数：uint64_t (phys_addr)
- * 返回：0 成功，-errno 失败
- */
-#define GPU_FREE_MEM       _IOW(GPU_IOCTL_MAGIC, 2, uint64_t)
-
-/**
- * GPU_MAP_MEM - 映射 GPU 内存到用户空间
- * 
- * 参数：gpu_mem_map_args_t*
- * 返回：0 成功，-errno 失败
- */
-#define GPU_MAP_MEM        _IOWR(GPU_IOCTL_MAGIC, 3, gpu_mem_map_args_t)
-
-// ========== 命令提交 IOCTL ==========
-
-/**
- * GPU_SUBMIT_CMD - 提交命令到 GPU
- * 
- * 参数：gpu_cmd_submit_args_t*
- * 返回：0 成功，-errno 失败
- * 
- * 行为：
- * 1. 将命令写入 RingBuffer
- * 2. 通知 GPU Simulator 线程
- * 3. 返回 fence_id 用于同步
- */
-#define GPU_SUBMIT_CMD     _IOWR(GPU_IOCTL_MAGIC, 4, gpu_cmd_submit_args_t)
-
-/**
- * GPU_WAIT_CMD - 等待命令完成
- * 
- * 参数：uint64_t (fence_id)
- * 返回：0 成功，-errno 失败（超时）
- */
-#define GPU_WAIT_CMD       _IOW(GPU_IOCTL_MAGIC, 5, uint64_t)
-
-/**
- * GPU_GET_STATUS - 获取 GPU 状态
- * 
- * 参数：gpu_status_t*
- * 返回：0 成功
- */
-#define GPU_GET_STATUS     _IOR(GPU_IOCTL_MAGIC, 6, gpu_status_t)
-
-// ========== 寄存器访问 IOCTL ==========
-
-/**
- * GPU_READ_REG - 读取 GPU 寄存器
- */
-#define GPU_READ_REG       _IOWR(GPU_IOCTL_MAGIC, 7, gpu_reg_access_t)
-
-/**
- * GPU_WRITE_REG - 写入 GPU 寄存器
- */
-#define GPU_WRITE_REG      _IOW(GPU_IOCTL_MAGIC, 8, gpu_reg_access_t)
-
-#ifdef __cplusplus
-}
-#endif
-```
-
----
-
-## 三、项目结构重构
-
-### 3.1 完整目录树
-
-```
-UsrLinuxEmu/
-├── CMakeLists.txt                    # 主构建配置
-├── README.md
-├── CONTRIBUTING.md
-│
-├── include/                          # 公共头文件
-│   ├── kernel/                       # 内核框架头文件
-│   │   ├── device/
-│   │   │   ├── device.h
-│   │   │   ├── gpgpu_device.h
-│   │   │   └── ...
-│   │   ├── vfs.h
-│   │   ├── plugin_manager.h
-│   │   └── ...
-│   └── uapi/                         # ⭐ 新建：用户空间 API
-│       ├── gpu_ioctl.h
-│       ├── gpu_types.h
-│       └── gpu_regs.h
-│
-├── shared/                           # ⭐ 新建：跨项目共享接口
-│   ├── gpu_ioctl.h                   # 符号链接 → include/uapi/gpu_ioctl.h
-│   ├── gpu_types.h                   # 符号链接 → include/uapi/gpu_types.h
-│   └── CMakeLists.txt                # 导出头文件配置
-│
-├── drivers/                          # 设备驱动实现
-│   └── gpu/
-│       ├── gpu_driver.h
-│       ├── gpu_driver.cpp
-│       ├── buddy_allocator.h/cpp
-│       ├── ring_buffer.h/cpp         # ⭐ 新建：RingBuffer 实现
-│       ├── address_space.h/cpp
-│       ├── ioctl_gpgpu.h
-│       ├── plugin_gpu.cpp
-│       └── taskrunner_compat/        # ⭐ 新建：TaskRunner 兼容层
-│           ├── taskrunner_wrapper.h
-│           ├── taskrunner_wrapper.cpp
-│           ├── firmware_decoder_emu.h
-│           └── firmware_decoder_emu.cpp
-│
-├── plugins/                          # ⭐ 新建：可加载插件
-│   └── gpu_driver/
-│       ├── CMakeLists.txt
-│       ├── plugin_main.cpp           # 插件入口
-│       ├── drm/
-│       │   ├── drm_driver.cpp
-│       │   └── gem_object.cpp
-│       └── ttm/
-│           ├── ttm_bo_driver.cpp
-│           └── ttm_bo_move.cpp
-│
-├── simulator/                        # 硬件模拟器
-│   └── gpu/
-│       ├── basic_gpu_simulator.h/cpp
-│       ├── command_parser.h/cpp
-│       └── gpu_register.h
-│
-├── src/                              # 框架核心实现
-│   └── kernel/
-│       ├── vfs.cpp
-│       ├── plugin_manager.cpp
-│       └── ...
-│
-├── tests/                            # 测试代码
-│   ├── test_gpu_ioctl.cpp            # ⭐ 新建：ioctl 接口测试
-│   ├── test_ring_buffer.cpp          # ⭐ 新建：RingBuffer 测试
-│   ├── test_buddy_allocator.cpp
-│   ├── test_gpu_submit.cpp
-│   └── test_taskrunner_integration.cpp # ⭐ 新建：集成测试
-│
-├── docs/                             # 文档
-│   ├── architecture_design.md        # ⭐ 本文档
-│   └── ...
-│
-└── plans/                            # 开发计划
-    ├── phase1_plan.md
-    ├── phase2_plan.md
-    └── phase3_plan.md
-```
-
-### 3.2 完成度跟踪表
-
-| 目录/模块 | 状态 | 完成度 | 负责人 |
-|----------|------|--------|--------|
-| `include/uapi/` | 🆕 待创建 | 0% | - |
-| `shared/` | 🆕 待创建 | 0% | - |
-| `drivers/gpu/ring_buffer.*` | 🆕 待创建 | 0% | - |
-| `drivers/gpu/taskrunner_compat/` | 🆕 待创建 | 0% | - |
-| `plugins/gpu_driver/` | 🆕 待创建 | 0% | - |
-| `tests/test_gpu_ioctl.cpp` | 🆕 待创建 | 0% | - |
-| 现有框架 (`src/kernel/`) | ✅ 完成 | 90% | - |
-| Linux 兼容层 | ⚠️ 进行中 | 20% | - |
-
----
-
-## 四、RingBuffer 详细设计
-
-### 4.1 无锁环形缓冲区架构
-
-```cpp
-// drivers/gpu/ring_buffer.h
-#pragma once
-#include <atomic>
-#include <cstddef>
-#include <cstdint>
-
-/**
- * @brief 无锁环形缓冲区（单生产者-单消费者）
- * 
- * 设计要点：
- * 1. 使用 std::atomic 实现无锁访问
- * 2. cache line 对齐避免伪共享
- * 3. 支持批量读写操作
- * 4. 满/空状态检测
- */
-class RingBuffer {
-public:
-    explicit RingBuffer(size_t capacity);
-    ~RingBuffer();
-
-    // 禁止拷贝
-    RingBuffer(const RingBuffer&) = delete;
-    RingBuffer& operator=(const RingBuffer&) = delete;
-
-    // ========== 写入接口（生产者） ==========
-    
-    /**
-     * @brief 写入数据到缓冲区
-     * @param data 数据指针
-     * @param size 数据大小
-     * @return 实际写入字节数，-1 表示缓冲区满
-     */
-    ssize_t write(const void* data, size_t size);
-
-    /**
-     * @brief 批量写入（零拷贝）
-     * @return 可写区域指针，nullptr 表示缓冲区满
-     */
-    void* reserve(size_t size);
-    void commit(size_t size);
-
-    // ========== 读取接口（消费者） ==========
-    
-    /**
-     * @brief 从缓冲区读取数据
-     * @param data 输出缓冲区
-     * @param size 读取大小
-     * @return 实际读取字节数，0 表示缓冲区空
-     */
-    ssize_t read(void* data, size_t size);
-
-    /**
-     * @brief 批量读取（零拷贝）
-     * @return 可读区域指针，nullptr 表示缓冲区空
-     */
-    const void* peek(size_t* available);
-    void consume(size_t size);
-
-    // ========== 状态查询 ==========
-    
-    size_t available_write_space() const;
-    size_t available_read_size() const;
-    bool is_empty() const;
-    bool is_full() const;
-    void reset();
-
+class GpgpuDevice {
+  explicit GpgpuDevice(struct gpu_hal_ops *hal) : hal_(hal) {}
 private:
-    uint8_t* buffer_;
-    size_t capacity_;
-    
-    // 分离读写指针到不同 cache line，避免伪共享
-    alignas(64) std::atomic<size_t> write_pos_{0};  // 生产者写入位置
-    alignas(64) std::atomic<size_t> read_pos_{0};   // 消费者读取位置
+  struct gpu_hal_ops *hal_;
 };
 ```
 
-### 4.2 关键实现细节
+**为什么不是单例？** HAL 注入让单元测试可以用 `hal_mock` 隔离硬件依赖，**单例无法多实例隔离**。GpgpuDevice 本身在 VFS 中也只有一个实例，但构造注入让"硬件是谁"这个事在构造时决定，对测试友好。
+
+---
+
+## §4 算法核心提取：为什么 libgpu_core 是纯 C（ADR-020）
+
+> 详见 [ADR-020](../00_adr/adr-020-libgpu-core-extraction.md)
+
+`libgpu_core/` 目录里只有两个文件：`include/gpu_buddy.h` + `src/buddy.c`。**不是 C++ 包装，不是 STL，没有依赖**。
+
+### 4.1 纯度的代价与回报
+
+**零依赖清单**：
+
+| ✅ 允许 | ❌ 禁止 |
+|---------|---------|
+| 纯 C（C99/C11） | `malloc`/`free` |
+| 传入缓冲区操作 | 系统调用 |
+| 位运算 | STL |
+| `assert()` | 锁/原子操作 |
+| `memcpy/memset` | 日志输出 |
+| `bool`/`uint32_t` | `errno` |
+
+**为什么这样狠？** 因为内核模块是 C 编译的，**不能带任何 C++ runtime**。`libgpu_core/*.c` 要做到"复制到任何 Linux 内核驱动的子目录下，加进该驱动的 `Makefile` 就能编译"。这就是"**可移植性门禁**"——一旦混进 STL，整个库就废了。
+
+### 4.2 完全无锁：调用者责任
+
+```c
+void     gpu_buddy_init(struct gpu_buddy *buddy, void *memory, u64 size);
+u64      gpu_buddy_alloc(struct gpu_buddy *buddy, u64 size);
+void     gpu_buddy_free(struct gpu_buddy *buddy, u64 addr);
+```
+
+BuddyAllocator 只操作自身数据结构，**不**做锁。**调用者必须做外部同步**。
+
+**为什么？** 锁策略取决于调用场景：用户态仿真可以用 `std::mutex`，内核态用 `spinlock` 或 `mutex`，固化在 libgpu_core 里反而绑死了使用方式。
+
+### 4.3 与 HAL 的边界
+
+`libgpu_core` 是**纯地址运算**，HAL 的 `mem_alloc/mem_free` 调用它完成实际的 VRAM 划分。**libgpu_core 不感知 HAL**，HAL 也不感知 libgpu_core 的存在——`sim/buddy_allocator.cpp` 把 libgpu_core 的 C API 包装为 `SimBuddyAllocator` 类，HAL 在 `hal_user.cpp` 里调用这个包装器。
+
+**为什么这样切？** 关注点分离：算法是 C，仿真设备是 C++，HAL 是契约。
+
+---
+
+## §5 命令处理的状态机：Hardware Puller（ADR-021）
+
+> 详见 [ADR-021](../00_adr/adr-021-hardware-puller.md)
+
+`HardwarePullerEmu`（在 `plugins/gpu_driver/sim/hardware/`）模拟真实 GPU 的命令处理单元（NVIDIA PBF/PE、AMD ACE）。**它不是简单 switch 循环**，是完整的状态机：
+
+```
+IDLE → FETCH_SOURCE_SELECT → [FETCH_FROM_SHARED_RING | FETCH_FROM_DEVICE_MEMORY]
+     → DECODE → [SCHEDULE | SEMAPHORE]
+     → DISPATCH → COMPLETE → NEXT → IDLE
+```
+
+### 5.1 为什么必须是状态级仿真
+
+真实硬件 Puller 是状态机：**从 ring buffer DMA 读 entry → 解码 method → 处理 semaphore → 分发引擎 → 中断通知**。**只仿真"打印日志然后返回成功"根本不是命令处理单元**。
+
+**为什么不是行为级或周期级？**
+
+- 行为级：只关心"做了什么"，无法验证状态转换正确性
+- 周期级：仿真时序，对驱动验证过度工程
+
+状态级是"够用"和"不冗余"之间的甜点。
+
+### 5.2 Doorbell 触发而非直接处理
+
+`handle_pushbuffer_submit_batch` 不再就地处理命令，而是：
+
+1. 将 GPFIFO entries 写入模拟的设备内存（drv 通过 HAL 写入）
+2. 触发模拟 doorbell 写入（`hal_doorbell_ring`）
+3. Puller 状态机从 IDLE → FETCH 开始完整流程
+
+**为什么绕一圈走 doorbell？** 真实 GPU 就是这么工作的：用户态写 doorbell 寄存器，硬件 Puller 检测到 doorbell 变化才开始拉命令。**直接处理会让仿真无法验证"doorbell 触发是否能正确唤醒 Puller"这种真实硬件的关键行为**。
+
+### 5.3 Global Scheduler 的责任分配
+
+Puller 状态机责任范围是 `FETCH → DECODE → ISSUE`，**不**做引擎分发。`GlobalScheduler`（在 `plugins/gpu_driver/sim/scheduler/`）接管：
+
+- 维护待执行命令队列
+- 按引擎类型路由（compute → `gpu_core_emu`、copy → `memcpy`、firmware → `cpu_core_emu`）
+- 支持优先级调度（Phase 2 实现）
+- 支持并发执行（多 entry 可同时在不同引擎上执行）
+
+**为什么 Puller 和 Scheduler 拆开？** 任务编排和执行引擎路由是**两个关注点**。拆开之后，Puller 的 FSM 复杂度被压住，Scheduler 可以独立做调度策略实验。
+
+---
+
+## §6 用户态队列提交：双路径架构（ADR-024）
+
+> 详见 [ADR-024](../00_adr/adr-024-user-mode-queue-submission.md)
+>
+> Phase 2 引入，是 UsrLinuxEmu 当前**最有架构性**的设计决策。
+
+### 6.1 真实硬件的参照
+
+| 架构 | 用户态提交机制 |
+|------|----------------|
+| AMD UMQ (GFX11+/CDNA3) | 用户态直接写 Ring Buffer (GPU VRAM) + 写 Doorbell (PCIe BAR MMIO mmap) |
+| NVIDIA GPFIFO | 用户态写 GPFIFO ring + 写 `GP_PUT` 或 userd doorbell |
+| Intel Gen12+/Xe | 用户态写 ring + doorbell (GuC 调度) |
+
+**共同点**：用户态**直接写共享内存 + 写 doorbell**，**零 syscall**。kernel 只在队列创建/异常时介入。
+
+**UsrLinuxEmu 改造前**的状态：每次命令提交都走 `ioctl(GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH)`，**每次都是 syscall**。这与真实硬件语义不一致，也让 TaskRunner 迁移到真机时必须改提交代码。
+
+### 6.2 为什么是"快速路径 + 回退路径"而不是替换
+
+ADR-024 决策是**双路径**而不是替换：
+
+```
+快速路径（新增）:                  回退路径（现有）:
+
+TaskRunner                         TaskRunner
+    │                                   │
+    │ 写 Ring Buffer (共享内存)           │ ioctl(SUBMIT_BATCH)
+    │ *(volatile u32*)doorbell           │
+    ▼                                   ▼
+GPU 模拟                            GpgpuDevice
+    │                                   │
+    │ Hardware Puller 读取               │ HAL DMA write + doorbell_ring
+    ▼                                   ▼
+       HardwarePullerEmu runLoop()  ←  共用执行路径
+```
+
+**为什么不全替换？**
+
+1. **架构对齐**：真实硬件就是这样，模拟器对齐
+2. **性能潜力**：模拟器里 syscall 占 30-50% 模拟时间
+3. **渐进迁移**：现有 ioctl 路径完整保留，TaskRunner 可以逐场景切换
+4. **测试兼容**：不影响现有测试
+
+ioctl 回退路径保留三个用途：
+
+- **兼容回退**：TaskRunner 在不支持用户态队列时使用
+- **调试路径**：开发测试时的替代提交方式
+- **小批量**：单次命令提交的开销在模拟器中可接受
+
+**HAL doorbell 的双层模型**（ADR-023 v2 修订）：
+
+```
+用户态 MMIO 直写（快速路径）:
+  TaskRunner → *(volatile u32*)doorbell_ptr = queue_id
+       └─ mmap'd BAR 地址 → DoorbellEmu::write()
+
+内核 HAL 调用（回退路径）:
+  drv/ → hal_doorbell_ring(hal_, queue_id)
+       └─ 函数指针 → hal->doorbell_ring(ctx, qid) → DoorbellEmu::write()
+```
+
+**两边最终都到 `DoorbellEmu::write()`**，执行路径统一。
+
+### 6.3 VA Space 作为 Queue 的归属
+
+Phase 2 之前，Queue 是隐式默认的。Phase 2 把 Queue 显式化，**且必须属于某个 VA Space**：
 
 ```cpp
-// drivers/gpu/ring_buffer.cpp (核心片段)
-
-#include "ring_buffer.h"
-#include <cstring>
-#include <new>
-
-RingBuffer::RingBuffer(size_t capacity)
-    : capacity_(capacity) {
-    // 分配缓冲区（额外 1 字节用于区分满/空）
-    buffer_ = new uint8_t[capacity_ + 1];
-}
-
-RingBuffer::~RingBuffer() {
-    delete[] buffer_;
-}
-
-ssize_t RingBuffer::write(const void* data, size_t size) {
-    const size_t write = write_pos_.load(std::memory_order_relaxed);
-    const size_t read = read_pos_.load(std::memory_order_acquire);
-    
-    // 计算可用空间（预留 1 字节区分满/空）
-    const size_t free_space = (read > write)
-        ? (read - write - 1)
-        : (capacity_ - (write - read) + 1);
-    
-    if (size > free_space) {
-        return -1;  // 缓冲区满
-    }
-    
-    // 处理环形边界
-    const size_t first_chunk = std::min(size, capacity_ - write);
-    std::memcpy(buffer_ + write, data, first_chunk);
-    
-    if (size > first_chunk) {
-        std::memcpy(buffer_, 
-                    static_cast<const uint8_t*>(data) + first_chunk,
-                    size - first_chunk);
-    }
-    
-    // 更新写指针
-    write_pos_.store((write + size) % capacity_, std::memory_order_release);
-    return size;
-}
-
-ssize_t RingBuffer::read(void* data, size_t size) {
-    const size_t read = read_pos_.load(std::memory_order_relaxed);
-    const size_t write = write_pos_.load(std::memory_order_acquire);
-    
-    // 计算可读空间
-    const size_t available = (write >= read)
-        ? (write - read)
-        : (capacity_ + write - read);
-    
-    size = std::min(size, available);
-    if (size == 0) {
-        return 0;  // 缓冲区空
-    }
-    
-    // 处理环形边界
-    const size_t first_chunk = std::min(size, capacity_ - read);
-    std::memcpy(data, buffer_ + read, first_chunk);
-    
-    if (size > first_chunk) {
-        std::memcpy(static_cast<uint8_t*>(data) + first_chunk,
-                    buffer_,
-                    size - first_chunk);
-    }
-    
-    // 更新读指针
-    read_pos_.store((read + size) % capacity_, std::memory_order_release);
-    return size;
-}
-```
-
-### 4.3 与 ioctl 集成
-
-```cpp
-// drivers/gpu/gpu_driver.cpp (ioctl 处理)
-
-long GpuDriver::ioctl(int fd, unsigned long request, void* argp) {
-    switch (request) {
-    case GPU_SUBMIT_CMD: {
-        auto* args = static_cast<gpu_cmd_submit_args_t*>(argp);
-        
-        // 从用户空间拷贝命令数据
-        std::vector<uint8_t> cmd_buffer(args->cmd_buffer_size);
-        // ... 拷贝逻辑 ...
-        
-        // 写入 RingBuffer
-        ssize_t written = ring_buffer_->write(cmd_buffer.data(), 
-                                               cmd_buffer.size());
-        if (written < 0) {
-            return -EBUSY;  // 缓冲区满
-        }
-        
-        // 生成 fence_id
-        args->fence_id = next_fence_id_++;
-        
-        // 通知 GPU 模拟器线程
-        gpu_sim_->notify();
-        
-        return 0;
-    }
-    
-    case GPU_WAIT_CMD: {
-        auto fence_id = *static_cast<uint64_t*>(argp);
-        
-        // 等待 fence 完成
-        // ... 实现等待逻辑 ...
-        
-        return 0;
-    }
-    
-    // ... 其他 IOCTL 处理 ...
-    
-    default:
-        return -ENOTTY;
-    }
-}
-```
-
----
-
-## 五、Phase 1-3 实施计划
-
-### 5.1 Phase 1: 基础架构与 ioctl 接口对齐 (4 周)
-
-| 周 | 任务 | 交付物 | 验收标准 |
-|---|------|--------|---------|
-| **W1** | 创建 `include/uapi/` 和 `shared/` | gpu_ioctl.h, gpu_types.h | 头文件编译通过 |
-| **W1** | Catch2 配置优化 | CMakeLists.txt 更新 | 测试可运行 |
-| **W2** | RingBuffer 实现 | ring_buffer.h/cpp | 单元测试通过 |
-| **W2** | ioctl 接口实现 | gpu_driver.cpp ioctl 处理 | 手动测试通过 |
-| **W3** | 创建 `tests/test_gpu_ioctl.cpp` | ioctl 接口测试 | 覆盖率 ≥40% |
-| **W3** | 创建 `tests/test_ring_buffer.cpp` | RingBuffer 测试 | 压力测试通过 |
-| **W4** | TaskRunner 子模块集成 | submodule 配置 | 可编译 TaskRunner 示例 |
-| **W4** | Phase 1 集成验证 | test_integration.cpp | 端到端测试通过 |
-
-**Phase 1 里程碑**:
-- ✅ ioctl 接口定义完成
-- ✅ RingBuffer 实现并测试
-- ✅ 测试覆盖率 ≥40%
-
----
-
-### 5.2 Phase 2: Linux 兼容层 Phase 1 (6 周)
-
-| 周 | 任务 | 交付物 | 验收标准 |
-|---|------|--------|---------|
-| **W5** | `types.h` 基础类型定义 | linux_compat/types.h | 与内核类型一致 |
-| **W5** | `memory.h` 内存 API | kmalloc/kfree/kzalloc | 单元测试通过 |
-| **W6** | `ioctl.h` 兼容宏 | _IOC/_IOW/_IOR/_IOWR | 与 linux/ioctl.h 一致 |
-| **W7** | `cdev.h` 字符设备 API | cdev_init/cdev_add | 可注册字符设备 |
-| **W7** | `file_operations` 兼容 | struct file_operations | 接口对齐内核 |
-| **W8** | `device.h` 设备模型 | device_create/destroy | 可创建设备节点 |
-| **W9** | `sync.h` 同步原语 | spinlock/mutex/semaphore | 并发测试通过 |
-| **W9** | 兼容性测试套件 | test_linux_compat.cpp | 覆盖率 ≥50% |
-| **W10** | Phase 2 集成验证 | 重构 GPU 驱动使用兼容层 | 原有测试全部通过 |
-
-**Phase 2 里程碑**:
-- ✅ P0 优先级 API 完成 (types/memory/ioctl)
-- ✅ P1 优先级 API 完成 (cdev/device/sync)
-- ✅ 测试覆盖率 ≥50%
-
----
-
-### 5.3 Phase 3: GPU 插件化 + TaskRunner 协同 (6 周)
-
-| 周 | 任务 | 交付物 | 验收标准 |
-|---|------|--------|---------|
-| **W11** | `plugins/gpu_driver/` 框架 | plugin_main.cpp | 插件可加载 |
-| **W11** | DRM/GEM 层实现 | drm_driver.cpp | DRM ioctl 响应 |
-| **W12** | TTM BO 驱动 | ttm_bo_driver.cpp | BO 创建/销毁 |
-| **W12** | TTM 页迁移 | ttm_bo_move.cpp | 迁移事件注入 |
-| **W13** | `taskrunner_compat/` 封装 | taskrunner_wrapper.cpp | TaskRunner 调用封装 |
-| **W13** | Firmware Decoder | firmware_decoder_emu.cpp | GPFIFO 解码正确 |
-| **W14** | Hardware Puller 仿真 | hardware_puller_emu.cpp | PCIe DMA 仿真 |
-| **W14** | 端到端集成测试 | test_end_to_end.cpp | 完整流程通过 |
-| **W15** | 性能优化 | 基准测试报告 | 延迟 <1ms |
-| **W16** | Phase 3 验收 | 完整演示 | 老板审查通过 |
-
-**Phase 3 里程碑**:
-- ✅ GPU 驱动插件可加载
-- ✅ TaskRunner 协同验证
-- ✅ 端到端流程完整
-
----
-
-## 六、测试策略
-
-### 6.1 Catch2 测试组织
-
-```
-tests/
-├── CMakeLists.txt                    # 测试构建配置
-├── test_base.h                       # 测试基类（统一 fixture）
-│
-├── unit/                             # 单元测试
-│   ├── test_buddy_allocator.cpp      # Buddy 分配器
-│   ├── test_ring_buffer.cpp          # RingBuffer
-│   ├── test_gpu_ioctl.cpp            # ioctl 接口
-│   └── test_linux_compat.cpp         # Linux 兼容层
-│
-├── integration/                      # 集成测试
-│   ├── test_gpu_driver.cpp           # GPU 驱动集成
-│   └── test_taskrunner_integration.cpp # TaskRunner 协同
-│
-└── e2e/                              # 端到端测试
-    └── test_end_to_end.cpp           # 完整流程验证
-```
-
-### 6.2 测试基类示例
-
-```cpp
-// tests/test_base.h
-#pragma once
-#include <catch2/catch_all.hpp>
-#include "kernel/vfs.h"
-#include "kernel/logger.h"
-
-/**
- * @brief 测试基类（统一 fixture）
- * 
- * 提供：
- * - 测试前初始化（VFS、Logger）
- * - 测试后清理
- * - 常用断言宏
- */
-class TestBase {
-protected:
-    void setUp() {
-        // 初始化 Logger
-        set_log_level(LOG_LEVEL_ERROR);
-        
-        // 清空 VFS
-        // ...
-    }
-    
-    void tearDown() {
-        // 清理资源
-        // ...
-    }
+struct gpu_queue_args {
+  gpu_va_space_handle_t va_space_handle;  // 必须
+  u32 queue_type;
+  u32 priority;
+  u64 ring_buffer_size;
+  gpu_queue_handle_t queue_handle;        // OUT
+  u64 doorbell_pgoff;                     // OUT: 给用户态 mmap
 };
-
-// 统一测试宏
-#define TEST_CASE_GPU(name) \
-    TEST_CASE(name, "[gpu]")
-
-#define TEST_CASE_IOCTL(name) \
-    TEST_CASE(name, "[gpu][ioctl]")
-
-#define REQUIRE_OK(expr) \
-    REQUIRE((expr) == 0)
-
-#define REQUIRE_GPU_ADDR_VALID(addr) \
-    REQUIRE((addr) > 0); \
-    REQUIRE((addr) < gpu_phys_size_)
 ```
 
-### 6.3 覆盖率目标
+**为什么 Queue 必须挂在 VA Space 下？** 真实 GPU 的 GPU VA 是进程地址空间，VA Space 是这个抽象的容器。Queue 在哪个 VA Space 下创建，决定了它的 Ring Buffer 物理地址映射对哪个进程可见。Phase 2 强制 `validate VA Space exists` + `validate Queue belongs to VA Space` 是为了把"进程隔离"这件事在模拟器层就做对。
 
-| 阶段 | 覆盖率目标 | 测量工具 |
-|------|-----------|---------|
-| Phase 1 | ≥40% | gcov/lcov |
-| Phase 2 | ≥50% | gcov/lcov |
-| Phase 3 | ≥60% | gcov/lcov |
+---
 
-### 6.4 CI/CD 集成
+## §7 跨切关注：namespace、错误码、测试框架
 
-```yaml
-# .github/workflows/test.yml
-name: Tests
+### 7.1 `usr_linux_emu` 命名空间（ADR-002 衍生）
 
-on: [push, pull_request]
+所有公共类型在 `usr_linux_emu` 命名空间下（`include/usr_linux_emu/`，目前是空目录，预留）。**原因**：避免与真实 Linux 内核头文件中的同名类型冲突，特别是在 `include/linux_compat/` 的过渡期。
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Configure
-        run: |
-          mkdir build && cd build
-          cmake .. -DENABLE_COVERAGE=ON
-      
-      - name: Build
-        run: cmake --build build -j$(nproc)
-      
-      - name: Test
-        run: |
-          cd build
-          ctest --output-on-failure
-      
-      - name: Coverage
-        run: |
-          cd build
-          lcov --capture --directory . --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' --output-file coverage.info
-          lcov --list coverage.info
+### 7.2 Linux 错误码统一
+
+所有可能失败的函数返回 `int`，`0` 成功，**负值**是 Linux 错误码（`-EINVAL`、`-ENOMEM`、`-EFAULT`、`-ENOTTY`）。HAL 返回值**直接穿透**到 ioctl 返回值，不做转换：
+
+```cpp
+long handle_pushbuffer_submit_batch(void* argp) {
+  int ret = hal_mem_write(hal_, DEV_MEM_BASE, entries, size);
+  if (ret < 0) return ret;  // -EFAULT 直接到用户
+  hal_doorbell_ring(hal_, queue_id);
+  return 0;
+}
 ```
 
----
+**为什么统一负值？** 让用户态程序**复用内核态的错误处理习惯**——`if (ioctl(...) < 0) { perror(...); }` 的代码可以直接搬。
 
-## 七、风险清单与缓解措施
+### 7.3 测试框架：Catch2（ADR-010 实际结果）
 
-### 7.1 技术风险
+> ADR-010 原提案"迁移到 GTest"**未实施**。实际项目用 Catch2（vendored 单文件，零外部依赖）。
 
-| 风险 | 等级 | 影响 | 概率 | 缓解措施 |
-|------|------|------|------|---------|
-| **ioctl 接口不一致** | 🔴 高 | TaskRunner 无法集成 | 中 | Phase 1 优先定义，双方共同审查 |
-| **RingBuffer 并发 bug** | 🔴 高 | 数据损坏/死锁 | 中 | 压力测试 + ThreadSanitizer |
-| **Linux 兼容层维护负担** | 🟡 中 | 长期技术债 | 高 | 明确"不支持列表"，不追求 100% 兼容 |
-| **插件 ABI 兼容性** | 🟡 中 | 插件加载失败 | 中 | 使用 C ABI，版本检查 |
-| **性能不达标** | 🟡 中 | 用户体验差 | 中 | 早期基准测试，持续优化 |
+**为什么 Catch2 比 GTest 适合？**
 
-### 7.2 进度风险
+- **零安装**：单文件 `tests/catch_amalgamated.{hpp,cpp}`，不需要 `apt install libgtest-dev`
+- **测试用例可拆分为独立二进制**（`build/bin/test_*_standalone`），CI 跑得快
+- **TDD 风格**：`TEST_CASE` + `REQUIRE` 比 GTest 的 `TEST_F` 简洁
 
-| 风险 | 等级 | 缓解措施 |
-|------|------|---------|
-| Phase 1 延期 | 中 | W2 结束进行进度审查，必要时削减范围 |
-| TaskRunner 协同阻塞 | 中 | 并行开发，先模拟 TaskRunner 接口 |
-| 测试覆盖率不达标 | 低 | 将覆盖率纳入 CI 门禁 |
-
-### 7.3 资源风险
-
-| 风险 | 等级 | 缓解措施 |
-|------|------|---------|
-| 人力不足 | 中 | 优先 P0 任务，P1/P2 可延后 |
-| 硬件资源限制 | 低 | 用户态模拟，无特殊硬件需求 |
+**重要纠正**：所有标"测试框架是 GTest"的旧文档（README、copilot-instructions、`docs/01-quickstart/installation.md`、`docs/04-building/testing_guide.md`）是**错的**，以代码为准。
 
 ---
 
-## 八、附录
+## §8 与真实硬件的语义对齐
 
-### 8.1 术语表
+UsrLinuxEmu 不是"看起来像 Linux 内核的玩具"，而是"**假装是真 GPU 驱动的开发环境**"。这一目标在 Phase 2 后具体化为：
 
-| 术语 | 定义 |
-|------|------|
-| BAR | Base Address Register，PCIe 基地址寄存器 |
-| BO | Buffer Object，缓冲区对象 |
-| CXL | Compute Express Link，高速互连协议 |
-| DRM | Direct Rendering Manager，Linux 图形驱动框架 |
-| GEM | Graphics Execution Manager，GPU 内存管理 |
-| GPFIFO | GPU Command FIFO，GPU 命令队列 |
-| IOCTL | Input/Output Control，设备控制接口 |
-| MESI | Modified/Exclusive/Shared/Invalid，缓存一致性协议 |
-| TTM | Translation Table Manager，TTM 内存管理 |
-| TLB | Translation Lookaside Buffer，页表缓存 |
+| 真实硬件行为 | UsrLinuxEmu 实现 | 对应 ADR |
+|--------------|------------------|----------|
+| 用户态写 mmap doorbell 触发 GPU | `*(volatile u32*)doorbell_ptr` 触发 `DoorbellEmu::write` | ADR-024 |
+| GPU 从 VRAM ring buffer DMA 拉命令 | Puller FETCH 阶段通过 `hal_mem_read` | ADR-021 |
+| GPU 写 fence 通知完成 | `sim/fence_sim.cpp` 写共享 fence 内存 | ADR-021 |
+| GPU 触发 MSI-X 中断 | `hal_interrupt_raise` → 用户态 callback | ADR-023 |
+| 用户态 mmap BAR | `vma->vm_pgoff` 路由 doorbell / ring buffer 区域 | ADR-024 |
+| 多进程 GPU VA 隔离 | VA Space handle + 进程范围检查 | ADR-017 / Phase 2 |
 
-### 8.2 参考文档
-
-- [Linux ioctl 编程指南](https://www.kernel.org/doc/html/latest/driver-api/ioctl.html)
-- [NVIDIA GPU 驱动文档](https://docs.nvidia.com/cuda/)
-- [TaskRunner 架构文档](/workspace/TaskRunner/docs/plan.md)
-- [Catch2 使用指南](https://github.com/catchorg/Catch2/blob/devel/docs/tutorial.md)
-
-### 8.3 变更日志
-
-| 版本 | 日期 | 变更内容 | 作者 |
-|------|------|---------|------|
-| v0.1-draft | 2026-04-07 | 初始草案 | DevMate |
-| v0.2-draft | 2026-04-07 | 完整架构设计 | DevMate + OpenCode |
+**这套对齐**让 TaskRunner 在模拟器和真机之间的代码差异**趋近于零**——验证过的逻辑在真机上几乎不会重新失败（除了硬件 bug）。
 
 ---
 
-**文档状态**: 待老板审查  
-**下一步**: 老板审查确认后进入 Phase 1 W1 编码
+## §9 已识别的设计张力与开放问题
+
+虽然 §3-§6 的决策都经过评审，但仍有几个**已知张力**值得记录：
+
+1. **HAL 的间接调用开销**（约 2 次指针解引用）—— 在性能敏感路径上是否需要 `static inline` 优化？
+2. **libgpu_core 的零日志约束**—— 调试时缺乏上下文，需要在 `sim/` 包装层加日志
+3. **mmap 的安全边界**—— 用户态 mmap doorbell 仅映射到创建队列的进程，多进程权限模型未完全设计
+4. **VA Space 多 GPU 注册**（`GPU_IOCTL_REGISTER_GPU` 0x32 已定义但未深入使用）—— 未来多 GPU / P2P 场景的语义需要更多 ADR 补充
+5. **GTest vs Catch2 文档历史遗留**—— 12+ 个文件仍声称 GTest，需要 P2 级修复
+
+这些**不**是阻塞性问题，但都在 [post-refactor-architecture.md](post-refactor-architecture.md) §3 的修复清单里有追踪。
+
+---
+
+## 附录 A：ADR 索引（本文引用）
+
+| ADR | 标题 | 关联章节 |
+|-----|------|----------|
+| [ADR-001](../00_adr/adr-001-user-mode-emulation.md) | 采用用户态模拟而非内核模块 | §1 |
+| [ADR-002](../00_adr/adr-002-cpp17-language.md) | 采用 C++17 作为开发语言 | §7.1 |
+| [ADR-003](../00_adr/adr-003-plugin-architecture.md) | 采用插件化架构 | §2.1 |
+| [ADR-004](../00_adr/adr-004-buddy-allocator.md) | Buddy Allocator 管理 GPU 内存 | §4 |
+| [ADR-005](../00_adr/adr-005-ring-buffer.md) | Ring Buffer 管理 GPU 命令队列 | §6 |
+| [ADR-006](../00_adr/adr-006-layered-architecture.md) | 采用分层架构设计 | §2.2 |
+| [ADR-008](../00_adr/adr-008-linux-api-compat.md) | Linux 内核 API 兼容层 | §2.3 |
+| [ADR-009](../00_adr/adr-009-singleton-pattern.md) | 单例模式实现核心服务 | §2.3 |
+| [ADR-010](../00_adr/adr-010-gtest-migration.md) | GTest 迁移（未实施，实际 Catch2） | §7.3 |
+| [ADR-015](../00_adr/adr-015-gpu-ioctl-unification.md) | GPU IOCTL 接口统一（System C） | §6, §3 |
+| [ADR-017](../00_adr/adr-017-gpfifo-queue-abstraction.md) | GPFIFO/Queue 抽象 | §6.3 |
+| [ADR-018](../00_adr/adr-018-driver-sim-separation.md) | 驱动/仿真代码分离策略 | §3（核心） |
+| [ADR-020](../00_adr/adr-020-libgpu-core-extraction.md) | libgpu_core 算法核心提取 | §4（核心） |
+| [ADR-021](../00_adr/adr-021-hardware-puller.md) | Hardware Puller GPFIFO 状态机 | §5（核心） |
+| [ADR-023](../00_adr/adr-023-hal-interface.md) | 仿真层接口契约（HAL） | §3（核心） |
+| [ADR-024](../00_adr/adr-024-user-mode-queue-submission.md) | 用户态队列命令提交架构 | §6（核心） |
+
+---
+
+## 附录 B：变更记录
+
+| 版本 | 日期 | 变更 | 作者 |
+|------|------|------|------|
+| v0.1-draft | 2026-04-07 | 初始草案（旧目录布局） | DevMate |
+| v0.2-draft | 2026-04-07 | 完整架构设计（旧布局） | DevMate + OpenCode |
+| **v1.0** | **2026-06-16** | **基于 Phase 2 重写**；聚焦"为什么"而非"是什么"；引用 ADR-001/003/006/008/009/015/017/018/020/021/023/024 共 12 个 ADR；移除所有过期路径与已弃用 API 引用；交叉链接 `architecture.md` + `post-refactor-architecture.md` | Sisyphus |
+
+---
+
+**维护者**: UsrLinuxEmu Architecture Team
+**最后更新**: 2026-06-16
+**对应代码 commit**: `374d463`
