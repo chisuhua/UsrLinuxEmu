@@ -11,6 +11,7 @@
   - [提交代码](#提交代码)
   - [改进文档](#改进文档)
 - [开发环境设置](#开发环境设置)
+  - [Pre-commit Hooks](#pre-commit-hooks强烈推荐)
 - [代码规范](#代码规范)
 - [提交规范](#提交规范)
 - [Pull Request 流程](#pull-request-流程)
@@ -189,6 +190,40 @@ make test
 # 或运行特定测试
 ./bin/test_gpu_submit
 ```
+
+### Pre-commit Hooks（强烈推荐）
+
+UsrLinuxEmu 在仓库中跟踪了一份 pre-commit hook 模板，安装后会：
+
+1. 调用 `code-review-graph`（如果已安装）维护知识图谱
+2. 当本次提交涉及 `docs/**`、`AGENTS.md`、`CONTRIBUTING.md`、`CMakeLists.txt`、`tools/docs-audit.sh` 或 `tools/cli/` 时，运行 `tools/docs-audit.sh --strict`
+
+**一次性安装**：
+
+```bash
+scripts/install-hooks.sh
+```
+
+**验证安装**：
+
+```bash
+ls -la .git/hooks/pre-commit
+# 应看到指向 UsrLinuxEmu pre-commit 的可执行脚本
+```
+
+**跳过单次 commit**（仅当确认 audit 是误报时）：
+
+```bash
+SKIP_DOCS_AUDIT=1 git commit -m "hotfix"
+```
+
+**卸载**：
+
+```bash
+scripts/install-hooks.sh --uninstall
+```
+
+> **为什么重要**：CI 在每个 PR 上跑 `tools/docs-audit.sh --strict`。本地 hook 让你在提交前就发现问题，省去 CI 失败 → 修改 → 重新提交的循环。
 
 ### 代码格式化
 
