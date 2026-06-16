@@ -18,5 +18,7 @@ module mod = {.name = "sample",
               },
               .exit =
                   []() {
+                    // See sample_serial.cpp exit() for the rationale.
+                    VFS::instance().unregister_device("sample");
                     std::cout << "[SampleMemory] Module exited." << std::endl;
                   }};

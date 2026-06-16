@@ -22,14 +22,15 @@ int main() {
   // passed directory for files matching plugin_*.so.
   ModuleLoader::load_plugins("build/drivers");
 
+  {
+    auto dev = VFS::instance().lookup_device("ttyS0");
+    if (dev) {
+      static_cast<SerialDevice*>(dev->fops.get())->push_data("Hello from serial!");
+    }
+  }  // dev shared_ptr destroyed here, BEFORE unload_plugins dlclose's the plugin .so
+
   std::thread t(reader_thread);
-  sleep(2);
-
-  auto dev = VFS::instance().lookup_device("ttyS0");
-  if (dev) {
-    static_cast<SerialDevice*>(dev->fops.get())->push_data("Hello from serial!");
-  }
-
   t.join();
+  ModuleLoader::unload_plugins();
   return 0;
 }
