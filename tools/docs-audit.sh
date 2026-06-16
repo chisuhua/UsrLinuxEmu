@@ -270,6 +270,22 @@ section_arch() {
     else
         check_warn "libgpu_core/include/gpu_buddy.h missing"
     fi
+
+    # 1.9 archive/empty_directories/ must not exist
+    subsection "1.9 archive/empty_directories/ must not exist"
+    if [ ! -e "${REPO_ROOT}/archive/empty_directories" ]; then
+        check_pass "archive/empty_directories/ does not exist (orphan zone removed)"
+    else
+        check_fail "archive/empty_directories/ exists; remove it (was 0 tracked files, always empty)"
+    fi
+
+    # 1.10 archive/stale_builds/ must not exist
+    subsection "1.10 archive/stale_builds/ must not exist"
+    if [ ! -e "${REPO_ROOT}/archive/stale_builds" ]; then
+        check_pass "archive/stale_builds/ does not exist (orphan zone removed)"
+    else
+        check_fail "archive/stale_builds/ exists; remove it (was 0 tracked files, always empty)"
+    fi
 }
 
 # ---------------------------------------------------------------------------
