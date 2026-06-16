@@ -17,5 +17,9 @@ module mod = {.name = "serial",
               },
               .exit =
                   []() {
+                    // Must unregister before loader dlclose()s this .so;
+                    // otherwise VFS retains a shared_ptr into this library's
+                    // code and SEGFAULTs when the destructor runs at process exit.
+                    VFS::instance().unregister_device("ttyS0");
                     std::cout << "[SampleSerial] Module exited." << std::endl;
                   }};

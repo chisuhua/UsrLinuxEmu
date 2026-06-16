@@ -17,30 +17,30 @@ int main() {
   // passed directory for files matching plugin_*.so.
   ModuleLoader::load_plugins("build/drivers");
 
-  auto dev = VFS::instance().open("/dev/ttyS0", 0);
-  if (!dev) {
-    std::cerr << "[Test] Failed to open serial device." << std::endl;
-    return -1;
-  }
+  {
+    auto dev = VFS::instance().open("/dev/ttyS0", 0);
+    if (!dev) {
+      std::cerr << "[Test] Failed to open serial device." << std::endl;
+      ModuleLoader::unload_plugins();
+      return -1;
+    }
 
-  int fd = 0;
+    int fd = 0;
 
-  // 获取当前波特率
-  int current_baud = 0;
-  dev->fops->ioctl(fd, SERIAL_GET_BAUDRATE, &current_baud);
-  std::cout << "[Test] Current baud rate: " << current_baud << std::endl;
+    int current_baud = 0;
+    dev->fops->ioctl(fd, SERIAL_GET_BAUDRATE, &current_baud);
+    std::cout << "[Test] Current baud rate: " << current_baud << std::endl;
 
-  // 设置新波特率
-  int new_baud = 115200;
-  dev->fops->ioctl(fd, SERIAL_SET_BAUDRATE, &new_baud);
-  std::cout << "[Test] Set baud rate to: " << new_baud << std::endl;
+    int new_baud = 115200;
+    dev->fops->ioctl(fd, SERIAL_SET_BAUDRATE, &new_baud);
+    std::cout << "[Test] Set baud rate to: " << new_baud << std::endl;
 
-  // 再次获取波特率验证
-  dev->fops->ioctl(fd, SERIAL_GET_BAUDRATE, &current_baud);
-  std::cout << "[Test] Updated baud rate: " << current_baud << std::endl;
+    dev->fops->ioctl(fd, SERIAL_GET_BAUDRATE, &current_baud);
+    std::cout << "[Test] Updated baud rate: " << current_baud << std::endl;
 
-  // 清空缓冲区
-  dev->fops->ioctl(fd, SERIAL_FLUSH, nullptr);
+    dev->fops->ioctl(fd, SERIAL_FLUSH, nullptr);
+  }  // dev shared_ptr destroyed here, BEFORE unload_plugins dlclose's the plugin .so
 
+  ModuleLoader::unload_plugins();
   return 0;
 }
