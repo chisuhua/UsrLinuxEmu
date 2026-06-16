@@ -1,18 +1,19 @@
 {
+  "_note": "This file is documentation. The runtime loader (src/kernel/module_loader.cpp) scans a directory passed to ModuleLoader::load_plugins() for files matching plugin_*.so and ignores this JSON. See AGENTS.md and docs/04-building/ci-cd.md for the current runtime contract.",
   "plugins": [
     {
       "name": "memory",
-      "path": "drivers/sample_memory.so",
+      "path": "build/drivers/plugin_sample_memory.so",
       "depends": []
     },
     {
       "name": "serial",
-      "path": "drivers/sample_serial.so",
+      "path": "build/drivers/plugin_sample_serial.so",
       "depends": []
     },
     {
       "name": "gpu_driver",
-      "path": "plugins/gpu_driver/gpu_driver_plugin.so",
+      "path": "build/plugins/gpu_driver/gpu_driver_plugin.so",
       "depends": []
     }
   ]

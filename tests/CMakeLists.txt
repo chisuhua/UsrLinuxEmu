@@ -87,10 +87,8 @@ set(STANDALONE_TESTS
     test_va_space.cpp
     test_serial.cpp
     test_serial_device.cpp
-    # 注意: 以下 2 个 test 因 plugin 路径不匹配暂时无法运行:
-    #   - test_poll.cpp        (依赖 sample_serial.so 插件加载,SEGFAULT)
-    #   - test_serial_ioctl.cpp (依赖 sample_serial.so 插件加载,Fails)
-    # 保留源文件供将来修复 (修复点: plugins/plugins.json 路径或 build 目录布局)
+    test_poll.cpp
+    test_serial_ioctl.cpp
 )
 
 # 定义Catch2测试的列表（使用Catch2框架的测试）

@@ -29,6 +29,14 @@
 | [adr-021](adr-021-hardware-puller.md) | Hardware Puller GPFIFO 状态机构架 | ✅ 已接受 | 2026-05 |
 | [adr-023](adr-023-hal-interface.md) | 仿真层接口契约 (HAL) | ✅ 已接受 | 2026-05 |
 | [adr-024](adr-024-user-mode-queue-submission.md) | 用户态队列命令提交架构 | 🔄 提议中 | 2026-05 |
+| [adr-022](adr-022-gpu-compute-unit-emulation.md) | GPU 计算单元仿真 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
+| [adr-025](adr-025-phase3-placeholder.md) | Phase 3+ 议题占位 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
+| [adr-026](adr-026-phase3-placeholder.md) | Phase 3+ 议题占位 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
+| [adr-027](adr-027-linux-compat-strategy.md) | Linux 内核兼容层扩展策略 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
+| [adr-028](adr-028-phase3-placeholder.md) | Phase 3+ 议题占位 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
+| [adr-029](adr-029-phase3-placeholder.md) | Phase 3+ 议题占位 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
+| [adr-030](adr-030-phase3-placeholder.md) | Phase 3+ 议题占位 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
+| [adr-031](adr-031-ttm-migration-priority.md) | TTM 迁移实施优先级 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
 
 ## ADR 状态说明
 
@@ -88,10 +96,16 @@ adr-001 (用户态模拟)
             │       ├── adr-021 (Hardware Puller)
             │       └── adr-023 (HAL 接口契约)
             │
-            └── (规划中 / 部分 ADR 待启动)
-                    ├── adr-022 (GPU 计算单元仿真) — **占位编号，未启动**
-                    ├── adr-023 (HAL 接口契约) — 已在 GPU 段重列
-                    └── adr-024～031 (其余待讨论议题) — **部分占位编号，未启动**
+            └── (Phase 3+ 规划 — 占位骨架已就位，详情待 owner 填充)
+                    ├── adr-022 (GPU 计算单元仿真)
+                    ├── adr-024 (用户态队列提交 — 已提议)
+                    ├── adr-025 (Phase 3+ 议题)
+                    ├── adr-026 (Phase 3+ 议题)
+                    ├── adr-027 (Linux 兼容层扩展)
+                    ├── adr-028 (Phase 3+ 议题)
+                    ├── adr-029 (Phase 3+ 议题)
+                    ├── adr-030 (Phase 3+ 议题)
+                    └── adr-031 (TTM 迁移优先级)
 ```
 
 ## 维护指南
@@ -118,4 +132,17 @@ adr-001 (用户态模拟)
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
-**最后更新**: 2026-05-07
+**最后更新**: 2026-06-16 (commit 374d463)
+
+## 编号 gap 治理（2026-06-16）
+
+2026-06-16 之前的 ADR 编号 022 + 025~031 一直缺失（被 `tools/docs-audit.sh` §3.1/3.2 标记为 "intentional placeholder"）。本轮治理补齐了 8 份**占位骨架 ADR**，明确每份占位的"决策待定"状态和潜在候选方向。
+
+- 022：GPU 计算单元仿真（具体 topic）
+- 025/026/028/029/030：通用 Phase 3+ 占位（候选 A/B/C/D 列出）
+- 027：Linux 兼容层扩展策略（具体 topic，承接 `docs/pending/linux_compat_plan.md`）
+- 031：TTM 迁移优先级（具体 topic，承接 adr-019 §6）
+
+后续 Phase 3+ 启动时，**owner 认领后应直接更新对应占位 ADR 的"决策"章节并将 status 改为 ✅ 已接受**，而不是新建一个文件。
+
+详细的占位 → 已接受工作流见各占位 ADR 的"## 后续"段。
