@@ -54,7 +54,6 @@ archive/
 .opencode/
 .mcp.json
 .opencode.json
-.github/
 
 Testing/
 .omo/
