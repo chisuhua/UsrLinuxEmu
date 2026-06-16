@@ -7,7 +7,7 @@
 #include "kernel/vfs.h"
 
 // 必须包含自定义命令
-#include "drivers/sample_serial.h"
+#include "sample_serial.h"
 #include "kernel/ioctl.h"
 
 using namespace usr_linux_emu;

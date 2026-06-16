@@ -24,3 +24,8 @@ target_include_directories(plugin_sample_serial PRIVATE ${PROJECT_SOURCE_DIR}/in
 #arget_link_libraries(sample_serial PRIVATE kernel)
 target_link_libraries(plugin_sample_memory PRIVATE kernel)
 target_link_libraries(plugin_sample_serial PRIVATE kernel)
+
+# 强制构建 sample 插件,即使没有其他 target 链接它们
+# (这些是 MODULE 库,通过 dlopen 加载,不会被自动构建)
+add_custom_target(sample_plugins ALL
+    DEPENDS plugin_sample_memory plugin_sample_serial)

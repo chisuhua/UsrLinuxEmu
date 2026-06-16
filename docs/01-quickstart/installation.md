@@ -32,7 +32,6 @@ sudo apt install -y \
     build-essential \
     cmake \
     git \
-    libgtest-dev \
     pkg-config
 
 # (可选) 安装开发工具
@@ -42,6 +41,8 @@ sudo apt install -y \
     clang-tidy \
     clang-format
 ```
+
+> **关于测试框架**：项目使用 **Catch2**（vendored 单文件 `tests/catch_amalgamated.{hpp,cpp}`），系统包管理器不需要安装任何外部测试框架。详见 [测试指南](../04-building/testing_guide.md)。
 
 ### CentOS/RHEL 系统
 
@@ -64,7 +65,6 @@ sudo dnf install -y \
     gcc-c++ \
     cmake \
     git \
-    gtest-devel \
     gdb \
     valgrind
 ```
@@ -76,7 +76,6 @@ sudo pacman -S \
     base-devel \
     cmake \
     git \
-    gtest \
     gdb \
     valgrind
 ```
@@ -112,6 +111,5 @@ git --version
 |------|----------|
 | CMake 版本过低 | 从 https://cmake.org/download/ 下载最新版本 |
 | 编译器不支持 C++17 | 升级 GCC 到 7+ 或 Clang 到 5+ |
-| 找不到 libgtest | 安装 libgtest-dev 包并编译 |
 
-**最后更新**: 2026-03-23
+**最后更新**: 2026-06-16

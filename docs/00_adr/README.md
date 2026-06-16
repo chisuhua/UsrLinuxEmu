@@ -15,7 +15,7 @@
 | [adr-007](adr-007-cmake-build-system.md) | 使用 CMake 作为构建系统 | ✅ 已接受 | 2025-12 |
 | [adr-008](adr-008-linux-api-compat.md) | 提供 Linux 内核 API 兼容层 | ✅ 已接受 | 2026-01 |
 | [adr-009](adr-009-singleton-pattern.md) | 采用单例模式实现核心服务 | ✅ 已接受 | 2026-01 |
-| [adr-010](adr-010-gtest-migration.md) | 计划迁移到 GTest 测试框架 | 🔄 提议中 | 2026-02 |
+| [adr-010](adr-010-gtest-migration.md) | 测试框架选型 — Catch2（最终采用）vs GTest | ✅ 已接受 | 2026-02 |
 | [adr-011](adr-011-multiprocess-support.md) | 多进程支持方案 | 🔄 提议中 | 2026-03 |
 | [adr-012](adr-012-performance-optimization.md) | 性能优化策略 | 🔄 提议中 | 2026-03 |
 | [adr-013](adr-013-error-handling-strategy.md) | 错误处理策略 | 🔄 提议中 | 2026-03 |
@@ -88,10 +88,10 @@ adr-001 (用户态模拟)
             │       ├── adr-021 (Hardware Puller)
             │       └── adr-023 (HAL 接口契约)
             │
-            └── (规划中)
-                    ├── adr-022 (GPU 计算单元仿真)
-                    ├── adr-023 (HAL 接口契约)
-                    └── adr-024～031 (其余待讨论议题)
+            └── (规划中 / 部分 ADR 待启动)
+                    ├── adr-022 (GPU 计算单元仿真) — **占位编号，未启动**
+                    ├── adr-023 (HAL 接口契约) — 已在 GPU 段重列
+                    └── adr-024～031 (其余待讨论议题) — **部分占位编号，未启动**
 ```
 
 ## 维护指南

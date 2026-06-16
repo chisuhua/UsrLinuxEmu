@@ -39,11 +39,11 @@ TaskRunner (消费者)                    UsrLinuxEmu (驱动实现者)
 
 | 文档 | 说明 | 维护方 |
 |------|------|--------|
-| [README.md](07-integration/README.md) | **入口索引** — 面向 TaskRunner 团队的文档目录，3 篇核心文档，核心 ioctl 表，引用 Issue #5 | UsrLinuxEmu |
-| [gpu-integration-guide.md](07-integration/gpu-integration-guide.md) | **联调教程** — 6 步完整示例（设备验证→GET_DEVICE_INFO→ALLOC_BO→PUSHBUFFER→WAIT_FENCE→FREE_BO），131 行 C++ 示例 | UsrLinuxEmu |
-| [gpu-api-reference.md](07-integration/gpu-api-reference.md) | **API 手册** — 6 个 ioctl 完整规格（签名、参数、结构体、返回值），引用 Issue #3/#4/#9 | UsrLinuxEmu |
-| [gpu-debug-faq.md](07-integration/gpu-debug-faq.md) | **问题排查** — 7 个常见故障（设备打开失败、EFAULT、ENOMEM、EINVAL、SUBMIT 无响应、WAIT_FENCE 超时、插件未加载），引用 Issue #11 | UsrLinuxEmu |
-| [taskrunner-index.md](07-integration/taskrunner-index.md) | **本文档** — 全量索引，跨所有目录的 TaskRunner 相关文档 | UsrLinuxEmu |
+| [README.md](../07-integration/README.md) | **入口索引** — 面向 TaskRunner 团队的文档目录，3 篇核心文档，核心 ioctl 表，引用 Issue #5 | UsrLinuxEmu |
+| [gpu-integration-guide.md](gpu-integration-guide.md) | **联调教程** — 6 步完整示例（设备验证→GET_DEVICE_INFO→ALLOC_BO→PUSHBUFFER→WAIT_FENCE→FREE_BO），131 行 C++ 示例 | UsrLinuxEmu |
+| [gpu-api-reference.md](gpu-api-reference.md) | **API 手册** — 6 个 ioctl 完整规格（签名、参数、结构体、返回值），引用 Issue #3/#4/#9 | UsrLinuxEmu |
+| [gpu-debug-faq.md](gpu-debug-faq.md) | **问题排查** — 7 个常见故障（设备打开失败、EFAULT、ENOMEM、EINVAL、SUBMIT 无响应、WAIT_FENCE 超时、插件未加载），引用 Issue #11 | UsrLinuxEmu |
+| [taskrunner-index.md](taskrunner-index.md) | **本文档** — 全量索引，跨所有目录的 TaskRunner 相关文档 | UsrLinuxEmu |
 
 **推荐阅读顺序**: README → gpu-integration-guide → gpu-api-reference → gpu-debug-faq
 
@@ -51,7 +51,7 @@ TaskRunner (消费者)                    UsrLinuxEmu (驱动实现者)
 
 | 文档 | 说明 | 状态 |
 |------|------|------|
-| [sync-plan.md](../../plans/sync-plan.md) | **主要协同契约** — 320 行，定义同步门限法工作流（S0-S5 同步点）、Phase 0-3 实施计划（35 项任务）、沟通机制（3 天超时预警、headless 测试、Issue 跟踪）、风险缓解 | 🔄 进行中 |
+| [sync-plan.md](../../archive/historical-plans-2026-06-15/sync-plan.md) | **主要协同契约**（已归档于 2026-06-15）— 320 行，定义同步门限法工作流（S0-S5 同步点）、Phase 0-3 实施计划（35 项任务）、沟通机制（3 天超时预警、headless 测试、Issue 跟踪）、风险缓解 | 🔄 已归档 |
 
 **同步点定义**:
 
@@ -81,9 +81,9 @@ TaskRunner (消费者)                    UsrLinuxEmu (驱动实现者)
 
 | ADR | 标题 | 状态 | 与 TaskRunner 的关系 |
 |-----|------|------|---------------------|
-| **ADR-015** | [gpu-ioctl-unification](00_adr/adr-015-gpu-ioctl-unification.md) | ✅ 已接受 | 废弃 System A/B，确立 System C (GPU_IOCTL_*) 为 canonical 接口，跨项目联合评审 |
-| **ADR-016** | [gpu-memory-domain](00_adr/adr-016-gpu-memory-domain.md) | ✅ 已接受 | 三层 Domain 模型 (VRAM/GTT/CPU)，ALLOC_BO 增加 domain 参数，TaskRunner 为评审者 |
-| **ADR-017** | [gpfifo-queue-abstraction](00_adr/adr-017-gpfifo-queue-abstraction.md) | ✅ 已接受 | GpuVaSpace 和 GpuQueue 抽象，支持多队列/优先级，TaskRunner 为评审者 |
+| **ADR-015** | [gpu-ioctl-unification](../00_adr/adr-015-gpu-ioctl-unification.md) | ✅ 已接受 | 废弃 System A/B，确立 System C (GPU_IOCTL_*) 为 canonical 接口，跨项目联合评审 |
+| **ADR-016** | [gpu-memory-domain](../00_adr/adr-016-gpu-memory-domain.md) | ✅ 已接受 | 三层 Domain 模型 (VRAM/GTT/CPU)，ALLOC_BO 增加 domain 参数，TaskRunner 为评审者 |
+| **ADR-017** | [gpfifo-queue-abstraction](../00_adr/adr-017-gpfifo-queue-abstraction.md) | ✅ 已接受 | GpuVaSpace 和 GpuQueue 抽象，支持多队列/优先级，TaskRunner 为评审者 |
 
 **ADR 关联图**:
 ```
@@ -96,8 +96,8 @@ ADR-015 (IOCTL 统一)
 
 | 文档 | 说明 |
 |------|------|
-| [development_implementation_plan.md](archive/planning/development_implementation_plan.md) | 第 7.5 子任务：TaskRunner 集成验证（verify_symlinks.sh CI 预检、端到端测试、无二进制依赖验证） |
-| [ROADMAP.md](archive/planning/ROADMAP.md) | 里程碑 3.3e：TaskRunner 集成验证（符号链接配置、CI symlink 预检、端到端测试） |
+| [development_implementation_plan.md](../archive/planning/development_implementation_plan.md) | 第 7.5 子任务：TaskRunner 集成验证（verify_symlinks.sh CI 预检、端到端测试、无二进制依赖验证） |
+| [ROADMAP.md](../archive/planning/ROADMAP.md) | 里程碑 3.3e：TaskRunner 集成验证（符号链接配置、CI symlink 预检、端到端测试） |
 
 ### 2.6 TaskRunner 子模块内部文档
 
@@ -212,20 +212,20 @@ TaskRunner/
 
 ### 6.1 首次联调
 
-1. 阅读 [07-integration/README.md](07-integration/README.md) 了解文档结构
-2. 按照 [gpu-integration-guide.md](07-integration/gpu-integration-guide.md) 的"快速开始"步骤操作
-3. 参考 [gpu-api-reference.md](07-integration/gpu-api-reference.md) 了解详细接口规格
+1. 阅读 [README.md](../07-integration/README.md) 了解文档结构
+2. 按照 [gpu-integration-guide.md](gpu-integration-guide.md) 的"快速开始"步骤操作
+3. 参考 [gpu-api-reference.md](gpu-api-reference.md) 了解详细接口规格
 
 ### 6.2 问题排查
 
-1. 查阅 [gpu-debug-faq.md](07-integration/gpu-debug-faq.md) 常见问题
-2. 检查 [sync-plan.md](../../plans/sync-plan.md) 同步点状态
+1. 查阅 [gpu-debug-faq.md](gpu-debug-faq.md) 常见问题
+2. 检查 [sync-plan.md](../../archive/historical-plans-2026-06-15/sync-plan.md) 同步点状态
 3. 如遇架构问题，参考 ADR-015/016/017
 
 ### 6.3 架构理解
 
 1. 阅读 [gpu_driver_architecture.md](../05-advanced/gpu_driver_architecture.md) 了解设计原则（第 1、3、8 章）
-2. 阅读 [sync-plan.md](../../plans/sync-plan.md) 了解协调工作流
+2. 阅读 [sync-plan.md](../../archive/historical-plans-2026-06-15/sync-plan.md) 了解协调工作流
 3. 阅读 ADR-015/016/017 了解关键决策
 
 ### 6.4 完整 TaskRunner 端文档

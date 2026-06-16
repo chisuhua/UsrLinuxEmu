@@ -1,421 +1,508 @@
 # 测试指南
 
-## 测试概述
+> **最后验证**: 2026-06-16 (commit `374d463`)
+>
+> **测试框架**: **Catch2**（vendored 单文件 `tests/catch_amalgamated.{hpp,cpp}`）。
+> 系统包管理器**不需要**安装任何外部测试框架。
+>
+> 权威架构文档：[post-refactor-architecture.md §1.7](../02_architecture/post-refactor-architecture.md)
 
-UsrLinuxEmu 项目包含全面的测试套件，用于验证各个组件的功能和性能。测试主要分为以下几类：
+---
 
-- 单元测试：测试单个组件的功能
-- 集成测试：测试多个组件之间的交互
-- 系统测试：测试整个系统的功能
-- 性能测试：评估系统性能
+## 目录
 
-## 测试结构
+- [1. 测试框架：Catch2](#1-测试框架catch2)
+- [2. 三类测试与命名约定](#2-三类测试与命名约定)
+- [3. 构建与运行](#3-构建与运行)
+- [4. Catch2 语法速查](#4-catch2-语法速查)
+- [5. 编写 GPU 测试](#5-编写-gpu-测试)
+- [6. 编写插件 / VFS 测试](#6-编写-插件--vfs-测试)
+- [7. SECTION 嵌套子例](#7-section-嵌套子例)
+- [8. 资源管理最佳实践](#8-资源管理最佳实践)
+- [9. 错误处理与边界](#9-错误处理与边界)
+- [10. 性能测试](#10-性能测试)
+- [11. 测试覆盖范围与策略](#11-测试覆盖范围与策略)
+- [12. 故障排除](#12-故障排除)
+- [13. 相关文档](#13-相关文档)
 
-### 测试目录结构
+---
+
+## 1. 测试框架：Catch2
+
+UsrLinuxEmu 使用 **Catch2 v2.x amalgamated 单文件版**，vendored 在 `tests/`：
 
 ```
 tests/
-├── CMakeLists.txt          # 测试构建配置
-├── test_gpu_ioctl.cpp      # GPU IOCTL 操作测试
-├── test_gpu_memory.cpp     # GPU 内存管理测试
-├── test_gpu_mmap.cpp       # GPU 内存映射测试
-├── test_gpu_mmap_and_submit.cpp  # GPU 内存映射和命令提交测试
-├── test_gpu_register.cpp   # GPU 寄存器操作测试
-├── test_gpu_regs.cpp       # GPU 寄存器测试
-├── test_gpu_ringbuffer.cpp # GPU 环形缓冲区测试
-├── test_gpu_submit.cpp     # GPU 命令提交测试
-├── test_ioctl.cpp          # IOCTL 操作测试
-├── test_logger.cpp         # 日志系统测试
-├── test_module_load_and_vfs.cpp  # 模块加载和 VFS 测试
-├── test_module_loader.cpp  # 模块加载器测试
-├── test_pcie_gpu.cpp       # PCIe GPU 设备测试
-├── test_plugin.cpp         # 插件系统测试
-├── test_poll.cpp           # 轮询功能测试
-├── test_serial.cpp         # 串口设备测试
-├── test_serial_device.cpp  # 串口设备测试
-├── test_serial_ioctl.cpp   # 串口 IOCTL 测试
-└── testno_vfs.cpp          # 非 VFS 相关测试
+├── catch_amalgamated.hpp   # 单头文件（约 520 KB）
+├── catch_amalgamated.cpp   # 单源文件（约 350 KB）
+└── test_*.cpp              # 30+ 测试用例
 ```
 
-## 编译和运行测试
+测试套件通过 `#include <catch_amalgamated.hpp>` 直接使用，**完全不依赖任何系统包**。所有测试基础设施都已经 vendored 在源码树里。
 
-### 构建测试
+### Catch2 关键 API
+
+Catch2 是 header-only 风格的单元测试框架，本项目使用 vendored 的 v2.x amalgamated 单文件版。
+
+| 维度 | Catch2（项目实际使用） |
+|------|---------------------|
+| 头文件 | `<catch_amalgamated.hpp>` |
+| 测试用例 | `TEST_CASE("name", "[tag]")` |
+| 致命断言 | `REQUIRE(expr)`（失败立即终止 TEST_CASE）|
+| 非致命断言 | `CHECK(expr)`（失败继续后续断言）|
+| 子例/嵌套 | `SECTION("name")` 自动重新执行外层 |
+| 系统安装 | 无需安装（vendored）|
+
+---
+
+## 2. 三类测试与命名约定
+
+[`tests/CMakeLists.txt`](../../tests/CMakeLists.txt) 把测试分成三组：
+
+| 类别 | 列表变量 | 链接 | 命名 | 用途 |
+|------|----------|------|------|------|
+| **Standalone** | `STANDALONE_TESTS` | `kernel` | `<src>_standalone` | 自定义 `main()` 的端到端测试 |
+| **Catch2** | `CATCH2_TESTS` | `kernel` + `catch_amalgamated.cpp` | `<src>` | Catch2 风格 `TEST_CASE` / `REQUIRE` |
+| **SIM** | `SIM_TESTS` | `kernel` + `gpu_sim` | `<src>_standalone` | 仿真层（scheduler/puller/hardware）测试 |
+
+完整文件列表参见 [`docs/04-building/build_system.md`](build_system.md) §6.1。
+
+新增 Catch2 测试的步骤：
+
+1. 在 `tests/test_<name>.cpp` 写测试（`#include <catch_amalgamated.hpp>` + `TEST_CASE` + `REQUIRE`）。
+2. 把文件名加到 `tests/CMakeLists.txt` 的 `CATCH2_TESTS` 列表（不是 `STANDALONE_TESTS`）。
+3. 重新 `cmake .. && make -j$(nproc)`，CMake 会自动链接 `catch_amalgamated.cpp` 并生成可执行文件 `build/bin/test_<name>`。
+
+---
+
+## 3. 构建与运行
+
+### 构建
 
 ```bash
-# 创建构建目录
-mkdir build && cd build
+# 必须从项目根目录
+cd /workspace/project/UsrLinuxEmu
 
-# 配置构建系统（启用测试）
-cmake .. -DBUILD_TESTS=ON
-
-# 编译所有测试
+# 配置 + 构建（顶层 enable_testing() 已开启）
+mkdir -p build && cd build
+cmake -DCMAKE_BUILD_TYPE=Debug ..
 make -j$(nproc)
 ```
 
-### 运行所有测试
+### 运行所有测试（CTest）
 
 ```bash
-# 运行所有测试
-make test
-
-# 或运行特定测试可执行文件
-./bin/test_gpu_submit
-./bin/test_plugin
+# 同样从项目根目录运行
+cd /workspace/project/UsrLinuxEmu
+cd build && ctest --output-on-failure && cd ..
 ```
 
-### 运行特定测试
+### 运行单个测试
 
 ```bash
-# 使用ctest运行特定测试
-ctest -R gpu_submit    # 运行包含"gpu_submit"的测试
-ctest -R gpu          # 运行包含"gpu"的所有测试
-ctest -V              # 详细输出
+# 直接执行二进制
+./build/bin/test_gpu_ioctl_standalone
+./build/bin/test_va_space_standalone
+./build/bin/test_gpu_ringbuffer_standalone
+./build/bin/test_hardware_puller_emu_standalone
+./build/bin/test_module_load_and_vfs_standalone
+
+# Catch2 二进制支持 tag 过滤
+./build/bin/test_gpu_memory                          # 跑该测试的所有 TEST_CASE
+./build/bin/test_gpu_memory "[alloc]"                # 只跑 tag 含 [alloc] 的
+./build/bin/test_gpu_memory "GPU memory allocation"  # 按 TEST_CASE 名字过滤
+./build/bin/test_gpu_memory -s                       # 打印通过/失败的测试名
 ```
 
-## 测试类型详解
+> **必须从项目根目录运行**：测试通过 `ModuleLoader::load_plugins("plugins")` 用相对路径加载插件。如果从 `build/bin/` 直接跑，会报 `Device not found`。
 
-### GPU 相关测试
+---
 
-#### GPU IOCTL 测试 ([test_gpu_ioctl.cpp](tests/test_gpu_ioctl.cpp))
+## 4. Catch2 语法速查
 
-验证 GPU 设备的 IOCTL 操作，包括内存分配、释放等操作。
+### 4.1 最小测试
 
 ```cpp
-// 示例：测试 GPU 内存分配
-TEST(GpuIoctlTest, TestAllocMemory) {
-    int fd = open("/dev/gpgpu0", O_RDWR);
-    ASSERT_GT(fd, 0);
-    
-    struct gpgpu_mem_alloc_args args = {0};
-    args.size = 1024;
-    
-    int ret = ioctl(fd, GPGPU_ALLOC_MEM, &args);
-    ASSERT_EQ(ret, 0);
-    ASSERT_GT(args.addr, 0);
-    
-    close(fd);
+#include <catch_amalgamated.hpp>
+
+TEST_CASE("GPU device returns vendor ID", "[gpu][device]") {
+    REQUIRE(gpu_vendor_id() == 0x1000);
 }
 ```
 
-#### GPU 内存管理测试 ([test_gpu_memory.cpp](tests/test_gpu_memory.cpp))
+`TEST_CASE(name, tags)`：第一个参数是测试名（推荐自然语言），第二个参数是 tag（用 `[tag1][tag2]` 形式，便于 `-t` / `[tag]` 过滤）。
 
-测试 GPU 内存分配器的功能，包括分配、释放和内存碎片管理。
+### 4.2 REQUIRE vs CHECK
 
-#### GPU 内存映射测试 ([test_gpu_mmap.cpp](tests/test_gpu_mmap.cpp))
-
-验证 GPU 内存的 mmap 操作，确保用户空间可以正确访问 GPU 内存。
-
-#### GPU 命令提交测试 ([test_gpu_submit.cpp](tests/test_gpu_submit.cpp))
-
-测试 GPU 命令提交机制，验证命令是否能正确传递给模拟器执行。
-
-### 框架功能测试
-
-#### 插件系统测试 ([test_plugin.cpp](tests/test_plugin.cpp))
-
-验证插件的加载、卸载和使用功能。
+| 宏 | 失败行为 | 适用场景 |
+|----|----------|----------|
+| `REQUIRE(expr)` | **致命**：当前 TEST_CASE 立即终止 | 前置条件、不变量 |
+| `CHECK(expr)` | **非致命**：继续执行后续断言 | 期望大量独立断言都跑一遍的场景 |
 
 ```cpp
-// 示例：测试插件加载
-TEST(PluginTest, TestLoadPlugin) {
-    int result = PluginManager::load_plugin("path/to/plugin.so");
-    ASSERT_EQ(result, 0);
-    
-    auto plugin = PluginManager::get_plugin("plugin_name");
-    ASSERT_NE(plugin, nullptr);
+TEST_CASE("Multiple buffer allocations", "[gpu][memory]") {
+    auto buf1 = alloc_buffer(1024);
+    REQUIRE(buf1.valid());              // 致命：buf1 失败后面所有断言都没意义
+
+    auto buf2 = alloc_buffer(2048);
+    CHECK(buf2.valid());                // 非致命：即使失败也继续记录
+
+    auto buf3 = alloc_buffer(4096);
+    CHECK(buf3.valid());
 }
 ```
 
-#### VFS 测试 ([test_module_load_and_vfs.cpp](tests/test_module_load_and_vfs.cpp))
+### 4.3 常用断言
 
-测试虚拟文件系统的设备注册和查找功能。
-
-#### 日志系统测试 ([test_logger.cpp](tests/test_logger.cpp))
-
-验证日志系统的功能，包括不同级别的日志输出。
-
-## 编写新测试
-
-### 单元测试模板
+Catch2 的 `REQUIRE(expr)` / `CHECK(expr)` 用 C++ 表达式原语。布尔判断直接写表达式，数值相等用 `==`：
 
 ```cpp
-#include <gtest/gtest.h>
-#include "your_component.h"
+REQUIRE(x == 42);
+CHECK(vec.size() == 3);
+REQUIRE(ptr != nullptr);
+CHECK(s == "hello");
+REQUIRE(flag);
 
-// 测试夹具类（如果需要）
-class YourComponentTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        // 测试前的初始化
+CHECK_THROWS(stmt);        // 期望抛异常
+CHECK_THROWS_AS(stmt, std::out_of_range);
+CHECK_NOTHROW(stmt);
+```
+
+---
+
+## 5. 编写 GPU 测试
+
+参考 [`tests/test_gpu_memory.cpp`](../../tests/test_gpu_memory.cpp)（标准 Catch2 模板）。
+
+### 5.1 标准模板
+
+```cpp
+#include <catch_amalgamated.hpp>
+
+#include "gpu_driver/shared/gpu_ioctl.h"
+#include "gpu_driver/shared/gpu_types.h"
+#include "kernel/file_ops.h"
+#include "kernel/module_loader.h"
+#include "kernel/vfs.h"
+
+using namespace usr_linux_emu;
+
+// 一次性加载插件：避免重复 dlopen/dlclose 触发动态链接器缓存问题
+struct PluginLifecycle {
+  PluginLifecycle() {
+    ModuleLoader::load_plugins("plugins");
+  }
+  ~PluginLifecycle() {
+    ModuleLoader::unload_plugins();
+  }
+};
+static PluginLifecycle plugin_lifecycle;
+
+TEST_CASE("GPU memory allocation and free", "[gpu][memory]") {
+  auto dev = VFS::instance().open("/dev/gpgpu0", 0);
+  REQUIRE(dev != nullptr);
+  REQUIRE(dev->fops != nullptr);
+
+  gpu_alloc_bo_args alloc_args{};
+  alloc_args.size   = 1024 * 1024;
+  alloc_args.domain = GPU_MEM_DOMAIN_VRAM;
+  alloc_args.flags  = GPU_BO_DEVICE_LOCAL;
+
+  long ret = dev->fops->ioctl(0, GPU_IOCTL_ALLOC_BO, &alloc_args);
+  REQUIRE(ret == 0);
+  REQUIRE(alloc_args.handle != 0);
+  REQUIRE(alloc_args.gpu_va != 0);
+
+  u32 handle = alloc_args.handle;
+  ret = dev->fops->ioctl(0, GPU_IOCTL_FREE_BO, &handle);
+  REQUIRE(ret == 0);
+}
+```
+
+### 5.2 常见 GPU 测试场景
+
+| 场景 | 测试源 | 关键 ioctl |
+|------|--------|-----------|
+| 设备信息查询 | `test_gpu_ioctl.cpp` | `GPU_IOCTL_GET_DEVICE_INFO` |
+| 显存分配 / 释放 | `test_gpu_memory.cpp` | `GPU_IOCTL_ALLOC_BO` / `GPU_IOCTL_FREE_BO` |
+| mmap + 提交 | `test_gpu_mmap_and_submit.cpp` | `GPU_IOCTL_MAP_BO` + `GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH` |
+| VA Space 创建 | `test_va_space.cpp` | `GPU_IOCTL_CREATE_VA_SPACE` / `DESTROY_VA_SPACE` |
+| Queue 创建 | `test_gpu_ioctl.cpp` | `GPU_IOCTL_CREATE_QUEUE` / `DESTROY_QUEUE` |
+| Fence 等待 | `test_gpu_fence_return.cpp` | `GPU_IOCTL_WAIT_FENCE` |
+| Ring buffer | `test_gpu_ringbuffer.cpp` | 多队列 fetch 链路 |
+| Hardware puller | `test_hardware_puller_emu.cpp` | FSM 状态机 |
+
+---
+
+## 6. 编写插件 / VFS 测试
+
+参考 [`tests/test_module_load_and_vfs.cpp`](../../tests/test_module_load_and_vfs.cpp)。
+
+```cpp
+#include <catch_amalgamated.hpp>
+
+#include "kernel/module_loader.h"
+#include "kernel/vfs.h"
+
+using namespace usr_linux_emu;
+
+TEST_CASE("Plugin loads and registers device", "[plugin][vfs]") {
+  ModuleLoader::load_plugins("plugins");
+
+  SECTION("Device lookup by path") {
+    auto dev = VFS::instance().open("/dev/gpgpu0", O_RDWR);
+    REQUIRE(dev != nullptr);
+    REQUIRE(dev->fops != nullptr);
+  }
+
+  SECTION("Missing device returns nullptr") {
+    auto dev = VFS::instance().open("/dev/nonexistent", O_RDWR);
+    REQUIRE(dev == nullptr);
+  }
+
+  ModuleLoader::unload_plugins();
+}
+```
+
+---
+
+## 7. SECTION 嵌套子例
+
+Catch2 的 `SECTION("name")` 是嵌套子例。每个 `SECTION` 会在每次进入 `TEST_CASE` 时**从头重新执行**外层 `TEST_CASE` 的代码（catch 的"tree of sub-cases"语义）。这意味着每个 section 自动获得一份干净的初始化状态，无需手动 `SetUp/TearDown`。
+
+### 7.1 基础嵌套
+
+```cpp
+TEST_CASE("VA Space lifecycle", "[va_space]") {
+  // 这段代码每个 SECTION 都会跑一遍
+  gpu_va_space_args args{};
+  args.page_size = 0;  // 4KB
+  REQUIRE(dev->fops->ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &args) == 0);
+  u64 handle = args.va_space_handle;
+  REQUIRE(handle != 0);
+
+  SECTION("Destroy with no attached queues") {
+    long ret = dev->fops->ioctl(0, GPU_IOCTL_DESTROY_VA_SPACE, &handle);
+    REQUIRE(ret == 0);
+  }
+
+  SECTION("Destroy with attached queue fails") {
+    // 先创建一个 queue，挂在 VA Space 上
+    gpu_queue_args q_args{};
+    q_args.va_space_handle = handle;
+    REQUIRE(dev->fops->ioctl(0, GPU_IOCTL_CREATE_QUEUE, &q_args) == 0);
+
+    // 再销毁 VA Space 应该返回 -EBUSY
+    long ret = dev->fops->ioctl(0, GPU_IOCTL_DESTROY_VA_SPACE, &handle);
+    REQUIRE(ret == -EBUSY);
+  }
+
+  // 清理（每个 SECTION 跑完后都会执行）
+  dev->fops->ioctl(0, GPU_IOCTL_DESTROY_VA_SPACE, &handle);
+}
+```
+
+### 7.2 嵌套 SECTION
+
+```cpp
+TEST_CASE("Multi-page VA Space with mixed pages", "[va_space][nested]") {
+  SECTION("4KB pages") {
+    gpu_va_space_args args{};
+    args.page_size = 0;  // 4KB
+    dev->fops->ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &args);
+
+    SECTION("Allocates 4KB-aligned BOs") {
+      // ... 测试 4KB 对齐 ...
     }
-    
-    void TearDown() override {
-        // 测试后的清理
+
+    SECTION("Allocates 64KB BOs (跨多个 4KB 页)") {
+      // ... 测试跨页 ...
     }
+  }
+
+  SECTION("64KB pages") {
+    gpu_va_space_args args{};
+    args.page_size = 1;  // 64KB
+    dev->fops->ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &args);
+
+    SECTION("Allocates 64KB-aligned BOs") {
+      // ...
+    }
+  }
+}
+```
+
+---
+
+## 8. 资源管理最佳实践
+
+### 8.1 RAII 守卫
+
+```cpp
+struct DeviceGuard {
+  std::shared_ptr<Device> dev;
+  DeviceGuard() {
+    dev = VFS::instance().open("/dev/gpgpu0", O_RDWR);
+    REQUIRE(dev != nullptr);  // 失败会终止整个 TEST_CASE
+  }
 };
 
-// 简单测试
-TEST(YourComponentTest, TestBasicFunctionality) {
-    YourComponent comp;
-    EXPECT_EQ(comp.do_something(), expected_result);
+TEST_CASE("GPU IOCTL round-trip", "[gpu]") {
+  DeviceGuard guard;
+  // 测试结束自动释放 guard.dev
 }
-
-// 使用测试夹具的测试
-TEST_F(YourComponentTest, TestWithFixture) {
-    // 使用在 SetUp 中初始化的资源
-    EXPECT_TRUE(some_condition);
-}
-
-// 参数化测试
-INSTANTIATE_TEST_SUITE_P(VariousSizes, 
-                         YourComponentTest,
-                         ::testing::Values(10, 100, 1000));
 ```
 
-### GPU 组件测试示例
+### 8.2 避免显式 `main()`
+
+Catch2 测试**不要**自己写 `main()`：
 
 ```cpp
-#include <gtest/gtest.h>
-#include "drivers/gpu/buddy_allocator.h"
-
-class BuddyAllocatorTest : public ::testing::Test {
-protected:
-    static const size_t TEST_MEMORY_SIZE = 1024 * 1024; // 1MB
-    
-    void SetUp() override {
-        allocator = std::make_unique<BuddyAllocator>(TEST_MEMORY_SIZE);
-    }
-    
-    void TearDown() override {
-        allocator.reset();
-    }
-    
-    std::unique_ptr<BuddyAllocator> allocator;
-};
-
-TEST_F(BuddyAllocatorTest, TestBasicAllocation) {
-    uint64_t addr;
-    size_t size = 4096;  // 4KB
-    
-    int result = allocator->allocate(size, &addr);
-    EXPECT_EQ(result, 0);
-    EXPECT_GT(addr, 0);
+// ❌ 错误：Standalone 模式会绕过 Catch2 的自动注册
+int main() {
+  ModuleLoader::load_plugins("plugins");
+  auto dev = VFS::instance().open("/dev/gpgpu0", 0);
+  // ...
 }
 
-TEST_F(BuddyAllocatorTest, TestMultipleAllocations) {
-    std::vector<uint64_t> addresses;
-    
-    // 分配多个块
-    for (int i = 0; i < 10; ++i) {
-        uint64_t addr;
-        size_t size = 1024;
-        ASSERT_EQ(allocator->allocate(size, &addr), 0);
-        addresses.push_back(addr);
-    }
-    
-    // 验证地址不重叠
-    for (size_t i = 0; i < addresses.size(); ++i) {
-        for (size_t j = i + 1; j < addresses.size(); ++j) {
-            // 检查是否有重叠（简单检查地址是否相同）
-            EXPECT_NE(addresses[i], addresses[j]);
-        }
-    }
-    
-    // 释放所有块
-    for (auto addr : addresses) {
-        EXPECT_EQ(allocator->deallocate(addr), 0);
-    }
-}
-
-TEST_F(BuddyAllocatorTest, TestLargeAllocation) {
-    uint64_t addr;
-    // 尝试分配接近总大小的内存
-    size_t large_size = TEST_MEMORY_SIZE - 1;
-    
-    int result = allocator->allocate(large_size, &addr);
-    // 根据分配器策略，这可能成功或失败，但不应崩溃
-    EXPECT_TRUE(result == 0 || result == -1);
+// ✅ 正确：放进 TEST_CASE，让 Catch2 来组织执行
+TEST_CASE("...", "[tag]") {
+  static PluginLifecycle plugin_lifecycle;  // 全局一次性加载
+  auto dev = VFS::instance().open("/dev/gpgpu0", 0);
+  REQUIRE(dev != nullptr);
+  // ...
 }
 ```
 
-### 集成测试示例
+如果确实需要自定义 `main()`（例如读特殊参数），把文件加入 `STANDALONE_TESTS` 而不是 `CATCH2_TESTS`，并提供 `CATCH_CONFIG_MAIN` 的替代。
+
+---
+
+## 9. 错误处理与边界
 
 ```cpp
-#include <gtest/gtest.h>
-#include "kernel/device/gpgpu_device.h"
-#include "drivers/gpu/gpu_driver.h"
+TEST_CASE("Invalid arguments are rejected", "[gpu][errors]") {
+  auto dev = VFS::instance().open("/dev/gpgpu0", 0);
+  REQUIRE(dev != nullptr);
 
-TEST(GpuIntegrationTest, TestFullWorkflow) {
-    // 创建 GPU 设备
-    auto gpu_device = std::make_shared<GpuDevice>();
-    ASSERT_NE(gpu_device, nullptr);
-    
-    // 打开设备
-    int fd = gpu_device->open(0);
-    EXPECT_GT(fd, 0);
-    
-    // 分配 GPU 内存
-    struct gpgpu_mem_alloc_args alloc_args = {};
-    alloc_args.size = 1024;
-    int ioctl_result = gpu_device->ioctl(GPGPU_ALLOC_MEM, &alloc_args);
-    EXPECT_EQ(ioctl_result, 0);
-    EXPECT_GT(alloc_args.addr, 0);
-    
-    // 测试内存映射
-    void *mapped_addr = gpu_device->mmap(
-        nullptr, alloc_args.size, 
-        PROT_READ | PROT_WRITE, 
-        MAP_SHARED, 
-        alloc_args.addr
-    );
-    EXPECT_NE(mapped_addr, MAP_FAILED);
-    
-    // 测试写入
-    const char test_data[] = "Hello GPU";
-    memcpy(mapped_addr, test_data, sizeof(test_data));
-    
-    // 验证写入的数据
-    EXPECT_STREQ(static_cast<char*>(mapped_addr), test_data);
-    
-    // 清理
-    munmap(mapped_addr, alloc_args.size);
-    gpu_device->close();
+  SECTION("Zero size allocation fails") {
+    gpu_alloc_bo_args args{};
+    args.size = 0;
+    long ret = dev->fops->ioctl(0, GPU_IOCTL_ALLOC_BO, &args);
+    REQUIRE(ret != 0);  // 非 0 表示失败
+  }
+
+  SECTION("Invalid domain flag fails") {
+    gpu_alloc_bo_args args{};
+    args.size = 4096;
+    args.domain = 0xDEADBEEF;  // 非法 domain
+    long ret = dev->fops->ioctl(0, GPU_IOCTL_ALLOC_BO, &args);
+    REQUIRE(ret != 0);
+  }
+
+  SECTION("Free with invalid handle fails") {
+    u32 bad_handle = 0xFFFFFFFF;
+    long ret = dev->fops->ioctl(0, GPU_IOCTL_FREE_BO, &bad_handle);
+    REQUIRE(ret != 0);
+  }
 }
 ```
 
-## 测试最佳实践
+---
 
-### 断言使用
-
-- 使用 `ASSERT_*` 进行关键条件检查，失败时停止测试
-- 使用 `EXPECT_*` 进行非关键条件检查，失败时继续测试
-- 选择合适的断言类型：
-  - `EQ/NE` 用于相等性检查
-  - `TRUE/FALSE` 用于布尔值检查
-  - `NULL/NOTNULL` 用于指针检查
-  - `STREQ/STRNE` 用于字符串比较
-
-### 资源管理
+## 10. 性能测试
 
 ```cpp
-// 使用 RAII 确保资源清理
-class ResourceGuard {
-public:
-    ResourceGuard(int fd) : fd_(fd) {}
-    ~ResourceGuard() { if (fd_ >= 0) close(fd_); }
-    
-private:
-    int fd_;
-};
+#include <chrono>
 
-TEST(ResourceManagementTest, TestWithGuard) {
-    int fd = open("/dev/gpgpu0", O_RDWR);
-    ResourceGuard guard(fd);
-    
-    // 测试代码...
-    // 离开作用域时会自动关闭文件描述符
-}
-```
+TEST_CASE("10000 GPU BO allocations complete in < 1s", "[gpu][perf]") {
+  using clock = std::chrono::high_resolution_clock;
 
-### 错误处理测试
+  auto start = clock::now();
 
-```cpp
-TEST(ErrorHandlingTest, TestInvalidArguments) {
-    BuddyAllocator allocator(1024 * 1024);
-    uint64_t addr;
-    
-    // 测试无效参数
-    EXPECT_NE(allocator.allocate(0, &addr), 0);  // 0 大小应失败
-    EXPECT_NE(allocator.allocate(1024*1024*1024, &addr), 0);  // 超大分配应失败
-}
-```
-
-### 性能测试
-
-```cpp
-TEST(PerformanceTest, TestAllocationSpeed) {
-    BuddyAllocator allocator(1024 * 1024);
-    const int iterations = 10000;
-    auto start = std::chrono::high_resolution_clock::now();
-    
-    for (int i = 0; i < iterations; ++i) {
-        uint64_t addr;
-        allocator.allocate(1024, &addr);
-        if (addr != 0) {
-            allocator.deallocate(addr);
-        }
+  for (int i = 0; i < 10000; ++i) {
+    gpu_alloc_bo_args args{};
+    args.size = 4096;
+    args.domain = GPU_MEM_DOMAIN_VRAM;
+    auto ret = dev->fops->ioctl(0, GPU_IOCTL_ALLOC_BO, &args);
+    if (ret == 0) {
+      u32 h = args.handle;
+      dev->fops->ioctl(0, GPU_IOCTL_FREE_BO, &h);
     }
-    
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    
-    // 验证性能在可接受范围内（例如：10000次操作不超过1秒）
-    EXPECT_LT(duration.count(), 1000000);  // 1秒 = 1,000,000微秒
+  }
+
+  auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(
+      clock::now() - start).count();
+
+  CHECK(duration_us < 1'000'000);  // 1 秒
 }
 ```
 
-## 测试覆盖范围
+CI 上默认会跑性能测试；本地开发可以用 `./build/bin/test_xxx "[!perf]"` 跳过带 `[perf]` tag 的测试。
 
-### 重要测试场景
+---
 
-1. **边界条件测试**：
-   - 最小/最大值
-   - 空值/零值
-   - 溢出情况
+## 11. 测试覆盖范围与策略
 
-2. **错误路径测试**：
-   - 无效输入
-   - 资源不足
-   - 系统调用失败
+### 11.1 重要场景清单
 
-3. **并发测试**：
-   - 多线程访问
-   - 竞态条件
-   - 死锁情况
+1. **边界条件**：最小/最大值、空值/零值、整数溢出
+2. **错误路径**：无效输入、资源耗尽、ioctl 失败注入
+3. **并发**：多线程访问、竞态条件、死锁恢复
+4. **资源泄漏**：RAII 守卫、mock 析构次数统计
+5. **跨模块集成**：plugin 加载 → VFS 注册 → ioctl → HAL → sim 的完整链路
 
-4. **资源泄漏测试**：
-   - 内存泄漏
-   - 文件描述符泄漏
-   - 锁未释放
-
-### 代码覆盖率
+### 11.2 覆盖率
 
 ```bash
-# 使用 lcov 生成覆盖率报告
-sudo apt-get install lcov
-
-# 重新配置项目以启用覆盖率
-cmake .. -DCOVERAGE=ON -DBUILD_TESTS=ON
-make
+# 启用 gcov 覆盖率
+cmake -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_CXX_FLAGS="--coverage -g" \
+      -DCMAKE_C_FLAGS="--coverage -g" ..
+make -j$(nproc)
 
 # 运行测试
-make test
+ctest --output-on-failure
 
-# 生成覆盖率报告
-lcov --directory . --capture --output-file coverage.info
-lcov --remove coverage.info '/usr/*' 'tests/*' --output-file coverage.info
-genhtml coverage.info --output-directory coverage_report
-
-# 查看报告
-xdg-open coverage_report/index.html
+# 生成报告
+gcovr -r .. --html --html-details -o coverage.html
+firefox coverage.html
 ```
 
-## 持续集成
+### 11.3 新功能测试要求
 
-### 测试执行策略
+- 每个新功能至少 1 个 `TEST_CASE`
+- 新功能代码覆盖率 ≥ 80%
+- Bug 修复必须包含回归测试（`[regression]` tag）
 
-在 CI/CD 环境中：
+---
 
-1. 每次提交运行快速单元测试
-2. 定期运行完整测试套件
-3. 性能回归测试
-4. 代码覆盖率检查
+## 12. 故障排除
 
-### 测试报告
+| 症状 | 原因 | 解决 |
+|------|------|------|
+| `undefined reference to Catch::TestRegistrar` | 文件没在 `CATCH2_TESTS` 列表里 | 把 `.cpp` 加到 `tests/CMakeLists.txt` 的 `CATCH2_TESTS` |
+| `Device not found` | 没从项目根目录运行 | `cd /workspace/project/UsrLinuxEmu` 后再跑测试 |
+| `ioctl 返回 -EFAULT` | 结构体字段没初始化 | 用 `{}` 零初始化，再设需要的字段 |
+| `ctest` 一个测试都没跑 | `BUILD_TESTS` 没开 | 顶层 `CMakeLists.txt` 已开启 `enable_testing()`，不需要 flag |
+| 测试二进制找不到 `catch_amalgamated.hpp` | include 路径没设 | 检查 `tests/CMakeLists.txt` 的 `add_catch_test` 是否加了 `${CMAKE_CURRENT_SOURCE_DIR}` |
 
-确保测试输出清晰的报告，包括：
+> 不要尝试用系统包管理器安装其他测试框架来"修复"上述问题——本项目**完全不依赖**任何外部测试包。所有 Catch2 设施都已 vendored。
 
-- 通过/失败的测试数量
-- 执行时间
-- 失败测试的详细信息
-- 性能指标
+---
+
+## 13. 相关文档
+
+| 文档 | 作用 |
+|------|------|
+| [build_system.md](build_system.md) | 构建系统详解、测试分三类的原因 |
+| [ci-cd.md](ci-cd.md) | CI 配置（基于 Catch2） |
+| [AGENTS.md](../../AGENTS.md) | 开发指南 + 编码风格 + 测试覆盖目标 |
+| [post-refactor-architecture.md §1.7](../02_architecture/post-refactor-architecture.md) | 测试框架"声称 vs 实际"审计 |
+| [tests/test_gpu_memory.cpp](../../tests/test_gpu_memory.cpp) | 标准 Catch2 模板 |
+| [tests/CMakeLists.txt](../../tests/CMakeLists.txt) | 测试构建配置 |
+
+---
+
+**最后更新**: 2026-06-16  
+**对应代码 commit**: `374d463`
