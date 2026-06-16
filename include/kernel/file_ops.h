@@ -9,7 +9,9 @@
 
 namespace usr_linux_emu {
 
+#ifndef O_NONBLOCK
 #define O_NONBLOCK 0x0004
+#endif
 
 class FileOperations {
  public:
