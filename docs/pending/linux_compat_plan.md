@@ -779,7 +779,7 @@ void pci_disable_msix(struct pci_dev* dev);
 
 - [Linux 内核文档](https://www.kernel.org/doc/html/latest/)
 - [Linux 驱动开发](https://lwn.net/Kernel/LDD3/)
-- [UsrLinuxEmu 架构设计](../02-core/architecture.md)
+- [UsrLinuxEmu 架构设计](../02_architecture/architecture.md)
 - [总体开发计划](../plans/master_plan_2026.md)
 
 ---

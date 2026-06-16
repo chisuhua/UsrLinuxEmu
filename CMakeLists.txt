@@ -16,7 +16,8 @@ include_directories(${PROJECT_SOURCE_DIR}/include/kernel)
 include_directories(${PROJECT_SOURCE_DIR}/include/kernel/device)
 include_directories(${PROJECT_SOURCE_DIR}/drivers)
 include_directories(${PROJECT_SOURCE_DIR}/external/json)
-include_directories(${PROJECT_SOURCE_DIR}/simulator)
+# Note: simulator/ is empty (legacy; simulation moved to plugins/gpu_driver/sim/ in Phase 1.5)
+# The audit script (tools/docs-audit.sh §5.3) enforces this invariant.
 
 # 添加子模块
 add_subdirectory(src)

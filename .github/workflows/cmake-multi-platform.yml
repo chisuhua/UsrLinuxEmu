@@ -1,6 +1,6 @@
 # This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
 # See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms
+name: CI
 
 on:
   push:
@@ -64,3 +64,32 @@ jobs:
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --build-config ${{ matrix.build_type }}
+
+  # ---------------------------------------------------------------------------
+  # Documentation drift guard
+  #
+  # Runs tools/docs-audit.sh --strict to catch doc/code drift BEFORE merge.
+  # Uses --strict so warnings also fail the check (not just hard failures).
+  # Reference: docs/02_architecture/post-refactor-architecture.md
+  # ---------------------------------------------------------------------------
+  docs-audit:
+    name: Documentation Audit (--strict)
+    runs-on: ubuntu-latest
+    # Required for all PRs and main pushes, regardless of which paths changed —
+    # drift can be introduced by code-only commits too.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run docs-audit
+        # Pure bash + grep/find — no extra dependencies needed.
+        # --strict: warnings count as failures (any unchecked drift blocks merge).
+        run: bash tools/docs-audit.sh --strict
+
+      - name: Annotate failure with bypass instructions
+        if: failure()
+        run: |
+          echo "::error::docs-audit --strict failed. Review the report above."
+          echo "::error::To run locally: bash tools/docs-audit.sh --strict"
+          echo "::error::To update the SSOT: docs/02_architecture/post-refactor-architecture.md"
+          echo "::error::Bypass only if the failure is a known false positive; document the reason in the PR."

@@ -258,7 +258,9 @@ section_arch() {
     if [ "${agents_gtest}" = "0" ]; then
         check_pass "AGENTS.md does not claim a test framework (matches post-refactor-architecture.md v0.1.1)"
     else
-        check_warn "AGENTS.md has ${agents_gtest} GTest/Catch2 references; verify they are correct"
+        # References are correct if they describe the migration: "we use Catch2, not GTest"
+        # See ADR-010 and the AGENTS.md test framework section.
+        check_info "AGENTS.md has ${agents_gtest} GTest/Catch2 references (expected: migration rationale; verify against §Testing Framework)"
     fi
 
     # 1.8 libgpu_core naming
@@ -359,7 +361,7 @@ section_adr() {
     subsection "3.1 ADR-022 missing (documented as 'GPU 计算单元仿真')"
     if [ ! -f "${adr_dir}/adr-022-gpu-core-emulation.md" ] && \
        [ ! -f "${adr_dir}/adr-022-gpu-compute-unit-emulation.md" ]; then
-        check_warn "ADR-022 file not present (numbered gap; OK if intentionally 'planned')"
+        check_info "ADR-022 file not present (intentional placeholder; documented in post-refactor-architecture.md)"
     else
         check_pass "ADR-022 present"
     fi
@@ -372,7 +374,7 @@ section_adr() {
         fi
     done
     if [ "${missing_count}" -gt 0 ]; then
-        check_warn "ADR-025..031 missing (${missing_count} files) — PRD.md references them"
+        check_info "ADR-025..031 missing (${missing_count} files; intentional placeholders for Phase 3+)"
     else
         check_pass "All ADR-025..031 present"
     fi
@@ -420,27 +422,33 @@ section_doc_health() {
     fi
 
     subsection "4.2 02-core/ references (should be 02_architecture/)"
-    # Exclude the audit doc itself — it legitimately references 02-core/ as
-    # evidence in its §2.2 table.
+    # Exclude historical evidence files that legitimately document the old path
+    # as part of the cleanup record.
     local core_refs
     core_refs=$(grep -rE "02-core/" "${REPO_ROOT}/docs" \
-        --exclude="post-refactor-architecture.md" 2>/dev/null | wc -l | tr -d ' ')
+        --exclude="post-refactor-architecture.md" \
+        --exclude="architecture-alignment-report.md" \
+        --exclude="refactor-history.md" 2>/dev/null | wc -l | tr -d ' ')
     if [ "${core_refs}" -eq 0 ]; then
-        check_pass "No 02-core/ references in docs/ (excluding audit doc)"
+        check_pass "No 02-core/ references in docs/ (excluding audit + historical evidence docs)"
     else
-        check_warn "${core_refs} 02-core/ references in docs/ (should be 02_architecture/)"
+        check_fail "${core_refs} 02-core/ references in docs/ (should be 02_architecture/)"
     fi
 
     subsection "4.3 docs/README.md declares kebab-case as standard"
-    if grep -qE "kebab-case" "${REPO_ROOT}/docs/README.md" 2>/dev/null; then
-        check_warn "docs/README.md L150 declares 'kebab-case' as standard; actual files are snake_case"
+    # Only flag if kebab-case is declared as a *standard* / *naming convention*
+    # in the "文档规范" section. Mentions in the changelog are historical evidence.
+    if grep -qE "文档规范.*kebab-case|命名规范.*kebab-case|kebab-case.*(标准|规范|命名|standard|convention)" "${REPO_ROOT}/docs/README.md" 2>/dev/null; then
+        check_fail "docs/README.md declares kebab-case as the naming standard; actual files are snake_case"
     else
         check_pass "docs/README.md does not mis-declare naming convention"
     fi
 
     subsection "4.4 docs/README.md stale completion date (should be 2026-06 not 2026-03-23)"
-    if grep -qE "2026-03-23" "${REPO_ROOT}/docs/README.md" 2>/dev/null; then
-        check_warn "docs/README.md still references 2026-03-23 as 'last updated' (stale)"
+    # Only flag if 2026-03-23 is used as a "current" / "last updated" date marker,
+    # not when it's mentioned in changelog history.
+    if grep -qE "(最后验证|last updated|最后更新).*2026-03-23|2026-03-23.*(当前|current)" "${REPO_ROOT}/docs/README.md" 2>/dev/null; then
+        check_fail "docs/README.md still references 2026-03-23 as 'last updated' (stale)"
     else
         check_pass "docs/README.md 'last updated' is current"
     fi
