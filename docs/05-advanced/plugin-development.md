@@ -1,16 +1,21 @@
 # 插件开发指南
 
-> **最后验证**: 2026-06-16 (commit `374d463`)
+> **最后验证**: 2026-06-16 (commit `758b39c` — PR #16 后)
 >
 > **SSOT**: 本文档与 [docs/02_architecture/post-refactor-architecture.md §1.5](../02_architecture/post-refactor-architecture.md) 和 [AGENTS.md](../../AGENTS.md) 对齐。如冲突，以 SSOT 为准。
 >
 > **状态**: ✅ 与 Phase 1.5 / Phase 2 重构后代码一致
+>
+> **重要更新 (2026-06-16)**:
+> - §2.1 / §2.2 / §4 Step 4 / §7.4：**修正 plugins.json 误导**——`ModuleLoader` **不读** `plugins/plugins.json`（PR #15 证实），它是手工维护的 dead documentation。loader 只扫目录里的 `plugin_*.so`。
+> - §3.4 新增「**dlclose + shared_ptr 陷阱**」——每个 plugin author **必须**在 `mod->exit()` 里撤销 `init()` 注册的所有 kernel-side state（PR #16 fix）。
 
 本文介绍如何在 UsrLinuxEmu 中开发、构建、加载一个设备插件。读完之后，你应该能：
 
 - 解释 `module mod` 符号的 ABI 契约
 - 用 `ModuleLoader::load_plugins("plugins")` 加载插件目录
 - 用 `VFS::instance().register_device(...)` 注册一个设备
+- **安全地写 `mod->exit()`**（避免 dlclose 后的 SEGFAULT）
 - 写一个最小可编译的插件并接入 Catch2 测试
 
 ---
@@ -22,7 +27,7 @@ UsrLinuxEmu 用 `dlopen` + `dlsym` 把设备驱动作为共享库动态加载。
 - `module mod` 符号：插件的元数据 + 生命周期回调（`init` / `exit`）
 - `VFS::instance()` 单例：插件把设备对象挂到全局文件系统
 
-运行时**只有一条加载路径**：`ModuleLoader::load_plugins("plugins")` 扫描 `plugins/` 子目录、读 `plugins/plugins.json`、逐个 `dlopen`、`dlsym(handle, "mod")`、调用 `mod->init()`。
+运行时**只有一条加载路径**：`ModuleLoader::load_plugins(dir)` 扫描 `dir` 子目录、找所有 `plugin_*.so`、逐个 `dlopen`、`dlsym(handle, "mod")`、调用 `mod->init()`。**注意：`plugins/plugins.json` 不是 loader 输入**——它是手工维护的 dead documentation（loader 不读它），只用于给开发者/工具查 plugin 路径。
 
 `PluginManager` 是 **CLI 工具**（`tools/cli/`）用来手动加载/卸载单个 `.so` 的接口。它不是运行时 API，不要在生产代码或测试里使用。
 
@@ -34,16 +39,20 @@ UsrLinuxEmu 用 `dlopen` + `dlsym` 把设备驱动作为共享库动态加载。
 
 ```
 main() / test fixture
-    ↓ ModuleLoader::load_plugins("plugins")        (静态 API)
-扫描 plugins/ 子目录
+    ↓ ModuleLoader::load_plugins("plugins")        (静态 API, dir 参数任意)
+扫描 dir/ 子目录（filesystem::directory_iterator）
     ↓
-解析 plugins/plugins.json
-    ↓
-对每个插件 entry:
-    ├── dlopen(plugins/<name>/<name>.so)
+对每个匹配 plugin_*.so 的文件:
+    ├── dlopen(path)
     ├── dlsym(handle, "mod") → struct module*
-    ├── mod->init()                              (构造设备 + 注册到 VFS)
-    └── 记录到 ModuleLoader::loaded_plugins_
+    ├── 校验 mod != nullptr（否则 dlclose + continue）
+    └── load_plugin(path)：
+         ├── resolve_dependencies(mod)
+         ├── mod->init()
+         └── 记录到 ModuleLoader::loaded_plugins_
+
+注：loader 完全不读 plugins/plugins.json。该文件可保留作为
+    documentation，但删掉也不会影响加载行为。
 ```
 
 ### 2.2 核心组件
@@ -55,7 +64,7 @@ main() / test fixture
 | `VFS` | `include/kernel/vfs.h` | Meyers 单例，存放 `name → Device` 映射 |
 | `Device` | `include/kernel/device/device.h` | 设备容器，持有 `FileOperations` 智能指针 |
 | `FileOperations` | `include/kernel/file_ops.h` | 驱动实现 `open/close/read/write/ioctl/mmap` |
-| `plugins.json` | `plugins/plugins.json` | 插件清单（路径、依赖、配置）|
+| `plugins.json` | `plugins/plugins.json` | **dead documentation**（loader 不读）。保留以方便查阅插件路径，但新增插件不需要改它 |
 
 ### 2.3 VFS 路径约定
 
@@ -111,6 +120,99 @@ typedef struct module {
 | 旧声明式注册宏（`REGISTER_*_PLUGIN` 系列） | `extern "C" module mod` 全局符号 |
 | `PluginManager`（CLI 工具的单插件加载方法）| `ModuleLoader::load_plugins("plugins")` |
 | `VFS::register_device("/dev/foo", dev)` 静态 | `VFS::instance().register_device(dev)` 实例 |
+
+### 3.4 ⚠️ dlclose + shared_ptr 陷阱（**必读**）
+
+**这是所有 plugin author 都必须踩过的坑**。`mod->exit()` 不是装饰，它**必须**撤销 `init()` 在 kernel-side 注册的所有 state。否则**进程退出时 SEGFAULT**。
+
+#### 3.4.1 现象
+
+在 `mod->exit()` 返回后，`ModuleLoader::decrease_ref` 会执行 `dlclose(handle)`。如果有任何 `shared_ptr` 仍指向 plugin 内的代码（C++ 对象、vtable 等），进程退出时它们的析构会跳转到已 unmap 的内存：
+
+```
+Program received signal SIGSEGV, Segmentation fault.
+#0  std::_Sp_counted_base<...>::_M_release
+#1  std::__shared_count<...>::~__shared_count
+#2  std::__shared_ptr<Device, ...>::~__shared_ptr
+#3  std::shared_ptr<Device>::~shared_ptr
+#4  main () at test_my_plugin.cpp:47
+```
+
+#### 3.4.2 根因
+
+`VFS::instance().register_device(dev)` 把 `dev` 的 shared_ptr 存进 `devices_` map。`Device` 持有 `shared_ptr<FileOperations> fops`，`FileOperations` 子类（如 `SampleMemory`）的虚函数表指向 **plugin .so 内的代码**。
+
+```
+Device (kernel lib)        fops shared_ptr
+    │
+    └── FileOperations (kernel lib, 虚函数)
+            │
+            └── SampleMemory / SampleSerialDriver / etc. (plugin .so)
+                   ^
+                   └── vtable entry → plugin .so code
+```
+
+`init()` 之后 `dlclose()` 会 unmap plugin .so。**任何**指向 plugin 代码的对象（包括 vtable 中的函数指针、虚函数调用）都会跳转到 unmapped 内存。
+
+#### 3.4.3 解药
+
+**plugin 侧**（`mod->exit()` 必须**撤销** `init()` 注册的所有 kernel-side state）：
+
+```cpp
+// drivers/my_plugin/plugin.cpp
+module mod = {
+    .name = "my_plugin",
+    .init = []() -> int {
+      auto dev = std::make_shared<Device>(
+          "mydev0", 0, std::make_shared<MyDriver>(), nullptr);
+      VFS::instance().register_device(dev);
+      return 0;
+    },
+    .exit = []() {
+      // 必须调用！撤销 init() 注册的设备，否则 dlclose 后 VFS 的析构
+      // 会通过 fops shared_ptr → plugin .so 的 vtable 跳到 unmapped 内存。
+      VFS::instance().unregister_device("mydev0");
+    },
+};
+```
+
+**测试侧**（plugin 的 `shared_ptr<Device>` 必须**先于** `unload_plugins()` 析构）：
+
+```cpp
+TEST_CASE("...", "[plugin][my_plugin]") {
+  ModuleLoader::load_plugins("plugins");
+
+  {
+    auto dev = VFS::instance().open("/dev/mydev0", 0);
+    REQUIRE(dev);
+    // ... use dev ...
+  }  // ⬅ dev 在这里析构；.so 还加载着，~fops 安全
+
+  ModuleLoader::unload_plugins();  // 现在安全：没人引用 plugin 代码
+}
+```
+
+#### 3.4.4 通用规则
+
+任何在 `init()` 里调用过、`影响 kernel-side 状态`的操作，**必须在 `exit()` 里反向调用一次**：
+
+| init() 调用 | exit() 必须反向调用 |
+|------------|--------------------|
+| `VFS::instance().register_device(dev)` | `VFS::instance().unregister_device(name)` |
+| `ServiceRegistry::instance().register_service(...)` | `ServiceRegistry::instance().unregister_service(...)` |
+| 启动后台线程 | `pthread_join` 或标记 stop 并等待 |
+| `mmap` shared memory | `munmap` |
+
+#### 3.4.5 真实案例
+
+PR #16（commit `8fb4f49`）就是这个 bug 的修复。`drivers/sample_serial.cpp` 和 `drivers/sample_memory_plugin.cpp` 的 `mod->exit()` 之前是 no-op：
+
+```cpp
+.exit = []() { std::cout << "[SampleSerial] Module exited.\n"; }
+// 没有 unregister_device → 测试退出时 SEGFAULT
+```
+
+修复后 `tests/test_serial_ioctl_standalone` 和 `tests/test_poll_standalone` 从 SEGFAULT 变成干净退出（33/33 tests pass）。
 
 ---
 
@@ -222,14 +324,19 @@ set_target_properties(my_plugin PROPERTIES
 
 `kernel` 库必须为 `SHARED`（参见 `src/CMakeLists.txt`）。原因：`VFS::instance()` 是函数内 `static` 局部变量（Meyers 单例），如果 kernel 是 `STATIC`，可执行文件和插件会各持有一份独立副本，导致 VFS 状态割裂（Issue #11）。
 
-### 步骤 4: 注册到 `plugins/plugins.json`
+### 步骤 4: （可选）在 `plugins/plugins.json` 加条目
+
+**注意：loader 不读这个文件**（PR #15 证实），它是手工维护的 dead documentation。加条目仅供开发者/工具查询插件路径。**新增插件不强制更新它**。
+
+如果要更新，格式：
 
 ```json
 {
+  "_note": "Documentation only — ModuleLoader does not read this file.",
   "plugins": [
     {
       "name": "my_plugin",
-      "path": "plugins/my_plugin/my_plugin.so",
+      "path": "build/drivers/my_plugin.so",
       "depends": []
     }
   ]
@@ -241,9 +348,8 @@ set_target_properties(my_plugin PROPERTIES
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `name` | string | ✅ | 插件逻辑名，用于日志/CLI 显示 |
-| `path` | string | ✅ | 相对项目根的 `.so` 路径 |
-| `depends` | array of string | ❌ | 依赖的插件名，加载前会先 `dlopen` 它们 |
-| `config` | object | ❌ | 透传给插件的 JSON 配置对象（按需使用）|
+| `path` | string | ✅ | build 产物的相对路径（**不是** plugin 源路径） |
+| `depends` | array of string | ❌ | 文档化用，loader 不读 |
 
 ### 步骤 5: 写 Catch2 测试
 
@@ -291,6 +397,24 @@ cd /workspace/project/UsrLinuxEmu
 ```
 
 `ModuleLoader::load_plugins("plugins")` 用相对路径。如果从 `build/bin/` 跑，路径解析会失败。
+
+**Plugin 生命周期管理**：参考 `tests/test_serial_ioctl.cpp` 和 `tests/test_poll.cpp`（PR #16 后的正确模式）：
+
+```cpp
+TEST_CASE("plugin lifecycle", "[plugin][my_plugin]") {
+  ModuleLoader::load_plugins("plugins");  // load once per test
+
+  {
+    auto dev = VFS::instance().open("/dev/mydev0", 0);
+    REQUIRE(dev);
+    // ... use dev ...
+  }  // dev shared_ptr destroyed HERE — BEFORE unload_plugins
+
+  ModuleLoader::unload_plugins();  // safe: no shared_ptrs into plugin code
+}
+```
+
+**绝对不要**：让 `dev` (或其他 plugin shared_ptr) 跨越 `unload_plugins()` 边界。这会导致**进程退出时的 SEGFAULT**（详见 §3.4 dlclose + shared_ptr 陷阱）。
 
 ---
 
@@ -568,11 +692,20 @@ lldb -- build/bin/test_gpu_plugin_standalone
 
 按顺序检查：
 
-1. `plugins/plugins.json` 里插件名是否与 `module mod.name` 一致
-2. `.so` 路径是否相对项目根，文件是否真的存在
-3. `ModuleLoader::load_plugins` 是否被调用（在 `main` 或 fixture）
-4. 测试是从**项目根目录**启动的
-5. `mod->init()` 是否返回 0（用 `std::cerr` 加日志）
+1. `.so` 文件是否在调用 `load_plugins(dir)` 传入的目录里（**loader 不查 JSON**）
+2. `.so` 文件名是否以 `plugin_` 开头（loader 用这个前缀过滤）
+3. `.so` 是否是 MODULE 库（`add_library(... MODULE ...)`）
+4. `ModuleLoader::load_plugins` 是否被调用（在 `main` 或 fixture）
+5. 测试是从**项目根目录**启动的（`WORKING_DIRECTORY` 默认是项目根）
+6. `mod->init()` 是否返回 0（用 `std::cerr` 加日志；返回负数 errno 会被 loader 跳过）
+
+### 7.5 排查"进程退出时 SEGFAULT"
+
+按 §3.4 检查：
+
+1. `mod->exit()` 是否撤销了 `init()` 在 kernel-side 注册的所有 state
+2. 测试代码中 plugin `shared_ptr`（`auto dev = ...`）是否在 `ModuleLoader::unload_plugins()` **之前**就被析构（用 scope block）
+3. 用 gdb 在 SEGFAULT 时 `bt` 看 `_M_release` → `~shared_ptr` 链，确认是 plugin vtable 调用
 
 ---
 
