@@ -18,7 +18,9 @@ void reader_thread() {
 }
 
 int main() {
-  ModuleLoader::load_plugins("plugins");
+  // Build artifacts live in build/drivers/; load_plugins scans the
+  // passed directory for files matching plugin_*.so.
+  ModuleLoader::load_plugins("build/drivers");
 
   std::thread t(reader_thread);
   sleep(2);
@@ -29,6 +31,5 @@ int main() {
   }
 
   t.join();
-  ModuleLoader::unload_plugins();
   return 0;
 }

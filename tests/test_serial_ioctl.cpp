@@ -13,7 +13,9 @@
 using namespace usr_linux_emu;
 
 int main() {
-  ModuleLoader::load_plugins("plugins");
+  // Build artifacts live in build/drivers/; load_plugins scans the
+  // passed directory for files matching plugin_*.so.
+  ModuleLoader::load_plugins("build/drivers");
 
   auto dev = VFS::instance().open("/dev/ttyS0", 0);
   if (!dev) {
@@ -40,6 +42,5 @@ int main() {
   // 清空缓冲区
   dev->fops->ioctl(fd, SERIAL_FLUSH, nullptr);
 
-  ModuleLoader::unload_plugins();
   return 0;
 }
