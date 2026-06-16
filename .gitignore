@@ -51,6 +51,9 @@ build_shadow/
 
 archive/
 !archive/historical-plans-2026-06-15/
+!archive/old_gpu_device/
+!archive/system_b_drivers/
+!archive/orphaned_simulator/
 
 .opencode/
 .mcp.json
