@@ -82,10 +82,17 @@ static inline void *memset_io(void *s, int c, size_t n) {
   return memset(s, c, n);
 }
 
-// 页面分配相关（简化模拟）
+// 页面分配相关（简化模拟）。Guarded so inclusion after <sys/mman.h>
+// or <asm/page.h> (which may define these on Linux) does not warn.
+#ifndef PAGE_SHIFT
 #define PAGE_SHIFT 12
+#endif
+#ifndef PAGE_SIZE
 #define PAGE_SIZE (1UL << PAGE_SHIFT)
+#endif
+#ifndef PAGE_MASK
 #define PAGE_MASK (~(PAGE_SIZE - 1))
+#endif
 
 #define round_up(x, y) ((((x) + (y) - 1) / (y)) * (y))
 #define round_down(x, y) (((x) / (y)) * (y))
