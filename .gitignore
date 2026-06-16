@@ -50,11 +50,11 @@ build_shadow/
 .omo/run-continuation/
 
 archive/
+!archive/historical-plans-2026-06-15/
 
 .opencode/
 .mcp.json
 .opencode.json
-.github/
 
 Testing/
 .omo/

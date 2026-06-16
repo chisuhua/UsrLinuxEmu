@@ -37,6 +37,26 @@ Catch2 语法：
 
 详细说明见 `docs/00_adr/adr-010-gtest-migration.md`（测试框架选型 ADR）。
 
+## Pre-commit Hooks
+
+仓库跟踪了一份 pre-commit hook 模板，安装后会在 `git commit` 时：
+1. 调用 `code-review-graph`（如果已安装）维护知识图谱
+2. 当 staged 文件包含 `docs/**`、`AGENTS.md`、`CMakeLists.txt`、`tools/docs-audit.sh` 等路径时，跑 `tools/docs-audit.sh --strict`
+
+**安装**：
+```bash
+scripts/install-hooks.sh
+```
+
+**跳过单次提交**（仅当确认 audit 是误报）：
+```bash
+SKIP_DOCS_AUDIT=1 git commit -m "hotfix"
+```
+
+CI 也跑 `tools/docs-audit.sh --strict`（`.github/workflows/cmake-multi-platform.yml` 的 `docs-audit` job）。本地 hook 让你在 push 前就发现问题。
+
+详细原理见 `docs/04-building/ci-cd.md` §Pre-commit Hook 与 §文档审计。
+
 ## 关键架构决策
 
 ### kernel 库必须是 SHARED

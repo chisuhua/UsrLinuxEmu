@@ -2,7 +2,7 @@
 
 本文档介绍 UsrLinuxEmu 项目的持续集成和持续部署（CI/CD）配置。
 
-**最后更新**: 2026-03-24  
+**最后更新**: 2026-06-16 (commit `374d463`)  
 **作者**: UsrLinuxEmu Team
 
 ---
@@ -12,10 +12,11 @@
 UsrLinuxEmu 使用 **GitHub Actions** 作为 CI/CD 平台，自动化执行以下任务：
 
 - ✅ 多平台编译（Linux GCC/Clang）
-- ✅ 单元测试
+- ✅ 单元测试（Catch2）
 - ✅ 代码风格检查
 - ✅ 静态分析（clang-tidy）
-- ✅ 文档构建
+- ✅ **文档审计**（`tools/docs-audit.sh --strict`，防止文档漂移回归）
+- ✅ **Pre-commit hook**（`scripts/install-hooks.sh`，本地漂移拦截）
 - 🔄 自动发布（规划中）
 
 ---
@@ -39,29 +40,129 @@ on:
 - **push**: 推送到 main 分支时触发
 - **pull_request**: 创建或更新 PR 时触发
 
-#### 构建矩阵
+#### Job 列表
+
+| Job | OS | 说明 | 必检 |
+|-----|-----|------|------|
+| `build` | ubuntu-latest × {gcc, clang} | CMake configure + build + ctest | ✅ |
+| `docs-audit` | ubuntu-latest | `tools/docs-audit.sh --strict` | ✅ |
+
+#### docs-audit Job 详情
 
 ```yaml
-matrix:
-  os: [ubuntu-latest]
-  build_type: [Release]
-  c_compiler: [gcc, clang]
+docs-audit:
+  name: Documentation Audit (--strict)
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - name: Run docs-audit
+      run: bash tools/docs-audit.sh --strict
+    - name: Annotate failure
+      if: failure()
+      run: |
+        echo "::error::docs-audit --strict failed..."
 ```
 
-当前配置：
-- **OS**: Ubuntu Latest
-- **构建类型**: Release
-- **编译器**: GCC 和 Clang
+**关键设计**：
+- 使用 `--strict` 模式（warnings 也算失败）— 任何文档漂移都会阻塞 PR
+- **不依赖路径过滤器** — 代码提交也可能引入文档漂移
+- **不依赖额外依赖** — 纯 bash + grep + find，在 ubuntu-latest 上开箱即用
 
-#### 工作流程步骤
+**失败时的修复指引**会在 PR 中以 `::error::` annotation 显示。
 
-```yaml
-steps:
-1. Checkout code              # 检出代码
-2. Configure CMake            # 配置 CMake
-3. Build                      # 编译项目
-4. Test                       # 运行测试
+---
+
+## 文档审计 (`tools/docs-audit.sh`)
+
+SSOT 关联文档：[docs/02_architecture/post-refactor-architecture.md](../02_architecture/post-refactor-architecture.md)
+
+### 设计目标
+
+防止文档与代码之间的漂移（doc/code drift）。文档可能因为以下原因"撒谎"：
+
+- 文件被重命名（如某目录 `core/` → `architecture/`）
+- 数量变化（如 `src/kernel/` 多了/少了 cpp 文件）
+- API 被替换（如 `GPGPU_*` → `GPU_IOCTL_*`）
+- 约定变更（如 kebab-case → snake_case）
+
+### 用法
+
+```bash
+# 跑全量审计（warnings 不阻塞）
+tools/docs-audit.sh
+
+# CI 模式（warnings 也算失败）
+tools/docs-audit.sh --strict
+
+# 跑单个 section
+tools/docs-audit.sh --section ioctl     # 仅 IOCTL 编号
+tools/docs-audit.sh --section arch      # 仅架构事实
+tools/docs-audit.sh --section doc-health # 仅文档健康
+
+# 看帮助
+tools/docs-audit.sh --help
 ```
+
+### 5 个审计 Section
+
+| Section | 检查内容 | 失败样例 |
+|---------|---------|---------|
+| **arch** | kernel SHARED / cpp 计数 / archive 目录 / HAL 数量 / 插件加载模式 | kernel 改为 STATIC（Issue #11 回归）|
+| **ioctl** | System C IOCTL 编号 / System A/B 残留 / LAUNCH_CB 残留 | 误用 `GPGPU_*` 宏 |
+| **adr** | ADR-022~031 编号 gap / IOCTL 编号冲突 | ADR-015 引用 0x33-0x35（应 0x40-0x43）|
+| **doc-health** | 链接完整性 / 02-core 引用 / 命名一致性 / 完成度日期 | 文档写"kebab-case 是标准"但文件是 snake_case |
+| **build** | 孤儿测试 / `add_subdirectory` 完整性 / include 路径 | `tests/test_foo.cpp` 未加入 CMakeLists.txt |
+
+### 退出码
+
+- `0` — 全部通过（或非 strict 模式下只有 warnings）
+- `1` — 有失败项（或 strict 模式下有 warnings）
+- `2` — 参数错误
+
+### 退出码 vs CI 集成
+
+CI 调用 `tools/docs-audit.sh --strict`，任何 warning 都会让 `docs-audit` job 失败 → PR 无法合并。
+
+---
+
+## Pre-commit Hook（本地漂移拦截）
+
+`scripts/install-hooks.sh` 安装 Git 钩子，在 commit 时自动跑 `docs-audit`，**仅在 docs/ 相关文件被 staged 时触发**（避免拖慢纯代码提交）。
+
+### 安装
+
+```bash
+# 一次性安装（已跟踪的钩子模板在 scripts/hooks/）
+scripts/install-hooks.sh
+
+# 卸载
+scripts/install-hooks.sh --uninstall
+```
+
+### 工作原理
+
+`scripts/hooks/pre-commit` 钩子：
+
+1. 调用 `code-review-graph`（如果已安装）— 维护知识图谱
+2. 检查 `git diff --cached` 中是否有匹配以下模式的文件：
+   - `docs/**`
+   - `AGENTS.md` / `CONTRIBUTING.md`
+   - 任何 `CMakeLists.txt`
+   - `tools/docs-audit.sh`
+3. 如果有，跑 `tools/docs-audit.sh --strict`
+4. 失败 → 阻止 commit 并打印修复指引
+
+### 跳过单次 commit
+
+```bash
+SKIP_DOCS_AUDIT=1 git commit -m "hotfix"
+```
+
+> 只在确实知道 audit 是误报时使用；并在 PR 描述中说明原因。
+
+### 为什么不在所有 commit 上都跑？
+
+docs-audit 检查范围广（含代码结构、IOCTL 编号等）。在纯代码 commit 上跑会拖慢提交速度且通常不会失败。仅在涉及可能影响文档的路径时跑，性能与严谨度平衡。
 
 ---
 
@@ -219,39 +320,24 @@ CheckOptions:
 
 ### 示例：文档检查
 
-创建 `.github/workflows/docs-check.yml`：
+UsrLinuxEmu 使用 `tools/docs-audit.sh` 做文档审计（已在主 workflow `cmake-multi-platform.yml` 中）。**不需要单独的 `docs-check.yml` workflow** —— 直接在主流程里加 job 即可（保持单一可信来源）。
+
+如果未来需要添加纯链接检查或 markdown lint，可在主 workflow 中新增 job：
 
 ```yaml
-name: Documentation Check
-
-on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'docs/**'
-  pull_request:
-    branches: [ "main" ]
-    paths:
-      - 'docs/**'
-
-jobs:
-  docs:
+  link-check:
+    name: Markdown Link Check
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Check Markdown links
-      uses: gaurav-nelson/github-action-markdown-link-check@v1
-      with:
-        use-quiet-mode: 'yes'
-        config-file: '.github/link-check-config.json'
-    
-    - name: Check Markdown formatting
-      run: |
-        npm install -g markdownlint-cli
-        markdownlint docs/
+      - uses: actions/checkout@v4
+      - name: Check links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          config-file: '.github/link-check-config.json'
 ```
+
+> 注意：markdownlint 等 npm 工具与本项目的 C++/bash 工具栈不匹配，引入会增加 CI 维护成本。`docs-audit.sh` 已经覆盖了 90% 的链接与格式问题。
 
 ### 示例：静态分析
 
@@ -580,4 +666,4 @@ env:
 
 ---
 
-**最后更新**: 2026-03-24
+**最后更新**: 2026-06-16 (commit `374d463`)
