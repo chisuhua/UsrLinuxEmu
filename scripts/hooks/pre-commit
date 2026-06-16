@@ -1,0 +1,75 @@
+#!/bin/sh
+# UsrLinuxEmu pre-commit hook
+#
+# 安装方式（自动）：
+#   scripts/install-hooks.sh
+#
+# 安装方式（手动）：
+#   cp scripts/hooks/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+#
+# 该 hook 做两件事：
+#   1. 调用 code-review-graph（如果可用）— 维护知识图谱 + 检测改动
+#   2. 当本次提交涉及 docs/、CMakeLists.txt、tools/、AGENTS.md 时
+#      运行 tools/docs-audit.sh 防止文档漂移
+#
+# 跳过条件：
+#   - SKIP_DOCS_AUDIT=1（环境变量）
+#   - docs-audit.sh 不存在
+#   - 没有任何 docs 相关文件被 staged
+#
+# 失败处理：
+#   - code-review-graph 失败不会阻塞（保持向后兼容）
+#   - docs-audit 失败（exit != 0）会阻塞提交并打印修复指引
+
+set -e
+
+# ---------------------------------------------------------------------------
+# 1. code-review-graph（保持与之前一致的行为：失败不阻塞）
+# ---------------------------------------------------------------------------
+if command -v code-review-graph >/dev/null 2>&1; then
+    code-review-graph update || true
+    code-review-graph detect-changes --brief || true
+fi
+
+# ---------------------------------------------------------------------------
+# 2. docs-audit（仅在 docs 相关文件被 staged 时触发）
+# ---------------------------------------------------------------------------
+
+# 跳过开关
+if [ "${SKIP_DOCS_AUDIT}" = "1" ]; then
+    echo "[pre-commit] SKIP_DOCS_AUDIT=1, skipping docs-audit"
+    exit 0
+fi
+
+# 定位仓库根
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+# .git/hooks/pre-commit → 向上 3 层到仓库根
+REPO_ROOT="$(cd "${HOOK_DIR}/../.." && pwd)"
+
+AUDIT_SCRIPT="${REPO_ROOT}/tools/docs-audit.sh"
+
+if [ ! -x "${AUDIT_SCRIPT}" ]; then
+    echo "[pre-commit] tools/docs-audit.sh not found or not executable, skipping"
+    exit 0
+fi
+
+# 检查 staged 文件中是否有 docs 相关路径
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
+DOCS_PATTERN='^(docs/|AGENTS\.md$|CONTRIBUTING\.md$|.*CMakeLists\.txt$|tools/docs-audit\.sh$|tools/cli/)'
+
+if echo "${STAGED_FILES}" | grep -qE "${DOCS_PATTERN}"; then
+    echo "[pre-commit] docs-related files changed, running docs-audit --strict"
+    if ! "${AUDIT_SCRIPT}" --strict; then
+        echo ""
+        echo "==================================================="
+        echo "  docs-audit failed. To bypass: SKIP_DOCS_AUDIT=1 git commit"
+        echo "  Fix the reported issues or update docs to match code."
+        echo "  See docs/02_architecture/post-refactor-architecture.md"
+        echo "==================================================="
+        exit 1
+    fi
+    echo "[pre-commit] docs-audit passed ✓"
+fi
+
+exit 0
