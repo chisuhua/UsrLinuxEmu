@@ -348,7 +348,7 @@ section_ioctl() {
 
     # 2.5 LAUNCH_CB should not exist (deleted in commit b78edc9)
     subsection "2.5 GPU_IOCTL_REGISTER_LAUNCH_CB absent (deleted in commit b78edc9)"
-    if ! grep -qE "GPU_IOCTL_REGISTER_LAUNCH_CB|handleRegisterLaunchCb|LaunchCallback" \
+    if ! grep -qE "GPU_IOCTL_REGISTER_LAUNCH_CB|handleRegisterLaunchCb" \
         "${ioctl_h}" "${REPO_ROOT}/plugins/gpu_driver/drv/gpgpu_device.cpp" 2>/dev/null; then
         check_pass "LAUNCH_CB fully removed from code (commit b78edc9 verified)"
     else

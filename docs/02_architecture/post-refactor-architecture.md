@@ -174,7 +174,7 @@ Queue  (u64 handle, 内部 GpuQueueEmu shared_ptr)
 ```
 UsrLinuxEmu/
 ├── AGENTS.md                      ← 唯一非正式权威架构说明
-├── README.md                      ← 🔴 严重过期（v0.1.0, 2026-02-10）
+├── README.md                      ← ✅ 已同步（v0.5+, 2026-06-16，Phase 2 + System C + Catch2 + TaskRunner）
 ├── CMakeLists.txt                 (project: user_kernel_emu)
 ├── build.sh, run_cli.sh
 ├── src/                           (kernel SHARED lib, 14 cpp)
