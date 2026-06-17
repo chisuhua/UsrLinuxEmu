@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-06-17
+goal: "H-1 validation feature is fully deployed: every caller of
+  GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH routes through the new VA Space + Queue
+  check, and the original change is auditable via git history"
