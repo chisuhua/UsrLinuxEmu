@@ -334,7 +334,8 @@ struct IoctlEntry {
   const char* name;
   long (GpgpuDevice::*handler)(void*);
 };
-static const IoctlEntry& getIoctlTable();
+// 注意：`getIoctlTable()` 已于 commit `cb2f386` (2026-06-16) 移除。
+// 当前唯一入口是 `getIoctlTablePtr()`（PR #19 audit 修复）。
 static const IoctlEntry* getIoctlTablePtr();
 ```
 
