@@ -117,7 +117,6 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
     long (GpgpuDevice::*handler)(void*);
   };
 
-  static const IoctlEntry& getIoctlTable();
   static const IoctlEntry* getIoctlTablePtr();
 
   /** Queue 句柄 → QueueEmu 映射 */
