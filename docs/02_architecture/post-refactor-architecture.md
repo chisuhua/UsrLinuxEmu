@@ -1,10 +1,12 @@
 # UsrLinuxEmu 重构后架构与文档同步方案
 
-> **SSOT 草案** | 最后验证: 2026-06-15 | 对应代码 commit: `374d463`
+> **SSOT 草案** | 最后验证: 2026-06-17 | 对应代码 commit: `374d463`
 >
 > **作者**: UsrLinuxEmu Architecture Team
-> **状态**: 🔄 待评审
+> **状态**: 🔄 待评审（v0.1.6 审计已完成，等待 fix 合并后升 ✅ Approved）
 > **作用**: 在 2026-05 ~ 06 期间完成 Phase 1.5 / Phase 2 重大重构后，建立**重构后架构**与**docs 现状**之间的对账，并给出 32 项修复建议
+>
+> **历史审计报告**：[`docs/02_architecture/audit-reports/`](audit-reports/)（含 v0.1.6 首次深度审计，25 项偏差：🔴 1 / 🟠 4 / 🟡 14 / 🟢 6）
 
 ---
 
@@ -682,10 +684,11 @@ struct gpu_queue_args {
 | 2026-06-17 | 0.1.3 实施 | Sisyphus | **OpenSpec change [fix-gpu-pushbuffer-va-space-validation] 落地**：① §1.3 标注「Phase 2 校验已实现」（`gpu_pushbuffer_args` 新增 `va_space_handle` 字段；`handlePushbufferSubmitBatch` 接入 VA Space + Queue 校验；`va_space_handle==0` 向后兼容）；② `docs/06-reference/ioctl-commands.md` §3.1 表 + 约束表更新；③ 4 个测试 case（attached/invalid/zero/unattached）；④ commit hash: `0272970`（结构体扩展）、`bf8192f`（handler 校验）、`09ae1b0`（测试 + 文档）|
 | 2026-06-17 | 0.1.4 收尾 | Sisyphus | **H-1 closeout 落地**（change `h1-pushbuffer-validation-closeout`）：① TaskRunner 客户端 `GpuDriverClient` 加 `setCurrentVASpace()` 透传 `args.va_space_handle`（submodule commit `ff52e64`，branch `h1-pushbuffer-validation-closeout`）；② `openspec/changes/archive/2026-06-17-fix-gpu-pushbuffer-va-space-validation/` 6 文件纳入 git 跟踪（修复 `744ef46` archive tracking 遗漏 + `.gitignore` 收紧 `/archive/` 仅根级）；③ SSOT §1.3 v0.1.3 段加 "v0.1.3 收尾" 收尾注 |
 | 2026-06-17 | 0.1.5 ADR 治理 | Sisyphus | **ADR 占位清理**（change `cleanup-adr-placeholders`）：① ADR-022 升级为 ✅ v1（operator-level emulation，4 个 kernel template）；② ADR-031 升级为 ✅ v1（TTM thin wrapper over `libgpu_core/gpu_buddy`）；③ ADR-025/026/028/029/030 转为 ⏸️ 显式 Deferred（每份附 Phase 3 触发条件）；④ `docs/00_adr/README.md` 索引表 + 关系图 + "Deferred Policy" 段同步；⑤ `PRD.md` L146 "022 gap" 警告移除；⑥ §3.3 P2-3 标注已落地；⑦ §5 关键洞察 5 标注"已解决" |
+| 2026-06-17 | 0.1.6 审计 | Sisyphus | **SSOT 全章节深度审计**（change `ssot-deep-audit`）：4 个并行 explore agent 覆盖 v0.1.2 勘误（commit `4e5d5ea`）的盲区 — §1.2 硬件仿真层 / §1.7 测试框架 / §1.8 权威文档空白 / 附录 A struct 字段；产出 `audit-reports/v0.1.6-audit.md`（首次建立此目录）；发现 **25 个偏差**（🔴 1 / 🟠 4 / 🟡 14 / 🟢 6），其中 **P0 必修 1 项**（A4 #1：附录 A `gpu_pushbuffer_args` 缺 `va_space_handle` 字段，H-1 commit `0272970` 后未同步）；**P1 高优 4 项**：A1 #2 `sim/hardware/` 布局分裂、A2 #1 `.github/copilot-instructions.md` 残留 "Google Test"、A3 #2 AGENTS.md 0 处反向引用 SSOT、A3 #3 3 个 `openspec/specs/*.md` TBD Purpose 占位；SSOT 顶部新增 `> 历史审计报告：docs/02_architecture/audit-reports/`；本次 commit 不修任何偏差（按 D5：审计与修复分离），所有 fix 由后续独立 follow-up change 实施 |
 
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
 **最后更新**: 2026-06-17
 **对应代码 commit**: `f364b17`
-**状态**: 🔄 v0.1.2 已合并 10 项偏差勘误；H-1 由独立 OpenSpec change 跟踪
+**状态**: 🔄 v0.1.6 审计已完成（25 项偏差，1 P0 必修）；H-1 由独立 OpenSpec change 跟踪；follow-up fixes 由独立 OpenSpec change 实施
