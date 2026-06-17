@@ -1,7 +1,8 @@
-# Capability: gpu-pushbuffer-validation
+# gpu-pushbuffer-validation Specification
 
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change fix-gpu-pushbuffer-va-space-validation. Update Purpose after archive.
+## Requirements
 ### Requirement: VA Space existence validation
 
 The `GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH` handler MUST, when `args->va_space_handle != 0`, verify that a VA Space with that handle exists in `GpgpuDevice::va_spaces_` before proceeding with fence creation or puller submission. If the VA Space does not exist, the handler MUST return `-EINVAL` without invoking any side effects.
@@ -67,3 +68,4 @@ The handler MUST return `-EINVAL` for all validation failures (matching the conv
 
 - **WHEN** any validation fails (VA Space not found OR Queue not attached)
 - **THEN** return value is exactly `-EINVAL` (not `-EFAULT`, not `-ENOMEM`, not any other negative value)
+
