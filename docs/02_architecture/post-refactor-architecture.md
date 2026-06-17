@@ -1,9 +1,9 @@
 # UsrLinuxEmu 重构后架构与文档同步方案
 
-> **SSOT 草案** | 最后验证: 2026-06-17 | 对应代码 commit: `374d463`
+> **SSOT** | 最后验证: 2026-06-17 | 对应代码 commit: `374d463`
 >
 > **作者**: UsrLinuxEmu Architecture Team
-> **状态**: 🔄 待评审（v0.1.6 审计已完成，等待 fix 合并后升 ✅ Approved）
+> **状态**: ✅ Approved（v0.1.7）
 > **作用**: 在 2026-05 ~ 06 期间完成 Phase 1.5 / Phase 2 重大重构后，建立**重构后架构**与**docs 现状**之间的对账，并给出 32 项修复建议
 >
 > **历史审计报告**：[`docs/02_architecture/audit-reports/`](audit-reports/)（含 v0.1.6 首次深度审计，25 项偏差：🔴 1 / 🟠 4 / 🟡 14 / 🟢 6）
@@ -203,7 +203,7 @@ UsrLinuxEmu/
 ├── README.md                      ← ✅ 已同步（v0.5+, 2026-06-16，Phase 2 + System C + Catch2 + TaskRunner）
 ├── CMakeLists.txt                 (project: user_kernel_emu)
 ├── build.sh, run_cli.sh
-├── src/                           (kernel SHARED lib, 14 cpp)
+├── src/                           (kernel SHARED lib, 12 cpp)
 ├── include/
 │   ├── kernel/                    (VFS, Device, FileOps, Module, WaitQueue, ...)
 │   ├── linux_compat/              (compat.h, types, macros, memory, ioctl, drm/)
@@ -258,22 +258,35 @@ UsrLinuxEmu/
 |------|------|------|
 | **代码**（`tests/catch_amalgamated.{hpp,cpp}`）| - | **Catch2**（vendored 单文件）|
 | `README.md` | Google Test | Catch2 |
-| `AGENTS.md` | **—（未表态）** | Catch2 |
+| `AGENTS.md` | **Catch2（明确反对 GTest）** | Catch2 |
 | `.github/copilot-instructions.md` | Google Test | Catch2 |
 | `docs/01-quickstart/installation.md` | `apt install libgtest-dev` | Catch2（不安装）|
 | `docs/04-building/build_system.md` | `find_package(GTest REQUIRED)` | Catch2 |
 | `docs/04-building/testing_guide.md` | 全文 `TEST()` / `EXPECT_*` | Catch2 `TEST_CASE` / `REQUIRE` |
 | `docs/04-building/ci-cd.md` | `apt install libgtest-dev` | Catch2 |
-| `docs/00_adr/adr-010-gtest-migration.md` | 提议"迁移到 GTest" | **未实施** |
+| `docs/00_adr/adr-010-gtest-migration.md` | **✅ 已接受 Catch2（最终决策）** | **Catch2**（ADR-010 自身已对齐实际）|
+| `CONTRIBUTING.md` | Catch2 | Catch2 |
+| `docs/03-development/adding-devices.md` | Catch2 | Catch2 |
+| `docs/06-reference/glossary.md` | Catch2 | Catch2 |
 
-**结论**: ADR-010 的提议与现实相反；实际项目用 Catch2。
+**结论**: ADR-010 已正式接受 Catch2（v0.1.7 同步）；实际项目用 Catch2。
 
 ### 1.8 当前架构的"权威文档"空白
 
 - `AGENTS.md` 是唯一接近准确的架构说明，但**定位是"开发指南"**
 - `docs/02_architecture/architecture.md` 严重过期（2026-03-23）
 - `docs/05-advanced/gpu_driver_architecture.md` 子目录描述（mmu/, drm/, ttm/）全部**虚构**
-- **缺少一份"重构后的架构总览"文档** —— 本文正是为此而写
+- 曾经缺少一份"重构后的架构总览"文档 —— 已于 v0.1.5 创建本文闭环此 gap（v0.1.6 审计确认闭环证据见 §1.8.1）
+
+#### §1.8.1 闭环证据（v0.1.6 审计确认）
+
+v0.1.6 SSOT 深度审计（change `ssot-deep-audit`，commit `211b48c`）确认本 gap 已闭环：
+
+- `post-refactor-architecture.md` 存在（47,232 字节，691 行）
+- 28 个 `docs/` + AGENTS.md + README.md 范围内文件交叉引用本 SSOT
+- 42 个项目全局 `.md` 文件引用本 SSOT
+- 详细审计报告：[`docs/02_architecture/audit-reports/v0.1.6-audit.md`](audit-reports/v0.1.6-audit.md)（25 项偏差：🔴 1 / 🟠 4 / 🟡 14 / 🟢 6）
+- 4 区域覆盖：§1.2 硬件仿真层 / §1.7 测试框架 / §1.8 权威空白 / 附录 A struct 字段
 
 ---
 
@@ -616,14 +629,37 @@ struct gpu_pushbuffer_args {
   u32 count;
   u32 flags;
   u64 fence_id;
+  u64 va_space_handle;  // Phase 2 校验字段；sentinel 0 = 跳过校验（向后兼容）。H-1 commit 0272970。
+};
+
+struct gpu_mmu_event_cb_args {
+  u64 callback_fn; /* Function pointer: void (*cb)(const struct gpu_mmu_event_context *) */
+  u64 user_data;   /* Opaque pointer passed to callback */
+};
+
+struct gpu_firmware_cb_args {
+  u64 callback_fn; /* Function pointer: void (*cb)(const struct gpu_cpu_task_desc *) */
+  u64 user_data;   /* Opaque pointer passed to callback */
 };
 
 struct gpu_alloc_bo_args {
-  u64 size;
-  u32 domain;   // GPU_MEM_DOMAIN_VRAM=0x1, GTT=0x2, CPU=0x4
-  u32 flags;    // GPU_BO_DEVICE_LOCAL=0x1, HOST_VISIBLE=0x2, CXL_SHARED=0x4
-  u32 handle;
-  u64 gpu_va;
+  u64 size;   /* Size in bytes (input) */
+  u32 domain; /* GPU_MEM_DOMAIN_VRAM/GTT/CPU (input) */
+  u32 flags;  /* Allocation flags: GPU_BO_DEVICE_LOCAL, GPU_BO_HOST_VISIBLE (input) */
+  u32 handle; /* Returned GEM handle (output) */
+  u64 gpu_va; /* Returned GPU virtual address (output) */
+};
+
+struct gpu_map_bo_args {
+  u32 handle; /* GEM handle (input) */
+  u32 flags;  /* Mapping flags (input) */
+  u64 gpu_va; /* GPU virtual address (output) */
+};
+
+struct gpu_wait_fence_args {
+  u64 fence_id;   /* Fence ID to wait on (input) */
+  u32 timeout_ms; /* Timeout in milliseconds, 0 = infinite (input) */
+  u32 status;     /* OUT: 1=signaled, 0=timeout, -1=error */
 };
 
 struct gpu_device_info {
@@ -638,18 +674,54 @@ struct gpu_device_info {
 };
 
 struct gpu_va_space_args {
-  u32 page_size;   // 0=4KB, 1=64KB
-  u32 flags;
-  gpu_va_space_handle_t va_space_handle;  // u64
+  u32 page_size;                         /* Page size: 0=4KB, 1=64KB (input) */
+  u32 flags;                             /* VA Space flags (input) */
+  gpu_va_space_handle_t va_space_handle; /* OUT: VA Space handle */
+};
+
+struct gpu_register_gpu_args {
+  gpu_va_space_handle_t va_space_handle; /* VA Space (input) */
+  u32 gpu_id;                            /* GPU ID (input) */
+  u32 flags;                             /* Registration flags (input) */
 };
 
 struct gpu_queue_args {
-  gpu_va_space_handle_t va_space_handle;
-  u32 queue_type;   // COMPUTE=0, COPY=1, GRAPHICS=2
-  u32 priority;
-  u64 ring_buffer_size;
-  gpu_queue_handle_t queue_handle;  // u64
-  u64 doorbell_pgoff;
+  gpu_va_space_handle_t va_space_handle; /* VA Space (input) */
+  u32 queue_type;                        /* GPU_QUEUE_COMPUTE/COPY/GRAPHICS (input) */
+  u32 priority;                          /* Queue priority 0-100 (input) */
+  u64 ring_buffer_size;                  /* Ring buffer size in entries (input) */
+  gpu_queue_handle_t queue_handle;       /* OUT: Queue handle */
+  u64 doorbell_pgoff;                    /* OUT: Doorbell mmap page offset */
+};
+
+struct gpu_queue_map_ring_args {
+  uint64_t queue_handle;       /* INPUT: 由 CREATE_QUEUE 返回 */
+  uint64_t ring_addr;          /* INPUT: 共享内存地址 */
+};
+
+struct gpu_queue_info_args {
+  uint64_t queue_handle;       /* INPUT: Queue 句柄 */
+  uint32_t queue_type;         /* OUT: Queue 类型 */
+  uint32_t queue_id;           /* OUT: 内部 ID */
+  uint64_t doorbell_offset;    /* OUT: Doorbell offset */
+  uint64_t ring_addr;          /* OUT: Ring Buffer 共享内存地址 */
+  uint32_t ring_size;          /* OUT: Ring Buffer 大小 */
+  uint32_t pending_count;      /* OUT: 待处理 entry 数 */
+};
+```
+
+### Ring Buffer 内部结构（非 IOCTL 直接配套）
+
+> 以下结构定义在 `plugins/gpu_driver/shared/gpu_queue.h`，由 `GpuQueueEmu` 实例化用于共享内存 Ring Buffer；非 IOCTL 入参 / 出参结构，仅供 SSOT 完整性记录。
+
+```c
+struct gpu_ring_header {
+  volatile uint32_t write_idx;   /* Producer index (用户态写入) */
+  volatile uint32_t read_idx;    /* Consumer index (Puller 读取) */
+  uint32_t capacity;             /* 环形缓冲区容量 (entry 数) */
+  uint32_t flags;                /* 标志位 */
+  uint64_t fence_value;          /* 完成 fence (Puller 写入) */
+  uint8_t  reserved[32];         /* 预留 + 缓存行对齐 */
 };
 ```
 
@@ -685,10 +757,11 @@ struct gpu_queue_args {
 | 2026-06-17 | 0.1.4 收尾 | Sisyphus | **H-1 closeout 落地**（change `h1-pushbuffer-validation-closeout`）：① TaskRunner 客户端 `GpuDriverClient` 加 `setCurrentVASpace()` 透传 `args.va_space_handle`（submodule commit `ff52e64`，branch `h1-pushbuffer-validation-closeout`）；② `openspec/changes/archive/2026-06-17-fix-gpu-pushbuffer-va-space-validation/` 6 文件纳入 git 跟踪（修复 `744ef46` archive tracking 遗漏 + `.gitignore` 收紧 `/archive/` 仅根级）；③ SSOT §1.3 v0.1.3 段加 "v0.1.3 收尾" 收尾注 |
 | 2026-06-17 | 0.1.5 ADR 治理 | Sisyphus | **ADR 占位清理**（change `cleanup-adr-placeholders`）：① ADR-022 升级为 ✅ v1（operator-level emulation，4 个 kernel template）；② ADR-031 升级为 ✅ v1（TTM thin wrapper over `libgpu_core/gpu_buddy`）；③ ADR-025/026/028/029/030 转为 ⏸️ 显式 Deferred（每份附 Phase 3 触发条件）；④ `docs/00_adr/README.md` 索引表 + 关系图 + "Deferred Policy" 段同步；⑤ `PRD.md` L146 "022 gap" 警告移除；⑥ §3.3 P2-3 标注已落地；⑦ §5 关键洞察 5 标注"已解决" |
 | 2026-06-17 | 0.1.6 审计 | Sisyphus | **SSOT 全章节深度审计**（change `ssot-deep-audit`）：4 个并行 explore agent 覆盖 v0.1.2 勘误（commit `4e5d5ea`）的盲区 — §1.2 硬件仿真层 / §1.7 测试框架 / §1.8 权威文档空白 / 附录 A struct 字段；产出 `audit-reports/v0.1.6-audit.md`（首次建立此目录）；发现 **25 个偏差**（🔴 1 / 🟠 4 / 🟡 14 / 🟢 6），其中 **P0 必修 1 项**（A4 #1：附录 A `gpu_pushbuffer_args` 缺 `va_space_handle` 字段，H-1 commit `0272970` 后未同步）；**P1 高优 4 项**：A1 #2 `sim/hardware/` 布局分裂、A2 #1 `.github/copilot-instructions.md` 残留 "Google Test"、A3 #2 AGENTS.md 0 处反向引用 SSOT、A3 #3 3 个 `openspec/specs/*.md` TBD Purpose 占位；SSOT 顶部新增 `> 历史审计报告：docs/02_architecture/audit-reports/`；本次 commit 不修任何偏差（按 D5：审计与修复分离），所有 fix 由后续独立 follow-up change 实施 |
+| 2026-06-17 | 0.1.7 全面修复 | Sisyphus | **SSOT 侧 17 项偏差综合修复**（change `ssot-v0-1-7-comprehensive-fix`）：① 附录 A 补全 9 个 struct（A4 #1-#9，含 1 项 P0 必修 `gpu_pushbuffer_args.va_space_handle` + 8 个 P2 struct 定义）；② §1.7 表格刷新（A2 #3-#5：ADR-010 状态、AGENTS.md 描述、3 源补录）；③ §1.8 闭环证据小节（A3 #1, #4, #6）；④ `docs/README.md` ADR-022 状态陈旧修复（A3 #5）；⑤ §1.5 src/kernel cpp 计数 14→12 校准（A1 #5）；⑥ SSOT 状态升 "✅ Approved（v0.1.7）"；本次 commit 不改任何代码（设计 D5：审计与修复分离）|
 
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
 **最后更新**: 2026-06-17
-**对应代码 commit**: `f364b17`
-**状态**: 🔄 v0.1.6 审计已完成（25 项偏差，1 P0 必修）；H-1 由独立 OpenSpec change 跟踪；follow-up fixes 由独立 OpenSpec change 实施
+**对应代码 commit**: `f3e4705`
+**状态**: ✅ Approved（v0.1.7）
