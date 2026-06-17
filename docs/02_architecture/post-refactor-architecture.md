@@ -149,9 +149,18 @@ handlePushbufferSubmitBatch(args)  (gpgpu_device.cpp:247)
 
 `GlobalScheduler::enqueue(entry, selectEngine(entry))` **不在** handler 的同步执行路径上。`handlePushbufferSubmitBatch` 调用 `puller_->submitBatch(...)` 后**立即返回**；真正的 `scheduler_->enqueue(current_entry_, engine)` 在 `HardwarePullerEmu::runLoop()` 推进到 `State::DISPATCH` 状态时由独立工作线程异步触发（`hardware_puller_emu.cpp:156-163`）。`GpfifoToLaunchParamsTranslator::translate()` 同样由 scheduler 内部调用。
 
-**Phase 2 安全校验**（v0.1.2 勘误）：
+**Phase 2 安全校验**（v0.1.2 勘误；**v0.1.3 已实现**）：
 
-SSOT 早期版本标注「`validate VA Space exists`（Phase 2 强制）」+「`validate Queue belongs to VA Space`」两个 handler 内校验环节。**实际代码（commit f364b17）未实现这两个校验**——handler 仅校验 `count > 0`，`args->stream_id` 直接使用。此缺口由独立 OpenSpec change [fix-gpu-pushbuffer-va-space-validation] 跟踪。
+SSOT 早期版本标注「`validate VA Space exists`（Phase 2 强制）」+「`validate Queue belongs to VA Space`」两个 handler 内校验环节。
+v0.1.2 之前实现缺失（handler 仅校验 `count > 0`，`args->stream_id` 直接使用）。v0.1.3 由 OpenSpec change [fix-gpu-pushbuffer-va-space-validation] 落地：
+
+```
+Phase 2 校验（已实现 — change fix-gpu-pushbuffer-va-space-validation）：
+├─→ validate VA Space exists（args->va_space_handle != 0 时）
+├─→ validate Queue belongs to VA Space（同上）
+```
+
+`va_space_handle == 0` 视为"未指定" sentinel，跳过校验以保持向后兼容（design D1）。
 
 ### 1.4 数据模型（VA Space / Queue / Ring Buffer）
 
@@ -661,6 +670,7 @@ struct gpu_queue_args {
 | | | | 待评审（用户审阅通过后进入实施阶段）|
 | 2026-06-16 | 0.1.1 修订 | Sisyphus | **审计自身偏差修正**：① 删除 `archive/openspec-deprecated-2026-06-15/` 引用（目录实际不存在，commit 71f6ff8 为空）；② AGENTS.md 测试框架描述改"未表态"（grep 0 匹配），删除 P3-2 错误基础；③ HAL 函数指针 10→11（代码实证 11 个）；④ plugin 加载机制改 `module mod` 符号模式（代码无 `__attribute__((constructor))`）；⑤ src/kernel cpp 计数 15→14；⑥ 附录 B archive 子目录文件计数（system_b_drivers/gpu 9→**12**、orphaned_simulator/gpu 5→6、historical-plans 7→8）；⑦ libgpu_core 命名（`gpu_buddy.h` + `buddy.c`）；⑧ 新增 `tools/docs-audit.sh`（§5 推荐）|
 | 2026-06-17 | 0.1.2 勘误 | Sisyphus | **代码 vs SSOT 偏差追踪**（4 个并行 explore agent 审计结果合并）：① §1.5 `simulator/` 标注为「已删除（commit `4f42005`）」而非「已清空」；② §1.5 `linux_compat/` 子项去除 `wait_queue.h`（实际在 `include/kernel/`）；③ §1.5 `include/kernel/` 子项补录 `WaitQueue`；④ 附录 B 删除 `archive/empty_directories/` 与 `archive/stale_builds/` 两个虚构条目；⑤ §1.3 删除「validate VA Space」/「validate Queue belongs」两个未实现的校验环节（指向 OpenSpec change [fix-gpu-pushbuffer-va-space-validation]）；⑥ §1.3 给 `GlobalScheduler::enqueue` 加异步性说明（实际在 `HardwarePullerEmu::runLoop` DISPATCH 状态异步触发）；⑦ §1.4 标注 Queue 的 u64 handle 是 `GpgpuDevice::queues_` map 的 key（不在 `GpuQueueEmu` 内）；⑧ §1.4 标注 doorbell offset 在 `GpgpuDevice::handleCreateQueue` 中计算；⑨ §1.4 补录 `VASpace::created_at` 与 `gpu_ring_header` 的 `flags / fence_value / reserved[32]` 字段；⑩ 配套修 `docs/06-reference/api-reference.md:337`（删除 `getIoctlTable()`，标注 commit `cb2f386` 已删）|
+| 2026-06-17 | 0.1.3 实施 | Sisyphus | **OpenSpec change [fix-gpu-pushbuffer-va-space-validation] 落地**：① §1.3 标注「Phase 2 校验已实现」（`gpu_pushbuffer_args` 新增 `va_space_handle` 字段；`handlePushbufferSubmitBatch` 接入 VA Space + Queue 校验；`va_space_handle==0` 向后兼容）；② `docs/06-reference/ioctl-commands.md` §3.1 表 + 约束表更新；③ 4 个测试 case（attached/invalid/zero/unattached）|
 
 ---
 

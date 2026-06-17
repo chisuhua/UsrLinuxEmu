@@ -75,6 +75,7 @@ set(STANDALONE_TESTS
     test_gpu_fence_return.cpp
     test_gpu_mmap.cpp
     test_gpu_mmap_and_submit.cpp
+    test_gpu_pushbuffer_validation.cpp
     test_gpu_register.cpp
     test_gpu_regs.cpp
     test_gpu_submit.cpp

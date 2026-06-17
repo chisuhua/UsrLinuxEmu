@@ -128,6 +128,7 @@ struct gpu_pushbuffer_args {
   u32 count;         // entry 数量（1..16）
   u32 flags;         // GPU_SUBMIT_*
   u64 fence_id;      // OUT：返回的 fence 标识
+  u64 va_space_handle;  // IN：VA Space 句柄（0=向后兼容，跳过校验）
 };
 ```
 
@@ -138,13 +139,15 @@ struct gpu_pushbuffer_args {
 | `count` 范围 | `1..16` | `gpgpu_device.cpp:269` |
 | `entries_addr` | 用户态虚拟地址，含 `count` 个 `gpu_gpfifo_entry` | 同上 |
 | `count == 0` | 立即返回 `-EINVAL` | 同上 |
+| `va_space_handle != 0` | 强制校验 VA Space 存在 + `stream_id` 已 attach | `gpgpu_device.cpp` `handlePushbufferSubmitBatch`（Phase 2 v0.1.3 起）|
+| `va_space_handle == 0` | 跳过校验（向后兼容 sentinel）| 设计 D1 |
 
 **返回值**:
 
 | 返回 | 含义 |
 |------|------|
 | `0` | 提交成功；`fence_id` 已填 |
-| `-EINVAL` | `count` 越界或 entry 含未知 method |
+| `-EINVAL` | `count` 越界 / entry 含未知 method / VA Space 不存在 / Queue 未 attach |
 | `-EFAULT` | `argp` 为空 |
 | `-ENOMEM` | `hal_fence_create` 失败 |
 
