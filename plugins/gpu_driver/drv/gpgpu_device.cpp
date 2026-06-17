@@ -101,22 +101,12 @@ const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
 
 long GpgpuDevice::ioctl(int fd, unsigned long request, void* argp) {
   (void)fd;
-  // Use unbuffered write to ensure output appears immediately
-  char buf[256];
-  int len = snprintf(buf, sizeof(buf), "[ioctl] request=0x%lx GPU_IOCTL_GET_DEVICE_INFO=0x%lx equal=%d\n",
-                    request, (unsigned long)GPU_IOCTL_GET_DEVICE_INFO, request == GPU_IOCTL_GET_DEVICE_INFO);
-  write(STDERR_FILENO, buf, len);
-  if (request == GPU_IOCTL_GET_DEVICE_INFO) {
-    return handleGetDeviceInfo(argp);
-  }
   const IoctlEntry* table = getIoctlTablePtr();
   for (size_t i = 0; i < kNumIoctls; ++i) {
     if (table[i].request == request) {
       return (this->*table[i].handler)(argp);
     }
   }
-  snprintf(buf, sizeof(buf), "[Unknown] request=0x%lx\n", request);
-  write(STDERR_FILENO, buf, strlen(buf));
   return -EINVAL;
 }
 
