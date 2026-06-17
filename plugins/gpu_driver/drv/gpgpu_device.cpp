@@ -1,6 +1,7 @@
 /*
  * drv/gpgpu_device.cpp — GPU 驱动设备（表驱动 ioctl）
  */
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstring>
@@ -8,6 +9,7 @@
 #include <thread>
 #include <unistd.h>
 #include "drv/gpgpu_device.h"
+#include "kernel/logger.h"
 #include "kernel/vfs.h"
 #include "sim/hardware/hardware_puller_emu.h"
 #include "sim/gpu_queue_emu.h"
@@ -243,6 +245,29 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
     std::cerr << "[GpgpuDevice] PUSHBUFFER_SUBMIT_BATCH: invalid count " << args->count
               << "\n";
     return -EINVAL;
+  }
+
+  // Phase 2 校验: va_space_handle != 0 时强制校验 (设计 D1: 0 = 向后兼容 sentinel)
+  if (args->va_space_handle != 0) {
+    if (!vaSpaceExists(args->va_space_handle)) {
+      usr_linux_emu::Logger::warn(
+          "[GpgpuDevice] PUSHBUFFER_SUBMIT_BATCH: va_space_handle not found: " +
+          std::to_string(args->va_space_handle));
+      return -EINVAL;
+    }
+    {
+      std::lock_guard<std::mutex> va_lock(va_space_mutex_);
+      const auto& attached = va_spaces_[args->va_space_handle].attached_queues;
+      if (std::find(attached.begin(), attached.end(),
+                    static_cast<uint64_t>(args->stream_id)) == attached.end()) {
+        usr_linux_emu::Logger::warn(
+            "[GpgpuDevice] PUSHBUFFER_SUBMIT_BATCH: stream_id " +
+            std::to_string(args->stream_id) +
+            " not attached to va_space_handle " +
+            std::to_string(args->va_space_handle));
+        return -EINVAL;
+      }
+    }
   }
 
   // 检查是否包含 FENCE 操作（需要同步返回 fence_id）
