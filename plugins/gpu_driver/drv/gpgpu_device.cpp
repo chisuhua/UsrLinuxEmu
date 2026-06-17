@@ -79,23 +79,6 @@ bool GpgpuDevice::HandleManager::valid(u32 handle) const {
   return handle != 0 && handles_.find(handle) != handles_.end();
 }
 
-const GpgpuDevice::IoctlEntry& GpgpuDevice::getIoctlTable() {
-  static const IoctlEntry kTable[kNumIoctls] = {
-      {GPU_IOCTL_GET_DEVICE_INFO, "GET_DEVICE_INFO", &GpgpuDevice::handleGetDeviceInfo},
-      {GPU_IOCTL_ALLOC_BO, "ALLOC_BO", &GpgpuDevice::handleAllocBo},
-      {GPU_IOCTL_FREE_BO, "FREE_BO", &GpgpuDevice::handleFreeBo},
-      {GPU_IOCTL_MAP_BO, "MAP_BO", &GpgpuDevice::handleMapBo},
-      {GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, "PUSHBUFFER_SUBMIT_BATCH",
-       &GpgpuDevice::handlePushbufferSubmitBatch},
-      {GPU_IOCTL_WAIT_FENCE, "WAIT_FENCE", &GpgpuDevice::handleWaitFence},
-      {GPU_IOCTL_CREATE_QUEUE, "CREATE_QUEUE", &GpgpuDevice::handleCreateQueue},
-      {GPU_IOCTL_DESTROY_QUEUE, "DESTROY_QUEUE", &GpgpuDevice::handleDestroyQueue},
-      {GPU_IOCTL_MAP_QUEUE_RING, "MAP_QUEUE_RING", &GpgpuDevice::handleMapQueueRing},
-      {GPU_IOCTL_QUERY_QUEUE, "QUERY_QUEUE", &GpgpuDevice::handleQueryQueue},
-  };
-  return kTable[0];  // BUG: This only returns FIRST element!
-}
-
 const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
   static const IoctlEntry kTable[kNumIoctls] = {
       {GPU_IOCTL_GET_DEVICE_INFO, "GET_DEVICE_INFO", &GpgpuDevice::handleGetDeviceInfo},
