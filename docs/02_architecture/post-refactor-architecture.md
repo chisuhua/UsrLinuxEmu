@@ -286,7 +286,7 @@ UsrLinuxEmu/
 
 | 目录 | 状态 | 主要问题 |
 |------|------|----------|
-| `docs/00_adr/` (24 个 ADR) | 🟡 **部分过期** | ADR-022 缺失；ADR-015/024 中 IOCTL 编号（0x33-0x35）与实际（0x40-0x43）冲突；ADR-010 "GTest 迁移"未实施 |
+| `docs/00_adr/` (24 个 ADR) | 🟢 **治理完成**（v0.1.5）| ADR-022 缺失已修复（升 ✅ v1）；ADR-025/026/028/029/030 已转 ⏸️ 显式 Deferred；ADR-031 升 ✅ v1；ADR-010 "GTest 迁移"未实施（改 Catch2 选型说明留待后续） |
 | `docs/01-quickstart/` | 🔴 **严重过期** | first-example.md 整章用废弃 `GPGPU_*` API；building.md 引用不存在的 `build/bin/cli_tool` |
 | `docs/02_architecture/` | 🔴 **严重过期** | 全部基于 03-23 旧结构，含 `drivers/gpu/`、`simulator/gpu/`、旧 ioctl |
 | `docs/03-development/` | 🔴 **严重过期** | guide.md/adding-devices.md 中 Device 类签名、`REGISTER_DEVICE_PLUGIN` 宏全错；架构对齐报告本身指出 6 处错误未修复 |
@@ -419,7 +419,9 @@ UsrLinuxEmu/
 | 问题 | 位置 |
 |------|------|
 | **ADR-022 完全缺失**（README 索引和 PRD 多次引用 "GPU Core Emu" ADR）| `docs/00_adr/README.md` L92 + `PRD.md` L149, 162 |
+| | **v0.1.5 落地**：ADR-022 已补齐为 ✅ v1（operator-level emulation 决策）| | |
 | **ADR-025~031 完全缺失**（PRD L136-164 引用 ADR-025/026/027/028/030/031）| `docs/00_adr/README.md` L96 + `PRD.md` |
+| | **v0.1.5 落地**：025/026/028/029/030 转 ⏸️ Deferred；031 升 ✅ v1；027 维持 🔄（承接 `linux_compat_plan.md`）| | |
 | **编码风格表与 AGENTS.md 矛盾** | AGENTS.md 说 snake_case + `var_` 后缀；`coding-style.md` 说 camelCase |
 | **设备类名混用** `GpuDevice` / `GpuDriver` / `GpgpuDevice` | `02_architecture/architecture.md`、`04-building/testing_guide.md`、`06-reference/api-reference.md` |
 | **架构对齐报告本身指出 6 处错误未修复** | `docs/03-development/architecture-alignment-report.md` |
@@ -493,6 +495,7 @@ UsrLinuxEmu/
 | | 基于 git log 生成 0.1 → 0.5+ 的版本日志，标注 Phase 1/1.5/2；当前是 03-24 快照 | | |
 | **P2-3** | **修复 PRD.md** | 中 | 单文件 |
 | | 删除对 ADR-022~031 的引用；明确"驱动/仿真分离"和"VA Space"作为产品定位；移除 5-7 之前的过期段落 | | |
+| | **v0.1.5 状态**：PRD.md 已无 ADR-022~031 直接引用（grep 0 匹配）；仅 L146 "022 gap" 警告已移除。ADR-022/031 已升 v1，025/026/028/029/030 已转 ⏸️ Deferred | | |
 | **P2-4** | **改写 ADR-010** | 低 | 单文件 |
 | | 从"提议迁移到 GTest"改为 **"Catch2 选型说明"**（说明为何最终选 Catch2） | | |
 | **P2-5** | **更新 `docs/03-development/coding-style.md`** 与 AGENTS.md 对齐 | 低 | 单文件 |
@@ -570,6 +573,7 @@ UsrLinuxEmu/
 4. **重构后产生了一个"orphan zone"** —— `simulator/`（已清空）、`include/usr_linux_emu/`（空，命名空间预留）这两个目录名仍被 docs 引用。**`tools/cli/` 实际存在并可用**——之前审计将其误判为空目录，应从 orphan zone 中移除。
 
 5. **ADR 编号有"二阶问题"** —— 不仅 ADR-022 缺失，README 关系图本身画的是"未来规划"，而 PRD 把它当"已存在"引用。**这是 ADR 治理问题**：要么补齐 ADR-022~031，要么明确标注"规划中"。
+   - **v0.1.5 落地（change `cleanup-adr-placeholders`）**：问题已分流为 3 状态：ADR-022/031 升 v1，025/026/028/029/030 转 ⏸️ 显式 Deferred（带 Phase 3 触发条件），027 维持 `🔄 提议中`（承接 `linux_compat_plan.md`）。README 关系图同步更新。
 
 6. **docs 治理的关键缺失** —— 没有任何"doc ownership / review"机制：
    - 没有 doc review checklist
@@ -677,6 +681,7 @@ struct gpu_queue_args {
 | 2026-06-17 | 0.1.2 勘误 | Sisyphus | **代码 vs SSOT 偏差追踪**（4 个并行 explore agent 审计结果合并）：① §1.5 `simulator/` 标注为「已删除（commit `4f42005`）」而非「已清空」；② §1.5 `linux_compat/` 子项去除 `wait_queue.h`（实际在 `include/kernel/`）；③ §1.5 `include/kernel/` 子项补录 `WaitQueue`；④ 附录 B 删除 `archive/empty_directories/` 与 `archive/stale_builds/` 两个虚构条目；⑤ §1.3 删除「validate VA Space」/「validate Queue belongs」两个未实现的校验环节（指向 OpenSpec change [fix-gpu-pushbuffer-va-space-validation]）；⑥ §1.3 给 `GlobalScheduler::enqueue` 加异步性说明（实际在 `HardwarePullerEmu::runLoop` DISPATCH 状态异步触发）；⑦ §1.4 标注 Queue 的 u64 handle 是 `GpgpuDevice::queues_` map 的 key（不在 `GpuQueueEmu` 内）；⑧ §1.4 标注 doorbell offset 在 `GpgpuDevice::handleCreateQueue` 中计算；⑨ §1.4 补录 `VASpace::created_at` 与 `gpu_ring_header` 的 `flags / fence_value / reserved[32]` 字段；⑩ 配套修 `docs/06-reference/api-reference.md:337`（删除 `getIoctlTable()`，标注 commit `cb2f386` 已删）|
 | 2026-06-17 | 0.1.3 实施 | Sisyphus | **OpenSpec change [fix-gpu-pushbuffer-va-space-validation] 落地**：① §1.3 标注「Phase 2 校验已实现」（`gpu_pushbuffer_args` 新增 `va_space_handle` 字段；`handlePushbufferSubmitBatch` 接入 VA Space + Queue 校验；`va_space_handle==0` 向后兼容）；② `docs/06-reference/ioctl-commands.md` §3.1 表 + 约束表更新；③ 4 个测试 case（attached/invalid/zero/unattached）；④ commit hash: `0272970`（结构体扩展）、`bf8192f`（handler 校验）、`09ae1b0`（测试 + 文档）|
 | 2026-06-17 | 0.1.4 收尾 | Sisyphus | **H-1 closeout 落地**（change `h1-pushbuffer-validation-closeout`）：① TaskRunner 客户端 `GpuDriverClient` 加 `setCurrentVASpace()` 透传 `args.va_space_handle`（submodule commit `ff52e64`，branch `h1-pushbuffer-validation-closeout`）；② `openspec/changes/archive/2026-06-17-fix-gpu-pushbuffer-va-space-validation/` 6 文件纳入 git 跟踪（修复 `744ef46` archive tracking 遗漏 + `.gitignore` 收紧 `/archive/` 仅根级）；③ SSOT §1.3 v0.1.3 段加 "v0.1.3 收尾" 收尾注 |
+| 2026-06-17 | 0.1.5 ADR 治理 | Sisyphus | **ADR 占位清理**（change `cleanup-adr-placeholders`）：① ADR-022 升级为 ✅ v1（operator-level emulation，4 个 kernel template）；② ADR-031 升级为 ✅ v1（TTM thin wrapper over `libgpu_core/gpu_buddy`）；③ ADR-025/026/028/029/030 转为 ⏸️ 显式 Deferred（每份附 Phase 3 触发条件）；④ `docs/00_adr/README.md` 索引表 + 关系图 + "Deferred Policy" 段同步；⑤ `PRD.md` L146 "022 gap" 警告移除；⑥ §3.3 P2-3 标注已落地；⑦ §5 关键洞察 5 标注"已解决" |
 
 ---
 

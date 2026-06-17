@@ -143,7 +143,7 @@ Phase 2 完整支持用户态队列命令提交：
 | **Phase 3** | 网络设备 / 存储设备插件 | （规划中，无具体 ADR）|
 | **Phase 4** | 稳定的 v1.0 发布；多进程支持、性能优化、错误处理、日志增强 | ADR-011, 012, 013, 014（提议中）|
 
-> ADR 索引与状态详见 [docs/00_adr/README.md](00_adr/README.md)。**编号 022 在 021 与 023 之间存在 gap**，无对应文件，引用时请跳过该编号。
+> ADR 索引与状态详见 [docs/00_adr/README.md](00_adr/README.md)。**ADR-022 已于 2026-06-17 升级为 ✅ v1**（operator-level emulation 决策；详见 [adr-022](00_adr/adr-022-gpu-compute-unit-emulation.md)）；ADR-025/026/028/029/030 已转为 ⏸️ 显式 Deferred（带 Phase 3 触发条件）；ADR-031 已升级为 ✅ v1（TTM thin wrapper 决策）。
 
 ---
 
