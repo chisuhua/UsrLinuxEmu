@@ -29,14 +29,14 @@
 | [adr-021](adr-021-hardware-puller.md) | Hardware Puller GPFIFO 状态机构架 | ✅ 已接受 | 2026-05 |
 | [adr-023](adr-023-hal-interface.md) | 仿真层接口契约 (HAL) | ✅ 已接受 | 2026-05 |
 | [adr-024](adr-024-user-mode-queue-submission.md) | 用户态队列命令提交架构 | 🔄 提议中 | 2026-05 |
-| [adr-022](adr-022-gpu-compute-unit-emulation.md) | GPU 计算单元仿真 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
-| [adr-025](adr-025-phase3-placeholder.md) | Phase 3+ 议题占位 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
-| [adr-026](adr-026-phase3-placeholder.md) | Phase 3+ 议题占位 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
+| [adr-022](adr-022-gpu-compute-unit-emulation.md) | GPU 计算单元仿真 | ✅ 已接受 (v1) | 2026-06 |
+| [adr-025](adr-025-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
+| [adr-026](adr-026-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
 | [adr-027](adr-027-linux-compat-strategy.md) | Linux 内核兼容层扩展策略 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
-| [adr-028](adr-028-phase3-placeholder.md) | Phase 3+ 议题占位 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
-| [adr-029](adr-029-phase3-placeholder.md) | Phase 3+ 议题占位 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
-| [adr-030](adr-030-phase3-placeholder.md) | Phase 3+ 议题占位 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
-| [adr-031](adr-031-ttm-migration-priority.md) | TTM 迁移实施优先级 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
+| [adr-028](adr-028-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
+| [adr-029](adr-029-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
+| [adr-030](adr-030-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
+| [adr-031](adr-031-ttm-migration-priority.md) | TTM 迁移实施优先级 | ✅ 已接受 (v1) | 2026-06 |
 
 ## ADR 状态说明
 
@@ -44,6 +44,7 @@
 |------|------|
 | ✅ 已接受 | 已通过评审，正式采用的决策 |
 | 🔄 提议中 | 正在评审或等待实现的决策 |
+| ⏸️ 显式 Deferred | 暂不决策，等待明确触发条件后重新打开（2026-06-17 引入；详见下文"deferred policy"）|
 | ⚠️ 已弃用 | 已被新决策替代的旧决策 |
 | ❌ 已拒绝 | 评审后未采纳的决策 |
 
@@ -96,16 +97,16 @@ adr-001 (用户态模拟)
             │       ├── adr-021 (Hardware Puller)
             │       └── adr-023 (HAL 接口契约)
             │
-            └── (Phase 3+ 规划 — 占位骨架已就位，详情待 owner 填充)
-                    ├── adr-022 (GPU 计算单元仿真)
+            └── (Phase 3+ 规划 — 已分流：v1 已接受 / 显式 Deferred)
+                    ├── adr-022 (GPU 计算单元仿真) ✅ v1
+                    ├── adr-031 (TTM 迁移优先级) ✅ v1
                     ├── adr-024 (用户态队列提交 — 已提议)
-                    ├── adr-025 (Phase 3+ 议题)
-                    ├── adr-026 (Phase 3+ 议题)
                     ├── adr-027 (Linux 兼容层扩展)
-                    ├── adr-028 (Phase 3+ 议题)
-                    ├── adr-029 (Phase 3+ 议题)
-                    ├── adr-030 (Phase 3+ 议题)
-                    └── adr-031 (TTM 迁移优先级)
+                    ├── adr-025 (Phase 3+ 议题) ⏸️ Deferred
+                    ├── adr-026 (Phase 3+ 议题) ⏸️ Deferred
+                    ├── adr-028 (Phase 3+ 议题) ⏸️ Deferred
+                    ├── adr-029 (Phase 3+ 议题) ⏸️ Deferred
+                    └── adr-030 (Phase 3+ 议题) ⏸️ Deferred
 ```
 
 ## 维护指南
@@ -134,15 +135,34 @@ adr-001 (用户态模拟)
 **维护者**: UsrLinuxEmu Architecture Team
 **最后更新**: 2026-06-16 (commit 374d463)
 
-## 编号 gap 治理（2026-06-16）
+## 编号 gap 治理（2026-06-16 → 2026-06-17）
 
-2026-06-16 之前的 ADR 编号 022 + 025~031 一直缺失（被 `tools/docs-audit.sh` §3.1/3.2 标记为 "intentional placeholder"）。本轮治理补齐了 8 份**占位骨架 ADR**，明确每份占位的"决策待定"状态和潜在候选方向。
+2026-06-16 之前的 ADR 编号 022 + 025~031 一直缺失（被 `tools/docs-audit.sh` §3.1/3.2 标记为 "intentional placeholder"）。2026-06-16 本轮治理补齐了 8 份**占位骨架 ADR**，明确每份占位的"决策待定"状态和潜在候选方向。
 
 - 022：GPU 计算单元仿真（具体 topic）
 - 025/026/028/029/030：通用 Phase 3+ 占位（候选 A/B/C/D 列出）
 - 027：Linux 兼容层扩展策略（具体 topic，承接 `docs/pending/linux_compat_plan.md`）
 - 031：TTM 迁移优先级（具体 topic，承接 adr-019 §6）
 
-后续 Phase 3+ 启动时，**owner 认领后应直接更新对应占位 ADR 的"决策"章节并将 status 改为 ✅ 已接受**，而不是新建一个文件。
+### 2026-06-17 二次治理（change `cleanup-adr-placeholders`）
 
-详细的占位 → 已接受工作流见各占位 ADR 的"## 后续"段。
+2026-06-17 由 OpenSpec change `cleanup-adr-placeholders` 完成第二轮治理：
+
+- **ADR-022**：从占位升级为 ✅ v1（operator-level emulation，4 个 kernel template）
+- **ADR-031**：从占位升级为 ✅ v1（TTM thin wrapper over `libgpu_core/gpu_buddy`）
+- **ADR-025/026/028/029/030**：从占位转为 **⏸️ 显式 Deferred**，每份附加明确 Phase 3 触发条件
+- **ADR-027**：保持 `🔄 提议中`（承接 `docs/pending/linux_compat_plan.md`，未在本次清理范围）
+
+### Deferred Policy（2026-06-17 引入）
+
+**025/026/028/029/030** 标注为 `⏸️ 显式 Deferred` 而非 `🔄 提议中`：
+
+- **区别于"永久拒绝"**：`⏸️ 显式 Deferred` 表示"暂不决策，触发条件满足后重新打开"
+- **每份 ADR 必须有明确触发条件**：写在 ADR 文件的 `## Phase 3 触发条件` 段（commit 事件 / issue 编号 / 第一个用例）
+- **重新打开工作流**：owner 认领后：
+  1. 更新 `## 决策` 章节并把 status 改为 `✅ 已接受`
+  2. 保留 `## 讨论历史 (v0 占位)` 附录（v0 候选项不删除）
+  3. 同步更新本 README 的索引表与关系图
+- **可自动检测**：每份 deferred ADR 的 `## Phase 3 触发条件` 段给出 `git log` / `gh issue list` 等具体检测命令
+
+后续 Phase 3+ 启动时，**owner 认领后应直接更新对应 ADR 的"决策"章节并将 status 改为 ✅ 已接受**，而不是新建一个文件。详细的占位 → 已接受工作流见各占位 ADR 的"## 后续"段。
