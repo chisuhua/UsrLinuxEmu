@@ -4,19 +4,19 @@
 
 ## 导航
 
-- [构建系统](build-system.md) - CMake 配置和编译选项
-- [测试指南](testing-guide.md) - 编写和运行测试
+- [构建系统](build_system.md) - CMake 配置和编译选项
+- [测试指南](testing_guide.md) - 编写和运行测试
 - [CI/CD](ci-cd.md) - 持续集成和部署
 
 ## 快速导航
 
 | 我想... | 阅读这个 |
 |---------|----------|
-| 编译项目 | [构建系统](build-system.md) |
-| 运行测试 | [测试指南](testing-guide.md) |
+| 编译项目 | [构建系统](build_system.md) |
+| 运行测试 | [测试指南](testing_guide.md) |
 | 了解 CI 流程 | [CI/CD](ci-cd.md) |
-| 配置构建选项 | [构建系统](build-system.md#构建选项) |
-| 启用代码覆盖率 | [测试指南](testing-guide.md#代码覆盖率) |
+| 配置构建选项 | [构建系统](build_system.md#构建选项) |
+| 启用代码覆盖率 | [测试指南](testing_guide.md#代码覆盖率) |
 
 ## 常用命令
 
