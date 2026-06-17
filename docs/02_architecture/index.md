@@ -15,7 +15,7 @@
 | 项目是什么 | [项目概述](overview.md) |
 | 系统如何工作 | [架构设计](architecture.md) |
 | API 如何使用 | [API 参考](api-reference.md) |
-| 如何构建项目 | [构建指南](../04-building/build-system.md) |
+| 如何构建项目 | [构建指南](../04-building/build_system.md) |
 | 如何开发 | [开发指南](../03-development/guide.md) |
 
 ## 阅读顺序
