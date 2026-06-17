@@ -133,41 +133,51 @@
 ```
 User ioctl(fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, args)
    ↓
-GpgpuDevice::ioctl() → table dispatch via getIoctlTablePtr()
+GpgpuDevice::ioctl() → table dispatch via getIoctlTablePtr()  (L82-100 实现，L112 调用)
    ↓
-handlePushbufferSubmitBatch(args)
-   ├─→ validate VA Space exists (Phase 2 强制)
-   ├─→ validate Queue belongs to VA Space
-   ├─→ HAL.fence_create(&fence_id)  ← S3.5 异步跟踪
-   ├─→ HardwarePullerEmu::submitBatch(gpfifo_addr, count)
-   │     └─→ FSM: IDLE→FETCH (HAL.mem_read) →DECODE→
+handlePushbufferSubmitBatch(args)  (gpgpu_device.cpp:247)
+   ├─→ HAL.fence_create(&fence_id)  ← 异步跟踪 (gpgpu_device.cpp:272)
+   ├─→ HardwarePullerEmu::submitBatch(gpfifo_addr, count)  (gpgpu_device.cpp:279)
+   │     └─→ FSM: IDLE→FETCH (HAL.mem_read) →DECODE→        (hardware_puller_emu.cpp:107-188)
    │         SCHEDULE→DISPATCH→COMPLETE
-   ├─→ GlobalScheduler::enqueue(entry, selectEngine(entry))
-   │     └─→ GpfifoToLaunchParamsTranslator::translate()
-   │         └─→ LaunchParamsCallback (kernel_name, grid, block)
-   └─→ HAL.doorbell_ring(stream_id)
+   └─→ HAL.doorbell_ring(stream_id)                          (gpgpu_device.cpp:280)
    ↓
-返回 args.fence_id 给用户
+返回 args.fence_id 给用户  (gpgpu_device.cpp:281)
 ```
+
+**重要异步性说明**（v0.1.2 勘误）：
+
+`GlobalScheduler::enqueue(entry, selectEngine(entry))` **不在** handler 的同步执行路径上。`handlePushbufferSubmitBatch` 调用 `puller_->submitBatch(...)` 后**立即返回**；真正的 `scheduler_->enqueue(current_entry_, engine)` 在 `HardwarePullerEmu::runLoop()` 推进到 `State::DISPATCH` 状态时由独立工作线程异步触发（`hardware_puller_emu.cpp:156-163`）。`GpfifoToLaunchParamsTranslator::translate()` 同样由 scheduler 内部调用。
+
+**Phase 2 安全校验**（v0.1.2 勘误）：
+
+SSOT 早期版本标注「`validate VA Space exists`（Phase 2 强制）」+「`validate Queue belongs to VA Space`」两个 handler 内校验环节。**实际代码（commit f364b17）未实现这两个校验**——handler 仅校验 `count > 0`，`args->stream_id` 直接使用。此缺口由独立 OpenSpec change [fix-gpu-pushbuffer-va-space-validation] 跟踪。
 
 ### 1.4 数据模型（VA Space / Queue / Ring Buffer）
 
 ```
-VASpace  (u64 handle, 内部 struct GpgpuDevice::VASpace)
+VASpace  (u64 handle, 内部 struct GpgpuDevice::VASpace，gpgpu_device.h:72-78)
    ├─ page_size (0=4KB, 1=64KB)
    ├─ flags
+   ├─ created_at  (内部字段，v0.1.2 勘误补录)
    └─ attached_queues: [queue_handle]
          ↓
-Queue  (u64 handle, 内部 GpuQueueEmu shared_ptr)
+Queue  (u64 handle 是 GpgpuDevice::queues_ map 的 key；内部 GpuQueueEmu shared_ptr)
+   ├─ GpuQueueEmu::queue_id_ (u32，内部 ID；≠ 外层 handle，v0.1.2 勘误)
    ├─ queue_type (COMPUTE/COPY/GRAPHICS)
    ├─ priority
    ├─ ring_size
    ├─ ring_buffer: gpu_ring_header (shm-backed)
    │     ├─ write_idx / read_idx (volatile)
    │     ├─ capacity (max 1024)
+   │     ├─ flags / fence_value / reserved[32]  (v0.1.2 勘误补录)
    │     └─ entries[] (gpu_gpfifo_entry)
-   └─ doorbell: mmap offset 0x10000 + h*0x1000
+   ├─ doorbell_cb_ (callback；非 doorbell offset 本身)
+   └─ doorbell offset 计算位置：GpgpuDevice::handleCreateQueue (gpgpu_device.cpp:410)
+         公式：DOORBELL_ALLOC_BASE + handle * DOORBELL_ALLOC_STRIDE
 ```
+
+**关键提醒**（v0.1.2 勘误）：Queue 的 **u64 handle 实际是 `GpgpuDevice::queues_` 这张 `unordered_map<uint64_t, std::shared_ptr<GpuQueueEmu>>` 的 key**（`gpgpu_device.h:123`），不是 `GpuQueueEmu` 内部字段。`GpuQueueEmu::queue_id_`（u32）是内部 ID，与外层 handle 不同。Doorbell offset 也不在 `GpuQueueEmu` 内，而在创建时由 `GpgpuDevice::handleCreateQueue` 计算并写入 `args->doorbell_pgoff`。
 
 ### 1.5 仓库物理布局
 
@@ -179,9 +189,9 @@ UsrLinuxEmu/
 ├── build.sh, run_cli.sh
 ├── src/                           (kernel SHARED lib, 14 cpp)
 ├── include/
-│   ├── kernel/                    (VFS, Device, FileOps, Module, ...)
-│   ├── linux_compat/              (types, macros, memory, ioctl, drm/)
-│   └── usr_linux_emu/             ⚠️ 空目录（为未来公共头预留）
+│   ├── kernel/                    (VFS, Device, FileOps, Module, WaitQueue, ...)
+│   ├── linux_compat/              (compat.h, types, macros, memory, ioctl, drm/)
+│   └── usr_linux_emu/             ⚠️ 空目录（命名空间预留，见 §4.6）
 ├── drivers/                       (sample_memory, sample_serial)
 ├── plugins/
 │   ├── gpu_driver/{drv,hal,sim,shared}
@@ -190,7 +200,7 @@ UsrLinuxEmu/
 ├── libgpu_core/                   (纯 C buddy allocator, ADR-020)
 ├── tests/                         (Catch2 + standalone + sim)
 ├── tools/cli/                     ✅ 存在（main.cpp + CMakeLists.txt，构建产物 cli 在 build/bin/）
-├── simulator/                     ⚠️ 已清空（迁移到 plugins/gpu_driver/sim/）
+├── ~~simulator/~~                 ❌ 已 git-silent 删除（commit `4f42005`，2026-06-16；迁移到 plugins/gpu_driver/sim/ 在 Phase 1.5 完成，2026-05）
 ├── external/TaskRunner/           (submodule)
 ├── archive/                       ← 旧代码归档
 │   ├── system_b_drivers/gpu/      (旧 GPGPU_*)
@@ -636,8 +646,6 @@ struct gpu_queue_args {
 | `archive/system_b_examples/` | 旧 sample_gpu 插件 | 3 文件 | 冻结 |
 | `archive/orphaned_simulator/gpu/` | 旧 basic_gpu_simulator + command_parser | 6 文件 | 冻结 |
 | `archive/historical-plans-2026-06-15/` | 7 份历史实现计划 | 8 文件 | 冻结 |
-| `archive/empty_directories/` | 空目录标记 | 0 | 占位 |
-| `archive/stale_builds/` | 旧 build_shadow 目录 | 0 | 占位 |
 
 **关键提醒**:
 - `archive/` 是**项目根**的目录，不是 `docs/archive/`
@@ -652,10 +660,11 @@ struct gpu_queue_args {
 | 2026-06-15 | 0.1 草案 | Architecture Team | 初稿：基于 docs/ 审计 + 代码对账 + ADR 索引合成 |
 | | | | 待评审（用户审阅通过后进入实施阶段）|
 | 2026-06-16 | 0.1.1 修订 | Sisyphus | **审计自身偏差修正**：① 删除 `archive/openspec-deprecated-2026-06-15/` 引用（目录实际不存在，commit 71f6ff8 为空）；② AGENTS.md 测试框架描述改"未表态"（grep 0 匹配），删除 P3-2 错误基础；③ HAL 函数指针 10→11（代码实证 11 个）；④ plugin 加载机制改 `module mod` 符号模式（代码无 `__attribute__((constructor))`）；⑤ src/kernel cpp 计数 15→14；⑥ 附录 B archive 子目录文件计数（system_b_drivers/gpu 9→**12**、orphaned_simulator/gpu 5→6、historical-plans 7→8）；⑦ libgpu_core 命名（`gpu_buddy.h` + `buddy.c`）；⑧ 新增 `tools/docs-audit.sh`（§5 推荐）|
+| 2026-06-17 | 0.1.2 勘误 | Sisyphus | **代码 vs SSOT 偏差追踪**（4 个并行 explore agent 审计结果合并）：① §1.5 `simulator/` 标注为「已删除（commit `4f42005`）」而非「已清空」；② §1.5 `linux_compat/` 子项去除 `wait_queue.h`（实际在 `include/kernel/`）；③ §1.5 `include/kernel/` 子项补录 `WaitQueue`；④ 附录 B 删除 `archive/empty_directories/` 与 `archive/stale_builds/` 两个虚构条目；⑤ §1.3 删除「validate VA Space」/「validate Queue belongs」两个未实现的校验环节（指向 OpenSpec change [fix-gpu-pushbuffer-va-space-validation]）；⑥ §1.3 给 `GlobalScheduler::enqueue` 加异步性说明（实际在 `HardwarePullerEmu::runLoop` DISPATCH 状态异步触发）；⑦ §1.4 标注 Queue 的 u64 handle 是 `GpgpuDevice::queues_` map 的 key（不在 `GpuQueueEmu` 内）；⑧ §1.4 标注 doorbell offset 在 `GpgpuDevice::handleCreateQueue` 中计算；⑨ §1.4 补录 `VASpace::created_at` 与 `gpu_ring_header` 的 `flags / fence_value / reserved[32]` 字段；⑩ 配套修 `docs/06-reference/api-reference.md:337`（删除 `getIoctlTable()`，标注 commit `cb2f386` 已删）|
 
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
-**最后更新**: 2026-06-16
-**对应代码 commit**: `374d463`
-**状态**: 🔄 待用户审阅（v0.1.1 已修正审计自身 7 类偏差）
+**最后更新**: 2026-06-17
+**对应代码 commit**: `f364b17`
+**状态**: 🔄 v0.1.2 已合并 10 项偏差勘误；H-1 由独立 OpenSpec change 跟踪
