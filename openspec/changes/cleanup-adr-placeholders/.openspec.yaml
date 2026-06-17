@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-06-17
+goal: Convert 8 placeholder ADRs from '🔄 占位骨架' state to either real decisions
+  (022, 031) or explicit deferral with Phase 3 trigger criteria (025-030). Stop
+  misleading PRD/SSOT references that imply these ADRs are already decided.
