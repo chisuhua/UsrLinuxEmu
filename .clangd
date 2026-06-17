@@ -1,0 +1,19 @@
+# clangd LSP 配置
+#
+# 用途：让 IDE（VSCode/CLion/Vim+YouCompleteMe 等）无需手选
+# compile_commands.json 即可正确解析头文件。
+#
+# 验证方法：
+#   clangd --check=include/kernel/vfs.h
+#   期望："All checks completed, 0 errors"，且无 config-error。
+#
+# 设计原则：clangd 的 flags 必须与 build 实际使用的 flags 一致，
+# 否则会出现"build 通过但 IDE 报红"的噪音。
+CompileFlags:
+  CompilationDatabase: build
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None
+Index:
+  Background: Build
+  StandardLibrary: Yes

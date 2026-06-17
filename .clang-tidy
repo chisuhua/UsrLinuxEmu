@@ -40,4 +40,3 @@ CheckOptions:
     value: '0'
   - key: readability-uppercase-literal-suffix.IntegerLiteralSuffix
     value: '0'
-...
