@@ -45,6 +45,20 @@ struct gpu_pushbuffer_args {
   u32 count;
   u32 flags;
   u64 fence_id;
+  /**
+   * VA Space handle for validation (Phase 2 contract).
+   *
+   * - 0 (sentinel): skip VA Space + Queue attachment validation.
+   *   Preserves backward compatibility with existing call sites that
+   *   value-initialize the struct.
+   * - non-zero: handler MUST verify (a) the VA Space exists and (b) the
+   *   target stream_id (queue handle) is attached to that VA Space,
+   *   else return -EINVAL.
+   *
+   * Appended at the end to preserve existing field offsets for ABI
+   * compatibility with callers that do not initialize the new field.
+   */
+  u64 va_space_handle;
 };
 
 /* ========================================================================
