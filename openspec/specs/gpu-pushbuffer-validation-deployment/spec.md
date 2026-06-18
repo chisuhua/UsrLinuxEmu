@@ -1,7 +1,9 @@
 # gpu-pushbuffer-validation-deployment Specification
 
 ## Purpose
-TBD - created by archiving change h1-pushbuffer-validation-closeout. Update Purpose after archive.
+
+Close out the deployment gaps left after the `gpu-pushbuffer-validation` capability landed: plumb `va_space_handle` through `external/TaskRunner/include/gpu_driver_client.h` (e.g. `setCurrentVASpace(handle)`) so TaskRunner end-to-end tests actually exercise H-1 validation, and restore git tracking of the H-1 archive directory `openspec/changes/archive/2026-06-17-fix-gpu-pushbuffer-va-space-validation/` so historical change artifacts survive `git clone`. Separates deployment/governance concerns from the H-1 behavior-layer capability.
+
 ## Requirements
 ### Requirement: TaskRunner client can plumb va_space_handle
 
