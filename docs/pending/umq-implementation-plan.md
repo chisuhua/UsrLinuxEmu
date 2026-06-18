@@ -142,19 +142,16 @@ struct gpu_ring_buffer {
 #define GPU_IOCTL_MAP_QUEUE_RING     _IOWR(GPU_IOCTL_BASE, 0x42, struct gpu_queue_map_ring_args)
 #define GPU_IOCTL_QUERY_QUEUE        _IOWR(GPU_IOCTL_BASE, 0x43, struct gpu_queue_info_args)
 
-struct gpu_create_queue_args {
-  u32 queue_type;           // GPU_QUEUE_COMPUTE / COPY
-  u32 priority;             // 0-100
-  u32 ring_size;            // Ring Buffer 大小（页对齐）
-  u32 reserved;
-  u64 queue_handle;         // OUT: Queue 句柄
-  u64 doorbell_pgoff;       // OUT: Doorbell mmap page offset
-};
-
 struct gpu_queue_map_ring_args {
   u64 queue_handle;         // INPUT: 由 CREATE_QUEUE 返回
   u64 ring_addr;            // INPUT: 用户态指定的共享内存地址
 };
+
+// 注: IOCTL 0x40 CREATE_QUEUE 实际入参为 `struct gpu_queue_args`
+// （定义在 plugins/gpu_driver/shared/gpu_ioctl.h 第 205-212 行）
+// 含 va_space_handle / queue_type / priority / ring_buffer_size /
+// queue_handle / doorbell_pgoff 共 6 字段。
+// 本计划 (§3.1) 的 `create_queue()` 客户端 API 将使用该 struct。
 ```
 
 ### 2.3 Implement Queue Management
@@ -262,7 +259,8 @@ State fetchFromRing() {
 
 ```cpp
 // 队列管理
-int create_queue(struct gpu_create_queue_args* args);
+// 注: 入参改为 struct gpu_queue_args* (与 IOCTL 0x40 一致, 见 plugins/gpu_driver/shared/gpu_ioctl.h)
+int create_queue(struct gpu_queue_args* args);
 int destroy_queue(u64 queue_handle);
 int map_queue_ring(u64 queue_handle, void** ring_ptr, size_t ring_size);
 

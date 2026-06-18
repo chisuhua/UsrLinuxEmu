@@ -588,15 +588,13 @@ struct gpu_ring_header {
 
 #define GPU_MAX_RING_ENTRIES 1024
 
-/* Queue 描述符参数 */
-struct gpu_create_queue_args {
-  uint32_t queue_type;         /* GPU_QUEUE_COMPUTE / COPY */
-  uint32_t priority;           /* 0-100 */
-  uint32_t ring_size;          /* Ring Buffer 容量 (entry 数) */
-  uint32_t reserved;
-  uint64_t queue_handle;       /* OUT: 队列句柄 */
-  uint64_t doorbell_pgoff;     /* OUT: Doorbell mmap page offset */
-};
+/* Queue 描述符参数
+ *
+ * 注: 实际 IOCTL 0x40 CREATE_QUEUE 使用的 struct 是 gpu_ioctl.h 中的
+ * `struct gpu_queue_args`（含 va_space_handle 字段，Phase 2 强制）。
+ * 本节仅展示 Ring Buffer 相关的头文件片段，Queue 创建参数详见
+ * plugins/gpu_driver/shared/gpu_ioctl.h 第 205-212 行。
+ */
 ```
 
 ### 5.6 `gpu_events.h` — MMU 事件模型

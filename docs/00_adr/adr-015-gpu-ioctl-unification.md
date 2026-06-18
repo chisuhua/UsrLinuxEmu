@@ -413,6 +413,13 @@ struct gpu_queue_map_ring_args {
 };
 ```
 
+> **ADR 历史注脚（2026-06-18 添加，change `cleanup-orphan-struct-gpu-create-queue-args`）**：
+> 本 ADR 早期版本使用的 `struct gpu_create_queue_args` 在 Phase 2 实施后**已被替代**。
+> 当前 IOCTL 0x40 `CREATE_QUEUE` 实际入参为 `struct gpu_queue_args`（定义在
+> `plugins/gpu_driver/shared/gpu_ioctl.h:205-212`），新增 `va_space_handle` 字段
+> （Phase 2 强制，sentinel 0 = 跳过校验，向后兼容）。
+> 详见 SSOT 附录 A 与 v0.1.7 审计报告 ND-A4.α。
+
 ### 接口层级变更
 
 ```

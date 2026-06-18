@@ -759,11 +759,12 @@ struct gpu_ring_header {
 | 2026-06-17 | 0.1.6 审计 | Sisyphus | **SSOT 全章节深度审计**（change `ssot-deep-audit`）：4 个并行 explore agent 覆盖 v0.1.2 勘误（commit `4e5d5ea`）的盲区 — §1.2 硬件仿真层 / §1.7 测试框架 / §1.8 权威文档空白 / 附录 A struct 字段；产出 `audit-reports/v0.1.6-audit.md`（首次建立此目录）；发现 **25 个偏差**（🔴 1 / 🟠 4 / 🟡 14 / 🟢 6），其中 **P0 必修 1 项**（A4 #1：附录 A `gpu_pushbuffer_args` 缺 `va_space_handle` 字段，H-1 commit `0272970` 后未同步）；**P1 高优 4 项**：A1 #2 `sim/hardware/` 布局分裂、A2 #1 `.github/copilot-instructions.md` 残留 "Google Test"、A3 #2 AGENTS.md 0 处反向引用 SSOT、A3 #3 3 个 `openspec/specs/*.md` TBD Purpose 占位；SSOT 顶部新增 `> 历史审计报告：docs/02_architecture/audit-reports/`；本次 commit 不修任何偏差（按 D5：审计与修复分离），所有 fix 由后续独立 follow-up change 实施 |
 | 2026-06-17 | 0.1.7 全面修复 | Sisyphus | **SSOT 侧 17 项偏差综合修复**（change `ssot-v0-1-7-comprehensive-fix`）：① 附录 A 补全 9 个 struct（A4 #1-#9，含 1 项 P0 必修 `gpu_pushbuffer_args.va_space_handle` + 8 个 P2 struct 定义）；② §1.7 表格刷新（A2 #3-#5：ADR-010 状态、AGENTS.md 描述、3 源补录）；③ §1.8 闭环证据小节（A3 #1, #4, #6）；④ `docs/README.md` ADR-022 状态陈旧修复（A3 #5）；⑤ §1.5 src/kernel cpp 计数 14→12 校准（A1 #5）；⑥ SSOT 状态升 "✅ Approved（v0.1.7）"；本次 commit 不改任何代码（设计 D5：审计与修复分离）|
 | 2026-06-18 | 0.1.7 审计 + 微补丁 | Sisyphus | **v0.1.6 审计 25 项偏差回归审计**（产出 [`audit-reports/v0.1.7-audit.md`](audit-reports/v0.1.7-audit.md)）+ **ND-A2.β 微补丁**：① 4 个并行 explore agent 回归验证 A1/A2/A3/A4（24/25 RESOLVED，1 PARTIALLY = A2 #2 CONTRIBUTING.md 残留 GTest 单元测试示例代码块，commit `3e306d1` 漏改）；② 发现新偏差 ND-A2.β（CONTRIBUTING.md L438-462 含完整 GTest 示例 + SSOT §1.7 L268 假信息）与 ND-A4.α（P3 旁观：orphan struct `gpu_create_queue_args`）；③ 微补丁 `CONTRIBUTING.md:436-466`：替换为 Catch2 `TEST_CASE` + 实际 libgpu_core API + 显式 Catch2 声明；④ 闭环率：v0.1.6 偏差 24/25（96%）→ 微补丁后 25/25（100%）；SSOT §1.7 测试框架 11 源一致性 100%；⑤ SSOT §1.7 L268 "Catch2 \| Catch2" 现为真值 |
+| 2026-06-18 | 0.1.7.1 ND-A4.α 清理 | Sisyphus | **orphan struct `gpu_create_queue_args` 清理**（change `cleanup-orphan-struct-gpu-create-queue-args`）：① 删 `plugins/gpu_driver/shared/gpu_queue.h:55-62` orphan struct 定义（无人引用，Phase 2 实施后已无法编译）；② 5 个活文档文件（api-reference.md × 2 / gpu_driver_architecture.md / umq-implementation-plan.md × 2）改用 `struct gpu_queue_args`（当前实际 IOCTL 0x40 入参，含 `va_space_handle` 字段）；③ 2 个历史 ADR（adr-015 / adr-024）保留 struct 定义 + 加注脚（说明已被 `gpu_queue_args` 替代）；④ 审计/SSOT/归档历史快照中的 6 处引用保留（治理轨迹）；⑤ 验证：docs-audit 36/36 PASS、编译 100%、ctest 34/34 PASS；⑥ 完成 v0.1.7 审计 ND-A4.α 100% 闭环 |
 
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
 **最后更新**: 2026-06-18
-**对应代码 commit**: `f3e4705`（v0.1.7）+ 本审计微补丁 `CONTRIBUTING.md:436-466`
-**状态**: ✅ Approved（v0.1.7）
+**对应代码 commit**: `f3e4705`（v0.1.7）+ `ed630e5`（v0.1.7 audit + ND-A2.β 微补丁）+ 本变更 ND-A4.α 清理
+**状态**: ✅ Approved（v0.1.7 + ND-A4.α 100% 闭环）
 **历史审计报告**: [`docs/02_architecture/audit-reports/`](audit-reports/)（含 v0.1.6 + v0.1.7 两轮深度审计）
