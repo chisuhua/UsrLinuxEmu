@@ -49,11 +49,11 @@
 
 | 文档 | 定位 | 当前状态 |
 |------|------|----------|
-| `AGENTS.md`（项目根） | 开发指南 + 架构要点 | 🟢 **相对准确**（唯一接近真相的文档，但定位为"开发指南"）|
-| `docs/02_architecture/architecture.md` | 旗舰架构文档 | 🔴 严重过期（2026-03-23，旧布局）|
+| `AGENTS.md`（项目根） | 开发指南 + 架构要点 | 🟢 **相对准确**（已通过反向引用 SSOT 闭环，commit `3faa3a7`）|
+| `docs/02_architecture/architecture.md` | 旗舰架构文档 | 🟢 v3.0（2026-06-16 对齐 Phase 1.5 → 2；引用 SSOT）|
 | `docs/00_adr/adr-018~024` | 架构决策记录 | 🟡 准确但分散，关系图待更新 |
 | `docs/README.md` | 文档索引 | 🟡 65% 完成度数字失真 |
-| **本文**（post-refactor-architecture.md）| **重构后架构 SSOT + docs 同步方案** | 🔄 待评审 |
+| **本文**（post-refactor-architecture.md）| **重构后架构 SSOT + docs 同步方案** | ✅ Approved（v0.1.7）|
 
 ### 阅读对象
 
@@ -63,8 +63,8 @@
 
 ### 关键事实
 
-- `AGENTS.md` 是事实上的"权威架构说明"，但**没有正式升级为架构文档**
-- 本文档目标是**接管 AGENTS.md 的架构部分**，成为正式的 SSOT
+- `AGENTS.md` 已通过反向引用 `> **权威架构说明**：[post-refactor-architecture.md]` 与本文建立双向引用闭环（commit `3faa3a7`）
+- 本文档已升为 ✅ Approved（v0.1.7），实现 SSOT 接管；架构部分反向引用闭环由 AGENTS.md commit `3faa3a7` 完成
 - 修复完成后，AGENTS.md 的架构部分应**反向引用本文**而非重复内容
 
 ---
