@@ -433,31 +433,35 @@ Related to #456
 
 ### 单元测试
 
+> **本项目使用 [Catch2](https://github.com/catchorg/Catch2)（vendored 单文件 amalgamation，路径：`tests/catch_amalgamated.hpp`）。**
+> **不要使用 GTest**（`TEST()` / `TEST_F` / `EXPECT_*` / `ASSERT_*` / `<gtest/gtest.h>`）。
+> 详见 [ADR-010](docs/00_adr/adr-010-gtest-migration.md)（✅ 已接受 Catch2）与 [测试指南](docs/04-building/testing_guide.md)。
+
 每个新功能都应该有对应的单元测试：
 
 ```cpp
-#include <gtest/gtest.h>
-#include "buddy_allocator.h"
+#include <catch_amalgamated.hpp>
 
-class BuddyAllocatorTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        allocator_ = std::make_unique<BuddyAllocator>(1024 * 1024);
-    }
-    
-    std::unique_ptr<BuddyAllocator> allocator_;
-};
+#include "gpu_buddy.h"  // libgpu_core/include/gpu_buddy.h
+#include <memory>
 
-TEST_F(BuddyAllocatorTest, AllocateSmallBlock) {
-    uint64_t addr;
-    ASSERT_EQ(allocator_->allocate(256, &addr), 0);
-    ASSERT_NE(addr, 0);
-}
+// libgpu_core 是纯 C 库；struct gpu_buddy 含 ~200KB 固定池，必须堆分配
+TEST_CASE("Buddy allocator: alloc/free round-trip", "[buddy]") {
+  auto buddy = std::make_unique<struct gpu_buddy>();
+  gpu_buddy_init(buddy.get(), 0x100000, 1024 * 1024);  // 1MB @ base=1MB
 
-TEST_F(BuddyAllocatorTest, AllocateFreeBlock) {
-    uint64_t addr;
-    ASSERT_EQ(allocator_->allocate(256, &addr), 0);
-    ASSERT_EQ(allocator_->free(addr), 0);
+  SECTION("Allocate 4KB block returns non-zero address") {
+    uint64_t addr = 0;
+    REQUIRE(gpu_buddy_alloc(buddy.get(), 4096, &addr) == 0);
+    REQUIRE(addr != 0);
+  }
+
+  SECTION("Free returns the allocator to empty state") {
+    uint64_t addr = 0;
+    REQUIRE(gpu_buddy_alloc(buddy.get(), 4096, &addr) == 0);
+    REQUIRE(gpu_buddy_free(buddy.get(), addr) == 0);
+    REQUIRE(gpu_buddy_allocated_count(buddy.get()) == 0);
+  }
 }
 ```
 
