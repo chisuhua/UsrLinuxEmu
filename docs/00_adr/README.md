@@ -28,7 +28,7 @@
 | [adr-020](adr-020-libgpu-core-extraction.md) | libgpu_core 算法核心提取 | ✅ 已接受 | 2026-05 |
 | [adr-021](adr-021-hardware-puller.md) | Hardware Puller GPFIFO 状态机构架 | ✅ 已接受 | 2026-05 |
 | [adr-023](adr-023-hal-interface.md) | 仿真层接口契约 (HAL) | ✅ 已接受 | 2026-05 |
-| [adr-024](adr-024-user-mode-queue-submission.md) | 用户态队列命令提交架构 | 🔄 提议中 | 2026-05 |
+| [adr-024](adr-024-user-mode-queue-submission.md) | 用户态队列命令提交架构 | ✅ 已接受 (v1) | 2026-06 |
 | [adr-022](adr-022-gpu-compute-unit-emulation.md) | GPU 计算单元仿真 | ✅ 已接受 (v1) | 2026-06 |
 | [adr-025](adr-025-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
 | [adr-026](adr-026-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
@@ -100,7 +100,7 @@ adr-001 (用户态模拟)
             └── (Phase 3+ 规划 — 已分流：v1 已接受 / 显式 Deferred)
                     ├── adr-022 (GPU 计算单元仿真) ✅ v1
                     ├── adr-031 (TTM 迁移优先级) ✅ v1
-                    ├── adr-024 (用户态队列提交 — 已提议)
+                    ├── adr-024 (用户态队列提交) ✅ v1
                     ├── adr-027 (Linux 兼容层扩展)
                     ├── adr-025 (Phase 3+ 议题) ⏸️ Deferred
                     ├── adr-026 (Phase 3+ 议题) ⏸️ Deferred
