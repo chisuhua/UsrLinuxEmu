@@ -1,10 +1,7 @@
 # sim/CMakeLists.txt — 仿真代码（仅在用户态运行）
 
 add_library(gpu_sim STATIC
-    buddy_allocator.cpp
-    fence_sim.cpp
     hardware/hardware_puller_emu.cpp
-    hardware/doorbell_emu.cpp
     gpu_queue_emu.cpp
     scheduler/global_scheduler.cpp
     scheduler/translator/gpfifo_translator.cpp
