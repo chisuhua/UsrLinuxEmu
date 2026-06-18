@@ -3,8 +3,8 @@
 add_library(gpu_sim STATIC
     buddy_allocator.cpp
     fence_sim.cpp
-    hardware_puller_emu.cpp
-    doorbell_emu.cpp
+    hardware/hardware_puller_emu.cpp
+    hardware/doorbell_emu.cpp
     gpu_queue_emu.cpp
     scheduler/global_scheduler.cpp
     scheduler/translator/gpfifo_translator.cpp

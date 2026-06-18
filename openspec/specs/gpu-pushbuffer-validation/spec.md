@@ -1,7 +1,9 @@
 # gpu-pushbuffer-validation Specification
 
 ## Purpose
-TBD - created by archiving change fix-gpu-pushbuffer-va-space-validation. Update Purpose after archive.
+
+Enforce Phase 2 VA Space + Queue validation on `GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH` as committed in SSOT `post-refactor-architecture.md` §1.3. Extends `struct gpu_pushbuffer_args` with a `u64 va_space_handle` field (sentinel `0` = skip validation for backward compatibility with legacy zero-initialized callers); rejects submissions with `-EINVAL` when the VA Space does not exist or when `stream_id` is not in the target VA Space's `attached_queues`.
+
 ## Requirements
 ### Requirement: VA Space existence validation
 

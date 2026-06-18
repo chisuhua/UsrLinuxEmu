@@ -1,7 +1,9 @@
 # adr-placeholder-cleanup Specification
 
 ## Purpose
-TBD - created by archiving change cleanup-adr-placeholders. Update Purpose after archive.
+
+Resolve governance debt of 8 placeholder ADRs (022, 025-030, 031) created by commit `40d2fda` to close the docs-audit §3.2 numbering gap. ADR-022 (operator-level emulation via 4 kernel templates) and ADR-031 (TTM as a thin wrapper over `libgpu_core/gpu_buddy`) MUST be advanced to `✅ 已接受 (v1)` with concrete decisions; ADR-025 through ADR-030 MUST be converted to `⏸️ 显式 Deferred` with concrete Phase 3 trigger criteria preserving v0 candidates as appendix history.
+
 ## Requirements
 ### Requirement: ADR-022 v1 decision on operator-level emulation
 
