@@ -122,10 +122,10 @@
 │              硬件仿真层 (Hardware Simulation)                    │
 │   plugins/gpu_driver/sim/                                         │
 │   • sim/scheduler/  : GlobalScheduler (FIFO + engine routing)   │
-│                       + GpfifoToLaunchParamsTranslator           │
+│   • sim/scheduler/translator/                                   │
+│                       : GpfifoToLaunchParamsTranslator           │
 │   • sim/hardware/   : HardwarePullerEmu (FSM), DoorbellEmu      │
 │   • sim/gpu_queue_emu.{h,cpp}   : Ring buffer 消费者 (Phase 2)  │
-│   • sim/buddy_allocator.cpp, sim/fence_sim.cpp (shadow 编译)     │
 │   libgpu_core/        : 纯 C buddy allocator (gpu_buddy.h + buddy.c) │
 └─────────────────────────────────────────────────────────────────┘
 ```
