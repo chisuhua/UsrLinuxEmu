@@ -4,6 +4,10 @@
 
 UsrLinuxEmu 是用户态 Linux 内核模拟环境，用于设备驱动开发（特别是 GPGPU 驱动）。无需 root 权限或内核编译即可开发和测试驱动。
 
+> **权威架构说明**：[docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md)（v0.1.7 ✅ Approved）
+>
+> 本 AGENTS.md 是**开发指南**（构建/编码风格/集成要点），架构权威说明以 post-refactor-architecture.md 为准。
+
 ## 构建命令
 
 ```bash
