@@ -155,9 +155,6 @@
 sudo apt update
 sudo apt install build-essential cmake git
 
-# 可选：安装 Google Test
-sudo apt install libgtest-dev
-
 # 可选：安装代码格式化工具
 sudo apt install clang-format
 
