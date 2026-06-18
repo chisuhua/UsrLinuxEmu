@@ -467,14 +467,9 @@ struct gpu_ring_header {
   uint8_t  reserved[32];
 };
 #define GPU_MAX_RING_ENTRIES 1024
-struct gpu_create_queue_args {
-  uint32_t queue_type;   // GPU_QUEUE_COMPUTE=0 / COPY=1
-  uint32_t priority;     // 0-100
-  uint32_t ring_size;
-  uint32_t reserved;
-  uint64_t queue_handle;
-  uint64_t doorbell_pgoff;
-};
+// Queue 创建参数：见 plugins/gpu_driver/shared/gpu_ioctl.h 中 struct gpu_queue_args
+// （IOCTL 0x40 CREATE_QUEUE 入参，含 va_space_handle / queue_type / priority /
+//   ring_buffer_size / queue_handle / doorbell_pgoff）
 enum gpu_queue_type { GPU_QUEUE_COMPUTE = 0, GPU_QUEUE_COPY = 1 };
 ```
 
@@ -689,8 +684,14 @@ int main() {
   u64 gpu_va = bo_args.gpu_va;
 
   // === Phase 2: 创建 Queue ===
-  struct gpu_create_queue_args q_args = {
-    .queue_type = GPU_QUEUE_COMPUTE, .priority = 50, .ring_size = 256,
+  // 注: struct gpu_queue_args 定义在 plugins/gpu_driver/shared/gpu_ioctl.h
+  // 必须先创建 VA Space 并填入 va_space_handle（Phase 2 强制）
+  extern gpu_va_space_handle_t g_va_handle;  // 由前述 VA Space 创建流程获得
+  struct gpu_queue_args q_args = {
+    .va_space_handle = g_va_handle,
+    .queue_type = GPU_QUEUE_COMPUTE,
+    .priority = 50,
+    .ring_buffer_size = 256,
   };
   fops->ioctl(fd, GPU_IOCTL_CREATE_QUEUE, &q_args);
   gpu_queue_handle_t q_h = q_args.queue_handle;

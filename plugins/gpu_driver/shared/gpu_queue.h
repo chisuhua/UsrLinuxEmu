@@ -51,15 +51,11 @@ enum gpu_queue_type {
   GPU_QUEUE_COPY = 1,     /* 拷贝队列 (SDMA) */
 };
 
-/** Queue 创建参数 (GPU_IOCTL_CREATE_QUEUE) */
-struct gpu_create_queue_args {
-  uint32_t queue_type;         /* GPU_QUEUE_COMPUTE / COPY */
-  uint32_t priority;           /* 0-100 */
-  uint32_t ring_size;          /* Ring Buffer 大小 (entry 数) */
-  uint32_t reserved;
-  uint64_t queue_handle;       /* OUT: Queue 句柄 */
-  uint64_t doorbell_pgoff;     /* OUT: Doorbell mmap page offset */
-};
+/**
+ * Queue 创建参数定义在 gpu_ioctl.h（`struct gpu_queue_args`），
+ * 因为它必须与 IOCTL 编号（0x40）和 Phase 2 必填字段 `va_space_handle` 一起管理。
+ * 本头文件仅保留 Ring Buffer 内部结构（gpu_ring_header / gpu_queue_map_ring_args / gpu_queue_info_args）。
+ */
 
 /** Ring Buffer 映射参数 (GPU_IOCTL_MAP_QUEUE_RING) */
 struct gpu_queue_map_ring_args {
