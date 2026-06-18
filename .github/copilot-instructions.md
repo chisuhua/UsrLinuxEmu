@@ -13,7 +13,7 @@ The project uses a layered architecture:
 - **`src/kernel/`** – Kernel framework implementation
 - **`drivers/`** – Device driver implementations (GPU, serial, memory, PCIe)
 - **`simulator/`** – Hardware simulators (GPU simulator)
-- **`tests/`** – Unit and integration tests (Google Test)
+- **`tests/`** – Unit and integration tests (Catch2)
 - **`tools/cli/`** – CLI utilities
 - **`plugins/`** – Loadable device plugins
 
@@ -56,7 +56,7 @@ cd build && make test
 
 ## Testing
 
-- Tests use **Google Test** framework.
+- Tests use **Catch2** framework (vendored single-header amalgamation in `tests/catch_amalgamated.hpp`).
 - Each new feature should have unit tests with ≥ 80% coverage target.
 - Bug fixes must include regression tests.
 - Test binaries are built in `build/bin/`.
