@@ -1,6 +1,6 @@
 # Change: ssot-0-section-refresh
 
-> **状态**: 🔄 Proposed
+> **状态**: ✅ Completed（2026-06-18，本 change 归档时即闭环）
 > **创建**: 2026-06-17
 > **来源**: v0.1.7 综合修复 + 4 P1 change 完成后发现的 SSOT §0 meta-stale（v0.1.6 审计未覆盖区域）
 > **关联 SSOT**: `docs/02_architecture/post-refactor-architecture.md`

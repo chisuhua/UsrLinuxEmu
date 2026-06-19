@@ -1,6 +1,6 @@
 # Change: adr-024-status-upgrade
 
-> **状态**: 🔄 Proposed
+> **状态**: ✅ Completed（2026-06-18，本 change 归档时即闭环）
 > **创建**: 2026-06-17
 > **来源**: v0.1.7 + 4 P1 change 完成后 ADR 治理审计（v0.1.6 未审计）
 > **关联 SSOT**: `docs/02_architecture/post-refactor-architecture.md`
