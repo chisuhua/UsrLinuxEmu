@@ -1,6 +1,6 @@
 # ADR-017: GPFIFO/Queue 抽象
 
-**状态**: 已接受 (Accepted)
+**状态**: ✅ 已接受 (Accepted)
 
 **日期**: 2026-04-28
 

@@ -1,6 +1,6 @@
 # ADR-015: GPU IOCTL 接口统一 — 废弃 System A/B，确立 System C 为 Canonical 接口
 
-**状态**: 已接受 (Accepted)
+**状态**: ✅ 已接受 (Accepted)
 
 **日期**: 2026-04-27
 

@@ -1,6 +1,6 @@
 # ADR-016: GPU Memory Domain 模型
 
-**状态**: 已接受 (Accepted)
+**状态**: ✅ 已接受 (Accepted)
 
 **日期**: 2026-04-28
 

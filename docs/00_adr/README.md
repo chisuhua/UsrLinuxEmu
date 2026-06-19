@@ -28,15 +28,15 @@
 | [adr-020](adr-020-libgpu-core-extraction.md) | libgpu_core 算法核心提取 | ✅ 已接受 | 2026-05 |
 | [adr-021](adr-021-hardware-puller.md) | Hardware Puller GPFIFO 状态机构架 | ✅ 已接受 | 2026-05 |
 | [adr-023](adr-023-hal-interface.md) | 仿真层接口契约 (HAL) | ✅ 已接受 | 2026-05 |
-| [adr-024](adr-024-user-mode-queue-submission.md) | 用户态队列命令提交架构 | ✅ 已接受 (v1) | 2026-06 |
-| [adr-022](adr-022-gpu-compute-unit-emulation.md) | GPU 计算单元仿真 | ✅ 已接受 (v1) | 2026-06 |
+| [adr-024](adr-024-user-mode-queue-submission.md) | 用户态队列命令提交架构 | ✅ 已接受 (Accepted) | 2026-06 |
+| [adr-022](adr-022-gpu-compute-unit-emulation.md) | GPU 计算单元仿真 | ✅ 已接受 (Accepted) | 2026-06 |
 | [adr-025](adr-025-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
 | [adr-026](adr-026-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
-| [adr-027](adr-027-linux-compat-strategy.md) | Linux 内核兼容层扩展策略 | 🔄 提议中 (Phase 3+ 占位骨架) | 2026-06 |
+| [adr-027](adr-027-linux-compat-strategy.md) | Linux 内核兼容层扩展策略 | ✅ 已接受 (Phase 3 触发后细化) | 2026-06 |
 | [adr-028](adr-028-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
 | [adr-029](adr-029-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
 | [adr-030](adr-030-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
-| [adr-031](adr-031-ttm-migration-priority.md) | TTM 迁移实施优先级 | ✅ 已接受 (v1) | 2026-06 |
+| [adr-031](adr-031-ttm-migration-priority.md) | TTM 迁移实施优先级 | ✅ 已接受 (Accepted) | 2026-06 |
 
 ## ADR 状态说明
 
@@ -97,11 +97,11 @@ adr-001 (用户态模拟)
             │       ├── adr-021 (Hardware Puller)
             │       └── adr-023 (HAL 接口契约)
             │
-            └── (Phase 3+ 规划 — 已分流：v1 已接受 / 显式 Deferred)
-                    ├── adr-022 (GPU 计算单元仿真) ✅ v1
-                    ├── adr-031 (TTM 迁移优先级) ✅ v1
-                    ├── adr-024 (用户态队列提交) ✅ v1
-                    ├── adr-027 (Linux 兼容层扩展)
+            └── (Phase 3+ 规划 — 已分流：已接受 / 显式 Deferred)
+                    ├── adr-022 (GPU 计算单元仿真) ✅
+                    ├── adr-031 (TTM 迁移优先级) ✅
+                    ├── adr-024 (用户态队列提交) ✅
+                    ├── adr-027 (Linux 兼容层扩展) ✅
                     ├── adr-025 (Phase 3+ 议题) ⏸️ Deferred
                     ├── adr-026 (Phase 3+ 议题) ⏸️ Deferred
                     ├── adr-028 (Phase 3+ 议题) ⏸️ Deferred
@@ -133,7 +133,7 @@ adr-001 (用户态模拟)
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
-**最后更新**: 2026-06-16 (commit 374d463)
+**最后更新**: 2026-06-19 (change `adr-governance-refresh-v2`)
 
 ## 编号 gap 治理（2026-06-16 → 2026-06-17）
 

@@ -1,6 +1,6 @@
 # ADR-021: Hardware Puller GPFIFO 状态机构架
 
-**状态**: 已接受 (Accepted)
+**状态**: ✅ 已接受 (Accepted)
 
 **日期**: 2026-05-06
 
