@@ -1,6 +1,6 @@
 # Change: ssot-deep-audit
 
-> **状态**: 🔄 Proposed（待用户在 `/opsx-apply` 中执行）
+> **状态**: ✅ Completed（2026-06-17，本 change 归档时即闭环）
 > **创建**: 2026-06-17
 > **来源**: C 审计 v0.1.2 勘误（commit `9e5d5ea`，2026-06-17）的覆盖盲区
 > **关联 SSOT**: `docs/02_architecture/post-refactor-architecture.md`（v0.1.2）

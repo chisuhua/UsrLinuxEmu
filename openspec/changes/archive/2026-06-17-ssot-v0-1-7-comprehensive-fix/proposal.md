@@ -1,6 +1,6 @@
 # Change: ssot-v0-1-7-comprehensive-fix
 
-> **状态**: 🔄 Proposed（待用户在 `/opsx-apply` 中执行）
+> **状态**: ✅ Completed（2026-06-17，本 change 归档时即闭环）
 > **创建**: 2026-06-17
 > **来源**: v0.1.6 SSOT 审计报告（change `ssot-deep-audit`，commit `211b48c`）的 17 项 SSOT 侧偏差
 > **关联 SSOT**: `docs/02_architecture/post-refactor-architecture.md`（v0.1.6 审计完成 → v0.1.7 全面修复）

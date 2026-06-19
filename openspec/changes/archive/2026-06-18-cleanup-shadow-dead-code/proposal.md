@@ -1,6 +1,6 @@
 # Change: cleanup-shadow-dead-code
 
-> **状态**: 🔄 Proposed
+> **状态**: ✅ Completed（2026-06-18，本 change 归档时即闭环）
 > **创建**: 2026-06-17
 > **来源**: v0.1.6 SSOT 审计 A1 #1 + #3 + #4（3 个 P2 残留）
 > **关联 SSOT**: `docs/02_architecture/post-refactor-architecture.md` §1.2

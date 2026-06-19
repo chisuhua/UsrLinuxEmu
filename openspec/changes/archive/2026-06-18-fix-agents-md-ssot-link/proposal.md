@@ -1,6 +1,6 @@
 # Change: fix-agents-md-ssot-link
 
-> **状态**: 🔄 Proposed
+> **状态**: ✅ Completed（2026-06-18，本 change 归档时即闭环）
 > **创建**: 2026-06-17
 > **来源**: v0.1.6 审计 A3 #2（AGENTS.md 0 处反向引用 SSOT）
 > **关联 SSOT**: `docs/02_architecture/post-refactor-architecture.md` (v0.1.7)
