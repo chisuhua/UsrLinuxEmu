@@ -1,6 +1,6 @@
 # Change: h1-pushbuffer-validation-closeout
 
-> **状态**: 🔄 Proposed（待用户在 `/opsx-apply` 中执行）
+> **状态**: ✅ Completed（2026-06-17，本 change 归档时即闭环）
 > **创建**: 2026-06-17
 > **前置依赖**: change `fix-gpu-pushbuffer-va-space-validation`（已完成 5/6 任务组，2 项遗留）
 > **关联 SSOT**: `docs/02_architecture/post-refactor-architecture.md` §1.3 v0.1.3, §变更记录
