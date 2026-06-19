@@ -1,6 +1,6 @@
 # Change: fix-gpu-pushbuffer-va-space-validation
 
-> **状态**: 🔄 Proposed（待用户在 `/opsx-apply` 中执行）
+> **状态**: ✅ Completed（2026-06-17，本 change 归档时即闭环）
 > **创建**: 2026-06-17
 > **来源**: docs/02_architecture/post-refactor-architecture.md §1.3 v0.1.2 勘误（`f364b17` 审计追踪）
 > **关联 SSOT**: `docs/02_architecture/post-refactor-architecture.md` §1.3, §1.4
