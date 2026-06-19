@@ -1,6 +1,6 @@
 # ADR-004: 使用 Buddy Allocator 管理 GPU 内存
 
-**状态**: 已接受
+**状态**: ✅ 已接受 (Accepted)
 
 **日期**: 2025-12
 

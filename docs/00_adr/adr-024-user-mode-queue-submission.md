@@ -1,6 +1,6 @@
 # ADR-024: 用户态队列命令提交架构 (User Mode Queue Submission)
 
-**状态**: ✅ 已接受 (v1)
+**状态**: ✅ 已接受 (Accepted)
 
 **日期**: 2026-05-12
 

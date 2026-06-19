@@ -1,6 +1,6 @@
 # ADR-027: Linux 内核兼容层扩展策略 (Linux Kernel Compat Layer Strategy)
 
-**状态**: ✅ 已接受
+**状态**: ✅ 已接受 (Accepted)
 
 **日期**: 2026-06-16
 

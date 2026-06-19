@@ -1,6 +1,6 @@
 # UsrLinuxEmu 项目文档
 
-> **最后验证**: 2026-06-16 (commit `374d463`)
+> **最后验证**: 2026-06-19 (change `adr-governance-refresh-v2`)
 >
 > **权威架构说明**: [docs/02_architecture/post-refactor-architecture.md](02_architecture/post-refactor-architecture.md)（SSOT）+ 顶层 [README.md](../README.md) + [AGENTS.md](../AGENTS.md)
 >
@@ -73,7 +73,7 @@
 | [API 参考](06-reference/api-reference.md) | 完整 API 接口文档 |
 | [IOCTL 命令](06-reference/ioctl-commands.md) | System C IOCTL 命令参考 |
 | [术语表](06-reference/glossary.md) | 技术术语解释 |
-| [架构决策记录](00_adr/README.md) | 所有 ADR（001–024，含 022）|
+| [架构决策记录](00_adr/README.md) | 所有 ADR（001–031，含 022、025–031 占位/Deferred）|
 
 ### TaskRunner 集成
 
@@ -151,17 +151,17 @@
 | 高级主题 | 4 | 75% | 2026-06-16 |
 | 参考资料 | 4 | 80% | 2026-06-16 |
 | TaskRunner 集成 | 5 | 80% | 2026-06-16 |
-| ADR | 24 | 90% | 2026-06-16 |
+| ADR | 31 | 95% | 2026-06-19 |
 
 **总体进度**: 约 **85%** 完成（Phase 2 + P0 cleanup 后）
 
 ### ADR 编号说明
 
-`docs/00_adr/` 当前收录 **24 份** ADR，编号范围 **001–024**：
+`docs/00_adr/` 当前收录 **31 份** ADR，编号范围 **001–031**：
 
-- ✅ 已收录：001, 002, 003, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 015, 016, 017, 018, 019, 020, 021, 022, 023, 024
-- ✅ v1（operator-level emulation）：022（"GPU 计算单元仿真"，ADR-022）
-- ❌ **未启动**：025–031（PRD 引用） — 占位编号
+- ✅ 已接受（22 个）：001–010、015–024、027、031
+- ⏸️ 显式 Deferred (Phase 3+)：025/026/028/029/030
+- 🔄 提议中：011/012/013/014（合法 backlog：多进程/性能/错误处理/日志）
 
 详见 [ADR 索引](00_adr/README.md) 和重构后架构 §2.7。
 
@@ -230,6 +230,6 @@
 ---
 
 **文档维护者**: UsrLinuxEmu Team
-**最后验证**: 2026-06-16
-**对应 commit**: `374d463`
-**文档版本**: 3.0（P0 cleanup + SSOT 版）
+**最后验证**: 2026-06-19
+**对应 change**: `adr-governance-refresh-v2`
+**文档版本**: 3.1（ADR 治理刷新 v2）
