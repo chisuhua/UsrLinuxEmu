@@ -83,7 +83,7 @@ openspec/changes/h3-phase2-management/
 <!-- 替换 line 75-82（历史与交叉引用） -->
 ## 历史与交叉引用
 
-- **DEPRECATED H-2**: `external/TaskRunner/plans/2026-06-19-h2-phase2-openspec-skeleton/`（2026-06-19 弃用，拆分依据：Path D 重构优先）
+- **DEPRECATED H-2**: `openspec/changes/archive/2026-06-19-h2-phase2-openspec-skeleton/`（2026-06-19 弃用，2026-06-23 H-4 迁移，拆分依据：Path D 重构优先）
 - **H-1 closeout**（参考格式）: UsrLinuxEmu `openspec/changes/archive/2026-06-17-h1-pushbuffer-validation-closeout/`
 - **H-2.5 前置**（✅ 已完成 + archived 2026-06-19）: `openspec/changes/archive/2026-06-19-h2-5-architecture-foundation/`
 - **Upstream ADR**: UsrLinuxEmu ADR-024 Phase 2 (Accepted v1)

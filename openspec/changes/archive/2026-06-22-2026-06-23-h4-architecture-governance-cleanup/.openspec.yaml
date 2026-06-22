@@ -1,0 +1,66 @@
+# H-4: Architecture Governance Cleanup
+# This file is openspec change metadata. Do NOT edit manually after activation.
+
+id: h4-architecture-governance-cleanup
+name: Architecture Governance Cleanup
+status: ACTIVE
+created: 2026-06-23
+author: Sisyphus (TaskRunner owner 协同)
+reviewers:
+  - UsrLinuxEmu Architecture Team
+  - TaskRunner owner
+
+# Capabilities affected (ADDED only — this is a governance framework)
+capabilities:
+  - architecture-governance
+
+# Change scope
+scope:
+  type: governance-cleanup
+  description: |
+    1. Archive historical plans/ in TaskRunner submodule
+    2. Slim down sync-plan.md to current-only
+    3. Add 4 new ADRs (H-2.5, H-3, H-7 deferred, governance)
+    4. Add ADR INDEX (README.md) for 35 ADR navigation
+    5. Update post-refactor-architecture.md §1.3 with H-2.5 + H-3 sections
+    6. Add 3-4 Mermaid diagrams to architecture blueprint
+    7. Mark pre-v0.1.5 architecture docs as DEPRECATED
+    8. Cross-repo sync (TaskRunner submodule push + UsrLinuxEmu combined commit + push)
+    9. Archive H-4 openspec change after combined commit
+
+# Estimated duration
+estimated_duration: 4-5 days
+
+# Risk level
+risk_level: LOW
+risk_rationale: |
+  Pure documentation/governance change. No code modifications.
+  - No new external dependencies
+  - No API/ABI changes
+  - docs-audit must maintain 36/36 PASS
+  - All changes reversible per-phase
+
+# Dependencies
+depends_on:
+  - H-1 (h1-pushbuffer-validation-closeout) — archived 2026-06-17
+  - H-2.5 (h2-5-architecture-foundation) — archived 2026-06-19
+  - H-3 (h3-phase2-management) — archived 2026-06-22
+
+# Source materials (not modified, only referenced)
+source_materials:
+  - openspec/changes/archive/2026-06-19-h2-5-architecture-foundation/design.md (D6-D11)
+  - openspec/changes/archive/2026-06-22-h3-phase2-management/design.md (D1-D5, R4)
+  - UsrLinuxEmu/docs/02_architecture/post-refactor-architecture.md (SSOT)
+  - UsrLinuxEmu/docs/00_adr/ (31 existing ADRs)
+
+# Verification baseline
+verification:
+  - tools/docs-audit.sh --strict must pass 36/36
+  - openspec list must show "No active changes found" after archive
+  - Cross-repo git status clean (except submodule .omo/)
+  - No broken cross-references in docs/
+
+# Rollback strategy
+rollback:
+  per_phase: true  # Each phase independently revertable
+  requires_force_push: false  # Per-phase commits before push
