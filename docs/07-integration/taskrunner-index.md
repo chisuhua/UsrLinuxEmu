@@ -106,7 +106,7 @@ ADR-015 (IOCTL 统一)
 | 文档 | 说明 | 状态 |
 |------|------|------|
 | `external/TaskRunner/plans/sync-plan.md` | TaskRunner 侧同步计划 — 问题映射、字段规格、S0-S5 Issue 追踪（S5 ✅ 已完成 2026-06-22）| 🟢 Active |
-| `external/TaskRunner/plans/2026-06-19-h2-phase2-openspec-skeleton/` | **DEPRECATED H-2** — Oracle review 揭示 GpuDriverClient 是 dead code 后被 H-2.5 + H-3 取代，保留为 Path D 决策证据 | ⚠️ DEPRECATED |
+| `openspec/changes/archive/2026-06-19-h2-phase2-openspec-skeleton/` | **DEPRECATED H-2** — Oracle review 揭示 GpuDriverClient 是 dead code 后被 H-2.5 + H-3 取代，2026-06-23 H-4 治理 cleanup 迁移至 UsrLinuxEmu openspec archive；保留为 Path D 决策证据 | ⚠️ DEPRECATED |
 | ~~`external/TaskRunner/plans/2026-06-19-h3-phase2-openspec-skeleton/`~~ | **H-3 (DRAFT)** — 2026-06-22 16:20 已迁移到 `openspec/changes/h3-phase2-management/`，原目录不再使用 | ✅ MIGRATED |
 | `openspec/changes/h3-phase2-management/` | **H-3 (✅ ACTIVE)** — Phase 2 VA Space + Queue lifecycle，5 个 ioctl wrapper + 4 cross-cutting requirements；commit `171c97b` 激活，11 项 review 反馈已应用 10/11 + 4 项 follow-up (F1-F4) 待清理 | ✅ ACTIVE |
 | `external/TaskRunner/plans/interface-unification-plan.md` | 接口统一计划 — 关键发现 K1/K4/K8、步骤、检查点 | 🔵 历史 |
