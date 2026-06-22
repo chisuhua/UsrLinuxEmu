@@ -43,6 +43,8 @@ TaskRunner (消费者)                    UsrLinuxEmu (驱动实现者)
 | [gpu-integration-guide.md](gpu-integration-guide.md) | **联调教程** — 6 步完整示例（设备验证→GET_DEVICE_INFO→ALLOC_BO→PUSHBUFFER→WAIT_FENCE→FREE_BO），131 行 C++ 示例 | UsrLinuxEmu |
 | [gpu-api-reference.md](gpu-api-reference.md) | **API 手册** — 6 个 ioctl 完整规格（签名、参数、结构体、返回值），引用 Issue #3/#4/#9 | UsrLinuxEmu |
 | [gpu-debug-faq.md](gpu-debug-faq.md) | **问题排查** — 7 个常见故障（设备打开失败、EFAULT、ENOMEM、EINVAL、SUBMIT 无响应、WAIT_FENCE 超时、插件未加载），引用 Issue #11 | UsrLinuxEmu |
+| [h3-plan-review-feedback.md](h3-plan-review-feedback.md) | **H-3 计划审查反馈**（2026-06-22）— 对 `external/TaskRunner/plans/2026-06-19-h3-phase2-openspec-skeleton/` 的结构化审查，4 项必改 (B1-B4) + 7 项建议改 (N1-N7)，含完整修复流程 | UsrLinuxEmu |
+| [h3-activation-followup.md](h3-activation-followup.md) | **H-3 激活后 Follow-up**（2026-06-22）— 11 项 review 反馈判定（10 ✅ + 1 ⚠️）+ 4 项 minor fix request（F1-F4），清理激活引入的 3 项 regression | UsrLinuxEmu |
 | [taskrunner-index.md](taskrunner-index.md) | **本文档** — 全量索引，跨所有目录的 TaskRunner 相关文档 | UsrLinuxEmu |
 
 **推荐阅读顺序**: README → gpu-integration-guide → gpu-api-reference → gpu-debug-faq
@@ -101,16 +103,24 @@ ADR-015 (IOCTL 统一)
 
 ### 2.6 TaskRunner 子模块内部文档
 
-| 文档 | 说明 |
-|------|------|
-| `external/TaskRunner/plans/sync-plan.md` | TaskRunner 侧同步计划 — 问题映射、字段规格、S0-S3 Issue 追踪 |
-| `external/TaskRunner/plans/interface-unification-plan.md` | 接口统一计划 — 关键发现 K1/K4/K8、步骤、检查点 |
-| `external/TaskRunner/plans/findings.md` | UsrLinuxEmu 接口分析 — ABI 体系 A/B/C、TaskRunner 引用位置 |
-| `external/TaskRunner/plans/progress.md` | 接口统一进度跟踪 |
-| `external/TaskRunner/docs/plan.md` | TaskRunner 架构计划 — 三层解耦、库构件 |
-| `external/TaskRunner/docs/phase1-week1-plan.md` | Phase 1 周计划 — ioctl 对齐、端到端测试 |
-| `external/TaskRunner/docs/cuda-vulkan-runtime-architecture.md` | 完整 Runtime 架构设计 (625 行) |
-| `external/TaskRunner/docs/DDS-CUDA-Vulkan-Runtime-v1.2-final.md` | DDS v1.2 最终架构规范 (688 行) |
+| 文档 | 说明 | 状态 |
+|------|------|------|
+| `external/TaskRunner/plans/sync-plan.md` | TaskRunner 侧同步计划 — 问题映射、字段规格、S0-S5 Issue 追踪（S5 ✅ 已完成 2026-06-22）| 🟢 Active |
+| `external/TaskRunner/plans/2026-06-19-h2-phase2-openspec-skeleton/` | **DEPRECATED H-2** — Oracle review 揭示 GpuDriverClient 是 dead code 后被 H-2.5 + H-3 取代，保留为 Path D 决策证据 | ⚠️ DEPRECATED |
+| ~~`external/TaskRunner/plans/2026-06-19-h3-phase2-openspec-skeleton/`~~ | **H-3 (DRAFT)** — 2026-06-22 16:20 已迁移到 `openspec/changes/h3-phase2-management/`，原目录不再使用 | ✅ MIGRATED |
+| `openspec/changes/h3-phase2-management/` | **H-3 (✅ ACTIVE)** — Phase 2 VA Space + Queue lifecycle，5 个 ioctl wrapper + 4 cross-cutting requirements；commit `171c97b` 激活，11 项 review 反馈已应用 10/11 + 4 项 follow-up (F1-F4) 待清理 | ✅ ACTIVE |
+| `external/TaskRunner/plans/interface-unification-plan.md` | 接口统一计划 — 关键发现 K1/K4/K8、步骤、检查点 | 🔵 历史 |
+| `external/TaskRunner/plans/findings.md` | UsrLinuxEmu 接口分析 — ABI 体系 A/B/C、TaskRunner 引用位置 | 🔵 历史 |
+| `external/TaskRunner/plans/progress.md` | 接口统一进度跟踪 | 🔵 历史 |
+| `external/TaskRunner/docs/plan.md` | TaskRunner 架构计划 — 三层解耦、库构件 | 🔵 历史 |
+| `external/TaskRunner/docs/phase1-week1-plan.md` | Phase 1 周计划 — ioctl 对齐、端到端测试 | 🔵 历史 |
+| `external/TaskRunner/docs/cuda-vulkan-runtime-architecture.md` | 完整 Runtime 架构设计 (625 行) | 🔵 历史 |
+| `external/TaskRunner/docs/DDS-CUDA-Vulkan-Runtime-v1.2-final.md` | DDS v1.2 最终架构规范 (688 行) | 🔵 历史 |
+
+**H-3 审查与激活**:
+- 原 review feedback: [h3-plan-review-feedback.md](h3-plan-review-feedback.md)（2026-06-22 16:07）
+- 激活 commit: `171c97b feat(h3): H-3 phase2-management openspec change activation`（2026-06-22 16:20，13 分钟完成 11 项修复）
+- Follow-up fix request: [h3-activation-followup.md](h3-activation-followup.md)（2026-06-22 16:25+, 4 项 minor fix F1-F4 预计 15-25 分钟）
 
 ---
 
@@ -243,5 +253,5 @@ TaskRunner 子模块内部有自己的计划文档，路径为 `external/TaskRun
 
 ---
 
-**最后更新**: 2026-05-06
+**最后更新**: 2026-06-22 (H-3 激活 + follow-up request 发布)
 **维护者**: UsrLinuxEmu Architecture Team + TaskRunner Team
