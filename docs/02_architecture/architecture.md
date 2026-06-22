@@ -1,5 +1,9 @@
 # 架构设计文档
 
+> ⚠️ **DEPRECATED**: 此文档最后验证于 2026-06-16 (commit `374d463`)，pre-v0.1.5 内容，**已显著 outdated**。
+> **请使用 SSOT**: [`post-refactor-architecture.md`](post-refactor-architecture.md)（持续更新至 v0.1.7+，2026-06-23 H-4 governance cleanup 同步）。
+> **迁移指南**: 见 H-4 [ADR-035](../../00_adr/adr-035-governance-policy.md) §Rule 4.3 — pre-v0.1.5 文档 deprecated 头标规则。
+
 > ⚠️ **本文档最后验证: 2026-06-16 (commit `374d463`)**
 >
 > 本文档基于 SSOT [`post-refactor-architecture.md`](./post-refactor-architecture.md) 同步更新。涉及代码路径、API、ioctl 编号时，以 `plugins/gpu_driver/shared/gpu_ioctl.h` 和 SSOT 为准。

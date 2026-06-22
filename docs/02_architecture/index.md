@@ -2,11 +2,24 @@
 
 这里包含理解 UsrLinuxEmu 所必需的核心概念和架构信息。
 
+> **最后更新**: 2026-06-23（H-4 governance cleanup，ADR-035 §Rule 4 实施）
+> **SSOT**: [`post-refactor-architecture.md`](post-refactor-architecture.md)（v0.1.7+，持续维护）
+
 ## 导航
 
-- [项目概述](overview.md) - 项目简介、目标和核心功能
-- [架构设计](architecture.md) - 系统架构、模块设计和数据流
-- [API 参考](api-reference.md) - 核心 API 接口文档
+### 活跃文档（推荐阅读）
+
+- [**post-refactor-architecture.md**](post-refactor-architecture.md) ⭐ **SSOT** — 重构后架构总览 + H-2.5 + H-3 跨仓架构（v0.1.7+，2026-06-23 更新）
+- [API 参考](api-reference.md) — 核心 API 接口文档
+
+### Deprecated 文档（pre-v0.1.5 历史）
+
+- ⚠️ [项目概述](overview.md) — pre-v0.1.5 内容（2026-06-16 最后验证）
+- ⚠️ [架构设计](architecture.md) — pre-v0.1.5 内容（2026-06-16 最后验证）
+- ⚠️ [架构设计 (详细)](architecture_design.md) — pre-v0.1.5 内容（2026-06-16 最后验证）
+- [重构历史](refactor-history.md) — 历史时间轴（保留）
+
+详细迁移指南见 [ADR-035](../../00_adr/adr-035-governance-policy.md) §Rule 4.3。
 
 ## 快速导航
 
