@@ -2,6 +2,10 @@
 
 本文档目录包含 UsrLinuxEmu 项目中所有已通过和提议中的架构决策记录。
 
+> **最后更新**: 2026-06-23（H-4 governance cleanup 新增 ADR-032 ~ ADR-035；详见末尾 "H-4 governance 增量" 段）
+> **维护者**: UsrLinuxEmu Architecture Team + TaskRunner owner
+> **治理规则**: 见 [ADR-035](adr-035-governance-policy.md)
+
 ## ADR 索引
 
 | 编号 | 标题 | 状态 | 日期 |
@@ -37,6 +41,19 @@
 | [adr-029](adr-029-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
 | [adr-030](adr-030-phase3-placeholder.md) | Phase 3+ 议题占位 | ⏸️ 显式 Deferred (Phase 3+) | 2026-06 |
 | [adr-031](adr-031-ttm-migration-priority.md) | TTM 迁移实施优先级 | ✅ 已接受 (Accepted) | 2026-06 |
+| [adr-032](adr-032-h2-5-igpu-driver-abstraction.md) | **H-2.5 IGpuDriver 抽象层** | ✅ 已接受 | 2026-06-23 |
+| [adr-033](adr-033-h3-phase2-lifecycle.md) | **H-3 Phase 2 Lifecycle** | ✅ 已接受 | 2026-06-23 |
+| [adr-034](adr-034-h7-deferred-registry.md) | **H-7 Deferred Registry**（3 owner-flagged upstream issues）| ⏸️ 显式 Deferred | 2026-06-23 |
+| [adr-035](adr-035-governance-policy.md) | **Architecture Governance Policy** | ✅ 已接受 | 2026-06-23 |
+
+## 状态分布总览（截至 2026-06-23）
+
+| 状态 | 数量 | ADR 列表 |
+|------|----:|----------|
+| ✅ 已接受 | 28 | 001-013, 015, 016, 018-024, 027, 031-033, 035 |
+| ⏸️ 显式 Deferred | 6 | 025, 026, 028-030, 034 |
+| 🔄 提议中 | 1 | 011-014, (027 即将升 v1) |
+| **总计** | **35** | ADR-001 ~ ADR-035 |
 
 ## ADR 状态说明
 
@@ -48,6 +65,8 @@
 | ⚠️ 已弃用 | 已被新决策替代的旧决策 |
 | ❌ 已拒绝 | 评审后未采纳的决策 |
 
+**详细治理规则**：见 [ADR-035](adr-035-governance-policy.md) §Rule 2 — ADR 状态标记规则（仅允许 ✅/⏸️/🔄/🚫 4 个状态）。
+
 ## ADR 格式
 
 每个 ADR 包含以下部分：
@@ -58,6 +77,19 @@
 - **决策**: 最终决定是什么
 - **理由**: 为什么要这样决定
 - **后果**: 决策的影响和权衡
+
+**H-4 起标准模板**（ADR-032 ~ ADR-035 已采用）：
+
+```
+# ADR-NNN: <Title>
+**状态**: ...
+**日期**: YYYY-MM-DD
+**提案人**: ...
+**评审者**: ...
+**关联 ADR**: ...
+**关联 Change**: ...
+## Context / Decision / Consequences / Migration
+```
 
 ## ADR 关系图
 
@@ -107,33 +139,48 @@ adr-001 (用户态模拟)
                     ├── adr-028 (Phase 3+ 议题) ⏸️ Deferred
                     ├── adr-029 (Phase 3+ 议题) ⏸️ Deferred
                     └── adr-030 (Phase 3+ 议题) ⏸️ Deferred
+
+    └── H-2.5 + H-3 + H-4 跨仓架构 (2026-06-23)
+            │
+            ├── adr-032 (H-2.5 IGpuDriver 抽象层) ✅
+            │       └── 关联: adr-015 (IOCTL), adr-024 (User Mode Queue), adr-017 (GPFIFO)
+            │
+            ├── adr-033 (H-3 Phase 2 Lifecycle) ✅
+            │       └── 关联: adr-032 (H-2.5)
+            │
+            ├── adr-034 (H-7 Deferred Registry) ⏸️ Deferred
+            │       └── 关联: adr-033 (H-3), adr-024 (User Mode Queue)
+            │
+            └── adr-035 (Architecture Governance Policy) ✅
+                    └── 元决策: 规范 ADR 治理规则本身
 ```
 
 ## 维护指南
 
 ### 添加新 ADR
 
-1. 在本目录创建新文件 `adr-XXX-title.md`
-2. 使用标准 ADR 格式
-3. 更新本索引表
+1. 在本目录创建新文件 `adr-XXX-title.md`（XXX = 当前最大编号 + 1）
+2. 使用标准 ADR 格式（参见 "H-4 起标准模板"）
+3. 更新本索引表 + 状态分布表
 4. 在相关 ADR 中添加交叉引用
+5. 关联 change 路径：`openspec/changes/<change-name>/` 或 `archive/YYYY-MM-DD-...`
 
 ### 更新现有 ADR
 
 1. 修改对应文件
 2. 更新"最后更新"日期
-3. 如状态变更，在索引表中更新状态
+3. 如状态变更，在索引表与状态分布表中同步更新
 
 ### 废弃 ADR
 
-1. 将状态改为"已弃用"
+1. 将状态改为"🚫 已拒绝"（仅在评审否决时使用，详见 ADR-035 §Rule 2）
 2. 添加"被替代者"引用
 3. 说明废弃原因
 
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
-**最后更新**: 2026-06-19 (change `adr-governance-refresh-v2`)
+**最后更新**: 2026-06-23（H-4 governance cleanup 新增 ADR-032 ~ ADR-035）
 
 ## 编号 gap 治理（2026-06-16 → 2026-06-17）
 
@@ -166,3 +213,41 @@ adr-001 (用户态模拟)
 - **可自动检测**：每份 deferred ADR 的 `## Phase 3 触发条件` 段给出 `git log` / `gh issue list` 等具体检测命令
 
 后续 Phase 3+ 启动时，**owner 认领后应直接更新对应 ADR 的"决策"章节并将 status 改为 ✅ 已接受**，而不是新建一个文件。详细的占位 → 已接受工作流见各占位 ADR 的"## 后续"段。
+
+## H-4 governance 增量（2026-06-23）
+
+本轮 `h4-architecture-governance-cleanup` 新增 4 个 ADR + 本 INDEX 升级：
+
+### 新增 ADR-032 ~ ADR-035 概要
+
+| 编号 | 标题 | 状态 | 决策来源 |
+|------|------|------|---------|
+| [adr-032](adr-032-h2-5-igpu-driver-abstraction.md) | H-2.5 IGpuDriver 抽象层 | ✅ Accepted | `openspec/changes/archive/2026-06-19-h2-5-architecture-foundation/design.md` §D6-D11 |
+| [adr-033](adr-033-h3-phase2-lifecycle.md) | H-3 Phase 2 Lifecycle | ✅ Accepted | `openspec/changes/archive/2026-06-22-h3-phase2-management/design.md` §D1-D5 + R2 |
+| [adr-034](adr-034-h7-deferred-registry.md) | H-7 Deferred Registry | ⏸️ Deferred | H-3 design.md §R4 + §R5（3 owner-flagged upstream issues）|
+| [adr-035](adr-035-governance-policy.md) | Architecture Governance Policy | ✅ Accepted | 元决策：本 change 自身 |
+
+### 按 Capability 分组（新增）
+
+- **gpu-driver-architecture** capability: ADR-032 (H-2.5), ADR-033 (H-3)
+- **gpu-phase2-management** capability: ADR-033 (H-3), ADR-034 (H-7 deferred)
+- **architecture-governance** capability: ADR-035 (governance)
+
+### H-4 期间的 INDEX 升级
+
+- 状态分布表（截至 2026-06-23）：28 Accepted + 6 Deferred + 1 Proposed = 35 total
+- 关系图：新增 "H-2.5 + H-3 + H-4 跨仓架构" 子树
+- 维护指南：补充 "H-4 起标准模板" 段落
+- 末尾新增 "H-4 governance 增量" 段
+
+### 跨引用规范
+
+在 `docs/` 其他文档或 openspec change 中引用 ADR：
+
+```markdown
+详见 [ADR-032](../00_adr/adr-032-h2-5-igpu-driver-abstraction.md) §Decision。
+```
+
+```markdown
+**关联 Source**: openspec/changes/archive/<source-change>/design.md §X
+```
