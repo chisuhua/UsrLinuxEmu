@@ -1,5 +1,9 @@
 # UsrLinuxEmu 项目概述
 
+> ⚠️ **DEPRECATED**: 此文档最后验证于 2026-06-16 (commit `374d463`)，pre-v0.1.5 内容，**已显著 outdated**。
+> **请使用 SSOT**: [`post-refactor-architecture.md`](post-refactor-architecture.md)（持续更新至 v0.1.7+，2026-06-23 H-4 governance cleanup 同步）。
+> **迁移指南**: 见 H-4 [ADR-035](../../00_adr/adr-035-governance-policy.md) §Rule 4.3 — pre-v0.1.5 文档 deprecated 头标规则。
+
 > **最后验证**: 2026-06-16 (commit `374d463`)
 >
 > **本文档角色**: 一页式项目介绍。详细架构看 [post-refactor-architecture.md](post-refactor-architecture.md)（SSOT），开发命令看 [AGENTS.md](../../AGENTS.md)，项目说明看 [README.md](../../README.md)。
