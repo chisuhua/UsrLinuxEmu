@@ -240,6 +240,20 @@ adr-001 (用户态模拟)
 - 维护指南：补充 "H-4 起标准模板" 段落
 - 末尾新增 "H-4 governance 增量" 段
 
+### 跨仓镜像 (submodule) — TaskRunner TADR
+
+TaskRunner 独立 ADR 体系（`TADR-NNN` 编号，2026-06-23 H-4.5 governance cleanup 建立），与本仓 ADR-NNN 区分。TaskRunner 仓的 consumer-lens 决策 + retro 决策 capture 详见 [external/TaskRunner/docs/adr/](../external/TaskRunner/docs/adr/README.md)。
+
+| TADR | 主题 | 关联 UsrLinuxEmu ADR |
+|------|------|---------------------|
+| TADR-001 ~ TADR-004 | CUDA/Vulkan Runtime v0.1 决策 (retroactive) | — |
+| TADR-005 | IGpuDriver 抽象层 consumer-lens (H-2.5) | [ADR-032](adr-032-h2-5-igpu-driver-abstraction.md) |
+| TADR-006 | Phase 2 5 方法 consumer-lens (H-3) | [ADR-033](adr-033-h3-phase2-lifecycle.md) |
+| TADR-007 | R2 mapping contract (LOW32 truncation 显式化) | [ADR-033 §R2](adr-033-h3-phase2-lifecycle.md) |
+| TADR-008 | H-7 上游 issue TaskRunner 侧注册点 (⏸️ Deferred) | [ADR-034](adr-034-h7-deferred-registry.md) |
+
+**维护政策**：本表是 canonical，TaskRunner `docs/adr/README.md` §索引 是 mirror。改动时先改本表，TaskRunner 端同步更新。同步协议遵循 ADR-035 §Rule 5.1 4 步流程。
+
 ### 跨引用规范
 
 在 `docs/` 其他文档或 openspec change 中引用 ADR：
