@@ -8,7 +8,7 @@
 
 **评审者**: UsrLinuxEmu Architecture Team
 
-**关联 ADR**: ADR-018 (Driver/Sim Separation), ADR-019 (DRM/GEM/TTM Alignment), ADR-021 (Hardware Puller)
+**关联 ADR**: ADR-018 (Driver/Sim Separation), ADR-019 (DRM/GEM/TTM Alignment), ADR-021 (Hardware Puller), ADR-036 (3-way Architectural Separation)
 
 **更新记录**:
 - 2026-05-07 v2: 新增 `fence_create` + `mem_alloc`/`mem_free` → 8 接口扩展为 10 接口（Oracle 审查发现）
@@ -18,6 +18,8 @@
 ## 背景
 
 ADR-018 规定 `drv/` 代码不直接调用 `sim/` 仿真层，所有硬件访问通过 `hal/` 接口。但当前没有定义这个接口。
+
+> 注：HAL 是 drv 与 sim 之间的桥接层（依赖反向 + 抽象），不是独立的第四层，详见 ADR-036。
 
 **为什么需要 HAL？**
 
@@ -76,6 +78,8 @@ sim/ 层（函数调用）                      真实硬件寄存器（MMIO）
 - Linux 内核模块是 C 编译，不支持 C++ 虚函数
 - 内核标准模式就是 `struct xxx_ops`（`struct file_operations`、`struct pci_driver_ops`、`struct drm_driver`）
 - 移植时直接替换实现函数，无需重写
+
+> 此模式与 Linux 内核一致：HAL = bridge（②③ 之间的注入点），不是独立第 4 层。详见 ADR-036。
 
 ### 决策 3: 构造注入
 
