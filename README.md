@@ -326,6 +326,8 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 
 当前阶段：**post-Phase 2**（2026-05-13 重构窗口完成）。详细时间轴见 [post-refactor-architecture.md §1.1](docs/02_architecture/post-refactor-architecture.md)。
 
+> **架构演进路线**: 见 [docs/roadmap/](docs/roadmap/README.md) — 从 MVP 到 Linux 内核环境模拟（4 阶段 + 蓝图）
+
 ### Phase 2 已完成（2026-05-13）
 
 - ✅ Ring Buffer + `GpuQueueEmu` 多队列 fetch
@@ -362,6 +364,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 |------|------|------|
 | 快速开始 | [docs/01-quickstart/](docs/01-quickstart/) | 安装、构建、第一个示例 |
 | 架构（SSOT） | [docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md) | 重构后权威架构说明 |
+| 架构演进路线 | [docs/roadmap/](docs/roadmap/README.md) | 4 阶段路线图 + 终态蓝图 |
 | 架构决策 | [docs/00_adr/](docs/00_adr/) | ADR 列表（001~024）|
 | 开发指南 | [docs/03-development/](docs/03-development/) | 编码规范、添加设备 |
 | 构建与测试 | [docs/04-building/](docs/04-building/) | CMake、Catch2、CI |
