@@ -18,6 +18,7 @@
 #   adr        ADR governance (ADR-022 missing, IOCTL number conflicts)
 #   doc-health Broken links, kebab-case/snake_case, 02-core/ vs 02_architecture/
 #   build      Build/structural (orphan tests, CMake subdirs, hidden include_directories)
+#   sync       Cross-repo doc consistency (taskrunner-index ↔ sync-plan, openspec archive status)
 #
 # Exit codes:
 #   0 - All checks passed (or only warnings in non-strict mode)
@@ -53,6 +54,7 @@ RUN_IOCTL=0
 RUN_ADR=0
 RUN_DOC=0
 RUN_BUILD=0
+RUN_SYNC=0
 
 # ---------------------------------------------------------------------------
 # Output helpers
@@ -154,16 +156,17 @@ parse_args() {
 
     case "${RUN_SECTION}" in
         all)
-            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1
+            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1; RUN_SYNC=1
             ;;
         arch)       RUN_ARCH=1 ;;
         ioctl)      RUN_IOCTL=1 ;;
         adr)        RUN_ADR=1 ;;
         doc-health) RUN_DOC=1 ;;
         build)      RUN_BUILD=1 ;;
+        sync)       RUN_SYNC=1 ;;
         *)
             echo "ERROR: unknown section: ${RUN_SECTION}" >&2
-            echo "Valid sections: all, arch, ioctl, adr, doc-health, build" >&2
+            echo "Valid sections: all, arch, ioctl, adr, doc-health, build, sync" >&2
             exit 2
             ;;
     esac
@@ -556,8 +559,119 @@ section_build() {
 }
 
 # ---------------------------------------------------------------------------
-# Summary
+# Section 6: Cross-repo doc consistency (sync)
 # ---------------------------------------------------------------------------
+# Added in H-4 follow-up (2026-06-23) to enforce the bidirectional invariants
+# between UsrLinuxEmu docs and the TaskRunner submodule's sync-plan.md:
+#   - taskrunner-index.md paths must resolve to existing files
+#   - sync-plan.md is the single source of truth for H-N change status
+#   - archived openspec changes must have status: ARCHIVED (ADR-035 Rule 6.2)
+# ---------------------------------------------------------------------------
+
+section_sync() {
+    section "6. Cross-Repo Doc Consistency"
+
+    local tri="${REPO_ROOT}/docs/07-integration/taskrunner-index.md"
+    local sp="${REPO_ROOT}/external/TaskRunner/plans/sync-plan.md"
+
+    # 6.1 taskrunner-index.md exists
+    subsection "6.1 docs/07-integration/taskrunner-index.md exists"
+    if [ -f "${tri}" ]; then
+        check_pass "taskrunner-index.md exists"
+    else
+        check_fail "taskrunner-index.md missing"
+        return
+    fi
+
+    # 6.2 sync-plan.md exists (submodule HEAD must contain H-4 commit)
+    subsection "6.2 external/TaskRunner/plans/sync-plan.md exists"
+    if [ -f "${sp}" ]; then
+        check_pass "sync-plan.md exists (submodule pointer up-to-date)"
+    else
+        check_fail "sync-plan.md missing in submodule — submodule pointer stale or H-4 not pushed"
+        return
+    fi
+
+    # 6.3 taskrunner-index.md paths to plans/ resolve to existing files
+    subsection "6.3 taskrunner-index.md plans/ paths resolve to existing files"
+    local broken_refs=0
+    local total_refs=0
+    while IFS= read -r ref; do
+        [ -z "${ref}" ] && continue
+        total_refs=$((total_refs + 1))
+        local full="${REPO_ROOT}/${ref}"
+        if [ ! -e "${full}" ]; then
+            broken_refs=$((broken_refs + 1))
+            check_fail "404 path: ${ref}"
+        fi
+    done < <(grep -oE "external/TaskRunner/plans/[A-Za-z0-9_./-]+\.md" "${tri}" 2>/dev/null | sort -u)
+    if [ "${total_refs}" -gt 0 ] && [ "${broken_refs}" -eq 0 ]; then
+        check_pass "All ${total_refs} plans/ path references resolve"
+    elif [ "${total_refs}" -eq 0 ]; then
+        check_warn "No plans/ path references found in taskrunner-index.md (expected ≥3 for H-4 archived paths)"
+    fi
+
+    # 6.4 taskrunner-index.md does NOT duplicate Issue #11 (canonical in sync-plan §2)
+    subsection "6.4 taskrunner-index.md §三 does NOT track Issue #11 (canonical: sync-plan §2)"
+    if grep -qE "\\|\\s*\\*\\*#11\\*\\*\\s*\\|" "${tri}" 2>/dev/null; then
+        check_fail "taskrunner-index.md §三 still tracks Issue #11 (move to sync-plan.md §2 to avoid duplication)"
+    else
+        check_pass "Issue #11 not duplicated in taskrunner-index.md (single source of truth preserved)"
+    fi
+
+    # 6.5 sync-plan.md Issue #11 is present (canonical ownership)
+    subsection "6.5 sync-plan.md §2 contains Issue #11 (canonical ownership)"
+    if grep -qE "#11.*VFS" "${sp}" 2>/dev/null; then
+        check_pass "sync-plan.md §2 owns Issue #11"
+    else
+        check_fail "sync-plan.md §2 missing Issue #11 — Issue must be tracked in exactly one place"
+    fi
+
+    # 6.6 Archived openspec changes with status: field must equal ARCHIVED
+    # (ADR-035 Rule 6.2). Status: DEPRECATED is a valid intermediate state
+    # (e.g. h2-phase2-openspec-skeleton superseded by H-2.5 + H-3). Old-format
+    # changes without status: field are not violations — predate this governance.
+    subsection "6.6 openspec/changes/archive/*/.openspec.yaml status field (ADR-035 Rule 6.2)"
+    local bad_status=0
+    local with_status=0
+    if [ -d "${REPO_ROOT}/openspec/changes/archive" ]; then
+        while IFS= read -r yaml; do
+            [ -z "${yaml}" ] && continue
+            local status
+            status=$(grep -E "^status:" "${yaml}" 2>/dev/null | head -1 | awk '{print $2}')
+            [ -z "${status}" ] && continue
+            with_status=$((with_status + 1))
+            if [ "${status}" != "ARCHIVED" ] && [ "${status}" != "DEPRECATED" ]; then
+                bad_status=$((bad_status + 1))
+                check_fail "Status '${status}' in $(realpath --relative-to="${REPO_ROOT}" "${yaml}") (expected ARCHIVED per ADR-035 Rule 6.2)"
+            fi
+        done < <(find "${REPO_ROOT}/openspec/changes/archive" -name ".openspec.yaml" -type f 2>/dev/null)
+    fi
+    if [ "${with_status}" -gt 0 ] && [ "${bad_status}" -eq 0 ]; then
+        check_pass "All ${with_status} archived openspec changes with status: field comply (ARCHIVED or DEPRECATED)"
+    elif [ "${with_status}" -eq 0 ]; then
+        check_warn "No archived openspec changes have status: field — older changes predating ADR-035 governance"
+    fi
+
+# 6.7 sync-plan.md H-N references exist in openspec/changes/archive/
+    subsection "6.7 sync-plan.md H-N references exist in openspec/changes/archive/"
+    local missing_changes=0
+    local total_h_refs=0
+    while IFS= read -r slug; do
+        [ -z "${slug}" ] && continue
+        total_h_refs=$((total_h_refs + 1))
+        # Acceptable path: openspec/changes/archive/YYYY-MM-DD-<slug>/
+        if ! ls -d "${REPO_ROOT}"/openspec/changes/archive/*-"${slug}"/ >/dev/null 2>&1; then
+            missing_changes=$((missing_changes + 1))
+            check_fail "H-N slug '${slug}' not found in openspec/changes/archive/"
+        fi
+    done < <(grep -oE "h[1-9]-[a-z0-9-]+" "${sp}" 2>/dev/null | sort -u)
+    if [ "${total_h_refs}" -gt 0 ] && [ "${missing_changes}" -eq 0 ]; then
+        check_pass "All ${total_h_refs} H-N change slugs resolve in openspec/changes/archive/"
+    elif [ "${total_h_refs}" -eq 0 ]; then
+        check_warn "No H-N slug references found in sync-plan.md"
+    fi
+}
 
 print_summary() {
     echo ""
@@ -600,6 +714,7 @@ main() {
     [ "${RUN_ADR}"   -eq 1 ] && section_adr
     [ "${RUN_DOC}"   -eq 1 ] && section_doc_health
     [ "${RUN_BUILD}" -eq 1 ] && section_build
+    [ "${RUN_SYNC}"  -eq 1 ] && section_sync
 
     print_summary
     exit "${EXIT_CODE}"
