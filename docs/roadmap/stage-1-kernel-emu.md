@@ -46,7 +46,7 @@ UsrLinuxEmu 的核心目标（见 [ADR-001](../00_adr/adr-001-user-mode-emulatio
 | [1.3](#子阶段-13--uvmhmm) | UVM/HMM | ① ② ③ | mmu_notifier + migrate + fault |
 | [1.4](#子阶段-14--集成验证) | 集成验证 | 全部 | 编译真实 KFD + 5 个 ioctl |
 
-> **重要说明**：**UMQ (User Mode Queue) 不在 1.3 范围内**。UMQ 提交路径已由 [ADR-024](../00_adr/adr-024-user-mode-queue-submission.md) 完整覆盖（决策 1-5），状态 ✅ Accepted。`docs/pending/umq-implementation-plan.md` 是 ADR-024 之前的过渡性计划文档，可由后续清理任务归档。
+> **重要说明**：**UMQ (User Mode Queue) 不在 1.3 范围内**。UMQ 提交路径已由 [ADR-024](../00_adr/adr-024-user-mode-queue-submission.md) 完整覆盖（决策 1-5），状态 ✅ Accepted。ADR-024 之前的过渡性 UMQ 计划文档已归档（commit `chore(docs): remove absorbed pending plan umq-implementation`）。
 
 ---
 
