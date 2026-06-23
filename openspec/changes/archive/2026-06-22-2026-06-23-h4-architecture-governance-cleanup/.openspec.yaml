@@ -3,8 +3,9 @@
 
 id: h4-architecture-governance-cleanup
 name: Architecture Governance Cleanup
-status: ACTIVE
+status: ARCHIVED
 created: 2026-06-23
+archived: 2026-06-23
 author: Sisyphus (TaskRunner owner 协同)
 reviewers:
   - UsrLinuxEmu Architecture Team
