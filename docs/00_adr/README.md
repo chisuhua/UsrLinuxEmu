@@ -45,6 +45,7 @@
 | [adr-033](adr-033-h3-phase2-lifecycle.md) | **H-3 Phase 2 Lifecycle** | ✅ 已接受 | 2026-06-23 |
 | [adr-034](adr-034-h7-deferred-registry.md) | **H-7 Deferred Registry**（3 owner-flagged upstream issues）| ⏸️ 显式 Deferred | 2026-06-23 |
 | [adr-035](adr-035-governance-policy.md) | **Architecture Governance Policy** | ✅ 已接受 | 2026-06-23 |
+| [adr-036](adr-036-three-way-separation.md) | **3 区分架构原则 (3-Way Architectural Separation)** | 🔄 提议中 | 2026-06-23 |
 
 ## 状态分布总览（截至 2026-06-23）
 
@@ -52,8 +53,8 @@
 |------|----:|----------|
 | ✅ 已接受 | 28 | 001-013, 015, 016, 018-024, 027, 031-033, 035 |
 | ⏸️ 显式 Deferred | 6 | 025, 026, 028-030, 034 |
-| 🔄 提议中 | 1 | 011-014, (027 即将升 v1) |
-| **总计** | **35** | ADR-001 ~ ADR-035 |
+| 🔄 提议中 | 2 | 011-014, 036, (027 即将升 v1) |
+| **总计** | **36** | ADR-001 ~ ADR-036 |
 
 ## ADR 状态说明
 
@@ -128,6 +129,8 @@ adr-001 (用户态模拟)
             │       ├── adr-020 (libgpu_core 提取)
             │       ├── adr-021 (Hardware Puller)
             │       └── adr-023 (HAL 接口契约)
+            │               └── adr-036 (3 区分架构原则) 🔄 Proposed
+            │                       └── 关联: adr-018, adr-023, adr-035
             │
             └── (Phase 3+ 规划 — 已分流：已接受 / 显式 Deferred)
                     ├── adr-022 (GPU 计算单元仿真) ✅
@@ -188,7 +191,7 @@ adr-001 (用户态模拟)
 
 - 022：GPU 计算单元仿真（具体 topic）
 - 025/026/028/029/030：通用 Phase 3+ 占位（候选 A/B/C/D 列出）
-- 027：Linux 兼容层扩展策略（具体 topic，承接 `docs/pending/linux_compat_plan.md`）
+- 027：Linux 兼容层扩展策略（具体 topic）
 - 031：TTM 迁移优先级（具体 topic，承接 adr-019 §6）
 
 ### 2026-06-17 二次治理（change `cleanup-adr-placeholders`）
@@ -198,7 +201,7 @@ adr-001 (用户态模拟)
 - **ADR-022**：从占位升级为 ✅ v1（operator-level emulation，4 个 kernel template）
 - **ADR-031**：从占位升级为 ✅ v1（TTM thin wrapper over `libgpu_core/gpu_buddy`）
 - **ADR-025/026/028/029/030**：从占位转为 **⏸️ 显式 Deferred**，每份附加明确 Phase 3 触发条件
-- **ADR-027**：保持 `🔄 提议中`（承接 `docs/pending/linux_compat_plan.md`，未在本次清理范围）
+- **ADR-027**：保持 `🔄 提议中`（承接 linux_compat 规划，已迁移至 ADR-027 v1；未在本次清理范围）
 
 ### Deferred Policy（2026-06-17 引入）
 

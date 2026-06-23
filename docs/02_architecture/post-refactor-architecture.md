@@ -22,6 +22,7 @@
   - [1.6 IOCTL 体系（System A / B / C）](#16-ioctl-体系system-a--b--c)
   - [1.7 测试框架（声称 vs 实际）](#17-测试框架声称-vs-实际)
   - [1.8 当前架构的"权威文档"空白](#18-当前架构的权威文档空白)
+  - [§1.10 3 区分架构原则](#110-3-区分架构原则)
 - [§2 docs/ 审计发现](#2-docs-审计发现)
   - [2.1 整体健康度](#21-整体健康度)
   - [2.2 类别 1：断裂的 Markdown 链接](#22-类别-1断裂的-markdown-链接)
@@ -47,13 +48,15 @@
 
 ### 本文与现有 docs 的关系
 
-| 文档 | 定位 | 当前状态 |
-|------|------|----------|
-| `AGENTS.md`（项目根） | 开发指南 + 架构要点 | 🟢 **相对准确**（已通过反向引用 SSOT 闭环，commit `3faa3a7`）|
-| `docs/02_architecture/architecture.md` | 旗舰架构文档 | 🟢 v3.0（2026-06-16 对齐 Phase 1.5 → 2；引用 SSOT）|
-| `docs/00_adr/adr-018~024` | 架构决策记录 | 🟡 准确但分散，关系图待更新 |
-| `docs/README.md` | 文档索引 | 🟡 65% 完成度数字失真 |
-| **本文**（post-refactor-architecture.md）| **重构后架构 SSOT + docs 同步方案** | ✅ Approved（v0.1.7）|
+| 文档 | 定位 | 当前状态 | 日期 |
+|------|------|----------|------|
+| `AGENTS.md`（项目根） | 开发指南 + 架构要点 | 🟢 **相对准确**（已通过反向引用 SSOT 闭环，commit `3faa3a7`）| — |
+| `docs/02_architecture/architecture.md` | 旗舰架构文档 | 🟢 v3.0（2026-06-16 对齐 Phase 1.5 → 2；引用 SSOT）| — |
+| `docs/00_adr/adr-018~024` | 架构决策记录 | 🟡 准确但分散，关系图待更新 | — |
+| `docs/README.md` | 文档索引 | 🟡 65% 完成度数字失真 | — |
+| [ADR-036](../00_adr/adr-036-three-way-separation.md) | 3 区分架构原则 | 🔄 Proposed | 2026-06-23 |
+| [ROADMAP](../roadmap/README.md) | 架构演进路线图（4 阶段 + 蓝图，从 MVP 到终态）| 🔄 进行中 | 2026-06-23 |
+| **本文**（post-refactor-architecture.md）| **重构后架构 SSOT + docs 同步方案** | ✅ Approved（v0.1.7）| — |
 
 ### 阅读对象
 
@@ -496,6 +499,39 @@ H-3 推迟 3 个 upstream issue 到 Phase 3 触发，详见 [ADR-034](../../00_a
 
 **Phase 3 触发条件**：详见 ADR-034 §"Phase 3 Trigger Conditions"（stream_id 接近 UINT32_MAX / mmap 路径实施 / 第三方 GPU service 接入）。
 
+### 1.10 3 区分架构原则
+
+> **参考**: [ADR-036](../00_adr/adr-036-three-way-separation.md) (🔄 Proposed)
+> **生效日期**: 2026-06-23
+> **目的**: 显式化架构原则，为 driver 可移植性提供治理基础
+
+#### 1.10.1 三层职责
+
+| 层级 | 路径 | 职责 | 成熟度 |
+|------|------|------|--------|
+| ① Linux 内核环境模拟 | `src/kernel/`, `include/kernel/`, `include/linux_compat/` | 提供 Linux 内核 API（VFS/调度/IOMMU/mmu_notifier/DRM/PCIe/中断） | 🔄 渐进（Stage 1 完成度提升） |
+| ② 可移植的驱动代码实现 | `plugins/gpu_driver/drv/` | GPGPU 驱动逻辑（KFD 风格），用真实 Linux 内核 API 写 | ✅ MVP（当前 GpgpuDevice 可工作） |
+| ③ 硬件模拟 | `plugins/gpu_driver/sim/` | 模拟真实 GPU 硬件（pushbuffer/调度器/寄存器/fence/中断） | ✅ MVP（基础模拟完整） |
+
+#### 1.10.2 HAL 的定位：桥接层（非第 4 层）
+
+HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ 之间，是**依赖注入点 / 桥接适配器**，不是独立的第四层：
+
+- **UsrLinuxEmu 环境**：driver → HAL → `hal_mock.cpp` → sim/
+- **真实 Linux kernel 环境**：driver → HAL → `hal_user.cpp` → 真实硬件
+- driver 代码本身**零修改**即可切换环境
+
+#### 1.10.3 与 ROADMAP 的关系
+
+本原则是 [`docs/roadmap/`](../roadmap/README.md) 的架构基础。Stage 1（Linux 内核环境模拟）按 3 区分组织工作：每个子阶段（1.0 PCIe / 1.1 IOMMU+ATS / 1.2 DRM / 1.3 UVM/HMM / 1.4 集成）都明确标注影响哪些层。
+
+#### 1.10.4 跨引用
+
+- [ADR-036](../00_adr/adr-036-three-way-separation.md) — 3 区分架构原则
+- [ADR-018](../00_adr/adr-018-driver-sim-separation.md) — 驱动/仿真分离（3 区分的前置）
+- [ADR-023](../00_adr/adr-023-hal-interface.md) — HAL 接口契约（②③ 桥接层定义）
+- [ADR-035](../00_adr/adr-035-governance-policy.md) — 治理规则（ADR 编号/状态/INDEX 同步）
+
 ---
 
 ## §2 docs/ 审计发现
@@ -517,7 +553,7 @@ H-3 推迟 3 个 upstream issue 到 Phase 3 触发，详见 [ADR-034](../../00_a
 | `docs/05-advanced/` | 🔴 **严重过期** | plugin-development.md 用 `PluginManager` 模式（实际用 `ModuleLoader`）；gpu_driver_architecture.md 描述不存在的子目录（mmu/, drm/, ttm/）|
 | `docs/06-reference/` | 🔴 **严重过期** | api-reference.md/ioctl-commands.md 全文 GPGPU_*（System B），与 System C 不匹配 |
 | `docs/07-integration/` | 🟡 **部分过期** | taskrunner-index.md 引用不存在的 `../../plans/sync-plan.md`；gpu-debug-faq.md/gpu-integration-guide.md 停留在 04-29 |
-| `docs/pending/` | 🟡 **规划中** | 三份实施计划（gpu_driver_portability / linux_compat / umq-implementation）；引用 13 个不存在的 `test_compat_*.cpp` |
+| `docs/pending/` | ✅ **已清理（2026-06-23）** | 3 份实施计划已被 ROADMAP（[`docs/roadmap/`](../roadmap/README.md)）吸收；`docs/pending/` 目录已清空 |
 | `docs/superpowers/plans/` | 🟡 **过程记录** | 全文 GTest 语法（实际 Catch2） |
 | `docs/archive/` | 🟢 **已归档** | 无需更新 |
 | 顶层 `CHANGELOG.md` / `README.md` / `PRD.md` | 🔴 **严重过期** | CHANGELOG 引用不存在的 `02-core/`、`06-reference/adr.md`（已修复）|
@@ -547,7 +583,6 @@ H-3 推迟 3 个 upstream issue 到 Phase 3 触发，详见 [ADR-034](../../00_a
 | 文件 | 行 | 引用 | 实际路径 |
 |------|----|------|----------|
 | `docs/CHANGELOG.md` | 26, 49, 78, 79 | `02-core/` | `02_architecture/`（已修复）|
-| `docs/pending/linux_compat_plan.md` | 782 | `../02-core/architecture.md` | `../02_architecture/architecture.md`（已修复）|
 | `docs/03-development/architecture-alignment-report.md` | 96-97, 313, 368 | `docs/02-core/...` | `docs/02_architecture/...`（已修复）|
 
 #### 1.3 引用不存在的文件
