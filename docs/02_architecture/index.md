@@ -10,6 +10,7 @@
 ### 活跃文档（推荐阅读）
 
 - [**post-refactor-architecture.md**](post-refactor-architecture.md) ⭐ **SSOT** — 重构后架构总览 + H-2.5 + H-3 跨仓架构（v0.1.7+，2026-06-23 更新）
+- [**ROADMAP**](../roadmap/README.md) ⭐ **演进路线** — 4 阶段 + 蓝图，从 MVP 到 Linux 内核环境模拟（v0.1+，2026-06-23 新增）
 - [API 参考](api-reference.md) — 核心 API 接口文档
 
 ### Deprecated 文档（pre-v0.1.5 历史）
@@ -27,6 +28,7 @@
 |------------|----------|
 | 项目是什么 | [项目概述](overview.md) |
 | 系统如何工作 | [架构设计](architecture.md) |
+| 架构如何演进 | [ROADMAP](../roadmap/README.md) |
 | API 如何使用 | [API 参考](api-reference.md) |
 | 如何构建项目 | [构建指南](../04-building/build_system.md) |
 | 如何开发 | [开发指南](../03-development/guide.md) |
@@ -38,7 +40,8 @@
 1. [项目概述](overview.md) - 了解项目定位
 2. [架构设计](architecture.md) - 理解系统设计
 3. [API 参考](api-reference.md) - 查阅接口详情
+4. [ROADMAP](../roadmap/README.md) - 了解架构演进路径
 
 ---
 
-**最后更新**: 2026-03-23
+**最后更新**: 2026-06-23
