@@ -51,7 +51,7 @@
 | [ADR-015-024](../00_adr/) | GPU 相关决策链 | ②③ 的具体决策 |
 | [ADR-032](../00_adr/adr-032-h2-5-igpu-driver-abstraction.md) | H-2.5 IGpuDriver 抽象 | 跨仓架构（2026-06-23）|
 | [ADR-033](../00_adr/adr-033-h3-phase2-lifecycle.md) | H-3 Phase 2 Lifecycle | Phase 2 完整实施（2026-06-23）|
-| [ADR-036](../00_adr/adr-036-three-way-separation.md) | 3 区分架构原则 | 元决策（🔄 Proposed）|
+| [ADR-036](../00_adr/adr-036-three-way-separation.md) | 3 区分架构原则 | 元决策（✅ Accepted）|
 
 ---
 

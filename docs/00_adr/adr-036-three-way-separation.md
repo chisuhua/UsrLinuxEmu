@@ -1,9 +1,12 @@
 # ADR-036: 3-Way Architectural Separation (3 区分架构原则)
 
-**状态**: 🔄 Proposed
+**状态**: ✅ Accepted
 **日期**: 2026-06-23
 **提案人**: UsrLinuxEmu Architecture Team
-**评审者**: 待定
+**评审者**: UsrLinuxEmu Architecture Team + TaskRunner owner
+**修订记录**:
+- 2026-06-23 v1: 初始版本（🔄 Proposed）
+- 2026-06-23 v1: 状态升 ✅ Accepted（迁移步骤全部完成：SSOT §1.10、ADR-018/023 交叉引用、README INDEX 同步、README 架构图）
 **关联 ADR**: ADR-001, ADR-006, ADR-008, ADR-018, ADR-023, ADR-035
 **关联 Change**: 无（governance cleanup 阶段同步推进）
 

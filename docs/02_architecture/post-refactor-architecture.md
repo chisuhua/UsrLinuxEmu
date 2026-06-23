@@ -54,7 +54,7 @@
 | `docs/02_architecture/architecture.md` | 旗舰架构文档 | 🟢 v3.0（2026-06-16 对齐 Phase 1.5 → 2；引用 SSOT）| — |
 | `docs/00_adr/adr-018~024` | 架构决策记录 | 🟡 准确但分散，关系图待更新 | — |
 | `docs/README.md` | 文档索引 | 🟡 65% 完成度数字失真 | — |
-| [ADR-036](../00_adr/adr-036-three-way-separation.md) | 3 区分架构原则 | 🔄 Proposed | 2026-06-23 |
+| [ADR-036](../00_adr/adr-036-three-way-separation.md) | 3 区分架构原则 | ✅ Accepted | 2026-06-23 |
 | [ROADMAP](../roadmap/README.md) | 架构演进路线图（4 阶段 + 蓝图，从 MVP 到终态）| 🔄 进行中 | 2026-06-23 |
 | **本文**（post-refactor-architecture.md）| **重构后架构 SSOT + docs 同步方案** | ✅ Approved（v0.1.7）| — |
 
@@ -501,7 +501,7 @@ H-3 推迟 3 个 upstream issue 到 Phase 3 触发，详见 [ADR-034](../../00_a
 
 ### 1.10 3 区分架构原则
 
-> **参考**: [ADR-036](../00_adr/adr-036-three-way-separation.md) (🔄 Proposed)
+> **参考**: [ADR-036](../00_adr/adr-036-three-way-separation.md) (✅ Accepted)
 > **生效日期**: 2026-06-23
 > **目的**: 显式化架构原则，为 driver 可移植性提供治理基础
 
