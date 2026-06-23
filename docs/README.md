@@ -93,7 +93,7 @@
 | 类别 | 说明 |
 |------|------|
 | [架构演进路线图](roadmap/README.md) | 4 阶段路线图 + 终态蓝图（3 区分架构原则）|
-| [ADR 索引](00_adr/README.md) | 含 ADR-036（3 区分架构原则，🔄 Proposed）|
+| [ADR 索引](00_adr/README.md) | 含 ADR-036（3 区分架构原则，✅ Accepted）|
 | [归档说明](archive/README.md) | 归档文档使用说明 |
 | [规划归档](archive/planning/) | 历史项目路线图与开发计划 |
 | [其他归档](archive/misc/) | 其他历史文档 |
