@@ -166,7 +166,7 @@ UsrLinuxEmu/
 
 ## 架构概览
 
-UsrLinuxEmu 采用**四层架构**，驱动代码与仿真代码物理分离（Phase 1.5）：
+UsrLinuxEmu 采用 **3 区分架构 + HAL 桥**（per [ADR-036](docs/00_adr/adr-036-three-way-separation.md)），驱动代码与仿真代码物理分离（Phase 1.5）：
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -175,7 +175,7 @@ UsrLinuxEmu 采用**四层架构**，驱动代码与仿真代码物理分离（P
 └─────────────────────────────────────────────┘
                   ↓ ioctl(fd, GPU_IOCTL_*, ...)
 ┌─────────────────────────────────────────────┐
-│       内核模拟框架层 (Kernel Framework)      │
+│ ① Linux 内核环境模拟 (Kernel Env Sim)        │
 │   src/kernel/ + include/kernel/ (SHARED)   │
 │   VFS (Meyers singleton) | ModuleLoader    │
 │   ServiceRegistry | Logger | WaitQueue     │
@@ -183,16 +183,20 @@ UsrLinuxEmu 采用**四层架构**，驱动代码与仿真代码物理分离（P
 └─────────────────────────────────────────────┘
                   ↓ dlopen("plugins/*.so")
 ┌─────────────────────────────────────────────┐
-│          设备驱动层 (Device Driver)          │
-│   plugins/gpu_driver/                       │
-│   • drv/    : GpgpuDevice（ioctl 派发表）   │
-│   • hal/    : struct gpu_hal_ops + impl     │
-│   • shared/ : gpu_ioctl.h 等公共头          │
+│ ② 可移植的驱动代码实现 (Portable Driver)     │
+│   plugins/gpu_driver/drv/                    │
+│   GpgpuDevice (ioctl 派发表)                 │
+│   BO / VA Space / Queue / Fence 管理         │
+│   遵循 Linux kernel idioms                    │
 └─────────────────────────────────────────────┘
-                  ↓ HAL ops 调用
+                       │  ↑↓
+                       │  HAL  ←  桥（②③ 之间的依赖反向注入点）
+                       │  ↓    （不是独立第 4 层）
+                       │  struct gpu_hal_ops（11 个函数指针）
+                       │  hal_user.cpp（真机）/ hal_mock.cpp（仿真）
 ┌─────────────────────────────────────────────┐
-│        硬件仿真层 (Hardware Simulation)     │
-│   plugins/gpu_driver/sim/                   │
+│ ③ 硬件模拟 (Hardware Sim)                    │
+│   plugins/gpu_driver/sim/                    │
 │   • sim/scheduler/  : GlobalScheduler       │
 │   • sim/hardware/   : HardwarePullerEmu FSM │
 │   • gpu_queue_emu   : Ring Buffer 消费者    │
