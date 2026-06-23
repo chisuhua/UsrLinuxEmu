@@ -109,9 +109,9 @@ ADR-015 (IOCTL 统一)
 | `openspec/changes/archive/2026-06-19-h2-phase2-openspec-skeleton/` | **DEPRECATED H-2** — Oracle review 揭示 GpuDriverClient 是 dead code 后被 H-2.5 + H-3 取代，2026-06-23 H-4 治理 cleanup 迁移至 UsrLinuxEmu openspec archive；保留为 Path D 决策证据 | ⚠️ DEPRECATED |
 | ~~`external/TaskRunner/plans/2026-06-19-h3-phase2-openspec-skeleton/`~~ | **H-3 (DRAFT)** — 2026-06-22 16:20 已迁移到 `openspec/changes/h3-phase2-management/`，原目录不再使用 | ✅ MIGRATED |
 | `openspec/changes/h3-phase2-management/` | **H-3 (✅ ACTIVE)** — Phase 2 VA Space + Queue lifecycle，5 个 ioctl wrapper + 4 cross-cutting requirements；commit `171c97b` 激活，11 项 review 反馈已应用 10/11 + 4 项 follow-up (F1-F4) 待清理 | ✅ ACTIVE |
-| `external/TaskRunner/plans/interface-unification-plan.md` | 接口统一计划 — 关键发现 K1/K4/K8、步骤、检查点 | 🔵 历史 |
-| `external/TaskRunner/plans/findings.md` | UsrLinuxEmu 接口分析 — ABI 体系 A/B/C、TaskRunner 引用位置 | 🔵 历史 |
-| `external/TaskRunner/plans/progress.md` | 接口统一进度跟踪 | 🔵 历史 |
+| `external/TaskRunner/plans/archive/interface-unification-plan.md` | 接口统一计划 — 关键发现 K1/K4/K8、步骤、检查点（H-4 governance cleanup 后归档） | 📦 ARCHIVED |
+| `external/TaskRunner/plans/archive/findings.md` | UsrLinuxEmu 接口分析 — ABI 体系 A/B/C、TaskRunner 引用位置（H-4 governance cleanup 后归档） | 📦 ARCHIVED |
+| `external/TaskRunner/plans/archive/progress.md` | 接口统一进度跟踪（H-4 governance cleanup 后归档） | 📦 ARCHIVED |
 | `external/TaskRunner/docs/plan.md` | TaskRunner 架构计划 — 三层解耦、库构件 | 🔵 历史 |
 | `external/TaskRunner/docs/phase1-week1-plan.md` | Phase 1 周计划 — ioctl 对齐、端到端测试 | 🔵 历史 |
 | `external/TaskRunner/docs/cuda-vulkan-runtime-architecture.md` | 完整 Runtime 架构设计 (625 行) | 🔵 历史 |
@@ -126,13 +126,14 @@ ADR-015 (IOCTL 统一)
 
 ## 三、关键 Issue 追踪
 
+> **范围说明**: 本节只追踪**接口规格确认**类 Issue（#3/#4/#5/#9），**实施结果**类 Issue（#11/#12/#13）和**完整 GitHub Issue 列表**统一在 [`external/TaskRunner/plans/sync-plan.md`](../../../external/TaskRunner/plans/sync-plan.md) §二追踪，避免双份维护。
+
 | Issue | 说明 | 文档位置 |
 |-------|------|----------|
 | **#3** | ALLOC_BO 参数确认 (domain 参数取值、handle 格式) | sync-plan.md (S2), gpu-api-reference.md |
 | **#4** | PUSHBUFFER_SUBMIT_BATCH 格式确认 (entries 格式、fence 返回位置) | sync-plan.md (S3), gpu-api-reference.md |
 | **#5** | Phase 1 实现清单，联调指南 | 07-integration/README.md, gpu-integration-guide.md, adr-015.md |
 | **#9** | GET_DEVICE_INFO 参数确认 (需要哪些 device 属性) | sync-plan.md (S1), gpu-api-reference.md |
-| **#11** | VFS 单例问题（已修复），符号链接配置 | AGENTS.md, gpu_driver_architecture.md, gpu-debug-faq.md |
 
 ---
 
@@ -253,5 +254,38 @@ TaskRunner 子模块内部有自己的计划文档，路径为 `external/TaskRun
 
 ---
 
-**最后更新**: 2026-06-22 (H-3 激活 + follow-up request 发布)
+## 八、治理与状态参考
+
+> **本节定位**: 本文是**文档导航**（WHERE 找资料）。治理状态信息（WHAT 完成度 / WHO 负责 / WHEN 下次同步）统一在 [`external/TaskRunner/plans/sync-plan.md`](../../../external/TaskRunner/plans/sync-plan.md) 维护，避免双份状态信息不一致。
+
+### 8.1 权威源映射
+
+| 信息类别 | 权威源 | 本文位置 |
+|----------|--------|----------|
+| 接口契约 / ioctl 规格 / canonical 头文件 | `UsrLinuxEmu/plugins/gpu_driver/shared/gpu_ioctl.h` + ADR-015/016/017 | §四 |
+| 集成教程 / API 参考 / 问题排查 | `docs/07-integration/` 同侪文档 | §二.1 |
+| 接口规格确认类 Issue（#3/#4/#5/#9）| `sync-plan.md` 同步点定义 + `gpu-api-reference.md` | §三 |
+| 实施结果类 Issue（#11/#12/#13）+ 完整 GitHub Issue 列表 | `sync-plan.md` §二 | (不在本文追踪) |
+| 同步点完成率（S0-S5 + H-N change 状态）| `sync-plan.md` §3.3 + §5.1 | (不在本文追踪) |
+| 跨仓 change 状态（H-1/H-2.5/H-3/H-4）| `sync-plan.md` §3.3 + `UsrLinuxEmu/openspec/changes/archive/` | (不在本文追踪) |
+| 风险登记 / 下一波 change 候选 | `sync-plan.md` §5.3 + §七 | (不在本文追踪) |
+| plans/ 目录归档政策 | `plans/README.md` + ADR-035 Rule 3 | §二.6 |
+
+### 8.2 双仓 docs 同步保证
+
+| 检查项 | 工具 | 基线 |
+|--------|------|------|
+| `taskrunner-index.md` ↔ `sync-plan.md` 路径引用一致性 | `tools/docs-audit.sh --section sync` | pre-commit hook 必须 PASS |
+| `taskrunner-index.md` 链接 404 检查 | `tools/docs-audit.sh --section doc-health` | 同上 |
+| `openspec/changes/archive/*/.openspec.yaml` status 字段（archive 后必须 ARCHIVED）| `tools/docs-audit.sh --section sync` | 同上 |
+| 跨仓 docs-audit baseline（36+ checks）| `tools/docs-audit.sh --strict` | pre-commit hook |
+
+**audit 新增章节**: `tools/docs-audit.sh --section sync`（H-4 follow-up）覆盖以下检查：
+- taskrunner-index.md 中 plans/ 路径必须在 `plans/` 或 `plans/archive/` 中存在
+- sync-plan.md 引用的 H-N change 在 `openspec/changes/archive/` 中存在
+- archive/ 下的 `.openspec.yaml` status 必须为 ARCHIVED
+
+---
+
+**最后更新**: 2026-06-23（H-4 follow-up: §三 Issue 范围收敛 + §八 治理参考 + §二.6 归档路径修正）
 **维护者**: UsrLinuxEmu Architecture Team + TaskRunner Team
