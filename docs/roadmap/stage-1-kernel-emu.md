@@ -4,7 +4,7 @@
 > **目标**: 提供完整 Linux 内核环境，使在 UsrLinuxEmu 开发的驱动可编译运行 KFD / NV 内核驱动
 > **范围**: DRM + UVM + IOMMU + ATS + PCIe BAR/中断
 > **关联 SSOT**: [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md)
-> **关联原则**: [ADR-036](../00_adr/adr-036-three-way-separation.md) (🔄 Proposed)
+> **关联原则**: [ADR-036](../00_adr/adr-036-three-way-separation.md) (✅ Accepted)
 > **维护者**: UsrLinuxEmu Architecture Team
 > **最后更新**: 2026-06-24
 
@@ -240,7 +240,7 @@ UsrLinuxEmu 的核心目标（见 [ADR-001](../00_adr/adr-001-user-mode-emulatio
 | [ADR-008](../00_adr/adr-008-linux-api-compat.md) | Linux API 兼容层基础 | ✅ Accepted |
 | [ADR-019](../00_adr/adr-019-drm-gem-ttm-alignment.md) | DRM/GEM/TTM 对齐路径（1.2 子阶段）| ✅ Accepted |
 | [ADR-027](../00_adr/adr-027-linux-compat-strategy.md) | Linux 兼容层扩展策略（spec-driven，按 Phase 3+ 真实需求增量）| ✅ Accepted（Phase 3 触发后细化）|
-| [ADR-036](../00_adr/adr-036-three-way-separation.md) | 3 区分架构原则（阶段 1 工作的判定基准）| 🔄 Proposed |
+| [ADR-036](../00_adr/adr-036-three-way-separation.md) | 3 区分架构原则（阶段 1 工作的判定基准）| ✅ Accepted |
 | [ADR-018](../00_adr/adr-018-driver-sim-separation.md) | 驱动/仿真分离（1.2 重构的物理基础）| ✅ Accepted |
 | [ADR-020](../00_adr/adr-020-libgpu-core-extraction.md) | libgpu_core 算法核心（GEM 内存后端）| ✅ Accepted |
 | [ADR-023](../00_adr/adr-023-hal-interface.md) | HAL 接口契约（新增 HAL ops 走此 ADR 流程）| ✅ Accepted |

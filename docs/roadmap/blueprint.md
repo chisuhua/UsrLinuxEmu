@@ -2,7 +2,7 @@
 
 > **性质**: 终态愿景描述（what "done" looks like）
 > **对比**: 与 [SSOT §1.10](../02_architecture/post-refactor-architecture.md) 互补 — SSOT 描述当前实现，本文描述成熟形态
-> **关联原则**: [ADR-036](../00_adr/adr-036-three-way-separation.md) (🔄 Proposed)
+> **关联原则**: [ADR-036](../00_adr/adr-036-three-way-separation.md) (✅ Accepted)
 > **最后更新**: 2026-06-23
 
 ---

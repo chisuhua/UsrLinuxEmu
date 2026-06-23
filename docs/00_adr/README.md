@@ -45,15 +45,15 @@
 | [adr-033](adr-033-h3-phase2-lifecycle.md) | **H-3 Phase 2 Lifecycle** | ✅ 已接受 | 2026-06-23 |
 | [adr-034](adr-034-h7-deferred-registry.md) | **H-7 Deferred Registry**（3 owner-flagged upstream issues）| ⏸️ 显式 Deferred | 2026-06-23 |
 | [adr-035](adr-035-governance-policy.md) | **Architecture Governance Policy** | ✅ 已接受 | 2026-06-23 |
-| [adr-036](adr-036-three-way-separation.md) | **3 区分架构原则 (3-Way Architectural Separation)** | 🔄 提议中 | 2026-06-23 |
+| [adr-036](adr-036-three-way-separation.md) | **3 区分架构原则 (3-Way Architectural Separation)** | ✅ 已接受 | 2026-06-23 |
 
 ## 状态分布总览（截至 2026-06-23）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 28 | 001-013, 015, 016, 018-024, 027, 031-033, 035 |
+| ✅ 已接受 | 29 | 001-013, 015, 016, 018-024, 027, 031-033, 035, 036 |
 | ⏸️ 显式 Deferred | 6 | 025, 026, 028-030, 034 |
-| 🔄 提议中 | 2 | 011-014, 036, (027 即将升 v1) |
+| 🔄 提议中 | 1 | 011-014, (027 即将升 v1) |
 | **总计** | **36** | ADR-001 ~ ADR-036 |
 
 ## ADR 状态说明
@@ -129,7 +129,7 @@ adr-001 (用户态模拟)
             │       ├── adr-020 (libgpu_core 提取)
             │       ├── adr-021 (Hardware Puller)
             │       └── adr-023 (HAL 接口契约)
-            │               └── adr-036 (3 区分架构原则) 🔄 Proposed
+            │               └── adr-036 (3 区分架构原则) ✅ Accepted
             │                       └── 关联: adr-018, adr-023, adr-035
             │
             └── (Phase 3+ 规划 — 已分流：已接受 / 显式 Deferred)
@@ -238,7 +238,7 @@ adr-001 (用户态模拟)
 
 ### H-4 期间的 INDEX 升级
 
-- 状态分布表（截至 2026-06-23）：28 Accepted + 6 Deferred + 1 Proposed = 35 total
+- 状态分布表（截至 2026-06-23）：29 Accepted + 6 Deferred + 1 Proposed = 36 total
 - 关系图：新增 "H-2.5 + H-3 + H-4 跨仓架构" 子树
 - 维护指南：补充 "H-4 起标准模板" 段落
 - 末尾新增 "H-4 governance 增量" 段
