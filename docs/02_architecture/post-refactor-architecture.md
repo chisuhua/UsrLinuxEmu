@@ -46,6 +46,19 @@
 
 ## §0 文档定位
 
+### §0.1 项目目标
+
+> **开发一个易移植到 Linux 内核的 GPU 驱动**。
+
+UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-separation.md)）实现这一目标：
+
+- **① Linux 内核环境模拟** — 在用户态提供 Linux 内核 API（VFS / 调度 / IOMMU / mmu_notifier / DRM / PCIe / 中断）
+- **② 可移植的驱动代码** — 用 Linux kernel 习语写，可直接拷贝到 `drivers/gpu/xxx/` 编译
+- **③ 硬件模拟** — 模拟真实 GPU 硬件行为
+- **HAL** — ②③ 之间的桥接适配器（per [ADR-036](../00_adr/adr-036-three-way-separation.md) §Decision）
+
+**验证标准**：在 UsrLinuxEmu 开发的驱动代码**逻辑零修改**（仅 `#include` 路径需调整）即可在真实 Linux 内核中编译并运行。
+
 ### 本文与现有 docs 的关系
 
 | 文档 | 定位 | 当前状态 | 日期 |

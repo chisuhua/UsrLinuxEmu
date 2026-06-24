@@ -13,6 +13,20 @@
 >
 > 本 README 反映 Phase 2 完成后的状态。如发现与上述两文件冲突，以它们为准。
 
+## 项目目标
+
+> **开发一个易移植到 Linux 内核的 GPU 驱动**。
+
+UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](docs/00_adr/adr-036-three-way-separation.md)）实现这一目标：
+
+- **① Linux 内核环境模拟**（`src/kernel/`, `include/kernel/`, `include/linux_compat/`）— 在用户态提供 Linux 内核 API
+- **② 可移植的驱动代码**（`plugins/gpu_driver/drv/`）— 用 Linux kernel 习语写，可直接拷贝到 `drivers/gpu/xxx/` 编译
+- **③ 硬件模拟**（`plugins/gpu_driver/sim/`）— 模拟真实 GPU 硬件行为
+- **HAL**（`plugins/gpu_driver/hal/`）— ②③ 之间的桥接适配器
+
+**验证标准**：在 UsrLinuxEmu 开发的驱动代码**逻辑零修改**（仅 `#include` 路径需调整）即可在真实 Linux 内核中编译并运行。
+**演进路径**：见 [docs/roadmap/](docs/roadmap/README.md)。
+
 ## 项目简介
 
 UsrLinuxEmu 是一个**用户态 Linux 内核模拟环境**，专为设备驱动开发和测试而设计。它允许开发者在**无需 root 权限**、**无需内核编译**的情况下，开发、测试和调试设备驱动程序，特别是支持 GPGPU 等复杂设备的完整模拟。
