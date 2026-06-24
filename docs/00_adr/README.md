@@ -243,19 +243,52 @@ adr-001 (用户态模拟)
 - 维护指南：补充 "H-4 起标准模板" 段落
 - 末尾新增 "H-4 governance 增量" 段
 
-### 跨仓镜像 (submodule) — TaskRunner TADR
+### 跨仓镜像 (submodule) — TaskRunner TADR (H-5 scope clarification)
 
-TaskRunner 独立 ADR 体系（`TADR-NNN` 编号，2026-06-23 H-4.5 governance cleanup 建立），与本仓 ADR-NNN 区分。TaskRunner 仓的 consumer-lens 决策 + retro 决策 capture 详见 [external/TaskRunner/docs/adr/](../external/TaskRunner/docs/adr/README.md)。
+TaskRunner 独立 ADR 体系（`TADR-NNN` 编号），与本仓 ADR-NNN 区分。H-5 起按 3 scope 分类（test-fixture 1xx / umd-evolution 2xx / shared 3xx + tadr-107）。完整索引见 [external/TaskRunner/docs/shared/adr/README.md](../external/TaskRunner/docs/shared/adr/README.md)。
+
+#### test-fixture scope（默认主线，已接受）
 
 | TADR | 主题 | 关联 UsrLinuxEmu ADR |
 |------|------|---------------------|
-| TADR-001 ~ TADR-004 | CUDA/Vulkan Runtime v0.1 决策 (retroactive) | — |
-| TADR-005 | IGpuDriver 抽象层 consumer-lens (H-2.5) | [ADR-032](adr-032-h2-5-igpu-driver-abstraction.md) |
-| TADR-006 | Phase 2 5 方法 consumer-lens (H-3) | [ADR-033](adr-033-h3-phase2-lifecycle.md) |
-| TADR-007 | R2 mapping contract (LOW32 truncation 显式化) | [ADR-033 §R2](adr-033-h3-phase2-lifecycle.md) |
-| TADR-008 | H-7 上游 issue TaskRunner 侧注册点 (⏸️ Deferred) | [ADR-034](adr-034-h7-deferred-registry.md) |
+| [tadr-101](../external/TaskRunner/docs/test-fixture/adr/tadr-101-stub-tracker.md) | Stub Tracker (原 tadr-004) | — |
+| [tadr-102](../external/TaskRunner/docs/test-fixture/adr/tadr-102-igpu-driver.md) | IGpuDriver 抽象层 consumer-lens (H-2.5, 原 tadr-005) | [ADR-032](adr-032-h2-5-igpu-driver-abstraction.md) |
+| [tadr-103](../external/TaskRunner/docs/test-fixture/adr/tadr-103-h3-phase2.md) | Phase 2 5 方法 consumer-lens (H-3, 原 tadr-006) | [ADR-033](adr-033-h3-phase2-lifecycle.md) |
+| [tadr-104](../external/TaskRunner/docs/test-fixture/adr/tadr-104-r2-mapping.md) | R2 mapping contract (原 tadr-007) | [ADR-033 §R2](adr-033-h3-phase2-lifecycle.md) |
+| [tadr-105](../external/TaskRunner/docs/test-fixture/adr/tadr-105-h7-deferred.md) | H-7 上游 issue TaskRunner 侧注册点 (原 tadr-008) | [ADR-034](adr-034-h7-deferred-registry.md) |
+| [tadr-106](../external/TaskRunner/docs/test-fixture/adr/tadr-106-test-fixture-scope-clarification.md) | test-fixture scope 明确化 (H-5 新增) | [ADR-036](adr-036-three-way-separation.md) |
 
-**维护政策**：本表是 canonical，TaskRunner `docs/adr/README.md` §索引 是 mirror。改动时先改本表，TaskRunner 端同步更新。同步协议遵循 ADR-035 §Rule 5.1 4 步流程。
+#### umd-evolution scope（实验性愿景，提议中）
+
+| TADR | 主题 | 关联 UsrLinuxEmu ADR |
+|------|------|---------------------|
+| [tadr-201](../external/TaskRunner/docs/umd-evolution/adr/tadr-201-unified-scheduler.md) | CUDA/Vulkan 统一调度器 (原 tadr-001, 🔄 Proposed) | — |
+| [tadr-202](../external/TaskRunner/docs/umd-evolution/adr/tadr-202-layered-design.md) | CUDA/Vulkan 分层设计 (原 tadr-002, 🔄 Proposed) | — |
+| [tadr-203](../external/TaskRunner/docs/umd-evolution/adr/tadr-203-sync-unified.md) | CUDA/Vulkan 同步统一 (原 tadr-003, 🔄 Proposed) | — |
+| [tadr-204](../external/TaskRunner/docs/umd-evolution/adr/tadr-204-umd-evolution-scope-clarification.md) | umd-evolution scope 明确化 (H-5 新增) | [ADR-036](adr-036-three-way-separation.md) |
+| [tadr-205](../external/TaskRunner/docs/umd-evolution/adr/tadr-205-umd-evolution-poc-roadmap.md) | UMD PoC 路线图 (H-5 新增, deferred Phase D) | — |
+
+#### shared scope（跨切面契约，已接受）
+
+| TADR | 主题 | 关联 UsrLinuxEmu ADR |
+|------|------|---------------------|
+| [tadr-107](../external/TaskRunner/docs/shared/adr/tadr-107-shared-infrastructure-boundary.md) | shared 边界 (H-5 新增) | [ADR-036](adr-036-three-way-separation.md) |
+| [tadr-301](../external/TaskRunner/docs/shared/adr/tadr-301-igpu-driver-contract.md) | IGpuDriver 28 方法契约 (H-5 新增) | [ADR-032](adr-032-h2-5-igpu-driver-abstraction.md) |
+| [tadr-302](../external/TaskRunner/docs/shared/adr/tadr-302-sync-primitives.md) | Sync Primitives 抽象 (H-5 新增) | — |
+| [tadr-303](../external/TaskRunner/docs/shared/adr/tadr-303-error-handling.md) | Error Handling 抽象 (H-5 新增) | — |
+
+#### 向后兼容 redirect 文件（DEPRECATED）
+
+8 个原 TADR 编号保留为 redirect 文件（指向新路径）：`tadr-001` ~ `tadr-008` → `tadr-201/202/203` + `tadr-101/102/103/104/105`。位于各 scope 的 `adr/tadr-NNN-redirect.md`。
+
+**维护政策**：本表是 canonical，TaskRunner `docs/shared/adr/README.md` §索引 是 mirror。改动时先改本表，TaskRunner 端同步更新。同步协议遵循 ADR-035 §Rule 5.1 4 步流程。
+
+**Dual-track 分类原则**（H-5）：
+- **test-fixture** (1xx): 当前已接受，默认主线
+- **umd-evolution** (2xx): 实验性愿景，提议中，延后至 Phase D
+- **shared** (3xx + tadr-107): 跨切面抽象，dual review 必需
+
+变更 shared scope 任何文件须至少 1 名 test-fixture scope 维护者 + 1 名 umd-evolution scope 维护者（或其指定人）共同 review。涉及 ABI 契约变更（如 `igpu_driver.hpp`）须同步通知 UsrLinuxEmu 维护者（ADR-036 跨仓策略）。
 
 ### 跨引用规范
 
