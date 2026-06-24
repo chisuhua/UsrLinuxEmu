@@ -45,7 +45,10 @@ TaskRunner 子模块当前文档/代码/TADR 混杂了两种范畴的内容：
 - 保留 8 个 redirect 文件（旧编号 → 新编号）以兼容历史链接
 
 ### 3. 共享基础设施规范
-- 把 `include/igpu_driver.hpp` + `include/sync_primitives.hpp` + `include/error_handling.hpp` 移到 `include/shared/`
+- 把 `include/igpu_driver.hpp` + `include/sync_primitives.hpp` 移到 `include/shared/`
+- **新建占位** `include/error_handling.hpp`（最小实现：`ErrorCode` enum + `Result<T>` 模板，约 30 行）+ 移动到 `include/shared/error_handling.hpp`（满足 spec-shared-infrastructure L49-55 REQUIRE 文件必须存在）
+- 同时把 `include/memory_manager.hpp` + `src/memory_manager.cpp` + `src/sync_primitives.cpp` 移到 `include/shared/` / `src/shared/`（v2 补充，被 cuda_scheduler.hpp `#include`）
+- **ADR-036 对齐（2026-06-23 增量）**：TaskRunner 的 shared 范畴对应 UsrLinuxEmu [ADR-036 §Decision](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-036-three-way-separation.md) 中的"shared ABI 契约"层（`plugins/gpu_driver/shared/`）。TaskRunner `include/shared/igpu_driver.hpp` 与 UsrLinuxEmu `plugins/gpu_driver/shared/gpu_ioctl.h`（通过符号链接 `external/TaskRunner/UsrLinuxEmu/` 访问）是同一 ABI 契约的两侧实现。修改 shared 范畴任何头文件须按 ADR-036 §风险表 "shared 头文件双方不同步" 缓解措施执行**双向 ack**（TaskRunner + UsrLinuxEmu 双方维护人同步 ack）。
 - 新增 `tadr-301`（Shared Infrastructure Boundary）+ `tadr-302`（IGpuDriver Contract）+ `tadr-303`（Sync Primitives）+ `tadr-304`（Error Handling）
 
 ### 4. CMake BUILD_MODE 开关
@@ -83,7 +86,8 @@ TaskRunner 子模块当前文档/代码/TADR 混杂了两种范畴的内容：
 
 ### 受影响代码路径
 - `external/TaskRunner/docs/` — 完整重组（test-fixture + umd-evolution + shared 三个并列目录）
-- `external/TaskRunner/include/` — `igpu_driver.hpp` + `sync_primitives.hpp` + `error_handling.hpp` 移到 shared/，新增 umd/ 骨架
+- `external/TaskRunner/include/` — `igpu_driver.hpp` + `sync_primitives.hpp` 移到 shared/，新建占位 `error_handling.hpp` + 移到 shared/，新增 `memory_manager.hpp` 移到 shared/，新增 umd/ 骨架
+- `external/TaskRunner/src/` — 新增 shared/（memory_manager.cpp + sync_primitives.cpp）+ test_fixture/（cuda_stub/cuda_scheduler/gpu_driver_client/CmdProcessor/TaskRunner/cli_main/cmd_buffer_v2/cmd_cuda 等 9 个 cpp）+ umd/ 骨架
 - `external/TaskRunner/src/` — 新增 umd/ 骨架 + shared/ 独立子目录
 - `external/TaskRunner/tests/` — 新增 shared/ 和 umd/ 子目录
 - `external/TaskRunner/CMakeLists.txt` — 添加 `TASKRUNNER_BUILD_MODE` option

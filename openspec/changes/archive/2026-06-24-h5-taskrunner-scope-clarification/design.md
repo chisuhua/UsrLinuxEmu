@@ -210,7 +210,7 @@ TaskRunner 子模块（路径 `/workspace/project/UsrLinuxEmu/external/TaskRunne
 1. 创建 `include/shared/` 和 `src/shared/` 目录
 2. 移动 `include/igpu_driver.hpp` → `include/shared/igpu_driver.hpp`
 3. 移动 `include/sync_primitives.hpp` → `include/shared/sync_primitives.hpp`
-4. 移动 `include/error_handling.hpp` → `include/shared/error_handling.hpp`（如存在）
+4. **新建占位** `include/error_handling.hpp`（最小实现：`ErrorCode` enum + `Result<T>` 模板）+ 移动到 `include/shared/error_handling.hpp`（spec-shared-infrastructure L49-55 REQUIRE 文件必须存在）
 5. 创建 `include/test_fixture/` 和 `src/test_fixture/` 目录
 6. 移动 test-fixture 范畴代码：
    - `include/cuda_stub.hpp` → `include/test_fixture/`
@@ -304,7 +304,7 @@ TaskRunner 子模块（路径 `/workspace/project/UsrLinuxEmu/external/TaskRunne
 3. **TADR 编号空间长期维护**：未来 tadr-3xx 共享区是否进一步分段（如 3xx-shared / 3xx-meta）？待观察
 4. **跨仓 mirror 更新**：UsrLinuxEmu 端 `docs/00_adr/README.md` 现状是简短表格，是否需要扩展为按范畴分组的完整列表？需要时再调整
 5. **umd-evolution 启动门槛**：H-5 完成 + H-3.5 shippable 后，是否自动开启 umd-evolution PoC？或等待明确需求？建议等待明确需求
-6. **错误处理抽象现状**：`include/error_handling.hpp` 当前是否已存在？Phase B Step 4 中需要先调研
+6. ~~错误处理抽象现状~~：**已解决**。`include/error_handling.hpp` 当前不存在；H-5 Phase B Step 4.0 将新建占位（`ErrorCode` enum + `Result<T>` 模板）+ 移动到 `include/shared/error_handling.hpp`。最小实现约 30 行，仅满足 spec L49-55 要求，不引入未完成业务逻辑。
 
 ## Implementation Notes
 

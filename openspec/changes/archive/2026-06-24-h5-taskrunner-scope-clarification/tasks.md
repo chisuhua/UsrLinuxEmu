@@ -42,6 +42,9 @@
 - [ ] A.5.1 创建 `docs/shared/README.md`，声明 shared 范畴规范（含双向 review 要求）
 - [ ] A.5.2 列出 shared 范畴包含的内容：IGpuDriver 契约、sync_primitives、error_handling
 - [ ] A.5.3 在 README 中明确"shared 范畴代码变更需双向 review"
+- [ ] A.5.4 **新增（ADR-036 响应）**：在 `docs/shared/README.md` 头部添加段说明 TaskRunner shared 范畴对应 UsrLinuxEmu ADR-036 的 shared ABI 契约层；引用 `[../../../docs/00_adr/adr-036-three-way-separation.md](../../../docs/00_adr/adr-036-three-way-separation.md)` §Decision 共享基础设施层
+- [ ] A.5.5 **新增（ADR-036 响应）**：在 `docs/shared/README.md` 添加"跨仓 ABI 契约"段，说明 TaskRunner 的 `include/shared/`（igpu_driver.hpp 等）与 UsrLinuxEmu 的 `plugins/gpu_driver/shared/`（gpu_ioctl.h 等）是同一契约的两侧实现
+- [ ] A.5.6 **新增（ADR-036 响应）**：在 `docs/shared/README.md` 添加"修改时双向 ack 要求"段，引用 ADR-036 §Migration "shared 头文件双方不同步"风险与"TaskRunner 与 UsrLinuxEmu 维护人在每次 shared 改动后需双向 ack"缓解措施
 
 ### A.6 重映射 8 个原 TADR（保留 git history）
 
@@ -59,15 +62,16 @@
 
 ### A.7 创建 8 个 redirect 文件（兼容历史链接）
 
-- [ ] A.7.1 创建 `docs/test-fixture/adr/tadr-004-redirect.md`（指向 tadr-101）
-- [ ] A.7.2 创建 `docs/test-fixture/adr/tadr-005-redirect.md`（指向 tadr-102）
-- [ ] A.7.3 创建 `docs/test-fixture/adr/tadr-006-redirect.md`（指向 tadr-103）
-- [ ] A.7.4 创建 `docs/test-fixture/adr/tadr-007-redirect.md`（指向 tadr-104）
-- [ ] A.7.5 创建 `docs/test-fixture/adr/tadr-008-redirect.md`（指向 tadr-105）
-- [ ] A.7.6 创建 `docs/umd-evolution/adr/tadr-001-redirect.md`（指向 tadr-201）
-- [ ] A.7.7 创建 `docs/umd-evolution/adr/tadr-002-redirect.md`（指向 tadr-202）
-- [ ] A.7.8 创建 `docs/umd-evolution/adr/tadr-003-redirect.md`（指向 tadr-203）
+- [ ] A.7.1 创建 `docs/adr/tadr-004-redirect.md`（指向 tadr-101，**保持旧路径** `docs/adr/` 兼容历史链接）
+- [ ] A.7.2 创建 `docs/adr/tadr-005-redirect.md`（指向 tadr-102）
+- [ ] A.7.3 创建 `docs/adr/tadr-006-redirect.md`（指向 tadr-103）
+- [ ] A.7.4 创建 `docs/adr/tadr-007-redirect.md`（指向 tadr-104）
+- [ ] A.7.5 创建 `docs/adr/tadr-008-redirect.md`（指向 tadr-105）
+- [ ] A.7.6 创建 `docs/adr/tadr-001-redirect.md`（指向 tadr-201）
+- [ ] A.7.7 创建 `docs/adr/tadr-002-redirect.md`（指向 tadr-202）
+- [ ] A.7.8 创建 `docs/adr/tadr-003-redirect.md`（指向 tadr-203）
 - [ ] A.7.9 每个 redirect 文件顶部明确标注 DEPRECATED + REPLACES + REPLACED_DATE
+- [ ] A.7.10 **不**在新 scoped 目录（`docs/test-fixture/adr/` / `docs/umd-evolution/adr/`）下创建 redirect 文件（违反"redirect 必须在旧路径"惯例）
 
 ### A.8 创建 7 个新增 TADR
 
@@ -87,7 +91,7 @@
 
 ### A.10 验证 Phase A
 
-- [ ] A.10.1 验证 8 个 redirect 文件可访问（`cat docs/test-fixture/adr/tadr-004-redirect.md`）
+- [ ] A.10.1 验证 8 个 redirect 文件可访问（`cat docs/adr/tadr-004-redirect.md`，确认在旧路径）
 - [ ] A.10.2 验证 `git log --follow` 可追所有重命名 TADR 历史
 - [ ] A.10.3 验证所有文档头部 SCOPE 元数据完整
 - [ ] A.10.4 验证 `docs/adr/` 旧目录**完全清空**（或仅保留 deprecated 索引）
@@ -102,13 +106,12 @@
 - [ ] B.1.2 创建 `src/shared/` 目录
 - [ ] B.1.3 用 `git mv` 移动 `include/igpu_driver.hpp` → `include/shared/igpu_driver.hpp`
 - [ ] B.1.4 用 `git mv` 移动 `include/sync_primitives.hpp` → `include/shared/sync_primitives.hpp`
-- [ ] B.1.5 检查 `include/error_handling.hpp` 是否存在；如不存在则跳过（如存在则移动）
+- [ ] B.1.5 **新建占位** `include/error_handling.hpp`（最小实现：`ErrorCode` enum + `Result<T>` 模板，约 30 行，满足 spec-shared-infrastructure L49-55 REQUIRE 文件必须存在）→ 然后移动到 `include/shared/error_handling.hpp`
 
 ### B.2 创建 include/test_fixture/ 和 src/test_fixture/
 
-- [ ] B.2.1 创建 `include/test_fixture/` 目录
-- [ ] B.2.2 创建 `src/test_fixture/` 目录
-- [ ] B.2.3 用 `git mv` 移动 7 个 test-fixture 范畴文件：
+- [ ] B.2.1 创建 `include/test_fixture/` 和 `src/test_fixture/` 目录
+- [ ] B.2.2 用 `git mv` 移动 7 个 test-fixture 范畴核心文件（plan 原清单）：
   - `include/cuda_stub.hpp` → `include/test_fixture/cuda_stub.hpp`
   - `include/cuda_scheduler.hpp` → `include/test_fixture/cuda_scheduler.hpp`
   - `include/gpu_driver_client.h` → `include/test_fixture/gpu_driver_client.h`
@@ -116,6 +119,19 @@
   - `src/cuda_scheduler.cpp` → `src/test_fixture/cuda_scheduler.cpp`
   - `src/gpu_driver_client.cpp` → `src/test_fixture/gpu_driver_client.cpp`
   - `src/cmd_cuda.cpp` → `src/test_fixture/cmd_cuda.cpp`
+- [ ] B.2.3 用 `git mv` 移动遗留源/头文件（**Metis 审查发现 plan 原版遗漏**，6 个文件）：
+  - **shared 范畴**（与 test-fixture / umd-evolution 共享）：
+    - `include/memory_manager.hpp` → `include/shared/memory_manager.hpp`（被 `cuda_scheduler.hpp:20` `#include`，**必须** 移动）
+    - `src/memory_manager.cpp` → `src/shared/memory_manager.cpp`
+    - `src/sync_primitives.cpp` → `src/shared/sync_primitives.cpp`
+  - **test-fixture 范畴**（核心 + 辅助）：
+    - `src/CmdProcessor.cpp` → `src/test_fixture/CmdProcessor.cpp`
+    - `src/TaskRunner.cpp` → `src/test_fixture/TaskRunner.cpp`
+    - `src/cli_main.cpp` → `src/test_fixture/cli_main.cpp`（CLI 入口，taskrunner 可执行文件）
+    - `src/cmd_buffer_v2.cpp` → `src/test_fixture/cmd_buffer_v2.cpp`（CLI 子命令）
+- [ ] B.2.4 决策遗留文件（**不**允许静默丢失，必须显式声明）：
+  - **`tests/test_taskrunner.cpp`**：3 个 TEST_CASEs（原 plan 未注册到 ctest）；决策：移动到 `tests/test_fixture/test_taskrunner.cpp` + 在新 TestFixture.cmake 中 `add_test` 注册
+  - **`sample/main.cpp`**：原 sample 程序；决策：保留并加入 `add_executable(sample ...)`（与 test 模式并列，可通过 `-DBUILD_SAMPLE=ON` 启用，默认 OFF）
 
 ### B.3 创建 include/umd/ 和 src/umd/ 骨架（**不**实现具体逻辑）
 
@@ -133,7 +149,8 @@
 - [ ] B.4.1 更新所有 `cuda_stub.cpp`、`cuda_stub.hpp`、`cuda_scheduler.cpp`、`cuda_scheduler.hpp` 的 include 路径（`#include "shared/igpu_driver.hpp"` 形式）
 - [ ] B.4.2 更新 `cmd_cuda.cpp`、`gpu_driver_client.h`、`gpu_driver_client.cpp` 的 include 路径
 - [ ] B.4.3 更新 `sync_primitives.hpp` 内部 include（如有引用其他 TaskRunner 文件）
-- [ ] B.4.4 验证无残留旧路径（`grep -rn 'include/igpu_driver\|include/sync_primitives\|include/cuda_' src/ include/` 应仅匹配 `shared/` 或 `test_fixture/` 子路径）
+- [ ] B.4.4 **新增**：更新 `cuda_scheduler.hpp` 等移动文件的 `memory_manager.hpp` include 路径（`#include "shared/memory_manager.hpp"`）— **Metis 审查发现遗漏**，原 plan 完全未处理
+- [ ] B.4.5 验证无残留旧路径（`grep -rn 'include/igpu_driver\|include/sync_primitives\|include/memory_manager\|include/cuda_' src/ include/` 应仅匹配 `shared/` 或 `test_fixture/` 子路径）— grep 模式新增 `include/memory_manager`
 
 ### B.5 创建 CMake 模块化拆分
 
@@ -274,7 +291,7 @@
 - [ ] V.2 `./test_cuda_scheduler` 8/8 通过
 - [ ] V.3 `./test_gpu_phase2` 12/12 通过
 - [ ] V.4 `cmake .. -DTASKRUNNER_BUILD_MODE=umd-evolution && make -j4` 成功
-- [ ] V.5 16 个重映射 TADR + 8 个 redirect 文件 + 7 个新增 TADR = 31 个文档齐全
+- [ ] V.5 **8 个重映射 TADR + 7 个新增 TADR + 8 个 redirect 文件 = 23 个文档齐全**（V.1 修正：原 "16+8+7=31" 算错，应为 8+8+7=23）
 - [ ] V.6 `docs/00_adr/README.md` mirror 表包含全部 23 个 TADR（含范畴列）
 - [ ] V.7 跨仓 PR 已合并 + closed
 - [ ] V.8 TaskRunner `git submodule status external/TaskRunner` 指向 H-5 commit
