@@ -4,6 +4,11 @@
 
 UsrLinuxEmu 是用户态 Linux 内核模拟环境，用于设备驱动开发（特别是 GPGPU 驱动）。无需 root 权限或内核编译即可开发和测试驱动。
 
+> **项目目标**: **开发一个易移植到 Linux 内核的 GPU 驱动**。
+>
+> 通过 **3 区分架构**实现：① 内核环境模拟 + ② 可移植驱动代码（用 Linux kernel 习语）+ ③ 硬件模拟 + HAL 桥接层。
+> 完整原则: [ADR-036](docs/00_adr/adr-036-three-way-separation.md) ✅ Accepted。演进路径: [ROADMAP](docs/roadmap/README.md)。
+
 > **权威架构说明**：[docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md)（v0.1.7 ✅ Approved）
 >
 > 本 AGENTS.md 是**开发指南**（构建/编码风格/集成要点），架构权威说明以 post-refactor-architecture.md 为准。
