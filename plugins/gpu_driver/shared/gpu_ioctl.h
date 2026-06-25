@@ -40,11 +40,11 @@
 #define GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH _IOW(GPU_IOCTL_BASE, 0x01, struct gpu_pushbuffer_args)
 
 struct gpu_pushbuffer_args {
-  u32 stream_id;
-  u64 entries_addr;
-  u32 count;
-  u32 flags;
-  u64 fence_id;
+  u64 stream_id;              /* 64-bit queue handle (widened from u32) */
+  u64 entries_addr;           /* User-space address of gpu_gpfifo_entry array */
+  u32 count;                  /* Number of entries */
+  u32 flags;                  /* Submission flags */
+  u64 fence_id;               /* OUT: Fence ID for async completion tracking */
   /**
    * VA Space handle for validation (Phase 2 contract).
    *
@@ -59,6 +59,8 @@ struct gpu_pushbuffer_args {
    * compatibility with callers that do not initialize the new field.
    */
   u64 va_space_handle;
+  u32 stream_id_compat;       /* Deprecated: backward compat alias for old u32 callers */
+  u32 flags_extended;         /* Reserved flag space for future use */
 };
 
 /* ========================================================================
