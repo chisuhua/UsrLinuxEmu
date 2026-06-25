@@ -283,6 +283,14 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
 
   if (puller_ && !has_fence) {
     // S3.5: 即使在 puller path 中也创建 fence 并返回
+    auto q = getQueue(static_cast<uint64_t>(args->stream_id));
+    if (!q) {
+      usr_linux_emu::Logger::warn(
+          "[GpgpuDevice] PUSHBUFFER_SUBMIT_BATCH: queue not found: stream_id=" +
+          std::to_string(args->stream_id));
+      return -ENOENT;
+    }
+
     u64 fence_id = 0;
     int ret = hal_fence_create(hal_, &fence_id);
     if (ret != 0) {
@@ -291,7 +299,11 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
     }
 
     u64 gpfifo_addr = GPFIFO_BASE;
-    puller_->submitBatch(gpfifo_addr, args->count);
+    int submit_ret = q->submit(gpfifo_addr, args->count);
+    if (submit_ret != 0) {
+      std::cerr << "[GpgpuDevice] PUSHBUFFER: queue submit failed (ret=" << submit_ret << ")\n";
+      return submit_ret;
+    }
     hal_doorbell_ring(hal_, args->stream_id);  // Use stream_id as queue_id
     args->fence_id = fence_id;  // S3.5: 返回 fence_id 给调用者
     std::cout << "[GpgpuDevice] PUSHBUFFER: puller path, gpfifo=0x" << std::hex << gpfifo_addr
@@ -430,6 +442,7 @@ long GpgpuDevice::handleCreateQueue(void* argp) {
   // Phase 2.5: 注册到 Puller
   if (puller_) {
     puller_->registerQueue(queue.get());
+    queue->setPuller(puller_.get());
   }
 
   std::cout << "[GpgpuDevice] CREATE_QUEUE: handle=" << handle
