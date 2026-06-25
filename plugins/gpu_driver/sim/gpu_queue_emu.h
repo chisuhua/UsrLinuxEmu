@@ -21,6 +21,8 @@
 #include "gpu_queue.h"
 #include "gpu_types.h"
 
+class HardwarePullerEmu;
+
 class GpuQueueEmu {
  public:
   using DoorbellCallback = std::function<void(uint32_t queue_id)>;
@@ -96,6 +98,19 @@ class GpuQueueEmu {
     }
   }
 
+  // ========== 提交操作（ioctl 路径委托） ==========
+
+  /**
+   * 提交 GPFIFO 批处理（委托给 HardwarePullerEmu）
+   * @param gpfifo_addr GPFIFO GPU 地址
+   * @param entry_count entry 数量
+   * @return 0=成功，-ENODEV=puller 未绑定
+   */
+  int submit(uint64_t gpfifo_addr, uint32_t entry_count);
+
+  /** 绑定 HardwarePullerEmu（供 GpgpuDevice 在注册时调用） */
+  void setPuller(HardwarePullerEmu* puller) { puller_ = puller; }
+
  private:
   uint32_t queue_id_;
   uint32_t queue_type_;
@@ -107,6 +122,9 @@ class GpuQueueEmu {
 
   /** Doorbell callback */
   DoorbellCallback doorbell_cb_;
+
+  /** HardwarePullerEmu 引用（可选，用于 ioctl 路径委托） */
+  HardwarePullerEmu* puller_ = nullptr;
 
   /** 线程安全 */
   mutable std::mutex mutex_;

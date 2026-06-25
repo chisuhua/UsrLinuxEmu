@@ -1,4 +1,5 @@
 #include "gpu_queue_emu.h"
+#include "hardware/hardware_puller_emu.h"
 
 #include <cstring>
 #include <iostream>
@@ -76,4 +77,13 @@ uint32_t GpuQueueEmu::pendingCount() const {
   if (!ring_header_) return 0;
   std::lock_guard<std::mutex> lock(mutex_);
   return ring_header_->write_idx - ring_header_->read_idx;
+}
+
+int GpuQueueEmu::submit(uint64_t gpfifo_addr, uint32_t entry_count) {
+  if (!puller_) {
+    std::cerr << "[GpuQueue] submit: puller not bound for queue_id=" << queue_id_ << "\n";
+    return -ENODEV;
+  }
+  puller_->submitBatch(gpfifo_addr, entry_count);
+  return 0;
 }

@@ -175,6 +175,20 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MAP_BO invalid handle", "[gpu]
 
 TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH MEMCPY",
                  "[gpu][ioctl][submit]") {
+  // Create VA Space and Queue first (required after Issue #2 refactoring)
+  struct gpu_va_space_args va_args = {};
+  va_args.page_size = 0;
+  long result = ioctl(GPU_IOCTL_CREATE_VA_SPACE, &va_args);
+  REQUIRE(result == 0);
+
+  struct gpu_queue_args q_args = {};
+  q_args.va_space_handle = va_args.va_space_handle;
+  q_args.queue_type = 0;
+  q_args.priority = 0;
+  q_args.ring_buffer_size = 16;
+  result = ioctl(GPU_IOCTL_CREATE_QUEUE, &q_args);
+  REQUIRE(result == 0);
+
   struct gpu_gpfifo_entry entry = {};
   entry.valid = 1;
   entry.priv = 0;
@@ -185,17 +199,38 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH MEMCPY
   entry.payload[2] = 1024;
 
   struct gpu_pushbuffer_args args = {};
-  args.stream_id = 0;
+  args.stream_id = static_cast<u32>(q_args.queue_handle);
+  args.va_space_handle = va_args.va_space_handle;
   args.entries_addr = reinterpret_cast<u64>(&entry);
   args.count = 1;
   args.flags = 0;
 
-  long result = ioctl(GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &args);
+  result = ioctl(GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &args);
+  REQUIRE(result == 0);
+
+  // Cleanup
+  result = ioctl(GPU_IOCTL_DESTROY_QUEUE, &q_args.queue_handle);
+  REQUIRE(result == 0);
+  result = ioctl(GPU_IOCTL_DESTROY_VA_SPACE, &va_args.va_space_handle);
   REQUIRE(result == 0);
 }
 
 TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH LAUNCH_KERNEL",
                  "[gpu][ioctl][submit]") {
+  // Create VA Space and Queue first (required after Issue #2 refactoring)
+  struct gpu_va_space_args va_args = {};
+  va_args.page_size = 0;
+  long result = ioctl(GPU_IOCTL_CREATE_VA_SPACE, &va_args);
+  REQUIRE(result == 0);
+
+  struct gpu_queue_args q_args = {};
+  q_args.va_space_handle = va_args.va_space_handle;
+  q_args.queue_type = 0;
+  q_args.priority = 0;
+  q_args.ring_buffer_size = 16;
+  result = ioctl(GPU_IOCTL_CREATE_QUEUE, &q_args);
+  REQUIRE(result == 0);
+
   struct gpu_gpfifo_entry entry = {};
   entry.valid = 1;
   entry.priv = 0;
@@ -206,12 +241,19 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH LAUNCH
   entry.payload[2] = 0x20;
 
   struct gpu_pushbuffer_args args = {};
-  args.stream_id = 0;
+  args.stream_id = static_cast<u32>(q_args.queue_handle);
+  args.va_space_handle = va_args.va_space_handle;
   args.entries_addr = reinterpret_cast<u64>(&entry);
   args.count = 1;
   args.flags = 0;
 
-  long result = ioctl(GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &args);
+  result = ioctl(GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &args);
+  REQUIRE(result == 0);
+
+  // Cleanup
+  result = ioctl(GPU_IOCTL_DESTROY_QUEUE, &q_args.queue_handle);
+  REQUIRE(result == 0);
+  result = ioctl(GPU_IOCTL_DESTROY_VA_SPACE, &va_args.va_space_handle);
   REQUIRE(result == 0);
 }
 

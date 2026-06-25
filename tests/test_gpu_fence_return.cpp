@@ -39,13 +39,34 @@ int test_fence_return_on_puller_path() {
 
   int fd = 0;
 
+  int ret = 0;
+  // Create VA Space and Queue first (required after Issue #2 refactoring)
+  struct gpu_va_space_args va_args = {};
+  va_args.page_size = 0;
+  ret = dev->fops->ioctl(fd, GPU_IOCTL_CREATE_VA_SPACE, &va_args);
+  if (ret != 0) {
+    std::cerr << "[FAIL] CREATE_VA_SPACE failed: " << ret << "\n";
+    return 1;
+  }
+
+  struct gpu_queue_args q_args = {};
+  q_args.va_space_handle = va_args.va_space_handle;
+  q_args.queue_type = 0;
+  q_args.priority = 0;
+  q_args.ring_buffer_size = 16;
+  ret = dev->fops->ioctl(fd, GPU_IOCTL_CREATE_QUEUE, &q_args);
+  if (ret != 0) {
+    std::cerr << "[FAIL] CREATE_QUEUE failed: " << ret << "\n";
+    return 1;
+  }
+
   // 分配一个 BO 用于 memcpy 测试
   struct gpu_alloc_bo_args alloc_args = {};
   alloc_args.size = 4096;
   alloc_args.domain = GPU_MEM_DOMAIN_VRAM;
   alloc_args.flags = 0;
 
-  int ret = dev->fops->ioctl(fd, GPU_IOCTL_ALLOC_BO, &alloc_args);
+  ret = dev->fops->ioctl(fd, GPU_IOCTL_ALLOC_BO, &alloc_args);
   if (ret != 0) {
     std::cerr << "[FAIL] ALLOC_BO failed: " << ret << "\n";
     return 1;
@@ -72,7 +93,8 @@ int test_fence_return_on_puller_path() {
 
   // 提交批次 - 注意：不包含 FENCE 操作，所以走 puller path
   struct gpu_pushbuffer_args pb_args = {};
-  pb_args.stream_id = 0;
+  pb_args.stream_id = static_cast<u32>(q_args.queue_handle);
+  pb_args.va_space_handle = va_args.va_space_handle;
   pb_args.entries_addr = reinterpret_cast<u64>(&entry);
   pb_args.count = 1;
   pb_args.flags = 0;
@@ -124,6 +146,8 @@ int test_fence_return_on_puller_path() {
 
   // 清理
   dev->fops->ioctl(fd, GPU_IOCTL_FREE_BO, &alloc_args.handle);
+  dev->fops->ioctl(fd, GPU_IOCTL_DESTROY_QUEUE, &q_args.queue_handle);
+  dev->fops->ioctl(fd, GPU_IOCTL_DESTROY_VA_SPACE, &va_args.va_space_handle);
 
   std::cout << "[PASS] test_fence_return_on_puller_path\n";
   return 0;
