@@ -1,0 +1,8 @@
+name: h3-8-issue-1-coordination
+schema: spec-driven
+status: PROPOSED
+created: 2026-06-26
+supersedes: null
+refs:
+  - tadr-105 (TaskRunner H-7 mirror)
+  - adr-034 (UsrLinuxEmu canonical, Issue #1)

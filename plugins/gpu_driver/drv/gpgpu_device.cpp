@@ -259,7 +259,7 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
       std::lock_guard<std::mutex> va_lock(va_space_mutex_);
       const auto& attached = va_spaces_[args->va_space_handle].attached_queues;
       if (std::find(attached.begin(), attached.end(),
-                    static_cast<uint64_t>(args->stream_id)) == attached.end()) {
+                    args->stream_id) == attached.end()) {
         usr_linux_emu::Logger::warn(
             "[GpgpuDevice] PUSHBUFFER_SUBMIT_BATCH: stream_id " +
             std::to_string(args->stream_id) +
@@ -268,6 +268,15 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
         return -EINVAL;
       }
     }
+  }
+
+  // Backward compat: old callers pass u32 handle in stream_id_compat
+  uint64_t effective_stream_id = args->stream_id;
+  if (effective_stream_id == 0 && args->stream_id_compat != 0) {
+    effective_stream_id = args->stream_id_compat;
+    usr_linux_emu::Logger::warn(
+        "[GpgpuDevice] PUSHBUFFER: deprecated stream_id_compat used, "
+        "migrate to stream_id (u64)");
   }
 
   // 检查是否包含 FENCE 操作（需要同步返回 fence_id）
@@ -283,11 +292,11 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
 
   if (puller_ && !has_fence) {
     // S3.5: 即使在 puller path 中也创建 fence 并返回
-    auto q = getQueue(static_cast<uint64_t>(args->stream_id));
+    auto q = getQueue(effective_stream_id);
     if (!q) {
       usr_linux_emu::Logger::warn(
           "[GpgpuDevice] PUSHBUFFER_SUBMIT_BATCH: queue not found: stream_id=" +
-          std::to_string(args->stream_id));
+          std::to_string(effective_stream_id));
       return -ENOENT;
     }
 
@@ -304,10 +313,10 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
       std::cerr << "[GpgpuDevice] PUSHBUFFER: queue submit failed (ret=" << submit_ret << ")\n";
       return submit_ret;
     }
-    hal_doorbell_ring(hal_, args->stream_id);  // Use stream_id as queue_id
+    hal_doorbell_ring(hal_, static_cast<u32>(effective_stream_id));  // Use effective_stream_id as queue_id
     args->fence_id = fence_id;  // S3.5: 返回 fence_id 给调用者
     std::cout << "[GpgpuDevice] PUSHBUFFER: puller path, gpfifo=0x" << std::hex << gpfifo_addr
-              << " count=" << std::dec << args->count << " queue=" << args->stream_id
+              << " count=" << std::dec << args->count << " queue=" << effective_stream_id
               << " fence_id=" << fence_id << "\n";
     return 0;
   } else if (has_fence) {
