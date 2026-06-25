@@ -2,7 +2,7 @@
 
 本文档目录包含 UsrLinuxEmu 项目中所有已通过和提议中的架构决策记录。
 
-> **最后更新**: 2026-06-25（H-5.1 scope cleanup 新增 tadr-108 + tadr-304；H-4 governance cleanup 新增 ADR-032 ~ ADR-035；详见末尾 "H-4 governance 增量" 段）
+> **最后更新**: 2026-06-26（H-3.8 完成—ADR-034 Issue #1 → Accepted，H-7 deferred 3 issues 全部关闭）
 > **维护者**: UsrLinuxEmu Architecture Team + TaskRunner owner
 > **治理规则**: 见 [ADR-035](adr-035-governance-policy.md)
 
@@ -43,7 +43,7 @@
 | [adr-031](adr-031-ttm-migration-priority.md) | TTM 迁移实施优先级 | ✅ 已接受 (Accepted) | 2026-06 |
 | [adr-032](adr-032-h2-5-igpu-driver-abstraction.md) | **H-2.5 IGpuDriver 抽象层** | ✅ 已接受 | 2026-06-23 |
 | [adr-033](adr-033-h3-phase2-lifecycle.md) | **H-3 Phase 2 Lifecycle** | ✅ 已接受 | 2026-06-23 |
-| [adr-034](adr-034-h7-deferred-registry.md) | **H-7 Deferred Registry**（3 owner-flagged upstream issues）| ⏸️ 显式 Deferred | 2026-06-23 |
+| [adr-034](adr-034-h7-deferred-registry.md) | **H-7 Deferred Registry**（3 owner-flagged upstream issues）| ✅ 已接受（先前 Deferred，H-3.6/3.7/3.8 全部修复）| 2026-06-23 |
 | [adr-035](adr-035-governance-policy.md) | **Architecture Governance Policy** | ✅ 已接受 | 2026-06-23 |
 | [adr-036](adr-036-three-way-separation.md) | **3 区分架构原则 (3-Way Architectural Separation)** | ✅ 已接受 | 2026-06-23 |
 
@@ -51,8 +51,8 @@
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 29 | 001-013, 015, 016, 018-024, 027, 031-033, 035, 036 |
-| ⏸️ 显式 Deferred | 6 | 025, 026, 028-030, 034 |
+| ✅ 已接受 | 30 | 001-013, 015, 016, 018-024, 027, 031-036 |
+| ⏸️ 显式 Deferred | 5 | 025, 026, 028-030 |
 | 🔄 提议中 | 1 | 011-014, (027 即将升 v1) |
 | **总计** | **36** | ADR-001 ~ ADR-036 |
 
@@ -151,7 +151,7 @@ adr-001 (用户态模拟)
             ├── adr-033 (H-3 Phase 2 Lifecycle) ✅
             │       └── 关联: adr-032 (H-2.5)
             │
-            ├── adr-034 (H-7 Deferred Registry) ⏸️ Deferred
+            ├── adr-034 (H-7 Deferred Registry) ✅ Accepted (H-3.8 complete, 3 issues resolved)
             │       └── 关联: adr-033 (H-3), adr-024 (User Mode Queue)
             │
             └── adr-035 (Architecture Governance Policy) ✅
@@ -182,8 +182,7 @@ adr-001 (用户态模拟)
 
 ---
 
-**维护者**: UsrLinuxEmu Architecture Team
-**最后更新**: 2026-06-23（H-4 governance cleanup 新增 ADR-032 ~ ADR-035）
+**最后更新**: 2026-06-26（H-3.8 完成—ADR-034 §Issue #1 → Accepted，H-7 deferred 3 issues 全部关闭）
 
 ## 编号 gap 治理（2026-06-16 → 2026-06-17）
 
@@ -227,7 +226,7 @@ adr-001 (用户态模拟)
 |------|------|------|---------|
 | [adr-032](adr-032-h2-5-igpu-driver-abstraction.md) | H-2.5 IGpuDriver 抽象层 | ✅ Accepted | `openspec/changes/archive/2026-06-19-h2-5-architecture-foundation/design.md` §D6-D11 |
 | [adr-033](adr-033-h3-phase2-lifecycle.md) | H-3 Phase 2 Lifecycle | ✅ Accepted | `openspec/changes/archive/2026-06-22-h3-phase2-management/design.md` §D1-D5 + R2 |
-| [adr-034](adr-034-h7-deferred-registry.md) | H-7 Deferred Registry | ⏸️ Deferred | H-3 design.md §R4 + §R5（3 owner-flagged upstream issues）|
+| [adr-034](adr-034-h7-deferred-registry.md) | H-7 Deferred Registry | ✅ Accepted（先前 Deferred，H-3.6/3.7/3.8 全部修复）| H-3 design.md §R4 + §R5（3 owner-flagged upstream issues）|
 | [adr-035](adr-035-governance-policy.md) | Architecture Governance Policy | ✅ Accepted | 元决策：本 change 自身 |
 
 ### 按 Capability 分组（新增）
