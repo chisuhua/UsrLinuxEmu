@@ -1,0 +1,10 @@
+name: h3-maintenance-transition
+schema: spec-driven
+status: ACCEPTED
+archived: 2026-06-26
+created: 2026-06-26
+supersedes: null
+refs:
+  - sync-plan.md (TaskRunner cross-repo sync plan)
+  - cross-repo-h7-template.md (TaskRunner H-7 coordination template)
+  - tadr-105 (TaskRunner H-7 deferred registry)
