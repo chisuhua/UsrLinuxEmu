@@ -1,0 +1,8 @@
+schema: spec-driven
+created: 2026-07-02
+status: DRAFT
+goal: "Enable TaskRunner libcuda_taskrunner.so → GpuDriverClient → UsrLinuxEmu real backend E2E path"
+cross_repo:
+  taskrunner_change: "docs/superpowers/plans/2026-07-02-phase1.5-cudastub-dynamic-cast-fix.md"
+  taskrunner_spec: "docs/superpowers/specs/2026-07-02-phase1.5-cudastub-dynamic-cast-fix.md"
+prerequisite: "TaskRunner Phase 1.5 Stretch (dynamic_cast fix in CudaScheduler)"
