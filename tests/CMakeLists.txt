@@ -98,6 +98,9 @@ set(CATCH2_TESTS
     test_gpu_mmap_bar.cpp
     test_gpu_plugin.cpp
     test_module_loader_isolation.cpp
+    test_pcie_emu_standalone.cpp
+    test_config_space_standalone.cpp
+    test_msi_x_inject_standalone.cpp
 )
 
 # 定义 sim 相关测试的列表（链接 gpu_sim）
