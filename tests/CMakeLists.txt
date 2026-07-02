@@ -101,6 +101,10 @@ set(CATCH2_TESTS
     test_pcie_emu_standalone.cpp
     test_config_space_standalone.cpp
     test_msi_x_inject_standalone.cpp
+    # Stage 1.1 — IOMMU + ATS (see openspec/changes/stage-1-1-iommu-ats/)
+    test_iommu_emu_standalone.cpp
+    test_dma_remap_standalone.cpp
+    test_ats_protocol_standalone.cpp
 )
 
 # 定义 sim 相关测试的列表（链接 gpu_sim）
