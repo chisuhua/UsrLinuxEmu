@@ -1,8 +1,14 @@
 schema: spec-driven
 created: 2026-07-02
-status: PROPOSED
+archived: 2026-07-02
+status: ARCHIVED
 goal: "Enable TaskRunner libcuda_taskrunner.so → GpuDriverClient → UsrLinuxEmu real backend E2E path"
 cross_repo:
   taskrunner_change: "external/TaskRunner/docs/superpowers/plans/2026-07-02-phase1.5-cudastub-dynamic-cast-fix.md"
   taskrunner_spec: "external/TaskRunner/docs/superpowers/specs/2026-07-02-phase1.5-cudastub-dynamic-cast-fix.md"
 prerequisite: "TaskRunner Phase 1.5 Stretch (dynamic_cast fix in CudaScheduler)"
+outcome:
+  taskrunner_commit: "82a2839"
+  usr_linux_emu_commit: "2a4898d"
+  submodule_bump_commit: "9e1a3a6"
+  verification: "proxy: 76/76 TaskRunner tests + 4 UsrLinuxEmu GPU tests PASS + 79 cu* symbols + IGpuDriver 31-method contract aligned"
