@@ -75,10 +75,10 @@ UsrLinuxEmu 的核心目标（见 [ADR-001](../00_adr/adr-001-user-mode-emulatio
 
 ### 验收
 
-- [ ] `lspci -v` 在 UsrLinuxEmu 内可见模拟设备（config space / BAR / capability 全部正确）
-- [ ] 驱动能响应 config space read/write（通过标准内核 API）
-- [ ] MSI-X 中断能成功注入并被驱动处理
-- [ ] 测试：`tests/test_pcie_emu_standalone` 覆盖 config space + BAR + MSI-X 注入
+- [x] `lspci -v` 在 UsrLinuxEmu 内可见模拟设备（config space / BAR / capability 全部正确）
+- [x] 驱动能响应 config space read/write（通过标准内核 API）
+- [x] MSI-X 中断能成功注入并被驱动处理
+- [x] 测试：`tests/test_pcie_emu_standalone` 覆盖 config space + BAR + MSI-X 注入
 
 ---
 
