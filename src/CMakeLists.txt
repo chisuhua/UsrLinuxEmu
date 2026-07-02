@@ -17,6 +17,15 @@ add_library(kernel SHARED
     kernel/pcie/config_space.cpp
     kernel/pcie/capability_walk.cpp
     kernel/pcie/msi_x.cpp
+    # Stage 1.1 — IOMMU + ATS (see openspec/changes/stage-1-1-iommu-ats/)
+    kernel/iommu/iommu_domain.cpp
+    kernel/iommu/iommu_group.cpp
+    kernel/iommu/ioasid.cpp
+    kernel/iommu/iommu_emu_state.cpp
+    kernel/iommu/dma_remap.cpp
+    kernel/iommu/ats_protocol.cpp
+    kernel/iommu/invalidate.cpp
+    kernel/iommu/pcie_integration.cpp
 
 )
 

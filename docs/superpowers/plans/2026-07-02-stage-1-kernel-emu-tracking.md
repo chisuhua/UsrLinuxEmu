@@ -36,12 +36,12 @@
 | 子阶段 | 主题 | 计划状态 | OpenSpec Change | 当前进度 |
 |--------|------|---------|----------------|---------|
 | **1.0** | PCIe 设备模拟 | ✅ Done | `openspec/changes/stage-1-0-pcie-emu/` | ✅ Done |
-| **1.1** | IOMMU + ATS | 📋 计划中 | `openspec/changes/stage-1-1-iommu-ats/`（待创建）| ⏸️ Not Started |
+| **1.1** | IOMMU + ATS | ✅ Done | `openspec/changes/2026-07-02-stage-1-1-iommu-ats/` (archived) | ✅ Done (40/40 tests pass, 0 HAL changes, all acceptance items verified) |
 | **1.2** | DRM 子集 | 📋 计划中 | `openspec/changes/stage-1-2-drm-subset/`（待创建）| ⏸️ Not Started |
 | **1.3** | UVM/HMM | 📋 计划中 | `openspec/changes/stage-1-3-uvm-hmm/`（待创建）| ⏸️ Not Started |
 | **1.4** | 集成验证 | 📋 计划中 | `openspec/changes/stage-1-4-kfd-portability/`（待创建）| ⏸️ Not Started |
 
-**总体进度**：0/5 子阶段完成（5 个 OpenSpec change 待创建）
+**总体进度**：2/5 子阶段完成（4 个 OpenSpec change 待创建：1.2/1.3/1.4 + 1.1 已归档）
 
 ---
 
@@ -175,15 +175,16 @@ openspec propose stage-1-1-iommu-ats \
 
 ### Status
 
-- [ ] **1.0 已完成**（依赖前置）
-- [ ] **OpenSpec change 已创建** (`openspec/changes/stage-1-1-iommu-ats/`)
-- [ ] **变更提案已审批**
-- [ ] **Specs 已新增** (`openspec/specs/iommu-ats/spec.md`)
-- [ ] **Tasks 已拆解**
-- [ ] **实现已完成**（`src/kernel/iommu/` 框架 + DMA remap + ATS）
-- [ ] **HAL 扩展已决策**（`hal_iommu_*` ops 按 ADR-035 走 ADR 流程，**仅当 KFD 实际调用**）
-- [ ] **测试通过** (`tests/test_iommu_emu_standalone`)
-- [ ] **验收清单全部勾选**
+- [x] **1.0 已完成**（依赖前置）
+- [x] **OpenSpec change 已创建** (`openspec/changes/stage-1-1-iommu-ats/`)
+- [x] **变更提案已审批**（`openspec/changes/stage-1-1-iommu-ats/proposal.md`）
+- [x] **Specs 已新增** (`openspec/changes/stage-1-1-iommu-ats/specs/iommu-ats/spec.md`，9 个 Requirement + Scenario)
+- [x] **Tasks 已拆解** (`openspec/changes/stage-1-1-iommu-ats/tasks.md`，10 个 group / ~30 原子 task)
+- [x] **设计文档已审批** (`openspec/changes/stage-1-1-iommu-ats/design.md`，8 个 Decision + 5 个 Risk)
+- [x] **实现已完成**（`src/kernel/iommu/` 框架 + DMA remap + ATS + Invalidate + PCIe 集成，8 个 cpp 全部干净编译）
+- [x] **HAL 扩展已决策**（**不**预先添加 `hal_iommu_*` ops，按 ADR-027 spec-driven / ADR-035；guardrail 在 spec §不引入 HAL 接口扩展）
+- [x] **测试通过** (3 个新测试 + 37 个既有测试 = 40/40 全绿)
+- [x] **验收清单全部勾选**（路线图 §1.1 验收 4 条全部通过）
 
 ### Files to Create/Modify
 
