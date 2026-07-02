@@ -1,4 +1,4 @@
-add_library(kernel SHARED 
+add_library(kernel SHARED
     kernel/types.cpp
     kernel/module.cpp
     kernel/vfs.cpp
@@ -13,6 +13,10 @@ add_library(kernel SHARED
     kernel/poll_watcher.cpp
     kernel/device/serial_device.cpp
     kernel/device/memory_device.cpp
+    kernel/pcie/pcie_emu.cpp
+    kernel/pcie/config_space.cpp
+    kernel/pcie/capability_walk.cpp
+    kernel/pcie/msi_x.cpp
 
 )
 
