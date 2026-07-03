@@ -109,6 +109,8 @@ set(CATCH2_TESTS
     test_vfs_path_standalone.cpp
     # Stage 1.2 — DRM GEM lifecycle (TDD)
     test_drm_gem_standalone.cpp
+    # Stage 1.2 — DRM prime (TDD)
+    test_drm_prime_standalone.cpp
 )
 
 # 定义 sim 相关测试的列表（链接 gpu_sim）
