@@ -67,6 +67,8 @@ The system MUST fully implement the 4 interface contracts locked in stage-1-2-dr
 
 #### Scenario: drm_device outlives mmu_interval_notifier (G1 full)
 
+> **追溯**: G1 生命周期保证由 Stage 1.2 closeout commit `e05e866` 实现 — `GpgpuDevice` 嵌入 `struct drm_device`（不再栈上分配），使 `drm_device` 生命周期与 GpgpuDevice 绑定。uvm module 后续通过 `drm_device*` 指针访问，不会因 ioctl() 返回而 dangling。归档在 `tasks.md §6.5`。
+
 - **WHEN** `tests/test_uvm_drm_lifecycle_standalone.cpp` runs
 - **THEN** it MUST verify that BO release order: drain fence → release GEM object → unregister mmu_interval_notifier → shutdown drm_device
 - **AND** the test MUST extend the G1 skeleton (no longer just BO release order)

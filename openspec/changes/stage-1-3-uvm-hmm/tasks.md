@@ -57,6 +57,12 @@
 - [ ] **6.2** 验证 G2：`mmu_interval_notifier` + `hmm_range_fault` API 签名与 Linux 6.12 ABI 一致（用 KFD 编译路径走 hmm_queue 触发）
 - [ ] **6.3** 验证 G3：design.md "Decision D3: 1.2/1.3 边界契约" 章节明确列出 4 项接口契约（已存在，本任务验证）
 - [ ] **6.4** 验证 G4：1.3 不预先实现 1.4 完整 KFD SVM 集成（`git grep "kfd_svm.c"` 在 1.3 commits 中无实现）
+- [x] **6.5** 嵌入 `struct drm_device` 为 `GpgpuDevice` 成员变量（G1 infra prerequisite，由 Stage 1.2 closeout commit `e05e866` 完成）
+  - `plugins/gpu_driver/drv/gpgpu_device.h`: 引入 `linux_compat/drm/drm_device.h`，添加 `struct drm_device drv_dev` 成员
+  - `plugins/gpu_driver/drv/gpgpu_device.cpp`: 构造函数初始化 `drv_dev{/*dev_private=*/this, /*filelist=*/nullptr, /*file_count=*/0}`
+  - `plugins/gpu_driver/drv/gpu_drm_driver.cpp`: 移除本地 `struct drm_device` 定义 + 栈上 `drv_dev`；所有 handler 改用 `dev_private`（Linux `container_of` 标准 target）
+  - `test_uvm_drm_lifecycle_standalone` 已验证 G1 生命周期合规（`drm_device` 在 BO release 后仍然 addressable）
+  - 追溯锚点：3 区分架构 ② 可移植驱动层；`drm_device` 生命周期与 `GpgpuDevice` 绑定，保证 outlive 所有 `mmu_interval_notifier`
 
 ---
 
