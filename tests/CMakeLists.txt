@@ -122,6 +122,8 @@ set(CATCH2_TESTS
     test_drm_ioctl_standalone.cpp
     # Stage 1.2 — KFD-compat handler dispatch tests
     test_drm_kfd_handlers_standalone.cpp
+    # Stage 1.3 — UVM/HMM PoC (Launch Condition LC2: userfaultfd + mmap)
+    poc/test_userfaultfd_poc.cpp
 )
 
 # 定义 sim 相关测试的列表（链接 gpu_sim）

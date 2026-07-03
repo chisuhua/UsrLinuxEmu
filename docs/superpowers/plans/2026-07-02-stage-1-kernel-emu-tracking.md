@@ -38,10 +38,10 @@
 | **1.0** | PCIe 设备模拟 | ✅ Done | `openspec/changes/stage-1-0-pcie-emu/` | ✅ Done |
 | **1.1** | IOMMU + ATS | ✅ Done | `openspec/changes/2026-07-02-stage-1-1-iommu-ats/` (archived) | ✅ Done (40/40 tests pass, 0 HAL changes, all acceptance items verified) |
 | **1.2** | DRM 子集 | ✅ Done | `openspec/changes/archive/2026-07-02-stage-1-2-drm-subset/` | ✅ Done (52/52 tests pass, 0 HAL changes, all acceptance items verified) |
-| **1.3** | UVM/HMM | 📋 计划中 | `openspec/changes/stage-1-3-uvm-hmm/`（待创建）| ⏸️ Not Started |
+| **1.3** | UVM/HMM | 📝 In Progress | `openspec/changes/stage-1-3-uvm-hmm/` | 🟡 OpenSpec 已创建（4/4 artifact），实现待启动 |
 | **1.4** | 集成验证 | 📋 计划中 | `openspec/changes/stage-1-4-kfd-portability/`（待创建）| ⏸️ Not Started |
 
-**总体进度**：3/5 子阶段完成（3 个 OpenSpec change 待创建：1.3/1.4 + 1.0/1.1/1.2 已归档）
+**总体进度**：3/5 子阶段完成（1.0/1.1/1.2 已归档；1.3 OpenSpec change 已创建；2 个待创建/启动：1.4 + 1.3 实施）
 
 ---
 
@@ -428,12 +428,12 @@ openspec propose stage-1-3-uvm-hmm \
 
 ### Status
 
-- [ ] **1.2 已完成**（依赖前置）
-- [ ] **内部 PoC 先完成**（userfaultfd + mmap 共享触发场景，避免一上来铺全套，路线图 §5 缓解）
-- [ ] **OpenSpec change 已创建** (`openspec/changes/stage-1-3-uvm-hmm/`)
+- [x] **1.2 已完成**（依赖前置）—— `openspec/changes/archive/2026-07-02-stage-1-2-drm-subset/`（已归档，2026-07-02 验证）
+- [x] **内部 PoC 完成**（userfaultfd + mmap 共享触发场景，2026-07-03 TDD 完成，53/53 全绿）—— `tests/poc/test_userfaultfd_poc.cpp`
+- [x] **OpenSpec change 已创建** (`openspec/changes/stage-1-3-uvm-hmm/`) —— 2026-07-03 包含 proposal.md (75 行) + design.md (269 行) + tasks.md (154 行) + specs/uvm-hmm/spec.md (142 行)，共 640 行；`openspec validate` 通过
 - [ ] **变更提案已审批**
-- [ ] **Specs 已新增** (`openspec/specs/uvm-hmm/spec.md`)
-- [ ] **Tasks 已拆解**
+- [x] **Specs 已新增** (`openspec/changes/stage-1-3-uvm-hmm/specs/uvm-hmm/spec.md`) —— 8 个 ADDED Requirements + 11 个 Scenario
+- [x] **Tasks 已拆解** —— 15 个 task group，涵盖 PoC + 头文件 + 框架 + sim + uvm 条件性 + 边界契约 + HAL + errno + 兼容矩阵 + 测试 + CMake + 文档 + KFD PoC + 验收归档
 - [ ] **实现已完成**：
   - [ ] `mmu_notifier` 框架
   - [ ] HMM API 子集（`hmm_range_fault/register/unregister` + `struct hmm_range` + `struct hmm_mirror`）

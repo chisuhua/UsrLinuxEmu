@@ -31,6 +31,7 @@ add_library(kernel SHARED
     kernel/drm/drm_file.cpp
     kernel/drm/drm_prime.cpp
     kernel/drm/render_node.cpp
+    kernel/drm/errno_to_linux.cpp
 
 )
 

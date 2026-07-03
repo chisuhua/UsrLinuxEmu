@@ -46,15 +46,18 @@
 | [adr-034](adr-034-h7-deferred-registry.md) | **H-7 Deferred Registry**（3 owner-flagged upstream issues）| ✅ 已接受（先前 Deferred，H-3.6/3.7/3.8 全部修复）| 2026-06-23 |
 | [adr-035](adr-035-governance-policy.md) | **Architecture Governance Policy** | ✅ 已接受 | 2026-06-23 |
 | [adr-036](adr-036-three-way-separation.md) | **3 区分架构原则 (3-Way Architectural Separation)** | ✅ 已接受 | 2026-06-23 |
+| [adr-037](adr-037-render-node-permissions.md) | **VFS Device Permission Model (Render Node 权限分离)** | ✅ 已接受 | 2026-07-03 |
 
-## 状态分布总览（截至 2026-06-23）
+## 状态分布总览（截至 2026-07-03）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 30 | 001-013, 015, 016, 018-024, 027, 031-036 |
+| ✅ 已接受 | 31 | 001-013, 015, 016, 018-024, 027, 031-037 |
 | ⏸️ 显式 Deferred | 5 | 025, 026, 028-030 |
-| 🔄 提议中 | 1 | 011-014, (027 即将升 v1) |
-| **总计** | **36** | ADR-001 ~ ADR-036 |
+| 🔄 提议中 | 0 | — |
+| **总计** | **36** | ADR-001 ~ ADR-037 |
+
+> **2026-07-03 变更**：ADR-037 从 🔄 提议中 升 ✅ 已接受（Stage 1.2 closeout 同步，VFS-1~VFS-4 全部实现并测试通过；详见 `adr-037-render-node-permissions.md` §验收记录）。
 
 ## ADR 状态说明
 
@@ -156,6 +159,12 @@ adr-001 (用户态模拟)
             │
             └── adr-035 (Architecture Governance Policy) ✅
                     └── 元决策: 规范 ADR 治理规则本身
+
+    └── Stage 1.x 内核环境模拟 (2026-07-03, ✅ Done 3/5)
+            │
+            └── adr-037 (VFS Device Permission Model / Render Node 权限分离) ✅
+                    └── 关联: adr-019 (DRM/GEM/TTM 对齐), adr-035 (Governance)
+                            → Stage 1.2 closeout 同步接受（VFS-1~VFS-4 全实施，52/52 tests pass）
 ```
 
 ## 维护指南
@@ -182,7 +191,7 @@ adr-001 (用户态模拟)
 
 ---
 
-**最后更新**: 2026-06-26（H-3.8 完成—ADR-034 §Issue #1 → Accepted，H-7 deferred 3 issues 全部关闭）
+**最后更新**: 2026-07-03（Stage 1.2 closeout 同步接受 ADR-037；总 Accepted 数 30 → 31，Proposed 1 → 0）
 
 ## 编号 gap 治理（2026-06-16 → 2026-06-17）
 
