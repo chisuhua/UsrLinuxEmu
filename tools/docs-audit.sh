@@ -188,13 +188,15 @@ section_arch() {
     fi
 
     # 1.2 src/kernel cpp count
-    subsection "1.2 src/kernel cpp file count (doc says 14)"
+    # Baseline: 12 root + pcie/ (Stage 1.0: 4) + iommu/ (Stage 1.1: 8) + device/ (2) = 26
+    # This expectation must be re-baselined after each new kernel module addition.
+    subsection "1.2 src/kernel cpp file count (expected 26 post-Stage 1.1)"
     local count
     count=$(find "${REPO_ROOT}/src/kernel" -name "*.cpp" 2>/dev/null | wc -l | tr -d ' ')
-    if [ "${count}" -eq 14 ]; then
-        check_pass "src/kernel has ${count} cpp files (matches doc)"
+    if [ "${count}" -eq 26 ]; then
+        check_pass "src/kernel has ${count} cpp files (matches post-Stage 1.1 baseline)"
     else
-        check_warn "src/kernel has ${count} cpp files (doc claims 14)"
+        check_warn "src/kernel has ${count} cpp files (baseline 26; update after adding new kernel modules)"
     fi
 
     # 1.3 archive/openspec-deprecated-2026-06-15 should NOT exist
