@@ -114,6 +114,7 @@ set(CATCH2_TESTS
     # Stage 1.2 — DRM file + mode + ioctl (TDD)
     test_drm_file_standalone.cpp
     test_drm_file_lifecycle_standalone.cpp
+    test_drm_prime_lifecycle_standalone.cpp
     test_drm_mode_config_standalone.cpp
     test_drm_ioctl_standalone.cpp
 )
