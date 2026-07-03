@@ -235,29 +235,71 @@ openspec propose stage-1-2-drm-subset \
 **预估工作量**: 3-4 周（基础已就位，重点是增量）
 **优先级**: P0（KFD 移植的基础）
 **依赖**: 1.1 IOMMU group 拓扑完成
+**目标 LTS（锁定）**: **Linux 6.12 LTS**（盲点 5 决策；兼容矩阵评估 6.6 ↔ 6.12）
+**Oracle 评估（2026-07-02）**: **Conditional Go** —— 4 项决策全部 Recommended，启动前必须满足 4 条启动条件（见下文"Launch Conditions"）
+
+### Launch Conditions（启动前必须满足，引用 Oracle 2026-07-02 评估）
+
+- [ ] **C1**: `tests/test_iommu_emu_standalone` 100% 通过 + TaskRunner `tests/test_kfd_integration` 通过
+- [ ] **C2**: `openspec/changes/stage-1-2-drm-subset/.openspec.yaml` 的 `ABI变更: 否` + `编号静态化: 是` 字段验证通过
+- [ ] **C3**: amdkfd 单文件 PoC 在 Linux 6.12 LTS 环境编译通过（**warning ≤ 3**），artifacts 存 `openspec/evidence/amdkfd-poc-2026-07-XX/`（仅 .o/.log，不修改源码）
+- [ ] **C4**: 新增 HAL ops ≤ 2 个 且每 op 提供 **call trace + compile log** 证明（存入 `openspec/changes/stage-1-2-drm-subset/specs/hal-drm-ops-audit.md`）
+
+### Oracle 决策评估摘要
+
+| 决策 | 选项 | 推荐 | 缓解 |
+|------|------|------|------|
+| **D1** 重构粒度 | A. 保留 FileOperations + 内部重定向 drm_ioctl / B. 移除 FileOperations | **A** | gpgpu_device.cpp 保留 `ioctl()` stub 内部重定向 `drm_ioctl()`；新增 `errno_to_linux()` 映射层对标 KFD errno 语义 |
+| **D2** KFD 编号预留 | A. 1.2 阶段预留 / B. 1.4 阶段再添加 | **A** | TaskRunner 符号链接 CI 加 `diff` 脚本验证两端 `GPU_IOCTL_*` 编号一致 |
+| **D3** amdkfd PoC 时机 | A. 早期（task group 9）/ B. 全 task 后 | **A** | 1.2 task group 9 加 `amdkfd_single_file_poc` milestone，**2026-07-15 前**完成 |
+| **D4** HAL 扩展策略 | A. 条件性添加 / B. 全加 | **A** | 严守 ADR-023 的 11 ops 上限；每 op 必须 KFD 实际调用驱动 |
 
 ### Status
 
-- [ ] **1.1 已完成**（依赖前置）
-- [ ] **OpenSpec change 已创建** (`openspec/changes/stage-1-2-drm-subset/`)
-- [ ] **变更提案已审批**
-- [ ] **Specs 已新增** (`openspec/specs/drm-subset/spec.md`)
-- [ ] **Tasks 已拆解**
-- [ ] **5 个 KFD IOCTL 编号已在 SSOT 附录 A 预留**（避免 1.4 时再次同步）
+- [x] **1.1 已完成**（依赖前置，2026-07-02 验证）
+- [x] **目录骨架已创建** (`openspec/changes/stage-1-2-drm-subset/.openspec.yaml`，仅 schema 声明)
+- [x] **OpenSpec change 内容已填充** (`proposal.md` 63 行 + `design.md` 270 行 + `tasks.md` 159 行 + `specs/drm-subset/spec.md` 190 行，共 682 行；2026-07-02 完成)
+- [ ] **Launch Conditions C1-C4 全部满足**（见上方启动条件）
+- [ ] **Oracle 决策 D1-D4 已写入 design.md**（作为 Decision 章节）
+- [ ] **1.2/1.3 边界契约已签**（见下文"Sub-stage 1.2/1.3 Boundary Contract"）
+- [x] **5 个 KFD IOCTL 编号已在 SSOT 附录 A 预留**（避免 1.4 时再次同步）—— 2026-07-02 完成 B 选项：4 个新 IOCTL 已在 `gpu_ioctl.h` 预留（`0x44-0x47`），CREATE_QUEUE (0x40) 通过追加字段扩展（ABI 向后兼容），`scripts/check_gpu_ioctl_sync.sh` 验证 UsrLinuxEmu 与 TaskRunner 镜像双端 15 个 IOCTL 完全一致
 - [ ] **实现已完成**：
   - [ ] GEM object 完整生命周期（`drm_gem_object_init` / `handle_create` / refcount / release）
   - [ ] `drm_file` 抽象完整化
-  - [ ] `drm_prime.h` + `drm_file_operations.h` 按需补齐
+  - [ ] `drm_prime.h` + `drm_file_operations.h` 按需补齐（依赖 1.1 IOMMU group）
   - [ ] render node `/dev/dri/renderD128` 支持
-  - [ ] GpgpuDevice 从 `FileOperations` 改为嵌入 `struct drm_device`
+  - [ ] GpgpuDevice 从 `FileOperations` 改为嵌入 `struct drm_device`（**保留** `FileOperations` 入口，按 Oracle D1）
   - [ ] `drm_ioctl_desc[]` 扩展到 15+ 个 IOCTL
-- [ ] **HAL 扩展已决策**（`hal_drm_*` ops，**仅当 KFD 实际调用**）
+- [ ] **HAL 扩展已决策**（`hal_drm_*` ops，**仅当 KFD 实际调用**，按 Oracle D4 + ADR-027 spec-driven）
 - [ ] **测试通过**：
   - [ ] `tests/test_drm_gem_standalone`
-  - [ ] `tests/test_drm_ioctl_dispatch_standalone`
+  - [ ] `tests/test_drm_ioctl_dispatch_standalone`（**含 errno mapping 验证**，按盲点 3）
+  - [ ] `tests/test_render_node_standalone`（**含权限分离验证**，按盲点 4）
   - [ ] ASan 验证无引用计数泄漏
-- [ ] **真实 amdkfd 单文件 PoC 编译通过**（路线图 §1.2 验收第 1 条最高门槛）
+- [ ] **真实 amdkfd 单文件 PoC 编译通过**（Oracle D3，**Linux 6.12 LTS，warning ≤ 3**）
 - [ ] **验收清单全部勾选**
+
+### Sub-stage 1.2/1.3 Boundary Contract（盲点 1 关键约束）
+
+> **目的**：锁定 1.2 与 1.3 的边界契约，避免 1.2 实施决策反向破坏 1.3 的 mmu_notifier / `struct hmm_range` 生命周期管理。
+
+**接口契约（1.2 必须提供给 1.3）**：
+
+| 契约 | 1.2 必须保证 | 1.3 期望 |
+|------|-------------|---------|
+| `struct drm_device` 生命周期 | 与 `GpgpuDevice` 同生命周期（创建时 init，析构前 shutdown） | uvm module 持有 `drm_device*` 指针，整个设备存在期间有效 |
+| BO 引用计数 | `drm_gem_object` refcount 在 close(fd) 时全部 release | hmm_range 不会引用已 release 的 BO |
+| prime import buffer 释放顺序 | `dma_buf_unmap` → `dma_buf_detach` → `dma_buf_put`（对标 Linux 6.12） | mmu_notifier invalidate 在 `dma_buf_detach` 前完成 |
+| fence 触发时机 | GEM object release 前必须等待所有 fence signal | hmm_range fault 完成前不会 trigger GEM release |
+
+**强制验收（1.2 不能 close，必须等 1.3 一起 close）**：
+
+- [ ] **G1**: `tests/test_uvm_drm_lifecycle_standalone`（新增，1.2 创建骨架 + 1.3 完整化）—— 验证 BO 释放顺序契约
+- [ ] **G2**: `dma_buf_attach`/`detach` API 签名在 `include/linux_compat/drm/drm_prime.h` 与 Linux 6.12 ABI 一致（按盲点 2 待 librarian 结论补充具体差异点）
+- [ ] **G3**: 1.2 design.md "Decision D5: 1.2/1.3 边界契约" 章节明确列出 4 项接口契约
+- [ ] **G4**: 1.2 不得**预先**实现 1.3 的 mmu_notifier / hmm_range 代码（仅留接口边界，避免过早耦合）
+
+> **背景**：Oracle 评估盲点 1 —— "mmu_notifier + drm_device 生命周期耦合：1.2 的 `struct drm_device` 嵌入与 1.3 的 `struct hmm_range` 的生命周期管理是否冲突（如 BO 的释放时机）"
 
 ### Files to Create/Modify
 
@@ -265,33 +307,100 @@ openspec propose stage-1-2-drm-subset \
 - `src/kernel/drm/drm_gem.cpp`（GEM 对象完整生命周期）
 - `src/kernel/drm/drm_file.cpp`（`struct drm_file` 抽象）
 - `src/kernel/drm/drm_prime.cpp`（prime 路径）
-- `src/kernel/drm/render_node.cpp`（`/dev/dri/renderD128` 节点创建 + 权限分离）
+- `src/kernel/drm/render_node.cpp`（`/dev/dri/renderD128` 节点创建 + 权限分离，按盲点 4）
+- `src/kernel/drm/errno_to_linux.cpp`（**新增**，按 Oracle D1 缓解：errno 映射层对标 KFD errno 语义）
 - `include/linux_compat/drm/drm_prime.h`
 - `include/linux_compat/drm/drm_file_operations.h`
 - `include/linux_compat/drm/drm_mode_config.h`（基础结构占位）
 - `tests/test_drm_gem_standalone.cpp`
-- `tests/test_drm_ioctl_dispatch_standalone.cpp`
-- `tests/test_render_node_standalone.cpp`
+- `tests/test_drm_ioctl_dispatch_standalone.cpp`（**必须含 errno mapping 验证**，按盲点 3）
+- `tests/test_render_node_standalone.cpp`（**必须含权限分离验证**，按盲点 4）
+- `tests/test_uvm_drm_lifecycle_standalone.cpp`（**新增骨架**，1.3 完整化，按盲点 1 边界契约 G1）
+- `openspec/evidence/amdkfd-poc-2026-07-XX/`（**新增目录**，Oracle D3 缓解：PoC artifacts 存放）
 
 **Modify:**
 - `include/linux_compat/drm/drm_gem.h`（扩展为完整实现）
 - `include/linux_compat/drm/drm_ioctl.h`（扩展 ioctl 派发支持）
 - `plugins/gpu_driver/drv/gpu_drm_driver.cpp`（从 288 行扩展，覆盖全部 15+ IOCTL）
-- `plugins/gpu_driver/drv/gpgpu_device.cpp` + `gpgpu_device.h`（重构嵌入 `struct drm_device`，保留 System C 编号）
+- `plugins/gpu_driver/drv/gpgpu_device.cpp` + `gpgpu_device.h`（**保留** `FileOperations` 入口，内部重定向 `drm_ioctl()`，按 Oracle D1）
 - `plugins/gpu_driver/shared/gpu_ioctl.h`（新增 5 个 KFD ioctl 编号）
 - `docs/02_architecture/post-refactor-architecture.md`（附录 A 更新 SSOT）
+- `.github/workflows/cmake-multi-platform.yml`（**新增** —— TaskRunner 符号链接 `diff` 脚本验证 `GPU_IOCTL_*` 编号一致性，按 Oracle D2 缓解）
 
 ### Acceptance Checklist
 
 引用 [stage-1-kernel-emu.md §子阶段 1.2 验收](../roadmap/stage-1-kernel-emu.md)：
 
-- [ ] 驱动的 .c 文件能直接拷贝到 `drivers/gpu/xxx/` 下编译通过（Linux 6.x LTS 环境）
+**路线图 §1.2 验收 7 条**：
+
+- [ ] 驱动的 .c 文件能直接拷贝到 `drivers/gpu/xxx/` 下编译通过（**Linux 6.12 LTS**，warning ≤ 3）
 - [ ] 仅 `#include` 路径调整需要改（`linux_compat/drm/*` → `<drm/*.h>`），逻辑零修改
 - [ ] `drm_ioctl_desc[]` 表与 ioctls 数组一一对应
 - [ ] GEM 引用计数与 release 路径无泄漏（AddressSanitizer 验证）
-- [ ] `tests/test_drm_gem_standalone` + `tests/test_drm_ioctl_dispatch_standalone` 全绿
-- [ ] render node 在 `/dev/dri/renderD128` 正确创建并可访问
-- [ ] KFD 5 个 ioctl 编号已在 SSOT 附录 A 预留
+- [ ] `tests/test_drm_gem_standalone` + `tests/test_drm_ioctl_dispatch_standalone` + `tests/test_render_node_standalone` 全绿
+- [ ] render node 在 `/dev/dri/renderD128` 正确创建并可访问（**权限分离对标 Linux udev**）
+- [x] KFD 5 个 ioctl 编号已在 SSOT 附录 A 预留（`gpu_ioctl.h` + TaskRunner 镜像双端 15 IOCTL 同步，2026-07-02 完成）
+
+**Oracle 评估启动条件（4 条）**：
+
+- [ ] **C1**: `tests/test_iommu_emu_standalone` 100% 通过 + TaskRunner `tests/test_kfd_integration` 通过
+- [ ] **C2**: `.openspec.yaml` 标注 `ABI变更: 否` + `编号静态化: 是`，CI 双端 `diff` 脚本通过
+- [ ] **C3**: amdkfd 单文件 PoC 在 Linux 6.12 LTS 编译通过（warning ≤ 3），artifacts 存 `openspec/evidence/amdkfd-poc-2026-07-XX/`
+- [ ] **C4**: 新增 HAL ops ≤ 2 个，每 op 含 call trace + compile log 证明（存入 `specs/hal-drm-ops-audit.md`）
+
+**1.2/1.3 边界契约（4 条 Oracle 盲点 1）**：
+
+- [ ] **G1**: `tests/test_uvm_drm_lifecycle_standalone`（1.2 创建骨架 + 1.3 完整化）
+- [ ] **G2**: `dma_buf_dynamic_attach/detach/map_attachment/unmap_attachment/pin/unpin` 在 `include/linux_compat/drm/drm_prime.h` 与 Linux 6.12 ABI 一致（**关键修正**：amdgpu **不调用** `dma_buf_attach()`，而是用 `dma_buf_dynamic_attach()`，见下方"Blind Spot 2 结论"）
+- [ ] **G3**: design.md "Decision D5: 1.2/1.3 边界契约" 章节列出 4 项接口契约
+- [ ] **G4**: 1.2 不预先实现 mmu_notifier / hmm_range 代码
+
+> **背景**：Oracle 评估盲点 1 —— "mmu_notifier + drm_device 生命周期耦合：1.2 的 `struct drm_device` 嵌入与 1.3 的 `struct hmm_range` 的生命周期管理是否冲突（如 BO 的释放时机）"
+
+### Blind Spot 2 结论（Linux 6.12 dma-buf 语义，librarian 2026-07-02 验证）
+
+| 项目 | 结论 | 设计影响 |
+|------|------|---------|
+| `dma_buf_attach()` 签名 6.6 ↔ 6.12 | ✅ **无变化** | stub 即可 |
+| **amdgpu 实际调用** | ❌ **不调用 `dma_buf_attach()`**，改用 `dma_buf_dynamic_attach()`（`amdgpu_dma_buf.c:570`） | **`drm_prime.h` 必须实现 `dma_buf_dynamic_attach`**，非 `dma_buf_attach` |
+| `struct dma_buf.list_node` 6.6 ↔ 6.12 | ⚠️ **条件化**：`#if IS_ENABLED(CONFIG_DEBUG_FS)` | 仅当 `CONFIG_DEBUG_FS=n` 时影响大小；UsrLinuxEmu 编译默认开 debugfs，**影响可控** |
+| `struct dma_buf_ops` 强制项 | `map_dma_buf`/`unmap_dma_buf`/`release`（3 项） | 必须实现，不可返回 -ENOSYS |
+| `dma_buf_export` 验证 | `map_dma_buf` 必须非 NULL 且返回有效 `sg_table` | IOMMU `map_page` 可旁路（恒等映射），但 `map_dma_buf` 必须有效 |
+| **amdgpu 实际依赖 API 清单** | `dma_buf_dynamic_attach/detach/map_attachment/unmap_attachment/pin/unpin` + `struct dma_buf_attach_ops`（`allow_peer2peer` + `move_notify`） | `drm_prime.h` 至少实现这 6 函数 + 1 结构体 |
+
+> **行动**：1.2 design.md 必须将 `drm_prime.h` 实现目标从"`dma_buf_attach/detach`"修正为"`dma_buf_dynamic_attach/detach/map_attachment/unmap_attachment/pin/unpin` + `struct dma_buf_attach_ops`"。
+
+**错误码语义端到端一致性（盲点 3）**：
+
+- [ ] `test_drm_ioctl_dispatch_standalone` 含 errno mapping test：覆盖 `-EACCES` / `-EFAULT` / `-ENOMEM` / `-EREMOTEIO` / `-ENOSPC` 在 DRM IOCTL 路径的统一映射
+- [ ] UsrLinuxEmu 模拟器返回的 errno 与 Linux 6.12 ABI 一致（按 ADR-027 §Decision 3）
+
+**Linux 6.6 vs 6.12 兼容矩阵（盲点 5）**：
+
+- [ ] `docs/05-advanced/drm-compat-matrix.md`（**新增**）记录 Linux 6.6 LTS ↔ 6.12 LTS 在 DRM 子集的 API 差异：
+  - struct layout 变化
+  - 函数签名变化
+  - 新增 required ops
+- [ ] amdkfd 源码 **取自 Linux 6.12 LTS**（除非兼容矩阵显示 6.6 必须）
+- [ ] 兼容矩阵报告中标注每个差异点的 UsrLinuxEmu 模拟策略
+
+**render node 权限与 device node（盲点 4）**：
+
+> **关键发现（explore 2026-07-02）**：UsrLinuxEmu 现有 VFS **零权限基础设施**。Device 结构体只有 `name/dev_id/plugin_handle/fops` 4 个字段；VFS::open() 是纯字符串查找，无任何 `mode_t`/`uid_t`/`gid_t` 检查。整个代码库 grep 0666/0660/chmod/chown/i_mode 全部零命中。`DRM_NODE_RENDER=2` 已定义但无使用站点。**结论：从头构建。**
+
+| 任务 | 范围 | 设计影响 |
+|------|------|---------|
+| **VFS-1**: `include/kernel/device/device.h` 扩展 `Device` 结构体：新增 `mode_t mode`、`uid_t uid`、`gid_t gid` 字段 | ① | 字段存在但**不强执行**（UsrLinuxEmu 单用户） |
+| **VFS-2**: `src/kernel/vfs.cpp` 路径解析扩展：支持多段路径 `/dev/dri/renderD128`（嵌套子目录） | ① | 当前 `open()` 仅剥离 `/dev/` 前缀并精确匹配 |
+| **VFS-3**: `VFS::open()` 添加 mode 检查 hook（在 `fops->open()` 前调用，可 bypass） | ① | 编译时结构正确性 + 未来强执行扩展点 |
+| **VFS-4**: 新增 `VFS::chmod()`/`chown()` 方法（接口存在 + no-op 实现） | ① | ABI 完整 + KFD 可编译调用 |
+| **ADR-37**: 新增 `docs/00_adr/adr-037-render-node-permissions.md`（首个权限 ADR）| 治理 | 明确 primary vs render 节点分离语义 |
+
+- [ ] **VFS-1** 至 **VFS-4** 全部实现（编译通过 + 类型正确）
+- [x] **ADR-37** 已创建并 Approved ([adr-037-render-node-permissions.md](../00_adr/adr-037-render-node-permissions.md)，2026-07-02 Proposed，5 Decision：Device 扩展 + 多段路径 + 权限 hook + chmod/chown + 默认模式)
+- [ ] `/dev/dri/renderD128` mode = 0666，`/dev/dri/card0` mode = 0666（与 Linux udev 默认一致）
+- [ ] `test_render_node_standalone` 验证两类节点都可 `open()` 成功
+- [ ] VFS `open()` 路径已记录权限检查位置（即便当前 bypass，记录未来扩展点）
 
 ### Trigger Next Change
 
@@ -575,6 +684,11 @@ include/linux_compat/hmm.h  # 1.3
 | 日期 | 版本 | 变更 |
 |------|------|------|
 | 2026-07-02 | v1.0 | 初版：5 子阶段追踪 plan + checkbox 状态 + OpenSpec change 触发机制 |
+| 2026-07-02 | v1.1 | **Stage 1.2 启动前置增强**（全面更新追踪文档 + 处理全部 5 个盲点）：<br>• Oracle 评估（2026-07-02）：4 决策全部 Recommended + Conditional Go<br>• 启动条件 C1-C4 + 1.2/1.3 边界契约 G1-G4（盲点 1）<br>• errno mapping test 设计（盲点 3）<br>• Linux 6.12 LTS 锁定 + 6.6 ↔ 6.12 兼容矩阵验收（盲点 5）<br>• amdkfd PoC artifacts 路径 `openspec/evidence/amdkfd-poc-2026-07-XX/`（Oracle D3 缓解）<br>• `errno_to_linux.cpp` 映射层（Oracle D1 缓解）<br>• TaskRunner CI `diff` 脚本（Oracle D2 缓解）<br>• `hal-drm-ops-audit.md` 审计（Oracle D4 缓解）<br>• render node 权限验收（盲点 4）<br>• 待 librarian/explore 完成后补充 dma_buf_attach / VFS 权限具体结论 |
+| 2026-07-02 | v1.2 | **盲点 2 + 盲点 4 结论整合**：<br>**盲点 2（librarian 2026-07-02 验证）**：<br>• `dma_buf_attach()` 签名 6.6 ↔ 6.12 无变化<br>• **关键修正**：amdgpu **不调用** `dma_buf_attach()`，改用 `dma_buf_dynamic_attach()`（`amdgpu_dma_buf.c:570`）<br>• `struct dma_buf.list_node` 在 6.12 受 `CONFIG_DEBUG_FS` 条件化（默认开 debugfs，影响可控）<br>• amdgpu 实际依赖 API：`dma_buf_dynamic_attach/detach/map_attachment/unmap_attachment/pin/unpin` + `struct dma_buf_attach_ops`（`allow_peer2peer` + `move_notify`）<br>• `map_dma_buf` 必须返回有效 `sg_table`，**不能** 返回 -ENOSYS；但 IOMMU `map_page` 可旁路（恒等映射）<br>• 行动：`drm_prime.h` 实现目标从 `dma_buf_attach/detach` 修正为 `dma_buf_dynamic_attach/detach/map_attachment/unmap_attachment/pin/unpin + struct dma_buf_attach_ops`<br>**盲点 4（explore 2026-07-02 验证）**：<br>• UsrLinuxEmu 现有 VFS **零权限基础设施**（grep 0666/chmod/chown/i_mode 全部零命中）<br>• `Device` 结构体只有 4 个字段（`name/dev_id/plugin_handle/fops`），无 `mode_t`/`uid_t`/`gid_t`<br>• `VFS::open()` 纯字符串查找，无任何权限检查<br>• 无 `/dev/dri/` 多级路径支持<br>• `DRM_NODE_RENDER=2` 已定义但**未使用**<br>• 31 份 ADR 中**零份**涉及设备权限<br>• **结论：从头构建** —— 1.2 需新增 VFS-1~VFS-4（Device 字段 + 路径解析 + mode 检查 hook + chmod/chown 接口）+ ADR-37（首个权限 ADR） |
+| 2026-07-02 | v1.3 | **G1 修复 + ADR-37 创建 + Oracle 审查**：<br>• ✅ G1：`include/linux_compat/types.h` 已标注 `mode_t`/`uid_t`/`gid_t`（来自 `<sys/types.h>` 透传，编译验证通过）<br>• ✅ ADR-37（`docs/00_adr/adr-037-render-node-permissions.md`）已创建（5 Decision）<br>• ✅ Oracle 审查（2026-07-02）：ADR-37 可行，确认 4 缺口（G1-G4），推荐立即进入 VFS-1~VFS-4<br>• G2-G4 待办：DRM_NODE_RENDER 注册、access() 语义、DRM ioctl 权限（Issue #38） |
+| 2026-07-02 | v1.4 | **VFS-1~VFS-4 实施**：<br>• VFS-1：`Device` 结构体扩展 `mode_t mode`/`uid_t uid`/`gid_t gid`，构造函数默认值 0666/0/0<br>• VFS-2：新增 `tests/test_vfs_path_standalone.cpp`，验证多段路径 `/dev/dri/renderD128`<br>• VFS-3：open() 插入 `check_permission()` hook（no-op，预留硬扩展点）<br>• VFS-4：实现 `chmod()`/`chown()`/`fchmod()`/`access()` POSIX 接口<br>• 测试：41/41 全绿（含新 `test_vfs_path_standalone`） |
+| 2026-07-02 | v1.5 | **AMD/NVIDIA 驱动 IOCTL 差异调研 + 选项 C (amdkfd PoC) + 选项 B (KFD IOCTL 预留)**：<br>• 调研：AMD KFD 与 NVIDIA open DRM 在 DRM 层均为 `DRM_IOCTL_DEF_DRV` + per-struct 模式，**框架可复用**；NVIDIA `NV_ESC_*` escape 路径在 DRM 外部，不在 Stage 1.2 范围<br>• 选项 C：`kfd_queue.c` 从 Linux 6.12 LTS 拷贝到 `plugins/gpu_driver/drv/kfd/`，逻辑零修改（仅 `#include` 调整）<br>  ◦ 新增 5 个最小 compat 头文件：`linux_compat/slab.h`/`list.h` + KFD 本地 stub `kfd_priv.h`/`kfd_topology.h`/`kfd_svm.h`<br>  ◦ **PoC 结果：errors=0, warnings=2（≤3）**，41/41 既有测试零回归<br>  ◦ Artifacts：`openspec/evidence/amdkfd-poc-2026-07-02/{kfd_queue.o,build.log}`<br>• 选项 B：`gpu_ioctl.h` 新增 5 个 KFD IOCTL（`0x44-0x47`），CREATE_QUEUE (0x40) 通过追加字段扩展（ABI 向后兼容）<br>  ◦ 新增 `scripts/check_gpu_ioctl_sync.sh`：自动验证 UsrLinuxEmu 与 TaskRunner 镜像双端 IOCTL 同步<br>  ◦ 当前双端 15 个 IOCTL 同步确认（diff=0） |
 
 ---
 
