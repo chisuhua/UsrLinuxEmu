@@ -28,6 +28,19 @@
 #define DRM_IOCTL_MAP_BO GPU_IOCTL_MAP_BO
 #define DRM_IOCTL_PUSHBUFFER_SUBMIT_BATCH GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH
 #define DRM_IOCTL_WAIT_FENCE GPU_IOCTL_WAIT_FENCE
+#define DRM_IOCTL_REGISTER_MMU_EVENT_CB GPU_IOCTL_REGISTER_MMU_EVENT_CB
+#define DRM_IOCTL_REGISTER_FIRMWARE_CB GPU_IOCTL_REGISTER_FIRMWARE_CB
+#define DRM_IOCTL_CREATE_VA_SPACE GPU_IOCTL_CREATE_VA_SPACE
+#define DRM_IOCTL_DESTROY_VA_SPACE GPU_IOCTL_DESTROY_VA_SPACE
+#define DRM_IOCTL_REGISTER_GPU GPU_IOCTL_REGISTER_GPU
+#define DRM_IOCTL_CREATE_QUEUE GPU_IOCTL_CREATE_QUEUE
+#define DRM_IOCTL_DESTROY_QUEUE GPU_IOCTL_DESTROY_QUEUE
+#define DRM_IOCTL_MAP_QUEUE_RING GPU_IOCTL_MAP_QUEUE_RING
+#define DRM_IOCTL_QUERY_QUEUE GPU_IOCTL_QUERY_QUEUE
+#define DRM_IOCTL_GET_PROCESS_APERTURE GPU_IOCTL_GET_PROCESS_APERTURE
+#define DRM_IOCTL_UPDATE_QUEUE GPU_IOCTL_UPDATE_QUEUE
+#define DRM_IOCTL_MAP_MEMORY GPU_IOCTL_MAP_MEMORY
+#define DRM_IOCTL_UNMAP_MEMORY GPU_IOCTL_UNMAP_MEMORY
 
 /* User-space drm_device simulation — minimal struct for handler access.
  * In kernel this is the real struct drm_device; here we embed a device pointer.
@@ -253,6 +266,26 @@ static long gpu_ioctl_wait_fence(struct drm_device* dev, void* data, struct drm_
   return 0;
 }
 
+/* ── Stage 1.2 new IOCTL handler stubs (minimal, full impl in later tasks) ── */
+
+static long gpu_ioctl_stub(struct drm_device*, void*, struct drm_file*) { return 0; }
+
+#define STUB_HANDLER(name) static long name(struct drm_device* d, void* p, struct drm_file* f) { (void)d;(void)p;(void)f; return 0; }
+
+STUB_HANDLER(gpu_ioctl_register_mmu_cb)
+STUB_HANDLER(gpu_ioctl_register_firmware_cb)
+STUB_HANDLER(gpu_ioctl_create_va_space)
+STUB_HANDLER(gpu_ioctl_destroy_va_space)
+STUB_HANDLER(gpu_ioctl_register_gpu)
+STUB_HANDLER(gpu_ioctl_create_queue)
+STUB_HANDLER(gpu_ioctl_destroy_queue)
+STUB_HANDLER(gpu_ioctl_map_queue_ring)
+STUB_HANDLER(gpu_ioctl_query_queue)
+STUB_HANDLER(gpu_ioctl_get_process_aperture)
+STUB_HANDLER(gpu_ioctl_update_queue)
+STUB_HANDLER(gpu_ioctl_map_memory)
+STUB_HANDLER(gpu_ioctl_unmap_memory)
+
 /* ── DRM ioctl table ─────────────────────────────────────────────────────── */
 
 static const struct drm_ioctl_desc gpu_ioctls[] = {
@@ -262,6 +295,19 @@ static const struct drm_ioctl_desc gpu_ioctls[] = {
     DRM_IOCTL_DEF_DRV(MAP_BO, gpu_ioctl_map_bo, DRM_RENDER_ALLOW),
     DRM_IOCTL_DEF_DRV(PUSHBUFFER_SUBMIT_BATCH, gpu_ioctl_pushbuffer, DRM_RENDER_ALLOW),
     DRM_IOCTL_DEF_DRV(WAIT_FENCE, gpu_ioctl_wait_fence, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(REGISTER_MMU_EVENT_CB, gpu_ioctl_register_mmu_cb, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(REGISTER_FIRMWARE_CB, gpu_ioctl_register_firmware_cb, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(CREATE_VA_SPACE, gpu_ioctl_create_va_space, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(DESTROY_VA_SPACE, gpu_ioctl_destroy_va_space, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(REGISTER_GPU, gpu_ioctl_register_gpu, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(CREATE_QUEUE, gpu_ioctl_create_queue, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(DESTROY_QUEUE, gpu_ioctl_destroy_queue, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(MAP_QUEUE_RING, gpu_ioctl_map_queue_ring, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(QUERY_QUEUE, gpu_ioctl_query_queue, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(GET_PROCESS_APERTURE, gpu_ioctl_get_process_aperture, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(UPDATE_QUEUE, gpu_ioctl_update_queue, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(MAP_MEMORY, gpu_ioctl_map_memory, DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(UNMAP_MEMORY, gpu_ioctl_unmap_memory, DRM_RENDER_ALLOW),
 };
 
 constexpr size_t kNumIoctls = sizeof(gpu_ioctls) / sizeof(gpu_ioctls[0]);
