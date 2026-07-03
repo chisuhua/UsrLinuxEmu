@@ -23,4 +23,8 @@ target_link_libraries(gpu_drv PUBLIC
     kernel
     gpu_hal
     gpu_sim
+    gpu_kfd
 )
+
+# KFD PoC C library (Stage 1.2)
+add_subdirectory(kfd)
