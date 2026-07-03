@@ -115,6 +115,7 @@ set(CATCH2_TESTS
     test_drm_file_standalone.cpp
     test_drm_file_lifecycle_standalone.cpp
     test_drm_prime_lifecycle_standalone.cpp
+    test_render_node_standalone.cpp
     test_drm_mode_config_standalone.cpp
     test_drm_ioctl_standalone.cpp
 )
