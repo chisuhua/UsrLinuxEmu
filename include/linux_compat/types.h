@@ -86,3 +86,14 @@ static inline bool IS_ERR_OR_NULL(const void *ptr) {
 #define ENOMEM 12 /* Out of memory */
 #define EFAULT 14 /* Bad address */
 #define EINVAL 22 /* Invalid argument */
+
+// ============================================================
+// POSIX 权限类型（Stage 1.2: VFS Device 权限模型）
+// 来源：<sys/types.h>（已在第 3 行引入）
+// 用途：Device 结构体的 mode/uid/gid 字段 + VFS::chmod()/chown()/access()
+// ============================================================
+// mode_t  — 文件模式字（如 0666），来自 <sys/types.h> → __mode_t
+// uid_t   — 用户 ID，来自 <sys/types.h> → __uid_t
+// gid_t   — 组 ID，来自 <sys/types.h> → __gid_t
+// 注意：这些类型不需要额外 typedef，<sys/types.h> 已提供。
+//       此处注释仅用于文档说明，确保编译器和人类都能发现它们。
