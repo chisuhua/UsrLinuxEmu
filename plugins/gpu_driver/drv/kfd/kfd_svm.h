@@ -1,0 +1,47 @@
+#pragma once
+// Stage 1.2 PoC: minimal KFD SVM stub for kfd_queue.c compilation
+// Source: linux/drivers/gpu/drm/amd/amdkfd/kfd_svm.h (Linux 6.12)
+
+#ifdef __cplusplus
+#include <cstdint>
+#else
+#include <stdint.h>
+#endif
+#include "linux_compat/list.h"
+
+typedef uint32_t u32;
+typedef uint64_t u64;
+
+#ifndef CONFIG_HSA_AMD_SVM
+#define CONFIG_HSA_AMD_SVM 0
+#endif
+
+#ifndef IS_ENABLED
+#define IS_ENABLED(config) (config)
+#endif
+
+struct mutex { int dummy; };
+struct rb_root { void *rb_node; };
+struct interval_tree_node { unsigned long start, last; };
+
+struct svm_range_list {
+  struct mutex lock;
+  struct rb_root objects;
+  struct list_head list;
+  struct list_head deferred_range_list;
+};
+
+struct svm_range {
+  struct interval_tree_node it_node;
+  struct list_head update_list;
+  struct list_head child_list;
+  u64 start;
+  u64 last;
+  unsigned long *bitmap_access;
+  unsigned long *bitmap_aip;
+  u32 flags;
+  bool mapped_to_gpu;
+  int queue_refcount;
+};
+
+struct svm_range *svm_range_from_addr(struct svm_range_list *svms, u64 addr, void *unused);
