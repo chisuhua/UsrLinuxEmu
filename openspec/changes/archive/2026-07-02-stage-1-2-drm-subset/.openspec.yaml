@@ -1,5 +1,7 @@
 schema: spec-driven
 created: 2026-07-02
+archived: 2026-07-03
+status: ARCHIVED
 target_lts: linux-6.12
 launch_conditions_met:
   C1_iommu_emu_standalone_green: true
