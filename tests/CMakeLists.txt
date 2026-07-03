@@ -107,6 +107,8 @@ set(CATCH2_TESTS
     test_ats_protocol_standalone.cpp
     # Stage 1.2 — VFS path resolution (see openspec/changes/stage-1-2-drm-subset/)
     test_vfs_path_standalone.cpp
+    # Stage 1.2 — DRM GEM lifecycle (TDD)
+    test_drm_gem_standalone.cpp
 )
 
 # 定义 sim 相关测试的列表（链接 gpu_sim）
