@@ -1,0 +1,10 @@
+schema: spec-driven
+created: 2026-07-02
+target_lts: linux-6.12
+launch_conditions_met:
+  C1_iommu_emu_standalone_green: true
+  C2_gpu_ioctl_sync_check_passed: true
+  C3_amdkfd_single_file_poc_complete: true
+  C4_hal_drm_ops_audit_zero: true
+abi_change: false
+number_reservation: static

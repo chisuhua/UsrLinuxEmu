@@ -1,0 +1,8 @@
+plugins/gpu_driver/drv/kfd/kfd_queue.c: In function ‘kfd_queue_acquire_buffers’:
+plugins/gpu_driver/drv/kfd/kfd_queue.c:313:9: warning: implicit declaration of function ‘kfd_queue_unref_bo_vas’ [-Wimplicit-function-declaration]
+  313 |         kfd_queue_unref_bo_vas(pdd, properties);
+      |         ^~~~~~~~~~~~~~~~~~~~~~
+plugins/gpu_driver/drv/kfd/kfd_queue.c:314:9: warning: implicit declaration of function ‘kfd_queue_release_buffers’; did you mean ‘kfd_queue_acquire_buffers’? [-Wimplicit-function-declaration]
+  314 |         kfd_queue_release_buffers(pdd, properties);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~
+      |         kfd_queue_acquire_buffers
