@@ -29,6 +29,7 @@ add_library(kernel SHARED
     # Stage 1.2 — DRM GEM lifecycle (TDD)
     kernel/drm/drm_gem.cpp
     kernel/drm/drm_file.cpp
+    kernel/drm/drm_prime.cpp
 
 )
 
