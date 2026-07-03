@@ -45,7 +45,8 @@ constexpr u64 GPFIFO_BASE = 0x10000000ULL;
 constexpr size_t GpgpuDevice::kNumIoctls;
 
 GpgpuDevice::GpgpuDevice(struct gpu_hal_ops* hal)
-    : name("gpgpu0"), hal_(hal), handles_(), bo_map_() {
+    : name("gpgpu0"), hal_(hal), drv_dev{/*dev_private=*/this, /*filelist=*/nullptr, /*file_count=*/0},
+      handles_(), bo_map_() {
   registered_kernels_["simple_kernel"] = 0;
   registered_kernels_["matmul_kernel"] = 1;
 }

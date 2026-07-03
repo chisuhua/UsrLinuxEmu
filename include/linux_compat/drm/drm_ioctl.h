@@ -76,12 +76,11 @@ static inline int drm_ioctl_permit(unsigned int flags, unsigned int cmd)
  * In user-space sim, errno values are the native libc errno constants,
  * which are POSIX and match Linux.  This function is a 1:1 identity
  * for the standard codes and a re-encoder for non-POSIX codes.
+ *
+ * Implementation lives in `src/kernel/drm/errno_to_linux.cpp` (linked
+ * into the kernel SHARED library so that plugins and tests can both
+ * call it without including the implementation inline).
  */
-static inline int errno_to_linux(int err)
-{
-  if (err >= 0) return err;         /* already a positive code */
-  /* negate to get positive errno */
-  return -err;
-}
+int errno_to_linux(int err);
 
 #endif

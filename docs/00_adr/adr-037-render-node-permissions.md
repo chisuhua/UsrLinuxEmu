@@ -1,6 +1,6 @@
 # ADR-037: VFS Device Permission Model (Render Node 权限分离)
 
-**状态**: 🔄 提议中 (Proposed)
+**状态**: ✅ 已接受 (Accepted)
 
 **日期**: 2026-07-02
 
@@ -10,9 +10,11 @@
 
 **关联 ADR**: ADR-035 (Governance Policy), ADR-036 (3-Way Separation), ADR-023 (HAL Interface)
 
-**关联 Change**: `openspec/changes/stage-1-2-drm-subset/`
+**关联 Change**: `openspec/changes/archive/2026-07-02-stage-1-2-drm-subset/`
 
 **追踪文档**: `docs/superpowers/plans/2026-07-02-stage-1-kernel-emu-tracking.md` §Sub-stage 1.2
+
+**接受日期**: 2026-07-03（Stage 1.2 closeout 同步接受，VFS-1~VFS-4 全部实现并测试通过）
 
 ---
 
@@ -175,7 +177,22 @@ VFS-4: chmod/chown/fchmod/access 接口（决策 4）
 
 ---
 
+## 验收记录（2026-07-03，Stage 1.2 closeout 同步）
+
+| 决策 | 实施状态 | 验证证据 |
+|------|---------|---------|
+| 决策 1（Device 扩展） | ✅ 已实施 | `include/kernel/device/device.h` 含 `mode_t mode` / `uid_t uid` / `gid_t gid` 字段；现有 41 既有测试零回归 |
+| 决策 2（多段路径） | ✅ 已实施 | `src/kernel/vfs.cpp` 支持 `dri/renderD128` 多段路径；`tests/test_vfs_path_standalone` 通过 |
+| 决策 3（权限 hook） | ✅ 已实施 | `VFS::check_permission()` 编译通过 + open() 行为无变化 |
+| 决策 4（chmod/chown/fchmod/access） | ✅ 已实施 | `VFS::chmod()` / `VFS::chown()` / `VFS::access()` 方法可调用（no-op 强校验） |
+| 决策 5（默认 0666） | ✅ 已实施 | `/dev/dri/renderD128` + `/dev/dri/card0` + `/dev/kfd` 三个节点 mode=0666，uid/gid=0/0，匹配 Linux udev 默认 |
+
+**总体验收**：52/52 测试全绿（含 `tests/test_render_node_standalone`），0 HAL ops 越界，SSOT §1.10 已同步记录 DRM Subset Layer 实施细节。
+
+---
+
 **维护者**: UsrLinuxEmu Architecture Team
 **创建日期**: 2026-07-02
-**对应 Change**: `openspec/changes/stage-1-2-drm-subset/`
+**接受日期**: 2026-07-03
+**对应 Change**: `openspec/changes/archive/2026-07-02-stage-1-2-drm-subset/`
 **对应追踪**: `docs/superpowers/plans/2026-07-02-stage-1-kernel-emu-tracking.md` §Sub-stage 1.2

@@ -9,6 +9,7 @@
 #include "kernel/file_ops.h"
 #include "shared/gpu_types.h"
 #include "shared/gpu_queue.h"
+#include "linux_compat/drm/drm_device.h"
 
 struct gpu_hal_ops;
 
@@ -39,6 +40,17 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   static constexpr off_t DOORBELL_MMAP_OFFSET = 0x20000;
 
   struct gpu_hal_ops* hal_;
+
+  /** DRM device context (per Decision 1 / task 3.3).
+   *
+   * Embeds the Linux 6.12 LTS ABI `struct drm_device` from
+   * linux_compat/drm/drm_device.h.  `dev_private` is the standard
+   * driver-private pointer (analogous to a Linux `container_of` target).
+   * uvm module (Stage 1.3) will hold a pointer to this for hmm_range
+   * fault handling, so it MUST outlive any BO release.
+   */
+  struct drm_device drv_dev;
+
   class HandleManager {
    public:
     u32 allocate();

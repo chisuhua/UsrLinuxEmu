@@ -42,12 +42,10 @@
 #define DRM_IOCTL_MAP_MEMORY GPU_IOCTL_MAP_MEMORY
 #define DRM_IOCTL_UNMAP_MEMORY GPU_IOCTL_UNMAP_MEMORY
 
-/* User-space drm_device simulation — minimal struct for handler access.
- * In kernel this is the real struct drm_device; here we embed a device pointer.
- * DRM handlers are static but need access to GpgpuDevice instance — use void* dev_ptr. */
-struct drm_device {
-  void* device_ptr;  /* points to GpgpuDevice */
-};
+/* Use the proper Linux 6.12 LTS ABI `struct drm_device` from
+ * linux_compat/drm/drm_device.h (transitively included via gpgpu_device.h).
+ * Handlers access the GpgpuDevice via `dev->dev_private` (standard Linux
+ * `container_of` target). */
 
 constexpr u32 VENDOR_SIMULATED = 0x1000;
 constexpr u32 DEVICE_SIMULATED_V1 = 0x1001;
@@ -61,7 +59,7 @@ constexpr u32 SIMULATED_CACHE_LINE_SIZE = 64;
 /* ── Individual ioctl handlers (drm_ioctl_t signature) ─────────────────────── */
 
 static long gpu_ioctl_get_device_info(struct drm_device* dev, void* data, struct drm_file*) {
-  auto* self = static_cast<GpgpuDevice*>(dev->device_ptr);
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* info = static_cast<struct gpu_device_info*>(data);
   if (!info)
     return -EFAULT;
@@ -82,7 +80,7 @@ static long gpu_ioctl_get_device_info(struct drm_device* dev, void* data, struct
 }
 
 static long gpu_ioctl_alloc_bo(struct drm_device* dev, void* data, struct drm_file*) {
-  auto* self = static_cast<GpgpuDevice*>(dev->device_ptr);
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_alloc_bo_args*>(data);
   if (!args)
     return -EFAULT;
@@ -118,7 +116,7 @@ static long gpu_ioctl_alloc_bo(struct drm_device* dev, void* data, struct drm_fi
 }
 
 static long gpu_ioctl_free_bo(struct drm_device* dev, void* data, struct drm_file*) {
-  auto* self = static_cast<GpgpuDevice*>(dev->device_ptr);
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto handle = *static_cast<u32*>(data);
   if (handle == 0)
     return -EINVAL;
@@ -140,7 +138,7 @@ static long gpu_ioctl_free_bo(struct drm_device* dev, void* data, struct drm_fil
 }
 
 static long gpu_ioctl_map_bo(struct drm_device* dev, void* data, struct drm_file*) {
-  auto* self = static_cast<GpgpuDevice*>(dev->device_ptr);
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_map_bo_args*>(data);
   if (!args)
     return -EFAULT;
@@ -162,7 +160,7 @@ static long gpu_ioctl_map_bo(struct drm_device* dev, void* data, struct drm_file
 }
 
 static long gpu_ioctl_pushbuffer(struct drm_device* dev, void* data, struct drm_file*) {
-  auto* self = static_cast<GpgpuDevice*>(dev->device_ptr);
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_pushbuffer_args*>(data);
   if (!args)
     return -EFAULT;
@@ -236,7 +234,7 @@ static long gpu_ioctl_pushbuffer(struct drm_device* dev, void* data, struct drm_
 }
 
 static long gpu_ioctl_wait_fence(struct drm_device* dev, void* data, struct drm_file*) {
-  auto* self = static_cast<GpgpuDevice*>(dev->device_ptr);
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_wait_fence_args*>(data);
   if (!args)
     return -EFAULT;
@@ -300,7 +298,7 @@ static long gpu_ioctl_get_process_aperture(struct drm_device* dev, void* data, s
 }
 
 static long gpu_ioctl_update_queue(struct drm_device* dev, void* data, struct drm_file*) {
-  auto* self = static_cast<GpgpuDevice*>(dev->device_ptr);
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_update_queue_args*>(data);
   if (!args)
     return -EFAULT;
@@ -318,7 +316,7 @@ static long gpu_ioctl_update_queue(struct drm_device* dev, void* data, struct dr
 }
 
 static long gpu_ioctl_map_memory(struct drm_device* dev, void* data, struct drm_file*) {
-  auto* self = static_cast<GpgpuDevice*>(dev->device_ptr);
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_map_memory_args*>(data);
   if (!args)
     return -EFAULT;
@@ -339,7 +337,7 @@ static long gpu_ioctl_map_memory(struct drm_device* dev, void* data, struct drm_
 }
 
 static long gpu_ioctl_unmap_memory(struct drm_device* dev, void* data, struct drm_file*) {
-  auto* self = static_cast<GpgpuDevice*>(dev->device_ptr);
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_unmap_memory_args*>(data);
   if (!args)
     return -EFAULT;
@@ -384,7 +382,6 @@ constexpr size_t kNumIoctls = sizeof(gpu_ioctls) / sizeof(gpu_ioctls[0]);
 
 long GpgpuDevice::ioctl(int fd, unsigned long request, void* argp) {
   (void)fd;
-  struct drm_device drv_dev = {.device_ptr = this};
   return drm_ioctl_compat(&drv_dev, gpu_ioctls, kNumIoctls, request, argp);
 }
 
