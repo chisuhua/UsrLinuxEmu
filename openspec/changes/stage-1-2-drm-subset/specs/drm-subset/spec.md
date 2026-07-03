@@ -81,7 +81,7 @@ The system MUST lock the following interface contracts between stage 1.2 and 1.3
 | Contract | 1.2 Guarantee | 1.3 Expectation |
 |----------|---------------|------------------|
 | `struct drm_device` lifetime | Same as `GpgpuDevice` (init on create, shutdown before dtor) | uvm module holds `drm_device*` valid for device lifetime |
-| BO refcount | `drm_gem_object` refcount drops to 0 on close(fd) | hmm_range never references released BO |
+| BO refcount | `close(fd)` releases all GEM handle references owned by that fd; BO object refcount follows standard `get`/`put` lifecycle and may remain >0 (held by dma_buf, SVG ranges, GPU page tables, etc.) | `mmu_interval_notifier.invalidate` callback and `hmm_range_fault()` never reference a BO whose fd-handle refs have been released but whose object refcount is still >0 |
 | prime import buffer release order | `dma_buf_unmap` → `dma_buf_detach` → `dma_buf_put` (Linux 6.12) | mmu_notifier invalidate completes before `dma_buf_detach` |
 | fence timing | All fences signal before GEM object release | hmm_range fault completes before triggering GEM release |
 
@@ -133,16 +133,35 @@ The system MUST produce `docs/05-advanced/drm-compat-matrix.md` documenting diff
   - new required ops (must note none added)
 - **AND** each row MUST state UsrLinuxEmu's simulation strategy
 
-### Requirement: render node + primary node 权限分离（ADR-037 + Blind Spot 4）
+### Requirement: DRM + KFD 设备节点权限分离（ADR-037 + Blind Spot 4 / CRITICAL Z5）
 
-The system MUST register both `/dev/dri/renderD128` (render node) and `/dev/dri/card0` (primary node) with Linux udev-default permissions. Mode bits MUST be 0666 with uid:gid = 0:0. The implementation MUST be backed by ADR-037 (which is already created, 2026-07-02). The system MUST use the VFS infrastructure extended in VFS-1~VFS-4 (also 2026-07-02).
+The system MUST register three device nodes with Linux udev-default permissions:
 
-#### Scenario: both nodes register and open successfully
+- `/dev/dri/renderD128` (render node): mode=0666, uid:gid=0:0
+- `/dev/dri/card0` (primary node): mode=0666, uid:gid=0:0
+- `/dev/kfd` (KFD process-level SVM node): mode=0666, uid:gid=0:0
+
+The `/dev/kfd` node is required because real KFD code (`kfd_device.c`, tracked in stage-1-4 via tracking plan §1.4 line 527) calls `register_chrdev()` to create this device and hardcodes `open("/dev/kfd", ...)` in its user-mode library path (TaskRunner research doc line 216). Without it, the KFD zero-logic-modification goal (roadmap §1.4 acceptance criterion 2) is violated.
+
+The implementation MUST:
+
+- Be backed by ADR-037 (which is already created, 2026-07-02: Decision 2 allows multi-path device nodes)
+- Use the VFS infrastructure extended in VFS-1~VFS-4 (also 2026-07-02)
+- Emulate `register_chrdev()` for the KFD major-number device registration model
+
+#### Scenario: all three nodes register and open successfully
 
 - **WHEN** `render_node.cpp` runs at module load
-- **THEN** both `/dev/dri/renderD128` and `/dev/dri/card0` MUST be discoverable via VFS
+- **THEN** `/dev/dri/renderD128`, `/dev/dri/card0`, and `/dev/kfd` MUST be discoverable via VFS
 - **AND** `VFS::access("/dev/dri/renderD128", 6)` MUST return 0 (R_OK|W_OK with mode 0666)
 - **AND** `VFS::chmod("/dev/dri/card0", 0666)` MUST succeed
+- **AND** `VFS::open("/dev/kfd", O_RDWR)` MUST succeed and return a valid KFD device handle
+
+#### Scenario: /dev/kfd supports KFD process-level ioctls
+
+- **WHEN** a user-mode driver opens `/dev/kfd` and calls an ioctl via its DRM dispatch handler
+- **THEN** the call MUST route through the `drm_ioctl()` table dispatch
+- **AND** the device's `FileOperations::ioctl()` stub MUST delegate to `drm_ioctl()` (preserving the System C / DRM dispatch dual-path, per Decision 1)
 
 ### Requirement: 测试交付（4 个 Catch2 standalone）
 

@@ -166,10 +166,12 @@ UsrLinuxEmu 的核心目标（见 [ADR-001](../00_adr/adr-001-user-mode-emulatio
 
 - 新增 `src/kernel/uvm/` 框架
 - **`mmu_notifier` 框架**：用户态 mmap 共享 → 内核 page invalidation 通知
-- **HMM（Heterogeneous Memory Management）API 子集**：
-  - `hmm_range_fault` / `hmm_range_register` / `hmm_range_unregister`
-  - `struct hmm_range` 完整字段
-  - `struct hmm_mirror` 抽象
+- **HMM（Heterogeneous Memory Management）API 子集**（与 Linux 6.12 LTS 实际 API 对齐）：
+  - `hmm_range_fault()` / `mmu_interval_notifier_insert()` / `mmu_interval_notifier_remove()`
+  - `struct hmm_range` 完整字段（7 个：`notifier` / `notifier_seq` / `start` / `end` / `hmm_pfns` / `default_flags` / `pfn_flags_mask` / `dev_private_owner`）
+  - `struct mmu_interval_notifier` + `struct mmu_interval_notifier_ops.invalidate` 回调（替代已从 Linux 6.x 移除的 `struct hmm_mirror`）
+  - 序列号一致性协议：`mmu_interval_read_begin()` / `mmu_interval_read_retry()` / `mmu_interval_set_seq()`
+  - HMM PFN flags：`HMM_PFN_VALID` / `HMM_PFN_WRITE` / `HMM_PFN_ERROR` / `HMM_PFN_REQ_FAULT` / `HMM_PFN_REQ_WRITE`（64-bit 编码，`HMM_PFN_VALID = 1UL << 63` 等）
 - **migrate 框架**：page migration between CPU/GPU memory domain
 - **fault 注入路径**：user-space mmap 触发 page fault → 通过 mmu_notifier 通知 device driver
 - `zone_device` 模拟（最简实现：spm vma + page 状态机）
