@@ -201,8 +201,24 @@ struct gpu_register_gpu_args {
  * Queues belong to a VA Space and are used for command submission.
  * Phase 1 uses implicit default queue; Phase 2 exposes explicit queues.
  * Returns queue_handle + doorbell_pgoff for mmap.
+ *
+ * Maps to AMDKFD_IOC_CREATE_QUEUE (0x02 in KFD space).
+ * Extension fields (added for Stage 1.2 KFD compatibility) are appended
+ * at the END of the struct to preserve binary compatibility with
+ * TaskRunner's existing 5-field usage.
  */
 #define GPU_IOCTL_CREATE_QUEUE _IOWR(GPU_IOCTL_BASE, 0x40, struct gpu_queue_args)
+
+/* Queue format (KFD: enum kfd_queue_format) */
+#define GPU_QUEUE_FORMAT_PM4  0  /* Legacy PM4 packet format (pre-GCN) */
+#define GPU_QUEUE_FORMAT_AQL  1  /* HSA AQL (Architected Queue Language) */
+
+/* Queue create flags (KFD: kfd_ioctl_create_queue_args flags) */
+#define GPU_QUEUE_FLAG_SPARSE         (1u << 0)  /* SLT/SVM bounds checking */
+#define GPU_QUEUE_FLAG_AQL            (1u << 1)  /* AQL access */
+#define GPU_QUEUE_FLAG_GWS            (1u << 2)  /* GWS (global wave sync) cap */
+#define GPU_QUEUE_FLAG_LIGHTWEIGHT_SVM (1u << 3) /* Skip HWS registration */
+#define GPU_QUEUE_FLAG_TBA_TMA        (1u << 4)  /* Trap handler buffer + TMA */
 
 struct gpu_queue_args {
   gpu_va_space_handle_t va_space_handle; /* VA Space (input) */
@@ -211,6 +227,15 @@ struct gpu_queue_args {
   u64 ring_buffer_size;                  /* Ring buffer size in entries (input) */
   gpu_queue_handle_t queue_handle;       /* OUT: Queue handle */
   u64 doorbell_pgoff;                    /* OUT: Doorbell mmap page offset */
+
+  /* ── KFD-compat extension fields (Stage 1.2) — optional, end of struct ── */
+
+  u64 ring_base_address;    /* Ring buffer base (user virt addr, 0=default) */
+  u64 gpu_va;               /* Reserved queue VA (0=auto-allocate) */
+  u32 queue_format;         /* GPU_QUEUE_FORMAT_PM4/AQL (input) */
+  u32 flags;                /* OR of GPU_QUEUE_FLAG_* (input) */
+  u32 doorbell_off;         /* Doorbell offset within doorbell BAR (input) */
+  u32 eop_buffer_size;      /* EOP buffer size for COMPUTE queues (input) */
 };
 
 /**
@@ -287,4 +312,111 @@ struct gpu_device_info {
 
   /** 市场营销名称 (UTF-8, 以 null 结尾) */
   char marketing_name[64];
+};
+
+/* ========================================================================
+ * KFD Portability IOCTLs (Stage 1.2 — reserved for Stage 1.4 integration)
+ *
+ * These are 1:1 mappings of AMD KFD ioctls into the System C numbering
+ * space.  KFD reference: include/uapi/linux/kfd_ioctl.h (Linux 6.12 LTS).
+ * System C uses 'G' base; KFD uses 'K' base — numbering is independent
+ * but struct layouts are aligned for zero-logic-change portability.
+ *
+ * IOCTL Numbering Map (System C → KFD):
+ *   0x44 GET_PROCESS_APERTURE ←  AMDKFD_IOC_GET_PROCESS_APERTURES_NEW (0x14)
+ *   0x45 UPDATE_QUEUE          ←  AMDKFD_IOC_UPDATE_QUEUE (0x07)
+ *   0x46 MAP_MEMORY            ←  AMDKFD_IOC_MAP_MEMORY_TO_GPU (0x16)
+ *   0x47 UNMAP_MEMORY          ←  AMDKFD_IOC_UNMAP_MEMORY_FROM_GPU (0x18)
+ *
+ * The CREATE_QUEUE (0x40) struct is extended in-place with KFD-compat
+ * fields at the END (see above) to map AMDKFD_IOC_CREATE_QUEUE (0x02)
+ * without breaking existing TaskRunner code.
+ * ======================================================================== */
+
+/**
+ * GPU_IOCTL_GET_PROCESS_APERTURE — Query GPU address aperture per process
+ *
+ * Maps to AMDKFD_IOC_GET_PROCESS_APERTURES_NEW (0x14 in KFD space).
+ * Returns per-node aperture information (GPU-local + scratch base/limit).
+ */
+#define GPU_IOCTL_GET_PROCESS_APERTURE \
+    _IOWR(GPU_IOCTL_BASE, 0x44, struct gpu_get_process_aperture_args)
+
+struct gpu_get_process_aperture_args {
+  u32 num_nodes;          /* Number of GPU nodes (input) */
+  u32 pad;                /* Padding for 8-byte alignment */
+  u64 apertures_ptr;      /* User-space pointer to gpu_aperture_info[num_nodes] (output) */
+};
+
+struct gpu_aperture_info {
+  u32 gpu_id;             /* GPU node ID */
+  u32 pad;
+  u64 lds_base;           /* LDS (Local Data Share) base address */
+  u64 lds_limit;          /* LDS limit address */
+  u64 scratch_base;       /* Scratch memory base */
+  u64 scratch_limit;      /* Scratch memory limit */
+  u64 gpuvm_base;         /* GPU VM base address */
+  u64 gpuvm_limit;        /* GPU VM limit address */
+};
+
+/**
+ * GPU_IOCTL_UPDATE_QUEUE — Update queue properties at runtime
+ *
+ * Maps to AMDKFD_IOC_UPDATE_QUEUE (0x07 in KFD space).
+ * Modifies properties of an already-created queue without destroying it.
+ */
+#define GPU_IOCTL_UPDATE_QUEUE \
+    _IOWR(GPU_IOCTL_BASE, 0x45, struct gpu_update_queue_args)
+
+struct gpu_update_queue_args {
+  gpu_queue_handle_t queue_handle;   /* Target queue (input) */
+  u64 ring_base_address;             /* New ring buffer base (input, 0 = keep current) */
+  u64 ring_size;                     /* New ring buffer size (input, 0 = keep current) */
+  u32 queue_percent;                 /* Queue percentage of GPU resources (input) */
+  u32 queue_priority;                /* Queue priority 0-100 (input) */
+  u32 queue_flags;                   /* Update flags: QUEUE_UPDATE_* (input) */
+  u32 pad;
+};
+
+#define GPU_QUEUE_UPDATE_RING_BASE   (1u << 0)  /* Update ring_base_address */
+#define GPU_QUEUE_UPDATE_RING_SIZE   (1u << 1)  /* Update ring_size */
+#define GPU_QUEUE_UPDATE_PERCENT     (1u << 2)  /* Update queue_percent */
+#define GPU_QUEUE_UPDATE_PRIORITY    (1u << 3)  /* Update queue_priority */
+
+/**
+ * GPU_IOCTL_MAP_MEMORY — Map system memory to GPU address space
+ *
+ * Maps to AMDKFD_IOC_MAP_MEMORY_TO_GPU (0x16 in KFD space).
+ * Maps host system memory (not BO/GEM) into the GPU's IOMMU page tables.
+ */
+#define GPU_IOCTL_MAP_MEMORY \
+    _IOWR(GPU_IOCTL_BASE, 0x46, struct gpu_map_memory_args)
+
+struct gpu_map_memory_args {
+  u32 handle;            /* Memory handle from alloc (input) */
+  u32 n_devices;         /* Number of GPU devices (input) */
+  u32 device_ids[8];     /* GPU device IDs to map to (input) */
+  u32 n_success;         /* Number of successful mappings (output) */
+  u64 gpu_va;            /* GPU virtual address (output) */
+  u64 size;              /* Size in bytes (input) */
+  u32 flags;             /* Mapping flags (input, reserved) */
+  u32 pad;
+};
+
+/**
+ * GPU_IOCTL_UNMAP_MEMORY — Unmap system memory from GPU
+ *
+ * Maps to AMDKFD_IOC_UNMAP_MEMORY_FROM_GPU (0x18 in KFD space).
+ * Removes host system memory mappings from GPU IOMMU page tables.
+ */
+#define GPU_IOCTL_UNMAP_MEMORY \
+    _IOWR(GPU_IOCTL_BASE, 0x47, struct gpu_unmap_memory_args)
+
+struct gpu_unmap_memory_args {
+  u32 handle;            /* Memory handle to unmap (input) */
+  u32 n_devices;         /* Number of GPU devices (input) */
+  u32 device_ids[8];     /* GPU device IDs to unmap from (input) */
+  u32 n_success;         /* Number of successful unmaps (output) */
+  u32 flags;             /* Unmap flags (input, reserved) */
+  u32 pad;
 };
