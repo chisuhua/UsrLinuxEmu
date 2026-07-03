@@ -105,6 +105,8 @@ set(CATCH2_TESTS
     test_iommu_emu_standalone.cpp
     test_dma_remap_standalone.cpp
     test_ats_protocol_standalone.cpp
+    # Stage 1.2 — VFS path resolution (see openspec/changes/stage-1-2-drm-subset/)
+    test_vfs_path_standalone.cpp
 )
 
 # 定义 sim 相关测试的列表（链接 gpu_sim）
