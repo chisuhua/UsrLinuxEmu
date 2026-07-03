@@ -65,7 +65,8 @@ The system MUST extend `drm_ioctl_desc[]` to cover:
 - All 4 Queue IOCTL (CREATE_QUEUE, DESTROY_QUEUE, MAP_QUEUE_RING, QUERY_QUEUE)
 - 5 new KFD-compat IOCTL (GET_PROCESS_APERTURE 0x44, UPDATE_QUEUE 0x45, MAP_MEMORY 0x46, UNMAP_MEMORY 0x47) + CREATE_QUEUE field extension (already done by Option B, 2026-07-02)
 
-Total: ≥20 IOCTL entries (with duplicates via natural numbering).
+Total: ≥19 IOCTL entries (7 GPU + 4 VA Space + 4 Queue + 4 new KFD at 0x44-0x47;
+CREATE_QUEUE is field-extension only, not a new IOCTL number).
 
 #### Scenario: each IOCTL maps to one handler
 
@@ -99,7 +100,7 @@ The system MUST lock the following interface contracts between stage 1.2 and 1.3
 #### Scenario: dma_buf API signatures match Linux 6.12 ABI (G2)
 
 - **WHEN** `linux_compat/drm/drm_prime.h` is inspected
-- **THEN** `dma_buf_dynamic_attach` / `dma_buf_detach` / `dma_buf_map_attachment` / `dma_buf_unmap_attachment` / `dma_buf_pin` / `dma_buf_unmap` MUST have Linux 6.12 ABI signatures
+- **THEN** `dma_buf_dynamic_attach` / `dma_buf_detach` / `dma_buf_map_attachment` / `dma_buf_unmap_attachment` / `dma_buf_pin` / `dma_buf_unpin` MUST have Linux 6.12 ABI signatures
 - **AND** `struct dma_buf_attach_ops` MUST contain `allow_peer2peer` and `move_notify` fields
 - **AND** KFD compiles with errors=0 against these signatures (validated via Option C PoC, 2026-07-02)
 
@@ -150,7 +151,7 @@ The system MUST provide 4 Catch2 standalone test executables:
 | Test | Range |
 |------|-------|
 | `test_drm_gem_standalone` | GEM object lifecycle + ASan validation |
-| `test_drm_ioctl_dispatch_standalone` | ≥20 IOCTL dispatch + errno mapping |
+| `test_drm_ioctl_dispatch_standalone` | ≥19 IOCTL dispatch + errno mapping |
 | `test_render_node_standalone` | render node registration + permission verification |
 | `test_uvm_drm_lifecycle_standalone` | 1.2/1.3 boundary contract G1 skeleton |
 
