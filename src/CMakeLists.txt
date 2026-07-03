@@ -28,6 +28,7 @@ add_library(kernel SHARED
     kernel/iommu/pcie_integration.cpp
     # Stage 1.2 — DRM GEM lifecycle (TDD)
     kernel/drm/drm_gem.cpp
+    kernel/drm/drm_file.cpp
 
 )
 

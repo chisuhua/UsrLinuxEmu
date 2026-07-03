@@ -22,6 +22,7 @@ struct drm_file;
 struct drm_device {
   void *dev_private;   /* driver-private state */
   struct drm_file *filelist; /* open file list */
+  int file_count;      /* number of open files */
 };
 
 #ifdef __cplusplus

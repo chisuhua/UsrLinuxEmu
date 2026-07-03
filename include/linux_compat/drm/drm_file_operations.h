@@ -44,6 +44,10 @@ struct drm_minor {
   void              *priv;        /* driver-private data */
 };
 
+/* Lifecycle functions (implemented in src/kernel/drm/drm_file.cpp) */
+void drm_file_init(struct drm_file *file, struct drm_device *dev, int flags);
+void drm_file_release(struct drm_file *file);
+
 #ifdef __cplusplus
 }
 #endif
