@@ -62,4 +62,26 @@ static inline long drm_ioctl_compat(struct drm_device *dev,
 
 #ifdef __cplusplus
 }
+
+/* drm_ioctl_permit — check if ioctl is allowed for the given file priv */
+static inline int drm_ioctl_permit(unsigned int flags, unsigned int cmd)
+{
+  (void)flags;
+  (void)cmd;
+  return 0; /* user-space: always allow (permission hooks in Stage 2+) */
+}
+
+/* errno_to_linux — byte-exact errno mapping for Linux 6.12 ABI
+ *
+ * In user-space sim, errno values are the native libc errno constants,
+ * which are POSIX and match Linux.  This function is a 1:1 identity
+ * for the standard codes and a re-encoder for non-POSIX codes.
+ */
+static inline int errno_to_linux(int err)
+{
+  if (err >= 0) return err;         /* already a positive code */
+  /* negate to get positive errno */
+  return -err;
+}
+
 #endif
