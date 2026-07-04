@@ -1,12 +1,14 @@
 # 阶段 1: Linux 内核环境模拟
 
-> **状态**: 🔄 计划中（下一步实施）
+> **状态**: ✅ 子阶段 1.0-1.3 已完成 / 🔄 1.4 Tier-1 边界已交付（5 个 KFD ioctl handler 穿透到 sim 原语）
 > **目标**: 提供完整 Linux 内核环境，使在 UsrLinuxEmu 开发的驱动可编译运行 KFD / NV 内核驱动
 > **范围**: DRM + UVM + IOMMU + ATS + PCIe BAR/中断
 > **关联 SSOT**: [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md)
+> **架构边界 SSOT**: [kfd-portability-boundary.md](../05-advanced/kfd-portability-boundary.md) (Tier-1 / Tier-2 分界)
+> **Stage 1.4 交付报告**: [kfd-portability-report.md](../05-advanced/kfd-portability-report.md) (commit `f41ace5`)
 > **关联原则**: [ADR-036](../00_adr/adr-036-three-way-separation.md) (✅ Accepted)
 > **维护者**: UsrLinuxEmu Architecture Team
-> **最后更新**: 2026-06-24
+> **最后更新**: 2026-07-04
 
 ---
 
