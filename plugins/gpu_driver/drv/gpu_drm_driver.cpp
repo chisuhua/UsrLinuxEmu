@@ -291,11 +291,12 @@ static long gpu_ioctl_get_process_aperture(struct drm_device* dev, void* data, s
     return -EINVAL;
   if (args->apertures_ptr == 0)
     return -EFAULT;
-  /* Stage 1.2 PoC: validate only; full per-node aperture bridge
-   * (kfd_process.c integration) deferred to Stage 1.4. */
-  std::cout << "[GpgpuDevice] GET_PROCESS_APERTURE: num_nodes=" << args->num_nodes
-            << " (simulated single GPU)\n";
-  return 0;
+  long ret = kfd_sim_handle_get_process_aperture(args);
+  if (ret == 0) {
+    std::cout << "[GpgpuDevice] GET_PROCESS_APERTURE: num_nodes=" << args->num_nodes
+              << " (sim apertures filled)\n";
+  }
+  return ret;
 }
 
 static long gpu_ioctl_update_queue(struct drm_device* dev, void* data, struct drm_file*) {
@@ -309,11 +310,13 @@ static long gpu_ioctl_update_queue(struct drm_device* dev, void* data, struct dr
     return -EINVAL;
   if (!self->handles_.valid(static_cast<u32>(args->queue_handle)))
     return -EINVAL;
-  /* Stage 1.2 PoC: queue state lives in va_space; full update logic
-   * (mqd_update / doorbell re-ring) deferred to Stage 1.4. */
-  std::cout << "[GpgpuDevice] UPDATE_QUEUE: handle=" << args->queue_handle
-            << " flags=0x" << std::hex << args->queue_flags << std::dec << "\n";
-  return 0;
+  long ret = kfd_sim_handle_update_queue(args);
+  if (ret == 0) {
+    std::cout << "[GpgpuDevice] UPDATE_QUEUE: handle=" << args->queue_handle
+              << " flags=0x" << std::hex << args->queue_flags << std::dec
+              << " (queue flags validated)\n";
+  }
+  return ret;
 }
 
 static long gpu_ioctl_map_memory(struct drm_device* dev, void* data, struct drm_file*) {
@@ -346,11 +349,13 @@ static long gpu_ioctl_unmap_memory(struct drm_device* dev, void* data, struct dr
     return -EINVAL;
   if (args->n_devices == 0 || args->n_devices > 8)
     return -EINVAL;
-  /* Stage 1.2 PoC: validate only; full IOMMU unmap deferred to Stage 1.4. */
-  args->n_success = args->n_devices;
-  std::cout << "[GpgpuDevice] UNMAP_MEMORY: handle=" << args->handle
-            << " n_devices=" << args->n_devices << "\n";
-  return 0;
+  long ret = kfd_sim_handle_unmap_memory(args);
+  if (ret == 0) {
+    std::cout << "[GpgpuDevice] UNMAP_MEMORY: handle=" << args->handle
+              << " n_devices=" << args->n_devices
+              << " (sim page table cleared)\n";
+  }
+  return ret;
 }
 
 /* ── DRM ioctl table ─────────────────────────────────────────────────────── */
