@@ -39,6 +39,12 @@ bool kfd_sim_mmu_cb_is_registered(void);
 u64  kfd_sim_get_mmu_cb_fn(void);
 u64  kfd_sim_get_mmu_cb_user_data(void);
 
+/* Tier-2 §3.2 — REGISTER_FIRMWARE_CB penetration (placeholder; firmware load Stage 2+) */
+long kfd_sim_register_firmware_cb(struct gpu_firmware_cb_args *args);
+bool kfd_sim_firmware_cb_is_registered(void);
+u64  kfd_sim_get_firmware_cb_fn(void);
+u64  kfd_sim_get_firmware_cb_user_data(void);
+
 #ifdef __cplusplus
 }
 #endif

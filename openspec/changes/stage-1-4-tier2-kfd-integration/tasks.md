@@ -24,12 +24,12 @@
 
 ### 3.2 `gpu_ioctl_register_firmware_cb`
 
-- [ ] 3.2.1 写失败的测试：`tests/test_register_firmware_cb_runtime_standalone.cpp`
-- [ ] 3.2.2 跑测试确认红
-- [ ] 3.2.3 升级 handler：调 `fops->register_fw_cb` 占位实现（**不实际加载 firmware**）
-- [ ] 3.2.4 跑测试确认绿
-- [ ] 3.2.5 替换 STUB_HANDLER 宏 + Tier-2 penetrated 注释
-- [ ] 3.2.6 Commit: `feat(handler): gpu_ioctl_register_firmware_cb tier-2 penetrated`
+- [x] 3.2.1 写失败的测试：`tests/test_register_firmware_cb_runtime_standalone.cpp`（5 cases / 14 assertions）
+- [x] 3.2.2 跑测试确认红（bridge 未声明 → 编译失败 = RED）
+- [x] 3.2.3 升级 handler：调 `kfd_sim_register_firmware_cb(args)` 占位实现（**不实际加载 firmware**，boundary §5.2 显式排除）
+- [x] 3.2.4 跑测试确认绿（70/70 PASS，+1 测试目标）
+- [x] 3.2.5 替换 STUB_HANDLER 宏 + Tier-2 penetrated 注释
+- [x] 3.2.6 Commit: `feat(handler): gpu_ioctl_register_firmware_cb tier-2 penetrated`
 
 ### 3.3 `gpu_ioctl_create_va_space` / `gpu_ioctl_destroy_va_space`
 
