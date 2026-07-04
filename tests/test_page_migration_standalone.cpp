@@ -99,3 +99,47 @@ TEST_CASE("sim_page_migration — is_page_on_device false before migration",
 
   sim_pm_destroy(pm);
 }
+
+/* P1: null guards for migrate_to_device / migrate_to_system */
+
+TEST_CASE("sim_page_migration — migrate_to_device rejects NULL pm",
+          "[uvm][sim][migration][null_guard]")
+{
+  unsigned char buf[64] = {};
+  CHECK(sim_pm_migrate_to_device(nullptr, 0, buf, 64) == -EINVAL);
+}
+
+TEST_CASE("sim_page_migration — migrate_to_device rejects NULL src",
+          "[uvm][sim][migration][null_guard]")
+{
+  struct sim_page_migration *pm = sim_pm_create(0x10000);
+  REQUIRE(pm != nullptr);
+  CHECK(sim_pm_migrate_to_device(pm, 0, nullptr, 64) == -EINVAL);
+  sim_pm_destroy(pm);
+}
+
+TEST_CASE("sim_page_migration — migrate_to_system rejects NULL pm",
+          "[uvm][sim][migration][null_guard]")
+{
+  unsigned char buf[64] = {};
+  CHECK(sim_pm_migrate_to_system(nullptr, 0, buf, 64) == -EINVAL);
+}
+
+TEST_CASE("sim_page_migration — migrate_to_system rejects NULL dst",
+          "[uvm][sim][migration][null_guard]")
+{
+  struct sim_page_migration *pm = sim_pm_create(0x10000);
+  REQUIRE(pm != nullptr);
+  CHECK(sim_pm_migrate_to_system(pm, 0, nullptr, 64) == -EINVAL);
+  sim_pm_destroy(pm);
+}
+
+TEST_CASE("sim_page_migration — migrate_to_system rejects offset overflow",
+          "[uvm][sim][migration][null_guard]")
+{
+  struct sim_page_migration *pm = sim_pm_create(0x1000);
+  REQUIRE(pm != nullptr);
+  unsigned char buf[64] = {};
+  CHECK(sim_pm_migrate_to_system(pm, 0x2000, buf, 64) == -EFAULT);
+  sim_pm_destroy(pm);
+}
