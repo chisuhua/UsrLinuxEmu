@@ -3,11 +3,17 @@
 add_library(gpu_drv STATIC
     gpu_drm_driver.cpp
     gpgpu_device.cpp
+    kfd_sim_bridge.cpp
 )
 
 set_target_properties(gpu_drv PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
+
+# GCC 13 + glibc pre-existing build issue: <thread> pulls in pthread/gthr
+# headers which need _GNU_SOURCE for cpu_set_t/sched_yield declarations.
+# Pre-existing issue documented; full verification blocked until upstream fix.
+target_compile_definitions(gpu_drv PRIVATE _GNU_SOURCE)
 
 target_include_directories(gpu_drv PUBLIC
     ${PROJECT_SOURCE_DIR}/include

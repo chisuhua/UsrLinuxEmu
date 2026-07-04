@@ -20,6 +20,7 @@
 #include "hal/gpu_hal.h"
 #include "shared/gpu_ioctl.h"
 #include "linux_compat/drm/drm_ioctl.h"
+#include "drv/kfd_sim_bridge.h"
 
 /* DRM ioctl command numbers — mirror GPU_IOCTL_* values for zero-change kernel migration */
 #define DRM_IOCTL_GET_DEVICE_INFO GPU_IOCTL_GET_DEVICE_INFO
@@ -290,11 +291,12 @@ static long gpu_ioctl_get_process_aperture(struct drm_device* dev, void* data, s
     return -EINVAL;
   if (args->apertures_ptr == 0)
     return -EFAULT;
-  /* Stage 1.2 PoC: validate only; full per-node aperture bridge
-   * (kfd_process.c integration) deferred to Stage 1.4. */
-  std::cout << "[GpgpuDevice] GET_PROCESS_APERTURE: num_nodes=" << args->num_nodes
-            << " (simulated single GPU)\n";
-  return 0;
+  long ret = kfd_sim_handle_get_process_aperture(args);
+  if (ret == 0) {
+    std::cout << "[GpgpuDevice] GET_PROCESS_APERTURE: num_nodes=" << args->num_nodes
+              << " (sim apertures filled)\n";
+  }
+  return ret;
 }
 
 static long gpu_ioctl_update_queue(struct drm_device* dev, void* data, struct drm_file*) {
@@ -308,11 +310,13 @@ static long gpu_ioctl_update_queue(struct drm_device* dev, void* data, struct dr
     return -EINVAL;
   if (!self->handles_.valid(static_cast<u32>(args->queue_handle)))
     return -EINVAL;
-  /* Stage 1.2 PoC: queue state lives in va_space; full update logic
-   * (mqd_update / doorbell re-ring) deferred to Stage 1.4. */
-  std::cout << "[GpgpuDevice] UPDATE_QUEUE: handle=" << args->queue_handle
-            << " flags=0x" << std::hex << args->queue_flags << std::dec << "\n";
-  return 0;
+  long ret = kfd_sim_handle_update_queue(args);
+  if (ret == 0) {
+    std::cout << "[GpgpuDevice] UPDATE_QUEUE: handle=" << args->queue_handle
+              << " flags=0x" << std::hex << args->queue_flags << std::dec
+              << " (queue flags validated)\n";
+  }
+  return ret;
 }
 
 static long gpu_ioctl_map_memory(struct drm_device* dev, void* data, struct drm_file*) {
@@ -326,14 +330,14 @@ static long gpu_ioctl_map_memory(struct drm_device* dev, void* data, struct drm_
     return -EINVAL;
   if (args->size == 0)
     return -EINVAL;
-  /* Stage 1.2 PoC: validate + return simulated gpu_va; full IOMMU map_page
-   * wiring with stage-1.1 iommu_domain deferred to Stage 1.4. */
-  args->n_success = args->n_devices;
-  args->gpu_va = 0x100000ULL + (static_cast<u64>(args->handle) * 0x1000ULL);
-  std::cout << "[GpgpuDevice] MAP_MEMORY: handle=" << args->handle
-            << " n_devices=" << args->n_devices
-            << " gpu_va=0x" << std::hex << args->gpu_va << std::dec << "\n";
-  return 0;
+  long ret = kfd_sim_handle_map_memory(args);
+  if (ret == 0) {
+    std::cout << "[GpgpuDevice] MAP_MEMORY: handle=" << args->handle
+              << " n_devices=" << args->n_devices
+              << " gpu_va=0x" << std::hex << args->gpu_va << std::dec
+              << " (sim page table updated)\n";
+  }
+  return ret;
 }
 
 static long gpu_ioctl_unmap_memory(struct drm_device* dev, void* data, struct drm_file*) {
@@ -345,11 +349,13 @@ static long gpu_ioctl_unmap_memory(struct drm_device* dev, void* data, struct dr
     return -EINVAL;
   if (args->n_devices == 0 || args->n_devices > 8)
     return -EINVAL;
-  /* Stage 1.2 PoC: validate only; full IOMMU unmap deferred to Stage 1.4. */
-  args->n_success = args->n_devices;
-  std::cout << "[GpgpuDevice] UNMAP_MEMORY: handle=" << args->handle
-            << " n_devices=" << args->n_devices << "\n";
-  return 0;
+  long ret = kfd_sim_handle_unmap_memory(args);
+  if (ret == 0) {
+    std::cout << "[GpgpuDevice] UNMAP_MEMORY: handle=" << args->handle
+              << " n_devices=" << args->n_devices
+              << " (sim page table cleared)\n";
+  }
+  return ret;
 }
 
 /* ── DRM ioctl table ─────────────────────────────────────────────────────── */
