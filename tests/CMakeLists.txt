@@ -124,6 +124,8 @@ set(CATCH2_TESTS
     test_drm_kfd_handlers_standalone.cpp
     # Stage 1.3 — UVM/HMM PoC (Launch Condition LC2: userfaultfd + mmap)
     poc/test_userfaultfd_poc.cpp
+    # Stage 1.3 — UVM/HMM header validation (tasks.md §2)
+    test_uvm_headers_standalone.cpp
 )
 
 # 定义 sim 相关测试的列表（链接 gpu_sim）
