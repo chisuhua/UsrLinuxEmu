@@ -191,6 +191,8 @@ set(CATCH2_SIM_TESTS
     test_page_fault_handler_standalone.cpp
     test_page_migration_standalone.cpp
     # Stage 1.4 — Tier-1 runtime penetration tests (B.2/B.3)
+    # Stage 1.4 — Tier-2 runtime penetration tests (STUB_HANDLER upgrades)
+    test_register_mmu_cb_runtime_standalone.cpp
     test_map_memory_runtime_standalone.cpp
     test_unmap_memory_runtime_standalone.cpp
     test_update_queue_runtime_standalone.cpp
