@@ -271,7 +271,20 @@ static long gpu_ioctl_stub(struct drm_device*, void*, struct drm_file*) { return
 
 #define STUB_HANDLER(name) static long name(struct drm_device* d, void* p, struct drm_file* f) { (void)d;(void)p;(void)f; return 0; }
 
-STUB_HANDLER(gpu_ioctl_register_mmu_cb)
+// Tier-2 penetrated: 2026-07-05 - references kfd-portability-boundary.md §3.3
+static long gpu_ioctl_register_mmu_cb(struct drm_device* dev, void* data, struct drm_file*) {
+  auto* args = static_cast<struct gpu_mmu_event_cb_args*>(data);
+  if (!args) return -EFAULT;
+
+  long ret = kfd_sim_register_mmu_cb(args);
+  if (ret == 0) {
+    std::cout << "[GpgpuDevice] REGISTER_MMU_EVENT_CB: " << std::hex
+              << "callback_fn=0x" << args->callback_fn << " user_data=0x"
+              << args->user_data << std::dec << "\n";
+  }
+  return ret;
+}
+
 STUB_HANDLER(gpu_ioctl_register_firmware_cb)
 STUB_HANDLER(gpu_ioctl_create_va_space)
 STUB_HANDLER(gpu_ioctl_destroy_va_space)

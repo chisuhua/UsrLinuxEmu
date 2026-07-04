@@ -1,26 +1,26 @@
 ## 1. Launch Conditions（LC1-LC4 验证）
 
-- [ ] 1.1 **LC1**：1.4 Tier-1 KFD portability 已 merge（commit `80f6a44`）—— **2026-07-04 已达成**
-- [ ] 1.2 **LC2**：`docs/05-advanced/kfd-portability-boundary.md` Tier-1/Tier-2 划分 SSOT 已发布（v1.0）—— **2026-07-04 已达成**
-- [ ] 1.3 **LC3**：Tier-1 回归测试无 regression（8/8 PASS：`test_drm_kfd_handlers_standalone` + `test_uvm_drm_lifecycle_standalone` G1-G4 + 5 个 stage-1 核心测试）—— **2026-07-04 已验证**
-- [ ] 1.4 **LC4**：worktree 创建完成（实施 Tier-2 代码时创建，**不在 change 启动阶段**）
+- [x] 1.1 **LC1**：1.4 Tier-1 KFD portability 已 merge（commit `80f6a44`）—— **2026-07-04 已达成**
+- [x] 1.2 **LC2**：`docs/05-advanced/kfd-portability-boundary.md` Tier-1/Tier-2 划分 SSOT 已发布（v1.0）—— **2026-07-04 已达成**
+- [x] 1.3 **LC3**：Tier-1 回归测试无 regression —— **2026-07-04 已验证**（commit `2322429` baseline fix 后 68/68 PASS，纠正了 LC3 仅 8/8 的不完整判定）
+- [x] 1.4 **LC4**：worktree 创建完成 —— **2026-07-05 已达成**（`stage-1.4-tier2-kfd-integration` 基于 main@`b65acad`）
 
 ## 2. Worktree 创建（决策 1）
 
-- [ ] 2.1 使用 `superpowers/using-git-worktrees` skill 创建 `stage-1.4-tier2-kfd-integration` worktree（基于 main 分支最新 commit `80f6a44`）
-- [ ] 2.2 验证 worktree 状态：`git branch --show-current` 显示 `stage-1.4-tier2-kfd-integration`，`git status` 干净
-- [ ] 2.3 在 worktree 内验证 baseline 构建：`cmake --build build` + `ctest --test-dir build` 70+/70+ PASS（避免引入新 regression）
+- [x] 2.1 使用 `superpowers/using-git-worktrees` skill 创建 `stage-1.4-tier2-kfd-integration` worktree（基于 main 分支最新 commit `b65acad`）
+- [x] 2.2 验证 worktree 状态：`git branch --show-current` 显示 `stage-1.4-tier2-kfd-integration`，`git status` 干净（建时干净；baseline fix 后改动 → 已 commit `2322429`）
+- [x] 2.3 在 worktree 内验证 baseline 构建：`cmake --build build` + `ctest --test-dir build` 68/68 PASS（commit `2322429` baseline fix 后达成，原始 main 存在 pre-existing build break）
 
 ## 3. 9 个 STUB_HANDLER 升级（D1 决策：桥接到既有 GpgpuDevice 实现）
 
 ### 3.1 `gpu_ioctl_register_mmu_cb`（Tier-2 G2 关键）
 
-- [ ] 3.1.1 写失败的测试（红）：`tests/test_register_mmu_cb_runtime_standalone.cpp` 覆盖 happy path（注册成功）+ error path（重复注册返回 `-EALREADY`）
-- [ ] 3.1.2 跑测试确认红
-- [ ] 3.1.3 升级 handler：调 `mmu_interval_notifier_register(mm, &cb, args)`
-- [ ] 3.1.4 跑测试确认绿
-- [ ] 3.1.5 替换 `STUB_HANDLER` 宏为显式函数体 + `// Tier-2 penetrated: [date] - references boundary §3.3` 注释
-- [ ] 3.1.6 Commit: `feat(handler): gpu_ioctl_register_mmu_cb penetrate to mmu_interval_notifier`
+- [x] 3.1.1 写失败的测试（红）：`tests/test_register_mmu_cb_runtime_standalone.cpp` 覆盖 happy path（注册成功）+ error path（重复注册返回 `-EALREADY`）
+- [x] 3.1.2 跑测试确认红
+- [x] 3.1.3 升级 handler：调 `kfd_sim_register_mmu_cb(args)`（桥接到 sim 单 callback 注册表，而非 mmu_interval_notifier_register — 见 boundary §3.3 callback body 延后至 Stage 3+）
+- [x] 3.1.4 跑测试确认绿
+- [x] 3.1.5 替换 `STUB_HANDLER` 宏为显式函数体 + `// Tier-2 penetrated: [date] - references boundary §3.3` 注释
+- [x] 3.1.6 Commit: `feat(handler): gpu_ioctl_register_mmu_cb penetrate to mmu event registry`
 
 ### 3.2 `gpu_ioctl_register_firmware_cb`
 
