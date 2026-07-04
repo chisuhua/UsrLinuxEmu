@@ -39,9 +39,9 @@
 | **1.1** | IOMMU + ATS | ✅ Done | `openspec/changes/2026-07-02-stage-1-1-iommu-ats/` (archived) | ✅ Done (40/40 tests pass, 0 HAL changes, all acceptance items verified) |
 | **1.2** | DRM 子集 | ✅ Done | `openspec/changes/archive/2026-07-02-stage-1-2-drm-subset/` | ✅ Done (52/52 tests pass, 0 HAL changes, all acceptance items verified) |
 | **1.3** | UVM/HMM | ✅ Done | `openspec/changes/stage-1-3-uvm-hmm/` | ✅ Done (63/63 tests pass, 0 HAL changes, §14 KFD PoC deferred to 1.4) |
-| **1.4** | 集成验证 | 📋 计划中 | `openspec/changes/stage-1-4-kfd-portability/`（待创建）| ⏸️ Not Started |
+| **1.4** | 集成验证 | 🔄 In Progress | `openspec/changes/2026-07-04-stage-1-4-kfd-portability/` (active, `openspec validate` PASS, 56 tasks) | 🔄 In Progress（LC1-LC3 ✅，待 worktree 创建 + 代码实施）|
 
-**总体进度**：4/5 子阶段完成（1.0/1.1/1.2/1.3 完成；1.4 待创建/启动）
+**总体进度**：4/5 子阶段完成 + 1.4 启动（1.0/1.1/1.2/1.3 完成；1.4 change 已创建、LC3 回归测试 8/8 PASS、待实施）
 
 ---
 
@@ -504,11 +504,12 @@ openspec propose stage-1-4-kfd-portability \
 
 ### Status
 
-- [ ] **1.0/1.1/1.2/1.3 全部完成**（依赖前置）
-- [ ] **OpenSpec change 已创建** (`openspec/changes/stage-1-4-kfd-portability/`)
-- [ ] **变更提案已审批**
-- [ ] **Specs 已新增** (`openspec/specs/kfd-portability/spec.md`)
-- [ ] **Tasks 已拆解**
+- [x] **1.0/1.1/1.2/1.3 全部完成**（依赖前置，SSOT §1.10 + ctest 63/63 PASS）
+- [x] **OpenSpec change 已创建** (`openspec/changes/2026-07-04-stage-1-4-kfd-portability/`，`openspec validate` PASS，56 tasks)
+- [ ] **变更提案已审批**（待 OpenSpec review 流程）
+- [x] **Specs 已新增** (`openspec/changes/2026-07-04-stage-1-4-kfd-portability/specs/kfd-portability/spec.md`，3 个 Requirement / 6 个 Scenario)
+- [x] **Tasks 已拆解** (`openspec/changes/2026-07-04-stage-1-4-kfd-portability/tasks.md`，12 节 / 56 个原子 task)
+- [x] **LC3 回归测试无 regression**（决策 3，8/8 PASS：`test_drm_kfd_handlers_standalone` + `test_uvm_drm_lifecycle_standalone` G1-G4 + 5 个 stage-1 核心测试）
 - [ ] **KFD 源码已拷贝**（Linux 6.6/6.12 LTS `drivers/gpu/drm/amd/amdkfd/` 5 个核心 .c）
 - [ ] **移植完成**（拷贝到 `plugins/gpu_driver/drv/kfd/`，仅 `#include` 路径调整）
 - [ ] **编译通过**（errors = 0）
