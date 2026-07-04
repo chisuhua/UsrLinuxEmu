@@ -301,13 +301,64 @@ static long gpu_ioctl_register_firmware_cb(struct drm_device* dev, void* data, s
   }
   return ret;
 }
-STUB_HANDLER(gpu_ioctl_create_va_space)
-STUB_HANDLER(gpu_ioctl_destroy_va_space)
-STUB_HANDLER(gpu_ioctl_register_gpu)
-STUB_HANDLER(gpu_ioctl_create_queue)
-STUB_HANDLER(gpu_ioctl_destroy_queue)
-STUB_HANDLER(gpu_ioctl_map_queue_ring)
-STUB_HANDLER(gpu_ioctl_query_queue)
+// Tier-2 penetrated: 2026-07-05 - references kfd-portability-boundary.md §3.1
+// Forwards gpu_ioctl_create_va_space to GpgpuDevice::ioctl (which dispatches
+// via IoctlEntry table to handleCreateVASpace).  Public ioctl is the bridge.
+static long gpu_ioctl_create_va_space(struct drm_device* dev, void* data, struct drm_file*) {
+  if (!data) return -EFAULT;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
+  long ret = self->ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, data);
+  if (ret == 0) std::cout << "[GpgpuDevice] CREATE_VA_SPACE: OK (GpgpuDevice dispatched)\n";
+  return ret;
+}
+// Tier-2 penetrated: 2026-07-05 - references boundary §3.1
+static long gpu_ioctl_destroy_va_space(struct drm_device* dev, void* data, struct drm_file*) {
+  if (!data) return -EFAULT;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
+  long ret = self->ioctl(0, GPU_IOCTL_DESTROY_VA_SPACE, data);
+  if (ret == 0) std::cout << "[GpgpuDevice] DESTROY_VA_SPACE: OK (GpgpuDevice dispatched)\n";
+  return ret;
+}
+// Tier-2 penetrated: 2026-07-05 - references boundary §3.1
+static long gpu_ioctl_register_gpu(struct drm_device* dev, void* data, struct drm_file*) {
+  if (!data) return -EFAULT;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
+  long ret = self->ioctl(0, GPU_IOCTL_REGISTER_GPU, data);
+  if (ret == 0) std::cout << "[GpgpuDevice] REGISTER_GPU: OK (GpgpuDevice dispatched)\n";
+  return ret;
+}
+// Tier-2 penetrated: 2026-07-05 - references boundary §3.1
+static long gpu_ioctl_create_queue(struct drm_device* dev, void* data, struct drm_file*) {
+  if (!data) return -EFAULT;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
+  long ret = self->ioctl(0, GPU_IOCTL_CREATE_QUEUE, data);
+  if (ret == 0) std::cout << "[GpgpuDevice] CREATE_QUEUE: OK (GpgpuDevice dispatched)\n";
+  return ret;
+}
+// Tier-2 penetrated: 2026-07-05 - references boundary §3.1
+static long gpu_ioctl_destroy_queue(struct drm_device* dev, void* data, struct drm_file*) {
+  if (!data) return -EFAULT;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
+  long ret = self->ioctl(0, GPU_IOCTL_DESTROY_QUEUE, data);
+  if (ret == 0) std::cout << "[GpgpuDevice] DESTROY_QUEUE: OK (GpgpuDevice dispatched)\n";
+  return ret;
+}
+// Tier-2 penetrated: 2026-07-05 - references boundary §3.1
+static long gpu_ioctl_map_queue_ring(struct drm_device* dev, void* data, struct drm_file*) {
+  if (!data) return -EFAULT;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
+  long ret = self->ioctl(0, GPU_IOCTL_MAP_QUEUE_RING, data);
+  if (ret == 0) std::cout << "[GpgpuDevice] MAP_QUEUE_RING: OK (GpgpuDevice dispatched)\n";
+  return ret;
+}
+// Tier-2 penetrated: 2026-07-05 - references boundary §3.1
+static long gpu_ioctl_query_queue(struct drm_device* dev, void* data, struct drm_file*) {
+  if (!data) return -EFAULT;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
+  long ret = self->ioctl(0, GPU_IOCTL_QUERY_QUEUE, data);
+  if (ret == 0) std::cout << "[GpgpuDevice] QUERY_QUEUE: OK (GpgpuDevice dispatched)\n";
+  return ret;
+}
 /* ── KFD-compat ioctl handlers (Stage 1.2 real impls) ────────────────── */
 
 static long gpu_ioctl_get_process_aperture(struct drm_device* dev, void* data, struct drm_file*) {
@@ -412,22 +463,6 @@ static const struct drm_ioctl_desc gpu_ioctls[] = {
 
 constexpr size_t kNumIoctls = sizeof(gpu_ioctls) / sizeof(gpu_ioctls[0]);
 
-/* ── GpgpuDevice public interface ──────────────────────────────────────── */
-
-long GpgpuDevice::ioctl(int fd, unsigned long request, void* argp) {
-  (void)fd;
-  return drm_ioctl_compat(&drv_dev, gpu_ioctls, kNumIoctls, request, argp);
-}
-
-int GpgpuDevice::open(const char* path, int flags) {
-  (void)path;
-  (void)flags;
-  std::cout << "[GpgpuDevice] Opened\n";
-  return 0;
-}
-
-int GpgpuDevice::close(int fd) {
-  (void)fd;
-  std::cout << "[GpgpuDevice] Closed\n";
-  return 0;
-}
+/* GpgpuDevice::ioctl, ::open, and ::close are defined in gpgpu_device.cpp
+ * (canonical location).  This file previously had duplicate copies that
+ * caused link errors when test executables linked both .o files. */
