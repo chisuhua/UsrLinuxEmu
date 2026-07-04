@@ -12,37 +12,43 @@
 #include "iommu_internal.h"
 
 #include <linux_compat/iommu/iommu.h>
+#include <kernel/uvm/mmu_notifier_internal.h>
 
 #include <cstdio>
 
 extern "C" {
 
+/* Tier-2 penetrated: 2026-07-05 - references kfd-portability-boundary.md §3.3
+ * Wire iommu_invalidate_register_notifier_internal to the mmu_notifier
+ * framework so that subsequent fault_inject_page_fault calls actually
+ * dispatch the user's invalidate_range_start callback.
+ *
+ * Per design.md D2: minimal viable callback wiring; do NOT add new sim
+ * primitives.  The user-provided mn->ops->invalidate_range_start is the
+ * Tier-2 "callback body" — it can call sim_pfh_inject_fault /
+ * sim_pm_migrate_to_system from the driver side. */
 int iommu_invalidate_register_notifier_internal(struct iommu_domain *d,
 					       struct mmu_notifier *mnp)
 {
 	if (!d || !mnp)
 		return IOMMU_ERR_EINVAL;
 
-	/*
-	 * TODO(stage-1.3): implement mmu_notifier callback body.
-	 * The full implementation will:
-	 *   1. Validate mnp ownership
-	 *   2. Insert mnp into domain->notifier_list
-	 *   3. Attach mmu_notifier_release callback if not yet attached
-	 *
-	 * For stage-1.1, only logging is performed so that downstream
-	 * driver code (e.g., KFD in stage-1.4) can call this function
-	 * without link-time errors. The stub returns 0 so callers
-	 * proceed; if stage-1.3 sees a real invalidation request before
-	 * this body is filled, behavior will be incorrect (no delivery)
-	 * but the test suite will not assert this path.
-	 *
-	 * Reference: docs/superpowers/plans/2026-07-02-stage-1-kernel-emu-tracking.md
-	 * §Sub-stage 1.3 fills this body.
-	 */
+	struct mm_struct *mm = static_cast<struct mm_struct *>(d->priv);
+	if (!mm)
+		return IOMMU_ERR_EINVAL;
+
+	int ret = mmu_notifier_register(mnp, mm);
+	if (ret != 0) {
+		std::fprintf(stderr,
+			     "[iommu] register_notifier failed (ret=%d) "
+			     "domain=%p mnp=%p\n",
+			     ret, (void *)d, (void *)mnp);
+		return ret;
+	}
+
 	std::fprintf(stderr,
-		     "[iommu] register_notifier stub domain=%p mnp=%p "
-		     "(TODO stage-1.3)\n",
+		     "[iommu] register_notifier OK domain=%p mnp=%p "
+		     "(Tier-2 penetrated: callback will fire on invalidation)\n",
 		     (void *)d, (void *)mnp);
 	return IOMMU_ERR_OK;
 }
@@ -53,9 +59,10 @@ int iommu_invalidate_unregister_notifier_internal(struct iommu_domain *d,
 	if (!d || !mnp)
 		return IOMMU_ERR_EINVAL;
 
-	/* Stage-1.1 stub mirrors register_notifier; full impl in stage-1.3 */
+	mmu_notifier_unregister(mnp);
+
 	std::fprintf(stderr,
-		     "[iommu] unregister_notifier stub domain=%p mnp=%p\n",
+		     "[iommu] unregister_notifier OK domain=%p mnp=%p\n",
 		     (void *)d, (void *)mnp);
 	return IOMMU_ERR_OK;
 }
@@ -63,6 +70,9 @@ int iommu_invalidate_unregister_notifier_internal(struct iommu_domain *d,
 /*
  * Optional public iommu_flush_iotlb() for callers that don't go through
  * the iommu_ops vtable. Equivalent to (and forwards to) the vtable hook.
+ *
+ * Tier-2 §5 upgrades the vtable hook (iommu_ops->flush_iotlb) in
+ * dma_remap.cpp; this function delegates to it.
  */
 int iommu_flush_iotlb(struct iommu_domain *domain, unsigned long iova, size_t size)
 {
