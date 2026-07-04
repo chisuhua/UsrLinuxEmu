@@ -156,3 +156,45 @@ TEST_CASE("zone_device — multiple pages tracked independently",
 
   zone_device_destroy(zd);
 }
+
+/* P0 null guard — cover missing guard clauses */
+
+TEST_CASE("zone_device — get_page_state rejects NULL zone_device",
+          "[uvm][zone_device][null_guard]")
+{
+  enum page_state s;
+  CHECK(zone_device_get_page_state(nullptr, 0x1000, &s) == -EINVAL);
+}
+
+TEST_CASE("zone_device — get_page_state rejects NULL out pointer",
+          "[uvm][zone_device][null_guard]")
+{
+  struct mm_struct mm = { .id = 5010 };
+  struct zone_device *zd = zone_device_create(&mm, 0, 0x10000);
+  REQUIRE(zd != nullptr);
+
+  CHECK(zone_device_set_page_state(zd, 0x1000, PAGE_STATE_CPU) == 0);
+  CHECK(zone_device_get_page_state(zd, 0x1000, nullptr) == -EINVAL);
+
+  zone_device_destroy(zd);
+}
+
+TEST_CASE("zone_device — set_page_state rejects NULL zone_device",
+          "[uvm][zone_device][null_guard]")
+{
+  CHECK(zone_device_set_page_state(nullptr, 0x1000, PAGE_STATE_CPU) == -EINVAL);
+}
+
+/* P0: set_page_state out-of-range address */
+
+TEST_CASE("zone_device — set_page_state rejects out-of-range address",
+          "[uvm][zone_device][null_guard]")
+{
+  struct mm_struct mm = { .id = 5011 };
+  struct zone_device *zd = zone_device_create(&mm, 0, 0x10000);
+  REQUIRE(zd != nullptr);
+
+  CHECK(zone_device_set_page_state(zd, 0x20000, PAGE_STATE_CPU) == -EFAULT);
+
+  zone_device_destroy(zd);
+}
