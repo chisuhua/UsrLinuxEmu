@@ -38,10 +38,10 @@
 | **1.0** | PCIe 设备模拟 | ✅ Done | `openspec/changes/stage-1-0-pcie-emu/` | ✅ Done |
 | **1.1** | IOMMU + ATS | ✅ Done | `openspec/changes/2026-07-02-stage-1-1-iommu-ats/` (archived) | ✅ Done (40/40 tests pass, 0 HAL changes, all acceptance items verified) |
 | **1.2** | DRM 子集 | ✅ Done | `openspec/changes/archive/2026-07-02-stage-1-2-drm-subset/` | ✅ Done (52/52 tests pass, 0 HAL changes, all acceptance items verified) |
-| **1.3** | UVM/HMM | 📝 In Progress | `openspec/changes/stage-1-3-uvm-hmm/` | 🟡 OpenSpec 已创建（4/4 artifact），实现待启动 |
+| **1.3** | UVM/HMM | ✅ Done | `openspec/changes/stage-1-3-uvm-hmm/` | ✅ Done (63/63 tests pass, 0 HAL changes, §14 KFD PoC deferred to 1.4) |
 | **1.4** | 集成验证 | 📋 计划中 | `openspec/changes/stage-1-4-kfd-portability/`（待创建）| ⏸️ Not Started |
 
-**总体进度**：3/5 子阶段完成（1.0/1.1/1.2 已归档；1.3 OpenSpec change 已创建；2 个待创建/启动：1.4 + 1.3 实施）
+**总体进度**：4/5 子阶段完成（1.0/1.1/1.2/1.3 完成；1.4 待创建/启动）
 
 ---
 

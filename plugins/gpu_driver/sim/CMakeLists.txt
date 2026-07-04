@@ -5,6 +5,9 @@ add_library(gpu_sim STATIC
     gpu_queue_emu.cpp
     scheduler/global_scheduler.cpp
     scheduler/translator/gpfifo_translator.cpp
+    # Stage 1.3 — UVM/HMM sim layer (see openspec/changes/stage-1-3-uvm-hmm/)
+    page_fault_handler.cpp
+    page_migration.cpp
 )
 
 set_target_properties(gpu_sim PROPERTIES POSITION_INDEPENDENT_CODE ON)
