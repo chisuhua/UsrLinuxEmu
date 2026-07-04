@@ -33,6 +33,14 @@ add_library(kernel SHARED
     kernel/drm/render_node.cpp
     kernel/drm/errno_to_linux.cpp
 
+    # Stage 1.3 — UVM/HMM (see openspec/changes/stage-1-3-uvm-hmm/)
+    kernel/uvm/mmu_notifier.cpp
+    kernel/uvm/hmm_range.cpp
+    kernel/uvm/migrate.cpp
+    kernel/uvm/fault_inject.cpp
+    kernel/uvm/page_state_machine.cpp
+    kernel/uvm/zone_device.cpp
+
 )
 
 # 添加 UsrLinuxEmu 头文件路径

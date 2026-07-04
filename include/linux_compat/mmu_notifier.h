@@ -26,8 +26,17 @@
 extern "C" {
 #endif
 
-/* Forward declarations */
-struct mm_struct;
+/**
+ * struct mm_struct — minimal user-space simulation of Linux mm_struct.
+ *
+ * In the real kernel, mm_struct represents a process address space
+ * with full page tables, VMA lists, and MMU context. For user-space
+ * simulation (Stage 1.3 UVM/HMM), we only need a stable identifier
+ * for per-mm notifier registration matching.
+ */
+struct mm_struct {
+  unsigned long id; /* unique mm identifier (e.g., simulated PID) */
+};
 
 /*
  * mmu_notifier_ops: callback vtable for MMU event notifications.

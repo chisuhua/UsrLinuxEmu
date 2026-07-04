@@ -65,6 +65,26 @@ function(add_sim_test TEST_NAME TEST_SOURCE)
     set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endfunction()
 
+# Define Catch2 sim test function (links kernel + gpu_sim)
+function(add_catch_sim_test TEST_NAME TEST_SOURCE)
+    add_executable(${TEST_NAME} ${TEST_SOURCE} ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp)
+    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim)
+    target_include_directories(${TEST_NAME} PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include/kernel
+        ${PROJECT_SOURCE_DIR}/include/linux_compat
+        ${PROJECT_SOURCE_DIR}/drivers
+        ${PROJECT_SOURCE_DIR}/plugins
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+        ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
+    set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endfunction()
+
 # 定义独立测试的列表（包含自定义main函数的测试）
 set(STANDALONE_TESTS
     test_compat_memory.cpp
@@ -126,6 +146,18 @@ set(CATCH2_TESTS
     poc/test_userfaultfd_poc.cpp
     # Stage 1.3 — UVM/HMM header validation (tasks.md §2)
     test_uvm_headers_standalone.cpp
+    # Stage 1.3 — UVM/HMM mmu_notifier (tasks.md §3.1 + §8.1 + §10.1)
+    test_mmu_notifier_standalone.cpp
+    # Stage 1.3 — UVM/HMM hmm_range (tasks.md §3.2 + §10.2)
+    test_hmm_range_standalone.cpp
+    # Stage 1.3 — UVM/HMM migrate + fault_inject (tasks.md §3.3 + §3.4)
+    test_migrate_standalone.cpp
+    test_fault_inject_standalone.cpp
+    # Stage 1.3 — UVM/HMM zone_device + page_state_machine
+    test_page_state_machine_standalone.cpp
+    test_zone_device_standalone.cpp
+    # Stage 1.3 — UVM/HMM SVM ioctl integration test (tasks.md §10.3)
+    test_svm_ioctl_standalone.cpp
 )
 
 # 定义 sim 相关测试的列表（链接 gpu_sim）
@@ -148,6 +180,17 @@ endforeach()
 foreach(src ${CATCH2_TESTS})
     get_filename_component(testname ${src} NAME_WE)
     add_catch_test(${testname} ${src})
+endforeach()
+
+# Catch2 sim tests (Catch2 + link kernel + gpu_sim)
+set(CATCH2_SIM_TESTS
+    # Stage 1.3 — UVM/HMM sim layer (tasks.md §4)
+    test_page_fault_handler_standalone.cpp
+    test_page_migration_standalone.cpp
+)
+foreach(src ${CATCH2_SIM_TESTS})
+    get_filename_component(testname ${src} NAME_WE)
+    add_catch_sim_test(${testname} ${src})
 endforeach()
 
 # 为每个 sim 测试源文件创建测试

@@ -57,7 +57,7 @@ struct mm_struct;
  * hmm_pfns[] entry (lower bits are flags).
  */
 #define HMM_PFN_SHIFT     12
-#define HMM_PFN_MASK      0x000FFFFFFFFFFFFFUL
+#define HMM_PFN_MASK      0x000000FFFFFFFFFFUL  /* 40 PFN bits */
 
 /* ================================================================
  * struct mmu_interval_notifier — replacement for removed hmm_mirror

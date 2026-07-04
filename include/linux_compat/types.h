@@ -85,7 +85,9 @@ static inline bool IS_ERR_OR_NULL(const void *ptr) {
 // 内核内存分配相关的错误码
 #define ENOMEM 12 /* Out of memory */
 #define EFAULT 14 /* Bad address */
+#define EBUSY  16 /* Device or resource busy */
 #define EINVAL 22 /* Invalid argument */
+#define ENOSPC 28 /* No space left on device */
 
 // ============================================================
 // POSIX 权限类型（Stage 1.2: VFS Device 权限模型）
