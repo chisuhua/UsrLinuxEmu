@@ -16,10 +16,13 @@
 
 namespace {
 
+constexpr unsigned long INVALID_PFN_VALUE = ~0UL;
+
 struct SimPageMigration {
   unsigned long device_mem_size;
   std::vector<unsigned char> device_memory;
-  std::map<unsigned long, bool> page_on_device; /* offset → is_on_device */
+  std::map<unsigned long, bool> page_on_device;
+  std::map<unsigned long, unsigned long> page_table;
   int migration_count = 0;
 };
 
@@ -53,6 +56,7 @@ int sim_pm_migrate_to_device(struct sim_page_migration *pm,
 
   memcpy(p->device_memory.data() + offset, src, size);
   p->page_on_device[offset] = true;
+  p->page_table[offset] = offset / 4096;
   p->migration_count++;
   return 0;
 }
@@ -69,6 +73,7 @@ int sim_pm_migrate_to_system(struct sim_page_migration *pm,
 
   memcpy(dst, p->device_memory.data() + offset, size);
   p->page_on_device[offset] = false;
+  p->page_table.erase(offset);
   p->migration_count++;
   return 0;
 }
@@ -86,6 +91,17 @@ int sim_pm_is_page_on_device(struct sim_page_migration *pm,
   auto *p = reinterpret_cast<SimPageMigration *>(pm);
   auto it = p->page_on_device.find(offset);
   return (it != p->page_on_device.end() && it->second) ? 1 : 0;
+}
+
+unsigned long sim_pm_lookup_pfn(struct sim_page_migration *pm,
+                                 unsigned long offset) {
+  if (!pm)
+    return INVALID_PFN_VALUE;
+  auto *p = reinterpret_cast<SimPageMigration *>(pm);
+  auto it = p->page_table.find(offset);
+  if (it == p->page_table.end())
+    return INVALID_PFN_VALUE;
+  return it->second;
 }
 
 } // extern "C"
