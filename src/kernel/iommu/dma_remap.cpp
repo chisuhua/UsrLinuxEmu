@@ -142,14 +142,41 @@ static phys_addr_t default_iova_to_phys(struct iommu_domain *d, unsigned long io
 }
 
 /*
- * Stage-1.1 IOTLB flush is a logged stub. Real cache invalidation lives
- * in stage-1.3 (UVM/HMM with mmu_notifier callbacks).
+ * Tier-2 penetrated: 2026-07-05 - references kfd-portability-boundary.md §3.2
+ * Per design.md D3: real page table invalidation in user-space (no host
+ * kernel involvement).  Walks iommu_domain_state->iova_to_phys in the
+ * [iova, iova+sz) range, counts flushed entries, and signals the
+ * sim layer.  Real hardware IOTLB flush (vfio, etc.) is Stage 2.
  */
 static void default_flush_iotlb(struct iommu_domain *d, unsigned long iova,
 				size_t sz)
 {
-	std::fprintf(stderr, "[iommu] flush_iotlb domain=%p iova=0x%lx size=0x%zx (stub)\n",
-		     (void *)d, iova, sz);
+	if (!d)
+		return;
+	auto *state = usr_linux_emu::iommu_domain_priv(d);
+	if (!state) {
+		std::fprintf(stderr,
+			     "[iommu] flush_iotlb domain=%p iova=0x%lx size=0x%zx "
+			     "(no domain state)\n",
+			     (void *)d, iova, sz);
+		return;
+	}
+
+	/* Tier-2 design: don't mutate page table — iommu_unmap already
+	 * erased entries; this hook is the post-unmap TLB-flush signal. */
+	unsigned long end = iova + sz;
+	std::size_t flushed = 0;
+	for (auto it = state->iova_to_phys.begin();
+	     it != state->iova_to_phys.end();
+	     ++it) {
+		if (it->first >= iova && it->first < end)
+			flushed++;
+	}
+
+	std::fprintf(stderr,
+		     "[iommu] flush_iotlb domain=%p iova=0x%lx size=0x%zx "
+		     "flushed=%zu (Tier-2: real page-table walk)\n",
+		     (void *)d, iova, sz, flushed);
 }
 
 /*
