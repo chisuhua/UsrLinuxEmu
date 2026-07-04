@@ -65,16 +65,19 @@ function(add_sim_test TEST_NAME TEST_SOURCE)
     set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endfunction()
 
-# Define Catch2 sim test function (links kernel + gpu_sim)
+# Define Catch2 sim test function (links kernel + gpu_sim + gpu_drv)
 function(add_catch_sim_test TEST_NAME TEST_SOURCE)
     add_executable(${TEST_NAME} ${TEST_SOURCE} ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp)
-    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim)
+    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim gpu_drv)
     target_include_directories(${TEST_NAME} PRIVATE
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/include/kernel
         ${PROJECT_SOURCE_DIR}/include/linux_compat
         ${PROJECT_SOURCE_DIR}/drivers
         ${PROJECT_SOURCE_DIR}/plugins
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv
         ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
         ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
         ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
@@ -182,11 +185,13 @@ foreach(src ${CATCH2_TESTS})
     add_catch_test(${testname} ${src})
 endforeach()
 
-# Catch2 sim tests (Catch2 + link kernel + gpu_sim)
+# Catch2 sim tests (Catch2 + link kernel + gpu_sim + gpu_drv)
 set(CATCH2_SIM_TESTS
     # Stage 1.3 — UVM/HMM sim layer (tasks.md §4)
     test_page_fault_handler_standalone.cpp
     test_page_migration_standalone.cpp
+    # Stage 1.4 — Tier-1 runtime penetration tests (B.2/B.3)
+    test_map_memory_runtime_standalone.cpp
 )
 foreach(src ${CATCH2_SIM_TESTS})
     get_filename_component(testname ${src} NAME_WE)

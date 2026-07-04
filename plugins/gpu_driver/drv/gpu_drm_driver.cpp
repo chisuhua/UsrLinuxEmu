@@ -20,6 +20,7 @@
 #include "hal/gpu_hal.h"
 #include "shared/gpu_ioctl.h"
 #include "linux_compat/drm/drm_ioctl.h"
+#include "drv/kfd_sim_bridge.h"
 
 /* DRM ioctl command numbers — mirror GPU_IOCTL_* values for zero-change kernel migration */
 #define DRM_IOCTL_GET_DEVICE_INFO GPU_IOCTL_GET_DEVICE_INFO
@@ -326,14 +327,14 @@ static long gpu_ioctl_map_memory(struct drm_device* dev, void* data, struct drm_
     return -EINVAL;
   if (args->size == 0)
     return -EINVAL;
-  /* Stage 1.2 PoC: validate + return simulated gpu_va; full IOMMU map_page
-   * wiring with stage-1.1 iommu_domain deferred to Stage 1.4. */
-  args->n_success = args->n_devices;
-  args->gpu_va = 0x100000ULL + (static_cast<u64>(args->handle) * 0x1000ULL);
-  std::cout << "[GpgpuDevice] MAP_MEMORY: handle=" << args->handle
-            << " n_devices=" << args->n_devices
-            << " gpu_va=0x" << std::hex << args->gpu_va << std::dec << "\n";
-  return 0;
+  long ret = kfd_sim_handle_map_memory(args);
+  if (ret == 0) {
+    std::cout << "[GpgpuDevice] MAP_MEMORY: handle=" << args->handle
+              << " n_devices=" << args->n_devices
+              << " gpu_va=0x" << std::hex << args->gpu_va << std::dec
+              << " (sim page table updated)\n";
+  }
+  return ret;
 }
 
 static long gpu_ioctl_unmap_memory(struct drm_device* dev, void* data, struct drm_file*) {
