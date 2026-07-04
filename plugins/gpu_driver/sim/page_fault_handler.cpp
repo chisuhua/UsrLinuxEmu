@@ -14,10 +14,14 @@
 
 namespace {
 
+constexpr int SIM_FAULT_CAUSE_READ_DEFAULT  = 0;
+constexpr int SIM_FAULT_CAUSE_WRITE_DEFAULT = 1;
+
 struct SimPageFaultHandler {
   struct mm_struct *mm;
   int fault_count = 0;
   unsigned long last_fault_addr = 0;
+  int last_fault_cause = SIM_FAULT_CAUSE_READ_DEFAULT;
 };
 
 } // anonymous namespace
@@ -43,24 +47,38 @@ int sim_pfh_get_fault_count(struct sim_page_fault_handler *pfh) {
   return reinterpret_cast<SimPageFaultHandler *>(pfh)->fault_count;
 }
 
-void sim_pfh_inject_fault(struct sim_page_fault_handler *pfh,
-                           unsigned long addr,
-                           unsigned long *pfn_out) {
+void sim_pfh_inject_fault_with_cause(struct sim_page_fault_handler *pfh,
+                                      unsigned long addr,
+                                      unsigned long *pfn_out,
+                                      int cause) {
   if (!pfh)
     return;
 
   auto *p = reinterpret_cast<SimPageFaultHandler *>(pfh);
   p->fault_count++;
   p->last_fault_addr = addr;
+  p->last_fault_cause = cause;
 
   if (pfn_out)
-    *pfn_out = addr;
+    *pfn_out = addr / 4096;
+}
+
+void sim_pfh_inject_fault(struct sim_page_fault_handler *pfh,
+                           unsigned long addr,
+                           unsigned long *pfn_out) {
+  sim_pfh_inject_fault_with_cause(pfh, addr, pfn_out, SIM_FAULT_CAUSE_READ_DEFAULT);
 }
 
 unsigned long sim_pfh_get_last_fault_addr(struct sim_page_fault_handler *pfh) {
   if (!pfh)
     return 0;
   return reinterpret_cast<SimPageFaultHandler *>(pfh)->last_fault_addr;
+}
+
+int sim_pfh_get_last_fault_cause(struct sim_page_fault_handler *pfh) {
+  if (!pfh)
+    return SIM_FAULT_CAUSE_READ_DEFAULT;
+  return reinterpret_cast<SimPageFaultHandler *>(pfh)->last_fault_cause;
 }
 
 } // extern "C"

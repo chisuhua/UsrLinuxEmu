@@ -29,6 +29,15 @@ void sim_pfh_inject_fault(struct sim_page_fault_handler *pfh,
                            unsigned long addr,
                            unsigned long *pfn_out);
 unsigned long sim_pfh_get_last_fault_addr(struct sim_page_fault_handler *pfh);
+
+#define SIM_FAULT_CAUSE_READ  0
+#define SIM_FAULT_CAUSE_WRITE 1
+
+void sim_pfh_inject_fault_with_cause(struct sim_page_fault_handler *pfh,
+                                      unsigned long addr,
+                                      unsigned long *pfn_out,
+                                      int cause);
+int  sim_pfh_get_last_fault_cause(struct sim_page_fault_handler *pfh);
 }
 
 TEST_CASE("sim_page_fault_handler — create/destroy lifecycle",
@@ -101,4 +110,65 @@ TEST_CASE("sim_page_fault_handler — multiple faults accumulate",
   CHECK(sim_pfh_get_fault_count(pfh) == 3);
 
   sim_pfh_destroy(pfh);
+}
+
+TEST_CASE("sim_page_fault_handler — inject_fault_with_cause records READ cause",
+          "[uvm][sim][page_fault][cause]")
+{
+  struct mm_struct mm = { .id = 8000 };
+  struct sim_page_fault_handler *pfh = sim_pfh_create(&mm);
+  REQUIRE(pfh != nullptr);
+
+  unsigned long pfn = 0;
+  sim_pfh_inject_fault_with_cause(pfh, 0x1000, &pfn, SIM_FAULT_CAUSE_READ);
+  CHECK(sim_pfh_get_last_fault_cause(pfh) == SIM_FAULT_CAUSE_READ);
+  CHECK(pfn == 1);
+
+  sim_pfh_destroy(pfh);
+}
+
+TEST_CASE("sim_page_fault_handler — inject_fault_with_cause records WRITE cause",
+          "[uvm][sim][page_fault][cause]")
+{
+  struct mm_struct mm = { .id = 8001 };
+  struct sim_page_fault_handler *pfh = sim_pfh_create(&mm);
+  REQUIRE(pfh != nullptr);
+
+  unsigned long pfn = 0;
+  sim_pfh_inject_fault_with_cause(pfh, 0x2000, &pfn, SIM_FAULT_CAUSE_WRITE);
+  CHECK(sim_pfh_get_last_fault_cause(pfh) == SIM_FAULT_CAUSE_WRITE);
+
+  sim_pfh_destroy(pfh);
+}
+
+TEST_CASE("sim_page_fault_handler — get_last_fault_cause defaults to READ",
+          "[uvm][sim][page_fault][cause]")
+{
+  struct mm_struct mm = { .id = 8002 };
+  struct sim_page_fault_handler *pfh = sim_pfh_create(&mm);
+  REQUIRE(pfh != nullptr);
+
+  CHECK(sim_pfh_get_last_fault_cause(pfh) == SIM_FAULT_CAUSE_READ);
+
+  sim_pfh_destroy(pfh);
+}
+
+TEST_CASE("sim_page_fault_handler — legacy inject_fault uses READ cause",
+          "[uvm][sim][page_fault][cause]")
+{
+  struct mm_struct mm = { .id = 8003 };
+  struct sim_page_fault_handler *pfh = sim_pfh_create(&mm);
+  REQUIRE(pfh != nullptr);
+
+  unsigned long pfn = 0;
+  sim_pfh_inject_fault(pfh, 0x1000, &pfn);
+  CHECK(sim_pfh_get_last_fault_cause(pfh) == SIM_FAULT_CAUSE_READ);
+
+  sim_pfh_destroy(pfh);
+}
+
+TEST_CASE("sim_page_fault_handler — get_last_fault_cause on null returns READ",
+          "[uvm][sim][page_fault][cause][null_guard]")
+{
+  CHECK(sim_pfh_get_last_fault_cause(nullptr) == SIM_FAULT_CAUSE_READ);
 }
