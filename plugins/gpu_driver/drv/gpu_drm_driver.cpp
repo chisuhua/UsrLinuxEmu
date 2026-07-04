@@ -285,7 +285,22 @@ static long gpu_ioctl_register_mmu_cb(struct drm_device* dev, void* data, struct
   return ret;
 }
 
-STUB_HANDLER(gpu_ioctl_register_firmware_cb)
+// Tier-2 penetrated: 2026-07-05 - references kfd-portability-boundary.md §3.1
+// Bridges gpu_ioctl_register_firmware_cb to sim's firmware callback registry.
+// Per boundary §5.2: actual firmware loading deferred to Stage 2+ — register-only here.
+// Re-registration allowed (firmware callbacks can be swapped without process restart).
+static long gpu_ioctl_register_firmware_cb(struct drm_device* dev, void* data, struct drm_file*) {
+  auto* args = static_cast<struct gpu_firmware_cb_args*>(data);
+  if (!args) return -EFAULT;
+  long ret = kfd_sim_register_firmware_cb(args);
+  if (ret == 0) {
+    std::cout << "[GpgpuDevice] REGISTER_FIRMWARE_CB: " << std::hex
+              << "callback_fn=0x" << args->callback_fn << " user_data=0x"
+              << args->user_data << std::dec
+              << " (sim firmware_cb registry updated; load deferred to Stage 2+)\n";
+  }
+  return ret;
+}
 STUB_HANDLER(gpu_ioctl_create_va_space)
 STUB_HANDLER(gpu_ioctl_destroy_va_space)
 STUB_HANDLER(gpu_ioctl_register_gpu)

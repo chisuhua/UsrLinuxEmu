@@ -45,6 +45,9 @@ struct KfdSimState {
   bool mmu_cb_registered = false;
   u64 mmu_cb_fn = 0;
   u64 mmu_cb_user_data = 0;
+  bool firmware_cb_registered = false;
+  u64 firmware_cb_fn = 0;
+  u64 firmware_cb_user_data = 0;
 };
 
 KfdSimState g_state;
@@ -66,6 +69,9 @@ void kfd_sim_reset(void) {
   g_state.mmu_cb_registered = false;
   g_state.mmu_cb_fn = 0;
   g_state.mmu_cb_user_data = 0;
+  g_state.firmware_cb_registered = false;
+  g_state.firmware_cb_fn = 0;
+  g_state.firmware_cb_user_data = 0;
 }
 
 u64 kfd_sim_lookup_pfn(u64 gpu_va) {
@@ -179,6 +185,31 @@ u64 kfd_sim_get_mmu_cb_fn(void) {
 u64 kfd_sim_get_mmu_cb_user_data(void) {
   std::lock_guard<std::mutex> lock(g_mutex);
   return g_state.mmu_cb_user_data;
+}
+
+long kfd_sim_register_firmware_cb(struct gpu_firmware_cb_args *args) {
+  if (!args) return -1;
+  if (args->callback_fn == 0) return -22;
+  std::lock_guard<std::mutex> lock(g_mutex);
+  g_state.firmware_cb_registered = true;
+  g_state.firmware_cb_fn = args->callback_fn;
+  g_state.firmware_cb_user_data = args->user_data;
+  return 0;
+}
+
+bool kfd_sim_firmware_cb_is_registered(void) {
+  std::lock_guard<std::mutex> lock(g_mutex);
+  return g_state.firmware_cb_registered;
+}
+
+u64 kfd_sim_get_firmware_cb_fn(void) {
+  std::lock_guard<std::mutex> lock(g_mutex);
+  return g_state.firmware_cb_fn;
+}
+
+u64 kfd_sim_get_firmware_cb_user_data(void) {
+  std::lock_guard<std::mutex> lock(g_mutex);
+  return g_state.firmware_cb_user_data;
 }
 
 } // extern "C"
