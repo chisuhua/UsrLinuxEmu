@@ -3,15 +3,15 @@
 > **目的**：固化 Stage 1.4 PoC 的诚实发现，明确 Stage 1 真正达成的边界（Tier-1）与实际超界的边界（Tier-2），作为 1.4 集成策略与未来 Stage 2+ 规划的架构 SSOT。
 >
 > **创建日期**：2026-07-04
-> **状态**：🔄 架构边界 SSOT（v1.0）
-> **基础证据**：[5341c3f](https://github.com/chisuhua/UsrLinuxEmu/commit/5341c3f) "stage-1.4 PoC integration attempt" + 1.0-1.3 全部 commit 历史 + 63/63 ctest 全绿基线
+> **状态**：✅ 架构边界 SSOT（v1.1）— Tier-2 §3.1/§3.2/§3.3 穿透完成 (2026-07-05)
+> **基础证据**：[5341c3f](https://github.com/chisuhua/UsrLinuxEmu/commit/5341c3f) "stage-1.4 PoC integration attempt" + 1.0-1.3 全部 commit 历史 + 63/63 ctest 全绿基线 + Tier-2 10 commits 穿透 (commit `6a7f4ab` merge to main)
 > **关联 SSOT**：
 > - 路线图: [stage-1-kernel-emu.md](../roadmap/stage-1-kernel-emu.md)
 > - 架构: [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md)
 > - 治理: [ADR-035](../00_adr/adr-035-governance-policy.md)
 > - 3 区分: [ADR-036](../00_adr/adr-036-three-way-separation.md)
 > - 兼容策略: [ADR-027](../00_adr/adr-027-linux-compat-strategy.md)
-> **关联 PoC 报告**：[kfd-portability-progress.md](kfd-portability-progress.md) + [kfd-portability-report.md](kfd-portability-report.md)
+> **关联 PoC 报告**：[kfd-portability-progress.md](kfd-portability-progress.md) + [kfd-portability-report.md](kfd-portability-report.md) + [tier2-runtime-penetration-report.md](tier2-runtime-penetration-report.md)
 
 ---
 
@@ -112,17 +112,21 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 ## 3. Tier-2：PoC 实际超界（必须显式记录 + 延后）
 
 > **判定标准**：commit message 或源码注释明确标注 "stub" / "placeholder" / "stage-1.4 if required" / "TODO(stage-1.3)" / "deferred"，或 1.4 PoC 实证阻塞
+>
+> **状态更新 (2026-07-05)**：Tier-2 穿透已完成（commit `6a7f4ab` merge to main）。详见 [tier2-runtime-penetration-report.md](tier2-runtime-penetration-report.md)。下表中 **✅ Penetrated** / **🔄 Real Implementation** / **✅ Implemented** 标记的是 2026-07-05 后的实际状态。
 
 ### 3.1 运行时行为穿透（4 个 KFD handler 仅"日志桩"）
 
 > **诚实标注**：handler 在派发表中，参数校验正确，**但未真正修改 sim 状态**。
 
-| Handler | 真实行为 | 期望行为 | Tier-2 原因 |
-|---------|---------|---------|------------|
-| `gpu_ioctl_get_process_aperture` | 校验 + `std::cout` + return 0 | 填 apertures 数组（GPU-local + scratch base/limit）| 注释 L292-294: "full per-node aperture bridge (kfd_process.c integration) deferred to Stage 1.4" |
-| `gpu_ioctl_update_queue` | 校验 + `std::cout` + return 0 | 修改 queue 状态（mqd_update / doorbell re-ring）| 注释 L317: "full update logic (mqd_update / doorbell re-ring) deferred to Stage 1.4" |
-| `gpu_ioctl_map_memory` | 校验 + `gpu_va = 0x100000 + handle * 0x1000` (**幻数**) | 真正调用 iommu_map_page | 注释 L335-337: "full IOMMU map_page wiring with stage-1.1 iommu_domain deferred to Stage 1.4" |
-| `gpu_ioctl_unmap_memory` | 校验 + `n_success = n_devices` + `std::cout` | 真正调用 iommu_unmap_page | 注释 L348-350: "full IOMMU unmap deferred to Stage 1.4" |
+| Handler | 真实行为 | 期望行为 | Tier-2 原因 | 状态 |
+|---------|---------|---------|------------|------|
+| `gpu_ioctl_get_process_aperture` | 校验 + `std::cout` + return 0 | 填 apertures 数组（GPU-local + scratch base/limit）| 注释 L292-294: "full per-node aperture bridge (kfd_process.c integration) deferred to Stage 1.4" | ✅ **Tier-1 Penetrated** (commit `cc6be1b`) |
+| `gpu_ioctl_update_queue` | 校验 + `std::cout` + return 0 | 修改 queue 状态（mqd_update / doorbell re-ring）| 注释 L317: "full update logic (mqd_update / doorbell re-ring) deferred to Stage 1.4" | ✅ **Tier-1 Penetrated** (commit `cc6be1b`) |
+| `gpu_ioctl_map_memory` | 校验 + `gpu_va = 0x100000 + handle * 0x1000` (**幻数**) | 真正调用 iommu_map_page | 注释 L335-337: "full IOMMU map_page wiring with stage-1.1 iommu_domain deferred to Stage 1.4" | ✅ **Tier-1 Penetrated** (commit `cc6be1b`) |
+| `gpu_ioctl_unmap_memory` | 校验 + `n_success = n_devices` + `std::cout` | 真正调用 iommu_unmap_page | 注释 L348-350: "full IOMMU unmap deferred to Stage 1.4" | ✅ **Tier-1 Penetrated** (commit `160ddd2`) |
+
+**附加 Tier-2 穿透 (2026-07-05)**：除上述 4 个之外，另有 9 个 STUB_HANDLER（register_mmu_cb / register_firmware_cb / create_va_space / destroy_va_space / register_gpu / create_queue / destroy_queue / map_queue_ring / query_queue）在 commit `c33d824`+`8b6a33d`+`4261bb4` 中升级为真实 handler。详见 [tier2-runtime-penetration-report.md §2.1](tier2-runtime-penetration-report.md)。
 
 **Tier-2 价值影响**：
 - KFD 代码可调用 5 个 ioctl，**但运行时不会真正影响 GPU/IOMMU 状态**
@@ -133,7 +137,7 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 | 模块 | 状态 | 证据 |
 |------|------|------|
 | `iommu_map` / `iommu_unmap` / `iommu_iova_to_phys` | 数据结构 + 页表框架存在 | `src/kernel/iommu/dma_remap.cpp` |
-| `iommu_flush_iotlb` | **logging stub** | [dma_remap.cpp:145-151](https://github.com/chisuhua/UsrLinuxEmu/blob/main/src/kernel/iommu/dma_remap.cpp): "Stage-1.1 IOTLB flush is a logged stub. Real cache invalidation lives..." |
+| `iommu_flush_iotlb` | 🔄 **Real Implementation (user-space)** (2026-07-05) | commit `62d2353`: 替换 fprintf stub 为真实 page-table walk。**不依赖 host kernel**（无 vfio / /dev/iommu，Stage 2 引入）|
 | ATS PRI/PRG response routing | **未实现** | [ats_protocol.cpp:31](https://github.com/chisuhua/UsrLinuxEmu/blob/main/src/kernel/iommu/ats_protocol.cpp): "PRI/PRG response routing lives in stage-1.4 if required" |
 | ATS Invalidation Request/Completion 完整协议 | 桩 + 部分 | ats_protocol.cpp |
 | PCIe device → iommu_group 1:1 映射 | register API 已存在 | pcie_integration.cpp |
@@ -149,8 +153,8 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 |------|------|------|
 | `mmu_interval_notifier_register` / `unregister` | API 完整 | `src/kernel/uvm/mmu_notifier.cpp` |
 | `mmu_interval_read_begin` / `retry` / `set_seq` | API 完整 | 同上 |
-| 实际 callback body | **TODO(stage-1.3)** | [invalidate.cpp:27](https://github.com/chisuhua/UsrLinuxEmu/blob/main/src/kernel/iommu/invalidate.cpp): "TODO(stage-1.3): implement mmu_notifier callback body" — 但 Stage 1.3 也**未真正填充**，仅创建了 sim 原语骨架 |
-| 用户态 munmap → kernel invalidation 链路 | **未验证** | — |
+| 实际 callback body | ✅ **Implemented** (2026-07-05, commit `58777e5`) | [invalidate.cpp:30](src/kernel/iommu/invalidate.cpp): `iommu_invalidate_register_notifier_internal` 调 `mmu_notifier_register`；unregister 调 `mmu_notifier_unregister`。`fault_inject_page_fault` → `mmu_notifier_dispatch_all_invalidate_start` → user `mn->ops->invalidate_range_start` 全链路可触发 |
+| 用户态 munmap → kernel invalidation 链路 | ✅ **Verified** (2026-07-05) | `test_mmu_notifier_callback_runtime_standalone` 验证 happy + 边界路径 |
 
 **Tier-2 价值影响**：
 - API 完整（driver code 可链接），**但 callback 触发后无实际行为**
@@ -321,6 +325,7 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 | 日期 | 版本 | 变更 |
 |------|------|------|
 | 2026-07-04 | v1.0 | 初版：基于 5341c3f PoC attempt + 1.0-1.3 commit 历史 + 63/63 ctest 基线，固化 Tier-1/Tier-2 架构边界 SSOT |
+| 2026-07-05 | v1.1 | Tier-2 穿透：§3.1 4 个 handler logging stub → Penetrated (Tier-1 已穿透)；§3.2 IOTLB flush fprintf stub → Real Implementation (user-space page-table walk, commit `62d2353`)；§3.3 mmu_notifier callback TODO → Implemented (commit `58777e5`)；附加 9 个 STUB_HANDLER 升级 (commits `c33d824`+`8b6a33d`+`4261bb4`)。10 commits / 73/73 ctest PASS / 0 regression。详见 [tier2-runtime-penetration-report.md](tier2-runtime-penetration-report.md)。|
 
 ---
 
