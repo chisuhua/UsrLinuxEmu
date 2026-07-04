@@ -195,6 +195,7 @@ set(CATCH2_SIM_TESTS
     test_register_mmu_cb_runtime_standalone.cpp
     test_register_firmware_cb_runtime_standalone.cpp
     test_stub_handlers_tier2_standalone.cpp
+    test_mmu_notifier_callback_runtime_standalone.cpp
     test_map_memory_runtime_standalone.cpp
     test_unmap_memory_runtime_standalone.cpp
     test_update_queue_runtime_standalone.cpp
