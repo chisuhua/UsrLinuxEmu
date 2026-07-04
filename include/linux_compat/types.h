@@ -1,10 +1,18 @@
 #pragma once
 
 #include <sys/types.h>
+
+#ifdef __cplusplus
 #include <cstddef>
 #include <cstdint>
+#else
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+#endif
 
-// 基础数据类型定义，兼容Linux内核类型
+// 基础数据类型定义，兼容Linux内核类型（C/C++ 双模式）
+#ifdef __cplusplus
 using u8 = uint8_t;
 using u16 = uint16_t;
 using u32 = uint32_t;
@@ -24,6 +32,27 @@ using __s8 = int8_t;
 using __s16 = int16_t;
 using __s32 = int32_t;
 using __s64 = int64_t;
+#else
+typedef uint8_t  u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
+
+typedef int8_t  s8;
+typedef int16_t s16;
+typedef int32_t s32;
+typedef int64_t s64;
+
+typedef uint8_t  __u8;
+typedef uint16_t __u16;
+typedef uint32_t __u32;
+typedef uint64_t __u64;
+
+typedef int8_t  __s8;
+typedef int16_t __s16;
+typedef int32_t __s32;
+typedef int64_t __s64;
+#endif
 
 // Linux内核中常用的类型定义
 typedef uint32_t __kernel_size_t;
@@ -31,10 +60,17 @@ typedef int32_t __kernel_ssize_t;
 typedef uint64_t __kernel_loff_t;
 
 // Linux内核中的布尔类型定义，避免与C++内置bool冲突
+// 在C模式下，<stdbool.h> 已提供 bool/true/false，无需重复定义
 #ifndef __cplusplus
+#ifndef bool
 typedef int bool;
+#endif
+#ifndef true
 #define true 1
+#endif
+#ifndef false
 #define false 0
+#endif
 #endif
 
 // 常用的NULL定义
