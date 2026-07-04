@@ -3,6 +3,9 @@ build/
 _codeql_build_dir/
 _codeql_detected_source_root
 
+# Git worktrees (per using-git-worktrees skill, 2026-07-04)
+.worktrees/
+
 # Compiled objects
 *.o
 *.a
