@@ -31,7 +31,9 @@ TEST_CASE("E2E: MAP_MEMORY + page fault + UNMAP_MEMORY full lifecycle",
   REQUIRE(kfd_sim_lookup_pfn(m.gpu_va) != ~0ULL);
 
   // Step 2: Inject fault on the mapped page (sim layer)
-  struct sim_page_fault_handler *pfh = sim_pfh_create(nullptr);
+  // Note: sim_pfh_create rejects nullptr mm; pass a valid placeholder.
+  struct mm_struct mm_for_pfh = { .id = 8001 };
+  struct sim_page_fault_handler *pfh = sim_pfh_create(&mm_for_pfh);
   REQUIRE(pfh != nullptr);
   unsigned long pfn = 0;
   sim_pfh_inject_fault_with_cause(pfh, m.gpu_va, &pfn, 0);
