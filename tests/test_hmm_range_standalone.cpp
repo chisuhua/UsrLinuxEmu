@@ -340,3 +340,50 @@ TEST_CASE("hmm_range_fault — returns -EBUSY on concurrent invalidation",
   mmu_interval_notifier_remove(&mni);
   sim_page_table_destroy(&mm);
 }
+
+/* P1: hmm_range_fault null guard + edge case */
+
+TEST_CASE("hmm_range_fault — rejects NULL notifier in range",
+          "[uvm][hmm][hmm_range_fault]")
+{
+  unsigned long pfns[1] = {0};
+  struct hmm_range range = {};
+  range.notifier = nullptr;
+  range.start    = 0;
+  range.end      = 0x1000;
+  range.hmm_pfns = pfns;
+
+  int ret = hmm_range_fault(&range, 0);
+  CHECK(ret == -EINVAL);
+}
+
+TEST_CASE("hmm_range_fault — handles sub-page range",
+          "[uvm][hmm][hmm_range_fault]")
+{
+  struct mm_struct mm = { .id = 60 };
+  struct mmu_interval_notifier_ops ops = {};
+  struct mmu_interval_notifier mni = {};
+
+  sim_page_table_init(&mm);
+  sim_page_table_add(&mm, 0x1000, 0xEE);
+
+  int ret = mmu_interval_notifier_insert(&mni, &mm, 0x1000, 0x1100, &ops);
+  REQUIRE(ret == 0);
+
+  unsigned long pfns[1] = {0};
+  struct hmm_range range = {};
+  range.notifier      = &mni;
+  range.notifier_seq  = mmu_interval_read_begin(&mni);
+  range.start         = 0x1000;
+  range.end           = 0x1100;
+  range.hmm_pfns      = pfns;
+  range.default_flags = 0;
+  range.pfn_flags_mask = HMM_PFN_VALID;
+
+  ret = hmm_range_fault(&range, 0);
+  CHECK(ret == 0);
+  CHECK((pfns[0] & HMM_PFN_VALID) != 0);
+
+  mmu_interval_notifier_remove(&mni);
+  sim_page_table_destroy(&mm);
+}

@@ -319,3 +319,18 @@ TEST_CASE("mmu_notifier — invalidate_start can return error from callback",
 
   mmu_notifier_unregister(&mn);
 }
+
+/* P1: dispatch_all_invalidate_start — nullptr mm guard */
+
+extern "C" {
+int mmu_notifier_dispatch_all_invalidate_start(struct mm_struct *mm,
+                                                unsigned long start,
+                                                unsigned long end);
+}
+
+TEST_CASE("mmu_notifier — dispatch_all_invalidate_start rejects NULL mm",
+          "[uvm][mmu_notifier][dispatch]")
+{
+  int ret = mmu_notifier_dispatch_all_invalidate_start(nullptr, 0x1000, 0x2000);
+  CHECK(ret == -EINVAL);
+}
