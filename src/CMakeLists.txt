@@ -45,6 +45,8 @@ add_library(kernel SHARED
     # Stage 2.2.1 — Network socket + sk_buff compat (see openspec/changes/...stage-2-2-network/)
     kernel/net/socket.cpp
     kernel/net/sk_buff.cpp
+    # Stage 2.3.1 — Storage block compat (bio_compat, per plan §2.3.1 决策)
+    kernel/block/bio_compat.cpp
 
 )
 
