@@ -21,7 +21,7 @@ struct sk_buff* skb_alloc_impl(unsigned long data_len) {
   if (data_len == 0) return nullptr;
   void* mem = std::malloc(sizeof(sk_buff_impl) + data_len);
   if (!mem) return nullptr;
-  auto* impl = new (mem) sk_buff_impl{};
+  auto* impl = reinterpret_cast<sk_buff_impl*>(mem);
   impl->data_len = data_len;
   impl->refcount = 1;
   std::memset(impl->payload, 0, data_len);
@@ -32,7 +32,6 @@ void skb_free_impl(struct sk_buff* skb) {
   if (!skb) return;
   auto* impl = impl_of(skb);
   if (--impl->refcount == 0) {
-    impl->~sk_buff_impl();
     std::free(impl);
   }
 }

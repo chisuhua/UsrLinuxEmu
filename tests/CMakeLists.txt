@@ -202,6 +202,8 @@ set(CATCH2_SIM_TESTS
     test_update_queue_runtime_standalone.cpp
     test_get_process_aperture_runtime_standalone.cpp
     test_migration_e2e_standalone.cpp
+    # Stage 2.2.1 — Network socket + sk_buff compat (per ADR-038 D1/D2)
+    test_socket_skbuff_standalone.cpp
 )
 foreach(src ${CATCH2_SIM_TESTS})
     get_filename_component(testname ${src} NAME_WE)
