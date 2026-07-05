@@ -188,15 +188,15 @@ section_arch() {
     fi
 
     # 1.2 src/kernel cpp count
-    # Baseline: 12 root + pcie/ (Stage 1.0: 4) + iommu/ (Stage 1.1: 8) + device/ (2) + drm/ (Stage 1.2: 5) + uvm/ (Stage 1.3: 6) = 37
+    # Baseline: 12 root + pcie/ (Stage 1.0: 4) + iommu/ (Stage 1.1: 8) + device/ (2) + drm/ (Stage 1.2: 5) + uvm/ (Stage 1.3: 6) + net/ (Stage 2.2: 2) + block/ (Stage 2.3: 1) = 40
     # This expectation must be re-baselined after each new kernel module addition.
-    subsection "1.2 src/kernel cpp file count (expected 37 post-Stage 1.3 UVM/HMM)"
+    subsection "1.2 src/kernel cpp file count (expected 40 post-Stage 2 multi-device)"
     local count
     count=$(find "${REPO_ROOT}/src/kernel" -name "*.cpp" 2>/dev/null | wc -l | tr -d ' ')
-    if [ "${count}" -eq 37 ]; then
-        check_pass "src/kernel has ${count} cpp files (matches post-Stage 1.3 UVM/HMM baseline)"
+    if [ "${count}" -eq 40 ]; then
+        check_pass "src/kernel has ${count} cpp files (matches post-Stage 2 multi-device baseline)"
     else
-        check_warn "src/kernel has ${count} cpp files (baseline 37; update after adding new kernel modules)"
+        check_warn "src/kernel has ${count} cpp files (baseline 40; update after adding new kernel modules)"
     fi
 
     # 1.3 archive/openspec-deprecated-2026-06-15 should NOT exist
@@ -717,9 +717,36 @@ main() {
     [ "${RUN_DOC}"   -eq 1 ] && section_doc_health
     [ "${RUN_BUILD}" -eq 1 ] && section_build
     [ "${RUN_SYNC}"  -eq 1 ] && section_sync
+    [ "${RUN_STAGE2}" -eq 1 ] && section_stage2
+    [ "${RUN_STAGE2}" -eq 1 ] && section_stage2
 
     print_summary
     exit "${EXIT_CODE}"
+}
+
+# Section 7: Stage 2 multi-device plugin path existence
+# (per plan §2.2 + §2.3: net_driver + storage_driver plugins)
+section_stage2() {
+  subsection "7.1 plugins/net_driver/ (Stage 2.2 net plugin) exists"
+  if [ -d "${REPO_ROOT}/plugins/net_driver" ]; then
+    check_pass "plugins/net_driver/ exists"
+  else
+    check_fail "plugins/net_driver/ missing (Stage 2.2 regression)"
+  fi
+
+  subsection "7.2 plugins/storage_driver/ (Stage 2.3 storage plugin) exists"
+  if [ -d "${REPO_ROOT}/plugins/storage_driver" ]; then
+    check_pass "plugins/storage_driver/ exists"
+  else
+    check_fail "plugins/storage_driver/ missing (Stage 2.3 regression)"
+  fi
+
+  subsection "7.3 src/kernel/net/ + block/ (compat layers) exist"
+  if [ -d "${REPO_ROOT}/src/kernel/net" ] && [ -d "${REPO_ROOT}/src/kernel/block" ]; then
+    check_pass "src/kernel/{net,block}/ compat layers present"
+  else
+    check_fail "src/kernel/{net,block}/ compat layers missing"
+  fi
 }
 
 main "$@"
