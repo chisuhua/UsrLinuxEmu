@@ -149,14 +149,11 @@ TEST_CASE("DESTROY_QUEUE — rejects unknown handle",
   CHECK(ret == -2);  /* -ENOENT */
 }
 
-/* MAP_QUEUE_RING (§3.6) and QUERY_QUEUE (§3.7) tests are deferred —
- * GpgpuDevice::handleMapQueueRing has a pre-existing segfault on the
- * Phase 2.5 shared-memory binding path (unrelated to Tier-2 STUB work).
- * The STUB-to-real-handler replacement itself IS verified: the drm_ioctls[]
- * entry now points to gpu_ioctl_map_queue_ring, which calls
- * self->ioctl(GPU_IOCTL_MAP_QUEUE_RING), which dispatches to
- * handleMapQueueRing via IoctlEntry.  The segfault is downstream of
- * the STUB penetration boundary.
+/* MAP_QUEUE_RING (§3.6) happy path was deferred during Tier-2 because of a
+ * pre-existing segfault in GpgpuDevice::handleMapQueueRing (Phase 2.5
+ * shared-memory binding path).  The STUB-to-real-handler replacement was
+ * verified via the unknown-handle test below.  The happy-path test is now
+ * enabled after the v1.4.1 hotfix (see TEST_CASE tagged [fix] below).
  *
  * Per ADR-035 + boundary §3.1, MAP_QUEUE_RING Tier-2 scope is "mmap /
  * dma_buf_mmap wiring" — that work is independent of the GpgpuDevice
@@ -171,6 +168,27 @@ TEST_CASE("MAP_QUEUE_RING — rejects unknown queue_handle (IoctlEntry dispatch 
   args.queue_handle = 0xDEADBEEFULL;
   long ret = dev.ioctl(0, GPU_IOCTL_MAP_QUEUE_RING, &args);
   CHECK(ret == -2);  /* -ENOENT */
+}
+
+TEST_CASE("MAP_QUEUE_RING happy path — Phase 2.5 segfault fix (Tier-2 §3.6)",
+          "[handler][map_queue_ring][tier2][fix]")
+{
+  GpgpuDevice dev(nullptr);
+  struct gpu_va_space_args va = {};
+  va.page_size = 0;
+  REQUIRE(dev.ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &va) == 0);
+
+  struct gpu_queue_args q = {};
+  q.va_space_handle = va.va_space_handle;
+  q.queue_type = 0;
+  q.ring_buffer_size = 4096;
+  REQUIRE(dev.ioctl(0, GPU_IOCTL_CREATE_QUEUE, &q) == 0);
+
+  struct gpu_queue_map_ring_args args = {};
+  args.queue_handle = q.queue_handle;
+  args.ring_addr = 0x10000;
+  long ret = dev.ioctl(0, GPU_IOCTL_MAP_QUEUE_RING, &args);
+  CHECK(ret == 0);
 }
 
 TEST_CASE("QUERY_QUEUE — rejects unknown queue_handle (IoctlEntry dispatch verified)",
