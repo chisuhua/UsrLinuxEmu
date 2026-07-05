@@ -23,6 +23,7 @@ add_library(kernel SHARED
     kernel/iommu/ioasid.cpp
     kernel/iommu/iommu_emu_state.cpp
     kernel/iommu/dma_remap.cpp
+    kernel/iommu/vfio_bridge.cpp
     kernel/iommu/ats_protocol.cpp
     kernel/iommu/invalidate.cpp
     kernel/iommu/pcie_integration.cpp
