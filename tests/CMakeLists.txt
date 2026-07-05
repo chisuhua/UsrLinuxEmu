@@ -65,6 +65,22 @@ function(add_sim_test TEST_NAME TEST_SOURCE)
     set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endfunction()
 
+# Stage 2.2.4 — net driver test (links kernel + net_drv)
+function(add_catch_net_test TEST_NAME TEST_SOURCE)
+    add_executable(${TEST_NAME} ${TEST_SOURCE} ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp)
+    target_link_libraries(${TEST_NAME} PRIVATE kernel net_drv)
+    target_include_directories(${TEST_NAME} PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include/kernel
+        ${PROJECT_SOURCE_DIR}/include/linux_compat
+        ${PROJECT_SOURCE_DIR}/drivers
+        ${PROJECT_SOURCE_DIR}/plugins
+        ${PROJECT_SOURCE_DIR}/plugins/net_driver/drv
+        ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
+    set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endfunction()
+
 # Define Catch2 sim test function (links kernel + gpu_sim + gpu_drv)
 function(add_catch_sim_test TEST_NAME TEST_SOURCE)
     add_executable(${TEST_NAME} ${TEST_SOURCE} ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp)
@@ -205,6 +221,15 @@ set(CATCH2_SIM_TESTS
     # Stage 2.2.1 — Network socket + sk_buff compat (per ADR-038 D1/D2)
     test_socket_skbuff_standalone.cpp
 )
+
+# Stage 2.2.4 — net driver plugin test (per ADR-038 D1)
+set(CATCH2_NET_TESTS
+    test_net_driver_standalone.cpp
+)
+foreach(src ${CATCH2_NET_TESTS})
+    get_filename_component(testname ${src} NAME_WE)
+    add_catch_net_test(${testname} ${src})
+endforeach()
 foreach(src ${CATCH2_SIM_TESTS})
     get_filename_component(testname ${src} NAME_WE)
     add_catch_sim_test(${testname} ${src})

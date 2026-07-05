@@ -120,6 +120,16 @@ const char* net_device_get_name(NetDevice* dev) {
   return dev ? dev->name.c_str() : nullptr;
 }
 
+int net_device_open(NetDevice* dev) {
+  if (!dev || !dev->ndo_open) return -22;
+  return dev->ndo_open(dev);
+}
+
+int net_device_close(NetDevice* dev) {
+  if (!dev || !dev->ndo_stop) return -22;
+  return dev->ndo_stop(dev);
+}
+
 }  // extern "C"
 
 }  // namespace usr_linux_emu
