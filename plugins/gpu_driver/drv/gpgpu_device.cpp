@@ -503,19 +503,26 @@ long GpgpuDevice::handleMapQueueRing(void* argp) {
   auto it = queues_.find(args->queue_handle);
   if (it == queues_.end()) return -ENOENT;
 
-  // Phase 2.5: 将共享内存绑定到 Queue
-  // 使用 Queue 创建时指定的 ring_size 计算所需内存
+  // HOTFIX v1.4.1: do not dereference user-provided ring_addr directly;
+  // userspace can't safely write to arbitrary user addresses.  Allocate
+  // our own aligned backing store and pass that to attachSharedMemory.
   size_t ring_mem_size = sizeof(gpu_ring_header) +
       it->second->ringSize() * sizeof(gpu_gpfifo_entry);
-  int ret = it->second->attachSharedMemory(
-      reinterpret_cast<void*>(args->ring_addr), ring_mem_size);
+  if (!it->second->shared_mem_) {
+    if (posix_memalign(&it->second->shared_mem_, 4096, ring_mem_size) != 0) {
+      std::cerr << "[GpgpuDevice] MAP_QUEUE_RING: posix_memalign failed\n";
+      return -ENOMEM;
+    }
+  }
+  int ret = it->second->attachSharedMemory(it->second->shared_mem_, ring_mem_size);
   if (ret != 0) {
     std::cerr << "[GpgpuDevice] MAP_QUEUE_RING: attachSharedMemory failed\n";
     return -ENOMEM;
   }
 
   std::cout << "[GpgpuDevice] MAP_QUEUE_RING: handle=" << args->queue_handle
-            << " addr=0x" << std::hex << args->ring_addr << "\n";
+            << " user_addr=0x" << std::hex << args->ring_addr
+            << " backing=0x" << it->second->shared_mem_ << std::dec << "\n";
   return 0;
 }
 

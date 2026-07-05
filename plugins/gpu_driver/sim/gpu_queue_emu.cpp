@@ -1,6 +1,7 @@
 #include "gpu_queue_emu.h"
 #include "hardware/hardware_puller_emu.h"
 
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 
@@ -16,6 +17,10 @@ GpuQueueEmu::GpuQueueEmu(uint32_t queue_id, uint32_t queue_type,
 }
 
 GpuQueueEmu::~GpuQueueEmu() {
+  if (shared_mem_) {
+    free(shared_mem_);
+    shared_mem_ = nullptr;
+  }
   ring_header_ = nullptr;
   std::cout << "[GpuQueue] Destroyed queue_id=" << queue_id_ << "\n";
 }

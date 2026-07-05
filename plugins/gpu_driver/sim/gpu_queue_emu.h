@@ -89,6 +89,10 @@ class GpuQueueEmu {
   /** 获取 Ring Buffer 头部指针（共享内存） */
   struct gpu_ring_header* ringHeader() const { return ring_header_; }
 
+  // HOTFIX v1.4.1: backing store for attachSharedMemory.
+  // Public so gpgpu_device.cpp handleMapQueueRing can pass it in.
+  void* shared_mem_ = nullptr;
+
   // ========== Doorbell 触发 ==========
 
   /** 触发 Doorbell（由 mmap 写操作调用） */
