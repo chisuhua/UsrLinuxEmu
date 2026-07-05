@@ -3,16 +3,16 @@
 > **目的**：固化 Stage 1.4 PoC 的诚实发现，明确 Stage 1 真正达成的边界（Tier-1）与实际超界的边界（Tier-2），作为 1.4 集成策略与未来 Stage 2+ 规划的架构 SSOT。
 >
 > **创建日期**：2026-07-04
-> **状态**：✅ 架构边界 SSOT（v1.2）— Stage 2 ✅ 已达成 (2026-07-05)
-> **基础证据**：[5341c3f](https://github.com/chisuhua/UsrLinuxEmu/commit/5341c3f) "stage-1.4 PoC integration attempt" + 1.0-1.3 全部 commit 历史 + 63/63 ctest 全绿基线 + Tier-2 10 commits 穿透 (commit `6a7f4ab` merge to main) + Stage 2 multi-device plugin 5 commits (net + storage) + 76/76 ctest
+> **状态**：✅ 架构边界 SSOT（v1.2）— Stage 1 全部达成 + Stage 2 Tier-2 deferred §3.2/§3.3 已吸收
+> **基础证据**：[5341c3f](https://github.com/chisuhua/UsrLinuxEmu/commit/5341c3f) "stage-1.4 PoC integration attempt" + 1.0-1.3 全部 commit 历史 + 63/63 ctest 全绿基线 + Stage 1.4 Tier-2 10 commits 穿透 + Stage 2 multi-device 14 commits
 > **关联 SSOT**：
-> - 路线图: [stage-1-kernel-emu.md](../roadmap/stage-1-kernel-emu.md)
+> - 路线图: [stage-1-kernel-emu.md](../roadmap/stage-1-kernel-emu.md) + [stage-2-multi-device.md](../roadmap/stage-2-multi-device.md)
 > - 架构: [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md)
 > - 治理: [ADR-035](../00_adr/adr-035-governance-policy.md)
 > - 3 区分: [ADR-036](../00_adr/adr-036-three-way-separation.md)
-> - 网络栈边界: [ADR-038](../00_adr/adr-038-network-stack-three-way-separation.md)
+> - 网络栈 3 区分: [ADR-038](../00_adr/adr-038-network-stack-three-way-separation.md)
 > - 兼容策略: [ADR-027](../00_adr/adr-027-linux-compat-strategy.md)
-> **关联 PoC 报告**：[kfd-portability-progress.md](kfd-portability-progress.md) + [kfd-portability-report.md](kfd-portability-report.md) + [tier2-runtime-penetration-report.md](tier2-runtime-penetration-report.md)
+> **关联 PoC 报告**：[kfd-portability-progress.md](kfd-portability-progress.md) + [kfd-portability-report.md](kfd-portability-report.md) + [tier2-runtime-penetration-report.md](tier2-runtime-penetration-report.md) + [stage-2-multi-device.md §Closeout](../roadmap/stage-2-multi-device.md)
 > **Stage 2 报告**：[stage-2-spike-report.md](stage-2-spike-report.md) + [stage-2-multi-device-design.md](../superpowers/specs/2026-07-05-stage-2-multi-device-design.md) + [stage-2-multi-device.md](../superpowers/plans/2026-07-05-stage-2-multi-device.md)
 
 ---
@@ -165,24 +165,26 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 ### 3.4 多文件 KFD 集成（架构差距，超出 Stage 1 范围）
 
 > **1.4 PoC attempt 实证**：完整 KFD 多文件集成**不可行**
+> **Stage 2 (commit `fb75ed2`, 2026-07-05)**：重新评估，**仍延后**（超出 Stage 2 范围）
 
-| 文件 | 状态 | 阻塞原因 |
-|------|------|---------|
-| `kfd_queue.c` | ✅ 已 PoC 编译 | 单文件 520 行，4 个 compat header 即可 |
-| `kfd_module.c` | ❌ 卡 amdgpu_ctx.h | transitive 依赖 `amdgpu_ctx_mgr_*` |
-| `kfd_device.c` | ❌ 卡 amdgpu_ctx.h | 同上 |
-| `kfd_process.c` | ❌ 卡 amdgpu_ctx.h | 同上 |
-| `kfd_doorbell.c` | ❌ 卡 amdgpu_ctx.h | 同上 |
-| `kfd_chardev.c`（候选）| ❌ 卡 amdgpu_ctx.h | 同上 |
+| 文件 | 状态 | 阻塞原因 | 推荐延后 |
+|------|------|---------|---------|
+| `kfd_queue.c` | ✅ 已 PoC 编译 | 单文件 520 行，4 个 compat header 即可 | (Tier-1 完成) |
+| `kfd_module.c` | ❌ 卡 amdgpu_ctx.h | transitive 依赖 `amdgpu_ctx_mgr_*` | Stage 3+ 独立子项目 |
+| `kfd_device.c` | ❌ 卡 amdgpu_ctx.h | 同上 | Stage 3+ 独立子项目 |
+| `kfd_process.c` | ❌ 卡 amdgpu_ctx.h | 同上 | Stage 3+ 独立子项目 |
+| `kfd_doorbell.c` | ❌ 卡 amdgpu_ctx.h | 同上 | Stage 3+ 独立子项目 |
+| `kfd_chardev.c`（候选）| ❌ 卡 amdgpu_ctx.h | 同上 | Stage 3+ 独立子项目 |
 
-**架构差距量化**（1.4 PoC 报告）：
+**架构差距量化**（1.4 PoC 报告，Stage 2 验证）：
 - **53+ amdgpu_* headers** transitive 依赖
 - **~50K 行 amdgpu driver** 需连同移植（占 Stage 1 全部工作量 2-3 倍）
 - 8 次迭代尝试均卡在 `amdgpu_ctx.h`（驱动需要 amdgpu context manager）
 
-**Tier-2 价值影响**：
-- **KFD 单文件 PoC（kfd_queue.c）是 Tier-1 上限**
-- 真实 KFD 多文件驱动移植需要 Stage 2+ 重新评估（可能需要 amdgpu 子集或重新设计 3 区分边界）
+**Stage 2 评估**：
+- vfio opt-in (Stage 2.1.1) + mm_shim PID/VMA (Stage 2.1.2) 提供 KFD Tier-2 path 真实运行环境
+- KFD 多文件 driver 移植仍是 ~50K 行工作量，**仍需独立子项目**（Stage 3+）
+- 真实 KFD 多文件驱动移植需要独立评估（可能需要 amdgpu 子集或重新设计 3 区分边界）
 
 ### 3.5 kfd_queue.c 完整功能（仅 helper 子集）
 
@@ -327,7 +329,8 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 | 日期 | 版本 | 变更 |
 |------|------|------|
 | 2026-07-04 | v1.0 | 初版：基于 5341c3f PoC attempt + 1.0-1.3 commit 历史 + 63/63 ctest 基线，固化 Tier-1/Tier-2 架构边界 SSOT |
-| 2026-07-05 | v1.1 | Tier-2 穿透：§3.1 4 个 handler logging stub → Penetrated (Tier-1 已穿透)；§3.2 IOTLB flush fprintf stub → Real Implementation (user-space page-table walk, commit `62d2353`)；§3.3 mmu_notifier callback TODO → Implemented (commit `58777e5`)；附加 9 个 STUB_HANDLER 升级 (commits `c33d824`+`8b6a33d`+`4261bb4`)。10 commits / 73/73 ctest PASS / 0 regression。详见 [tier2-runtime-penetration-report.md](tier2-runtime-penetration-report.md)。|
+| 2026-07-05 | v1.1 | Tier-2 穿透：§3.1 4 个 handler logging stub → Penetrated (Tier-1 已穿透)；§3.2 IOTLB flush fprintf stub → Real Implementation (user-space page-table walk, commit `62d2353`)；§3.3 mmu_notifier callback TODO → Implemented (commit `58777e5`)；附加 9 个 STUB_HANDLER 升级 (commits `c33d824`+`8b6a33d`+`4261bb4`)。10 commits / 73/73 ctest PASS / 0 regression。详见 [tier2-runtime-penetration-report.md](tier2-runtime-penetration-report.md)。 |
+| 2026-07-05 | v1.2 | Stage 2 完成 (commit `fb75ed2` merge to main)：§3.2 IOTLB flush → vfio opt-in 真实 invalidation (Stage 2.1.1)；§3.3 mmu_notifier callback → mm_shim PID+VMA 跟踪 (Stage 2.1.2)；§3.4 多文件 KFD 集成 → 仍延后 Stage 3+ 独立子项目 (Stage 2 评估确认)。14 Stage 2 commits / 76/76 ctest PASS / 0 regression。详见 [stage-2-multi-device.md](../roadmap/stage-2-multi-device.md) + [ADR-038](../00_adr/adr-038-network-stack-three-way-separation.md)。|
 
 ---
 
