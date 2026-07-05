@@ -30,7 +30,7 @@ int us_block_open(const char* path, unsigned long flags) {
   if (!path) return -22;
   std::string mode = "rb+";
   if (flags == 0) mode = "rb";
-  else if (flags & 0x40) mode = "wb";  /* O_CREAT */
+  else if (flags & 0x40) mode = "w+b";  /* O_CREAT: create+truncate+read+write */
   else if (flags & 0x200) mode = "ab";  /* O_APPEND */
   std::FILE* fp = std::fopen(path, mode.c_str());
   if (!fp) return -2;  /* -ENOENT */
@@ -67,7 +67,14 @@ long us_block_write(int fd, const void* buf, unsigned long count) {
   if (!buf || count == 0) return -22;
   auto it = g_files.find(fd);
   if (it == g_files.end()) return -9;
-  return static_cast<long>(std::fwrite(buf, 1, count, it->second.fp));
+  long n = static_cast<long>(std::fwrite(buf, 1, count, it->second.fp));
+  if (n > 0) {
+    long pos = std::ftell(it->second.fp);
+    if (pos > static_cast<long>(it->second.size)) {
+      it->second.size = static_cast<unsigned long>(pos);
+    }
+  }
+  return n;
 }
 
 long us_block_seek(int fd, long offset, int whence) {
