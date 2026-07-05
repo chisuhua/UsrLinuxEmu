@@ -9,6 +9,8 @@
 
 #include "iommu_internal.h"
 
+#include <kernel/uvm/mm_shim.h>
+
 #include <cstdlib>
 #include <cstring>
 
@@ -103,3 +105,20 @@ struct iommu_group_state *iommu_group_priv(struct iommu_group *group)
 }
 
 }  /* namespace usr_linux_emu */
+
+extern "C" {
+
+/* Stage 2.1.2: attach a us_mm_shim to an iommu_domain.  Called by
+ * Stage 2.1.2 setup code (e.g., GPU driver open path) to associate a
+ * PID + VMA list with the domain so iommu_invalidate_register_notifier
+ * can propagate context to mmu_notifier callbacks. */
+int iommu_domain_attach_mm_shim(struct iommu_domain* domain,
+                                struct us_mm_shim* shim) {
+  if (!domain || !shim) return -22;  /* -EINVAL */
+  auto* state = usr_linux_emu::iommu_domain_priv(domain);
+  if (!state) return -22;
+  state->mm_shim = shim;
+  return 0;
+}
+
+}  /* extern "C" */
