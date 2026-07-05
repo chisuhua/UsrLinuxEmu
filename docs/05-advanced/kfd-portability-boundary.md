@@ -3,15 +3,17 @@
 > **目的**：固化 Stage 1.4 PoC 的诚实发现，明确 Stage 1 真正达成的边界（Tier-1）与实际超界的边界（Tier-2），作为 1.4 集成策略与未来 Stage 2+ 规划的架构 SSOT。
 >
 > **创建日期**：2026-07-04
-> **状态**：✅ 架构边界 SSOT（v1.1）— Tier-2 §3.1/§3.2/§3.3 穿透完成 (2026-07-05)
-> **基础证据**：[5341c3f](https://github.com/chisuhua/UsrLinuxEmu/commit/5341c3f) "stage-1.4 PoC integration attempt" + 1.0-1.3 全部 commit 历史 + 63/63 ctest 全绿基线 + Tier-2 10 commits 穿透 (commit `6a7f4ab` merge to main)
+> **状态**：✅ 架构边界 SSOT（v1.2）— Stage 2 ✅ 已达成 (2026-07-05)
+> **基础证据**：[5341c3f](https://github.com/chisuhua/UsrLinuxEmu/commit/5341c3f) "stage-1.4 PoC integration attempt" + 1.0-1.3 全部 commit 历史 + 63/63 ctest 全绿基线 + Tier-2 10 commits 穿透 (commit `6a7f4ab` merge to main) + Stage 2 multi-device plugin 5 commits (net + storage) + 76/76 ctest
 > **关联 SSOT**：
 > - 路线图: [stage-1-kernel-emu.md](../roadmap/stage-1-kernel-emu.md)
 > - 架构: [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md)
 > - 治理: [ADR-035](../00_adr/adr-035-governance-policy.md)
 > - 3 区分: [ADR-036](../00_adr/adr-036-three-way-separation.md)
+> - 网络栈边界: [ADR-038](../00_adr/adr-038-network-stack-three-way-separation.md)
 > - 兼容策略: [ADR-027](../00_adr/adr-027-linux-compat-strategy.md)
 > **关联 PoC 报告**：[kfd-portability-progress.md](kfd-portability-progress.md) + [kfd-portability-report.md](kfd-portability-report.md) + [tier2-runtime-penetration-report.md](tier2-runtime-penetration-report.md)
+> **Stage 2 报告**：[stage-2-spike-report.md](stage-2-spike-report.md) + [stage-2-multi-device-design.md](../superpowers/specs/2026-07-05-stage-2-multi-device-design.md) + [stage-2-multi-device.md](../superpowers/plans/2026-07-05-stage-2-multi-device.md)
 
 ---
 
