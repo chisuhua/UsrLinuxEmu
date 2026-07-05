@@ -420,3 +420,282 @@ struct gpu_unmap_memory_args {
   u32 flags;             /* Unmap flags (input, reserved) */
   u32 pad;
 };
+
+/* ========================================================================
+ * Phase 3.1 / 3.2 — Stream Capture + CUDA Graph + Memory Pool
+ * (sim-stream-primitive-support, ACCEPTED 2026-07-05)
+ *
+ * Numbering reservation:
+ *   0x50-0x59  Stream Capture + Graph (10 IOCTLs)
+ *   0x60-0x67  Memory Pool (8 IOCTLs)
+ *   0x68-0x6F  Reserved (internal driver extensions)
+ *   0x70-0x7F  Reserved for future use
+ *
+ * IOCTL direction table — Oracle H2 fix: any IOCTL that returns data to
+ * user space MUST be declared _IOWR (not _IOW), otherwise the kernel
+ * will NOT copy the output fields back to user space, causing silent
+ * data loss. See proposal.md / design.md §IOCTL Directions Table for the
+ * authoritative mapping.
+ * ======================================================================== */
+
+/* ── Stream Capture (0x50-0x52, 2 struct) ──────────────────────────────── */
+
+/**
+ * GPU_IOCTL_STREAM_CAPTURE_BEGIN - Begin stream capture on a queue/stream
+ *
+ * `_IOW`: input-only (stream_id + mode). No output fields.
+ * capture mode: 0=GLOBAL, 1=THREAD_LOCAL, 2=RELAXED (cuStreamCaptureMode).
+ * Only SIM_CAPTURE_MODE_GLOBAL (0) is recognized in this change; other
+ * modes return -EINVAL.
+ */
+#define GPU_IOCTL_STREAM_CAPTURE_BEGIN _IOW(GPU_IOCTL_BASE, 0x50, struct gpu_stream_capture_args)
+
+/**
+ * GPU_IOCTL_STREAM_CAPTURE_END - End stream capture, returns captured graph
+ *
+ * `_IOWR`: graph_handle_out must be filled on return.
+ */
+#define GPU_IOCTL_STREAM_CAPTURE_END _IOWR(GPU_IOCTL_BASE, 0x51, struct gpu_stream_capture_args)
+
+/**
+ * GPU_IOCTL_STREAM_CAPTURE_STATUS - Query current capture state
+ *
+ * `_IOWR`: status_out is filled with one of SIM_STREAM_CAPTURE_{NONE,ACTIVE,INVALID}.
+ */
+#define GPU_IOCTL_STREAM_CAPTURE_STATUS _IOWR(GPU_IOCTL_BASE, 0x52, struct gpu_stream_capture_status_args)
+
+/* Capture mode + status constants are defined in sim/stream_capture.h
+ * (typed enums). Do NOT redefine here — both this header and stream_capture.h
+ * may be included in a single translation unit; the preprocessor would
+ * otherwise substitute these names into the enum body. */
+
+struct gpu_stream_capture_args {
+  u32 stream_id;        /* Queue/stream handle (input for BEGIN/END) */
+  u32 mode;             /* SIM_CAPTURE_MODE_* (input, BEGIN only) */
+  u64 graph_handle_out; /* OUT (END only): captured graph handle */
+};
+
+struct gpu_stream_capture_status_args {
+  u32 stream_id;        /* Queue/stream handle (input) */
+  u32 _pad;
+  u32 status_out;       /* OUT: SIM_STREAM_CAPTURE_* */
+  u32 _pad2;
+};
+
+/* ── Graph (0x53-0x59, 7 structs) ─────────────────────────────────────── */
+
+/**
+ * GPU_IOCTL_GRAPH_CREATE - Create an empty graph
+ */
+#define GPU_IOCTL_GRAPH_CREATE _IOWR(GPU_IOCTL_BASE, 0x53, struct gpu_graph_create_args)
+
+/**
+ * GPU_IOCTL_GRAPH_DESTROY - Destroy a graph
+ */
+#define GPU_IOCTL_GRAPH_DESTROY _IOW(GPU_IOCTL_BASE, 0x54, struct gpu_graph_destroy_args)
+
+/**
+ * GPU_IOCTL_GRAPH_ADD_KERNEL_NODE - Append a kernel node to the graph
+ */
+#define GPU_IOCTL_GRAPH_ADD_KERNEL_NODE _IOW(GPU_IOCTL_BASE, 0x55, struct gpu_graph_add_kernel_node_args)
+
+/**
+ * GPU_IOCTL_GRAPH_ADD_MEMCPY_NODE - Append a memcpy node to the graph
+ */
+#define GPU_IOCTL_GRAPH_ADD_MEMCPY_NODE _IOW(GPU_IOCTL_BASE, 0x56, struct gpu_graph_add_memcpy_node_args)
+
+/**
+ * GPU_IOCTL_GRAPH_INSTANTIATE - Validate graph and produce executable
+ *
+ * `_IOWR`: exec_handle_out must be filled on return.
+ */
+#define GPU_IOCTL_GRAPH_INSTANTIATE _IOWR(GPU_IOCTL_BASE, 0x57, struct gpu_graph_instantiate_args)
+
+/**
+ * GPU_IOCTL_GRAPH_LAUNCH - Launch a graph executable
+ *
+ * `_IOWR`: fence_id_out must be filled with a sim-layer fence_id (>= 1<<32).
+ * See design.md §fence_id Lifecycle Migration Plan.
+ */
+#define GPU_IOCTL_GRAPH_LAUNCH _IOWR(GPU_IOCTL_BASE, 0x58, struct gpu_graph_launch_args)
+
+/**
+ * GPU_IOCTL_GRAPH_DESTROY_EXEC - Destroy a graph executable
+ */
+#define GPU_IOCTL_GRAPH_DESTROY_EXEC _IOW(GPU_IOCTL_BASE, 0x59, struct gpu_graph_destroy_exec_args)
+
+/* Graph node type enum is defined in sim/graph.h (typed enum). */
+
+struct gpu_graph_create_args {
+  u64 graph_handle_out;  /* OUT: graph handle */
+};
+
+struct gpu_graph_destroy_args {
+  u64 graph_handle;      /* Graph to destroy (input) */
+};
+
+struct gpu_graph_add_kernel_node_args {
+  u64 graph_handle;          /* Target graph (input) */
+  u32 kernel_index;          /* Kernel table index (input) */
+  u32 grid_x, grid_y, grid_z;
+  u32 block_x, block_y, block_z;
+  u64 kernargs_bo_handle;    /* BO handle for kernel arguments, 0 = no args */
+};
+
+struct gpu_graph_add_memcpy_node_args {
+  u64 graph_handle;      /* Target graph (input) */
+  u64 src_va;            /* Source GPU virtual address (input) */
+  u64 dst_va;            /* Destination GPU virtual address (input) */
+  u64 size;              /* Transfer size in bytes (input) */
+  u32 is_h2d;            /* 0 = D2D (device-to-device), 1 = H2D (host-to-device) */
+  u32 _pad;
+};
+
+struct gpu_graph_instantiate_args {
+  u64 graph_handle;      /* Graph to instantiate (input) */
+  u64 exec_handle_out;   /* OUT: executable handle */
+};
+
+struct gpu_graph_launch_args {
+  u64 exec_handle;       /* Executable to launch (input) */
+  u32 stream_id;         /* Target queue (input) */
+  u32 _pad;
+  s64 fence_id_out;      /* OUT: sim fence_id (>= 1<<32 on success, <0 = error) */
+};
+
+struct gpu_graph_destroy_exec_args {
+  u64 exec_handle;       /* Executable to destroy (input) */
+  u64 _pad;
+};
+
+/* ── Memory Pool (0x60-0x67, 8 structs) ───────────────────────────────── */
+
+/**
+ * GPU_IOCTL_MEM_POOL_CREATE - Create a memory pool within a VA Space
+ *
+ * `_IOWR`: pool_handle_out must be filled. Pool semantics per Fix-2:
+ * VA subrange approach — pool reserves a contiguous VA range
+ * [va_base, va_base + size) inside the parent VA Space.
+ */
+#define GPU_IOCTL_MEM_POOL_CREATE _IOWR(GPU_IOCTL_BASE, 0x60, struct gpu_mem_pool_create_args)
+
+/**
+ * GPU_IOCTL_MEM_POOL_DESTROY - Destroy a memory pool
+ */
+#define GPU_IOCTL_MEM_POOL_DESTROY _IOW(GPU_IOCTL_BASE, 0x61, struct gpu_mem_pool_destroy_args)
+
+/**
+ * GPU_IOCTL_MEM_POOL_ALLOC - Synchronous allocation from a pool
+ *
+ * `_IOWR`: va_out must be filled.
+ */
+#define GPU_IOCTL_MEM_POOL_ALLOC _IOWR(GPU_IOCTL_BASE, 0x62, struct gpu_mem_pool_alloc_args)
+
+/**
+ * GPU_IOCTL_MEM_POOL_ALLOC_ASYNC - Asynchronous allocation (returns fence)
+ *
+ * `_IOWR`: va_out AND fence_id_out must be filled.
+ */
+#define GPU_IOCTL_MEM_POOL_ALLOC_ASYNC _IOWR(GPU_IOCTL_BASE, 0x63, struct gpu_mem_pool_alloc_async_args)
+
+/**
+ * GPU_IOCTL_MEM_POOL_FREE_ASYNC - Asynchronous free (returns fence)
+ *
+ * `_IOWR`: fence_id_out must be filled.
+ */
+#define GPU_IOCTL_MEM_POOL_FREE_ASYNC _IOWR(GPU_IOCTL_BASE, 0x64, struct gpu_mem_pool_free_async_args)
+
+/**
+ * GPU_IOCTL_MEM_POOL_SET_ATTR - Set pool attribute (recorded, not enforced)
+ */
+#define GPU_IOCTL_MEM_POOL_SET_ATTR _IOW(GPU_IOCTL_BASE, 0x65, struct gpu_mem_pool_attr_args)
+
+/**
+ * GPU_IOCTL_MEM_POOL_GET_ATTR - Get pool attribute
+ *
+ * `_IOWR`: value_out must be filled.
+ */
+#define GPU_IOCTL_MEM_POOL_GET_ATTR _IOWR(GPU_IOCTL_BASE, 0x66, struct gpu_mem_pool_attr_args)
+
+/**
+ * GPU_IOCTL_MEM_POOL_TRIM - Trim pool to retain at least min_bytes
+ */
+#define GPU_IOCTL_MEM_POOL_TRIM _IOW(GPU_IOCTL_BASE, 0x67, struct gpu_mem_pool_trim_args)
+
+/* Pool attribute constants + error codes are defined in sim/mem_pool.h
+ * (typed enum + #defines). Do NOT redefine here — including both this
+ * header and sim/mem_pool.h in a single translation unit would otherwise
+ * trigger the preprocessor to mangle the enum body into numeric literals. */
+
+/* Pool error codes (Fix-2) */
+#define SIM_POOL_ERR_OK               0
+#define SIM_POOL_ERR_INVALID_HANDLE  -1
+#define SIM_POOL_ERR_NOSPC           -2
+#define SIM_POOL_ERR_INVAL           -3
+#define SIM_POOL_ERR_NOT_SUPPORTED   -4
+
+struct gpu_mem_pool_props {
+  u64 va_space_handle;  /* Parent VA Space handle (input) */
+  u64 size;             /* Pool size in bytes (input) */
+  u64 va_base;          /* Pool VA subrange base (OUT, set by MEM_POOL_CREATE) */
+  u64 va_limit;         /* Pool VA subrange end = va_base + size (OUT) */
+  u32 flags;            /* GPU_MEM_POOL_* flags (input) */
+  u32 _pad;
+};
+
+/* GPU_MEM_POOL flags (subset of CU_MEMPOOL_* for Phase 3.2) */
+#define GPU_MEM_POOL_FLAGS_DEFAULT  0u
+
+struct gpu_mem_pool_create_args {
+  struct gpu_mem_pool_props props;  /* Input */
+  u64 pool_handle_out;              /* OUT: pool handle */
+};
+
+struct gpu_mem_pool_destroy_args {
+  u64 pool_handle;   /* Pool handle (input) */
+};
+
+struct gpu_mem_pool_alloc_args {
+  u64 pool_handle;   /* Pool handle (input) */
+  u64 size;          /* Requested allocation size (input) */
+  u64 va_out;        /* OUT: allocated VA in [va_base, va_limit) */
+};
+
+struct gpu_mem_pool_alloc_async_args {
+  u64 pool_handle;   /* Pool handle (input) */
+  u64 size;          /* Requested allocation size (input) */
+  u32 stream_id;     /* Target stream (input) */
+  u32 _pad;
+  u64 va_out;        /* OUT: allocated VA */
+  s64 fence_id_out;  /* OUT: sim fence_id (>= 1<<32) */
+};
+
+struct gpu_mem_pool_free_async_args {
+  u64 va;             /* VA to free (input, from prior alloc) */
+  u32 stream_id;      /* Target stream (input) */
+  u32 _pad;
+  s64 fence_id_out;   /* OUT: sim fence_id (>= 1<<32) */
+  u64 _pad2;
+};
+
+struct gpu_mem_pool_attr_args {
+  u64 pool_handle;       /* Pool handle (input) */
+  u32 attr;              /* SIM_MEM_POOL_ATTR_* (input) */
+  u32 _reserved;         /* Padding, must be 0 */
+  u64 value[4];          /* 32-byte blob (Fix-7 documented layout):
+                          *  - SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD:
+                          *      value[0]=uint64_t threshold bytes; value_size must == 8
+                          *  - SIM_MEM_POOL_ATTR_REUSE_FOLLOW_EVENT_DEPENDENCIES:
+                          *      value[0]=uint32_t enable 0/1; value_size must == 4
+                          *  For get_attr, value_out is filled.
+                          *  For set_attr, value is input.
+                          *  Errors:
+                          *   - value_size > 32 → -EINVAL
+                          *   - unknown attr  → -ENOSYS
+                          */
+};
+
+struct gpu_mem_pool_trim_args {
+  u64 pool_handle;   /* Pool handle (input) */
+  u64 min_bytes;     /* Retain at least this many bytes (input) */
+};

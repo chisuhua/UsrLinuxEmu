@@ -8,6 +8,14 @@ add_library(gpu_sim STATIC
     # Stage 1.3 — UVM/HMM sim layer (see openspec/changes/stage-1-3-uvm-hmm/)
     page_fault_handler.cpp
     page_migration.cpp
+    # sim-stream-primitive-support — Phase A.1 fence_id (Fix-1 / Oracle H4)
+    fence_id.cpp
+    # sim-stream-primitive-support — §2.1 Stream Capture (Phase 3.1)
+    stream_capture.cpp
+    # sim-stream-primitive-support — §2.2 Graph (Phase 3.1)
+    graph.cpp
+    # sim-stream-primitive-support — §2.3 Memory Pool (Phase 3.2, Fix-2 Option B)
+    mem_pool.cpp
 )
 
 set_target_properties(gpu_sim PROPERTIES POSITION_INDEPENDENT_CODE ON)

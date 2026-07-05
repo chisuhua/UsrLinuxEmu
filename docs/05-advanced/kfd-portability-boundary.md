@@ -344,6 +344,33 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
-**最后更新**: 2026-07-04
-**对应 SSOT 章节**: post-refactor-architecture.md §1.10（待同步引用本 boundary）
-**对应 ADR**: ADR-035 (governance) + ADR-027 (compat strategy) + ADR-036 (3-way principle)
+**最后更新**: 2026-07-06 (v1.2 — Phase 3.1/3.2 sim primitives 扩 0x50-0x67)
+**对应 SSOT 章节**: post-refactor-architecture.md §1.10
+**对应 ADR**: ADR-015 (IOCTL unification) + ADR-035 (governance) + ADR-027 (compat strategy) + ADR-036 (3-way principle)
+
+---
+
+## 10. Phase 3 sim primitives 扩展（2026-07-06 追加 — sim-stream-primitive-support）
+
+### 10.1 新增 sim 原语（18 个 IOCTL 映射）
+
+| 原语 | IOCTL 范围 | 来源 change | 备注 |
+|------|-----------|------------|------|
+| `sim_fence_id_alloc/check/signal` | (跨 IOCTL — 等待 fence 字段) | sim-stream-primitive-support §5.6 | 新增 fence_id 范围 [(1<<32), INT64_MAX] |
+| `sim_stream_capture_begin/end/status` | 0x50-0x52 | sim-stream-primitive-support §2.1 | cuStreamCapture 状态机 |
+| `sim_graph_create/destroy/add_*/instantiate/launch/destroy_exec` | 0x53-0x59 | sim-stream-primitive-support §2.2 | Graph metadata + fence 返回 |
+| `sim_mem_pool_create/destroy/alloc/alloc_async/free_async/set_attr/get_attr/trim` | 0x60-0x67 | sim-stream-primitive-support §2.3 | Memory pool (Fix-2 Option B VA 子范围方案) |
+
+### 10.2 对 Tier 边界的影响
+
+- 不修改 Tier-1 已锁定的 19 个 IOCTL 派发表（0x44-0x47 KFD + 之前编号）
+- 仅追加 0x50-0x67（18 个新 IOCTL），不破坏任何现有 ABI
+- sim 原语与 Stage 1.3 `sim_pfh_*` / `sim_pm_*` 风格一致（C 链接，extern "C"）
+- 沿用现有 HAL 11 函数指针表（**未引入新 HAL op**，符合 Phase 1.4 Tier-2 决策）
+
+### 10.3 端到端验证
+
+- 81/81 ctest 通过（baseline 70 + 5 新 sim primitive test binary + Phase 3.1 测试覆盖）
+- G1-G4 边界契约保持（无 regression）
+- 新增 49 个 test cases（≥47 required per tasks.md §7）
+- ADR-015 同步更新 IOCTL 编号表（含 0x50-0x67 + 0x70-0x7F reserved）

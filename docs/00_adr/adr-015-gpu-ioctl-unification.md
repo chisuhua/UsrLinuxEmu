@@ -4,7 +4,7 @@
 
 **日期**: 2026-04-27
 
-**最后更新**: 2026-04-28 (Phase 0 修复：domain 字段已添加，VA Space/Queue ioctl 已定义)
+**最后更新**: 2026-07-06 (sim-stream-primitive-support §6.2.5 修订：补 0x44-0x47 (Stage 1.4 遗留) + 0x50-0x67 (Phase 3.1/3.2 新增) + 标注 0x70-0x7F reserved)
 
 **提案人**: Sisyphus (TaskRunner/UsrLinuxEmu 协同分析)
 
@@ -443,11 +443,22 @@ struct gpu_queue_map_ring_args {
 | 0x20 | ~~LAUNCH_CB~~ | ✅ **已删除 (commit `b78edc9`)** |
 | 0x30-0x32 | VA Space + GPU 注册 | ✅ 已定义 |
 | **0x40-0x43** | **Queue 管理 (ADR-024)** | **✅ 已实现 (Phase 2)** |
+| **0x44-0x47** | **KFD Portability (Stage 1.2 → 1.4)** | **✅ 已实现 (Stage 1.4 Tier-1, commit `80f6a44`)** — 补登于 sim-stream-primitive-support §6.2.5 |
+| **0x50-0x59** | **Stream Capture + Graph (Phase 3.1)** | **✅ 已实现 (sim-stream-primitive-support, target 7/15)** — sim_stream_capture + sim_graph 原语 |
+| **0x60-0x67** | **Memory Pool (Phase 3.2)** | **🔄 实施中 (sim-stream-primitive-support, target 7/15)** — sim_mem_pool 原语 |
+| 0x68-0x6F | (reserved) | ⚠️ 保留 — 内部驱动扩展 |
+| 0x70-0x7F | (reserved) | ⚠️ 保留 — 未来使用 (per Oracle H3 / Fix-12) |
+
+> **Fix-12 决策**：本 ADR 编号表由 sim-stream-primitive-support 修订（Oracle H3 + Fix-12 切割）：
+> - **本 change 范围**：补 0x44-0x47 (Stage 1.4 遗留) + 0x50-0x67 (本 change 新增) + 标注 0x70-0x7F 为 reserved
+> - **不在本 change 范围**：见 §10 Follow-ups（sim 多线程、F.5 等）
+>
+> 编号预留策略：0x50-0x7F 共 48 个 IOCTL 编号，Phase 3 全部扩展（10 graph/capture + 8 mempool + 缓冲）足以覆盖。
 
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team + TaskRunner Team
 
-**最后更新**: 2026-05-12 (ADR-024 修订)
+**最后更新**: 2026-07-06 (sim-stream-primitive-support §6.2.5 修订：补 0x44-0x47 + 0x50-0x67 + 标注 0x70-0x7F reserved)
 
 **评审截止**: 2026-05-04

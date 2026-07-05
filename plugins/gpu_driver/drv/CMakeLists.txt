@@ -21,6 +21,7 @@ target_include_directories(gpu_drv PUBLIC
     ${PROJECT_SOURCE_DIR}/include/linux_compat
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
     ${PROJECT_SOURCE_DIR}/libgpu_core/include
 )
 
