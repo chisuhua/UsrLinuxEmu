@@ -34,7 +34,7 @@ add_library(kernel SHARED
     kernel/drm/render_node.cpp
     kernel/drm/errno_to_linux.cpp
 
-    # Stage 1.3 — UVM/HMM (see openspec/changes/stage-1-3-uvm-hmm/)
+# Stage 1.3 — UVM/HMM (see openspec/changes/stage-1-3-uvm-hmm/)
     kernel/uvm/mmu_notifier.cpp
     kernel/uvm/mm_shim.cpp
     kernel/uvm/hmm_range.cpp
@@ -42,6 +42,11 @@ add_library(kernel SHARED
     kernel/uvm/fault_inject.cpp
     kernel/uvm/page_state_machine.cpp
     kernel/uvm/zone_device.cpp
+    # Stage 2.2.1 — Network socket + sk_buff compat (see openspec/changes/...stage-2-2-network/)
+    kernel/net/socket.cpp
+    kernel/net/sk_buff.cpp
+    # Stage 2.3.1 — Storage block compat (bio_compat, per plan §2.3.1 决策)
+    kernel/block/bio_compat.cpp
 
 )
 
