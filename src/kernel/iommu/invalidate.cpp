@@ -13,20 +13,12 @@
 
 #include <linux_compat/iommu/iommu.h>
 #include <kernel/uvm/mmu_notifier_internal.h>
+#include <kernel/uvm/mm_shim.h>
 
 #include <cstdio>
 
 extern "C" {
 
-/* Tier-2 penetrated: 2026-07-05 - references kfd-portability-boundary.md §3.3
- * Wire iommu_invalidate_register_notifier_internal to the mmu_notifier
- * framework so that subsequent fault_inject_page_fault calls actually
- * dispatch the user's invalidate_range_start callback.
- *
- * Per design.md D2: minimal viable callback wiring; do NOT add new sim
- * primitives.  The user-provided mn->ops->invalidate_range_start is the
- * Tier-2 "callback body" — it can call sim_pfh_inject_fault /
- * sim_pm_migrate_to_system from the driver side. */
 int iommu_invalidate_register_notifier_internal(struct iommu_domain *d,
 					       struct mmu_notifier *mnp)
 {
@@ -46,10 +38,16 @@ int iommu_invalidate_register_notifier_internal(struct iommu_domain *d,
 		return ret;
 	}
 
+	/* Stage 2.1.2: propagate mm_shim (PID + VMA context) to the
+	 * notifier's priv so user callbacks can read it via mn->priv. */
+	auto* state = usr_linux_emu::iommu_domain_priv(d);
+	if (state && state->mm_shim) {
+		mnp->priv = state->mm_shim;
+	}
+
 	std::fprintf(stderr,
-		     "[iommu] register_notifier OK domain=%p mnp=%p "
-		     "(Tier-2 penetrated: callback will fire on invalidation)\n",
-		     (void *)d, (void *)mnp);
+		     "[iommu] register_notifier OK domain=%p mnp=%p mm_shim=%p\n",
+		     (void *)d, (void *)mnp, (void*)mnp->priv);
 	return IOMMU_ERR_OK;
 }
 

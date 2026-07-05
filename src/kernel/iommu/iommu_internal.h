@@ -21,6 +21,8 @@
 #include <vector>
 #include <unordered_map>
 
+struct us_mm_shim;
+
 namespace usr_linux_emu {
 
 /*
@@ -32,6 +34,7 @@ struct iommu_domain_state {
 	unsigned long aperture_start;
 	unsigned long aperture_end;
 	unsigned long capacity_bytes;
+	::us_mm_shim* mm_shim = nullptr;
 };
 
 /*
@@ -64,6 +67,9 @@ struct iommu_emu_state *iommu_emu_global_state(void);
 
 iommu_domain_state *iommu_domain_priv(struct iommu_domain *domain);
 iommu_group_state *iommu_group_priv(struct iommu_group *group);
+
+int iommu_domain_attach_mm_shim(struct iommu_domain* domain,
+                                ::us_mm_shim* shim);
 
 }  /* namespace usr_linux_emu */
 

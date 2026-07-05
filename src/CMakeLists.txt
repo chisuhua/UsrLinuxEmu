@@ -36,6 +36,7 @@ add_library(kernel SHARED
 
     # Stage 1.3 — UVM/HMM (see openspec/changes/stage-1-3-uvm-hmm/)
     kernel/uvm/mmu_notifier.cpp
+    kernel/uvm/mm_shim.cpp
     kernel/uvm/hmm_range.cpp
     kernel/uvm/migrate.cpp
     kernel/uvm/fault_inject.cpp

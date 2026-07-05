@@ -21,6 +21,7 @@ extern "C" {
 #include <linux_compat/iommu/iommu.h>
 #include <linux_compat/iommu/iommu_domain.h>
 #include <kernel/uvm/mmu_notifier_internal.h>
+#include <kernel/uvm/mm_shim.h>
 
 int fault_inject_page_fault(struct mm_struct *mm, unsigned long addr,
                              unsigned long *pfn_out);
@@ -122,4 +123,32 @@ TEST_CASE("mmu_notifier — direct framework registration fires callback",
   CHECK(log.last_start == 0x20000);
 
   mmu_notifier_unregister(&mn);
+}
+
+TEST_CASE("us_mm_shim — PID + VMA list operations (Stage 2.1.2)",
+          "[kernel][mm_shim][stage21][pid]")
+{
+  struct us_mm_shim shim;
+  us_mm_shim_init(&shim, 0xCAFE);
+
+  CHECK(shim.pid == 0xCAFE);
+  CHECK(shim.vma_count == 0);
+
+  CHECK(us_mm_shim_register_vma(&shim, 0x10000, 0x20000, 0x1) == 0);
+  CHECK(us_mm_shim_register_vma(&shim, 0x30000, 0x40000, 0x3) == 0);
+  CHECK(shim.vma_count == 2);
+
+  unsigned long start = 0, end = 0;
+  CHECK(us_mm_shim_find_vma(&shim, 0x15000, &start, &end) == 0);
+  CHECK(start == 0x10000);
+  CHECK(end == 0x20000);
+
+  CHECK(us_mm_shim_find_vma(&shim, 0x99999, &start, &end) != 0);
+
+  CHECK(us_mm_shim_unregister_vma(&shim, 0x10000, 0x20000) == 0);
+  CHECK(shim.vma_count == 1);
+  CHECK(us_mm_shim_unregister_vma(&shim, 0x10000, 0x20000) != 0);
+
+  CHECK(us_mm_shim_register_vma(&shim, 0x1000, 0x1000, 0) != 0);
+  CHECK(us_mm_shim_register_vma(nullptr, 0x1000, 0x2000, 0) != 0);
 }
