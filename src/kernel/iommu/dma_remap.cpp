@@ -10,6 +10,7 @@
  */
 
 #include "iommu_internal.h"
+#include "vfio_bridge.h"
 
 #include <cstddef>
 #include <cstdio>
@@ -153,6 +154,18 @@ static void default_flush_iotlb(struct iommu_domain *d, unsigned long iova,
 {
 	if (!d)
 		return;
+
+	/* Stage 2.1.1: try vfio real-mode first (opt-in via
+	 * USR_LINUX_EMU_VFIO env var + /dev/vfio accessibility).  Falls
+	 * back to page-table walk gracefully on -ENOSYS / non-root. */
+	int vfio_rc = us_iommu_vfio_invalidate(iova, sz);
+	if (vfio_rc == 0) {
+		std::fprintf(stderr,
+			     "[iommu] flush_iotlb domain=%p iova=0x%lx size=0x%zx "
+			     "(Stage 2.1.1: vfio real-mode)\n",
+			     (void *)d, iova, sz);
+		return;
+	}
 	auto *state = usr_linux_emu::iommu_domain_priv(d);
 	if (!state) {
 		std::fprintf(stderr,
