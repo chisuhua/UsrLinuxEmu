@@ -230,6 +230,30 @@ foreach(src ${CATCH2_NET_TESTS})
     get_filename_component(testname ${src} NAME_WE)
     add_catch_net_test(${testname} ${src})
 endforeach()
+
+# Stage 2.3.4 — storage driver test (links kernel + storage_drv)
+function(add_catch_storage_test TEST_NAME TEST_SOURCE)
+    add_executable(${TEST_NAME} ${TEST_SOURCE} ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp)
+    target_link_libraries(${TEST_NAME} PRIVATE kernel storage_drv)
+    target_include_directories(${TEST_NAME} PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include/kernel
+        ${PROJECT_SOURCE_DIR}/include/linux_compat
+        ${PROJECT_SOURCE_DIR}/drivers
+        ${PROJECT_SOURCE_DIR}/plugins
+        ${PROJECT_SOURCE_DIR}/plugins/storage_driver/drv
+        ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
+    set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endfunction()
+
+set(CATCH2_STORAGE_TESTS
+    test_storage_driver_standalone.cpp
+)
+foreach(src ${CATCH2_STORAGE_TESTS})
+    get_filename_component(testname ${src} NAME_WE)
+    add_catch_storage_test(${testname} ${src})
+endforeach()
 foreach(src ${CATCH2_SIM_TESTS})
     get_filename_component(testname ${src} NAME_WE)
     add_catch_sim_test(${testname} ${src})
