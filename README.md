@@ -6,6 +6,7 @@
 [![Phase](https://img.shields.io/badge/phase-2%20complete-success)]()
 [![Stage 1.4 Tier-1](https://img.shields.io/badge/Stage%201.4%20Tier--1-delivered-success)]()
 [![Stage 1.4 Tier-2](https://img.shields.io/badge/Stage%201.4%20Tier--2-delivered-success)]()
+[![Stage 2](https://img.shields.io/badge/Stage%202-delivered-success)]()
 [![IOCTL](https://img.shields.io/badge/ioctl-System%20C-blue)]()
 [![Tests](https://img.shields.io/badge/tests-Catch2-orange)]()
 

@@ -1,8 +1,10 @@
 # 阶段 2: 多设备插件化
 
-> **状态**: 📋 规划中
+> **状态**: ✅ 已达成 (2026-07-05)
 > **目标**: 扩展插件化架构支持网络设备 + 存储设备（GPU 之外的设备类型）
-> **前置依赖**: 阶段 1（Linux 内核环境模拟基础）
+> **前置依赖**: 阶段 1（Linux 内核环境模拟基础）✅
+> **实施**: 5 commits (net + storage plugins) + 76/76 ctest PASS
+> **详情**: [Stage 2 plan](../superpowers/plans/2026-07-05-stage-2-multi-device.md) + [Stage 2 spec](../superpowers/specs/2026-07-05-stage-2-multi-device-design.md) + [spike report](../05-advanced/stage-2-spike-report.md)
 
 ---
 
