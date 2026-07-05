@@ -1,7 +1,8 @@
 #include <kernel/net/socket.h>
 #include <kernel/net/sk_buff.h>
 
-#include <linux_compat/errno.h>
+#include <linux_compat/types.h>
+#include <cerrno>
 
 #include <cstring>
 #include <map>
