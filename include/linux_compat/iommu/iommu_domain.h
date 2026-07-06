@@ -28,6 +28,7 @@ extern "C" {
 struct iommu_domain;
 struct iommu_group;
 struct device;
+struct mm_struct;
 
 /*
  * Fault handler callback. Aligned with Linux kernel iommu_fault_handler_t.
@@ -128,6 +129,17 @@ struct iommu_domain *iommu_domain_alloc(enum iommu_domain_type type);
  * All IOVA mappings must be unmapped before calling this.
  */
 void iommu_domain_free(struct iommu_domain *domain);
+
+/*
+ * Attach an mm_struct* to the domain's backing state.
+ * Required before iommu_invalidate_register_notifier() so the wrapper
+ * has a stable mm to pass to mmu_notifier_register().  Replaces the
+ * older "domain->priv = &mm" implicit contract that produced UB once
+ * Stage 2.1.2 added mm_shim propagation (Issue #21).  Returns 0 on
+ * success, -EINVAL on null inputs or unallocated domain.
+ */
+int iommu_domain_attach_mm(struct iommu_domain *domain,
+                           struct mm_struct *mm);
 
 /*
  * High-level DMA remapping API (Linux 6.6/6.12 LTS iommu.h semantics).

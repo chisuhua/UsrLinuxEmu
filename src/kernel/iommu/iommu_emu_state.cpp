@@ -10,6 +10,7 @@
 #include "iommu_internal.h"
 
 #include <kernel/uvm/mm_shim.h>
+#include <linux_compat/mmu_notifier.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -118,6 +119,24 @@ int iommu_domain_attach_mm_shim(struct iommu_domain* domain,
   auto* state = usr_linux_emu::iommu_domain_priv(domain);
   if (!state) return -22;
   state->mm_shim = shim;
+  return 0;
+}
+
+/*
+ * Issue #21 fix: explicit public helper to associate an mm_struct* with an
+ * iommu_domain.  Replaces the old implicit "d->priv == mm_struct*"
+ * contract that Stage 2.1.2's mm_shim propagation silently broke (UB
+ * exposed by clang+g++ stack layout).  All callers that previously wrote
+ * `domain->priv = &mm;` should now use:
+ *     iommu_domain_attach_mm(domain, &mm);
+ * (which sets state->mm without touching priv).
+ */
+int iommu_domain_attach_mm(struct iommu_domain* domain,
+                           struct mm_struct* mm) {
+  if (!domain || !mm) return -22;  /* -EINVAL */
+  auto* state = usr_linux_emu::iommu_domain_priv(domain);
+  if (!state) return -22;
+  state->mm = mm;
   return 0;
 }
 
