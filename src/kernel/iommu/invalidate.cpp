@@ -25,7 +25,20 @@ int iommu_invalidate_register_notifier_internal(struct iommu_domain *d,
 	if (!d || !mnp)
 		return IOMMU_ERR_EINVAL;
 
-	struct mm_struct *mm = static_cast<struct mm_struct *>(d->priv);
+	/*
+	 * Use the canonical contract: domain->priv is iommu_domain_state*
+	 * (set by iommu_domain_alloc).  Previous versions of this function
+	 * cast d->priv to mm_struct* directly, which produced UB once the
+	 * Stage 2.1.2 mm_shim propagation landed in the same function and
+	 * reinterpreted the same pointer as iommu_domain_state* — clang+g++
+	 * stack layouts surfaced it as a SEGFAULT in test_mmu_notifier_
+	 * callback_runtime_standalone (Issue #21).
+	 */
+	auto* state = usr_linux_emu::iommu_domain_priv(d);
+	if (!state)
+		return IOMMU_ERR_EINVAL;
+
+	struct mm_struct *mm = state->mm;
 	if (!mm)
 		return IOMMU_ERR_EINVAL;
 
@@ -40,8 +53,7 @@ int iommu_invalidate_register_notifier_internal(struct iommu_domain *d,
 
 	/* Stage 2.1.2: propagate mm_shim (PID + VMA context) to the
 	 * notifier's priv so user callbacks can read it via mn->priv. */
-	auto* state = usr_linux_emu::iommu_domain_priv(d);
-	if (state && state->mm_shim) {
+	if (state->mm_shim) {
 		mnp->priv = state->mm_shim;
 	}
 

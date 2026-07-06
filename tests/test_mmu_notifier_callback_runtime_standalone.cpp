@@ -75,11 +75,22 @@ TEST_CASE("mmu_notifier callback body — fires on fault_inject invalidation",
   mn.priv = &log;
 
   /* Register via the Tier-2 path: iommu_invalidate_register_notifier_internal
-   * should call mmu_notifier_register under the hood. */
-  struct iommu_domain domain = {};
-  domain.priv = &mm;  /* domain's backing mm */
+   * should call mmu_notifier_register under the hood.
+   *
+   * Issue #21 contract: use iommu_domain_alloc() to get a domain whose priv
+   * is a real iommu_domain_state*, then iommu_domain_attach_mm() to wire the
+   * mm into state->mm. The legacy "domain->priv = &mm" form is no longer
+   * valid — Stage 2.1.2 reads state->mm_shim from priv and would dereference
+   * past the 8-byte mm_struct, producing UB that compiles cleanly but
+   * segfaults at runtime (clang+g++ exposed it first). */
+  struct iommu_domain *domain = iommu_domain_alloc(IOMMU_DOMAIN_DMA);
+  REQUIRE(domain != nullptr);
+  REQUIRE(iommu_domain_attach_mm(domain, &mm) == 0);
+  /* Without iommu_domain_attach_mm_shim, state->mm_shim stays nullptr, so the
+   * library preserves mn.priv (which is &log) — the user callback contract
+   * is preserved. */
 
-  int reg_ret = iommu_invalidate_register_notifier_internal(&domain, &mn);
+  int reg_ret = iommu_invalidate_register_notifier_internal(domain, &mn);
   if (reg_ret != 0) {
     /* If registration still doesn't bridge through the framework, mark
      * Tier-2 incomplete but still test the direct framework path. */
@@ -97,7 +108,8 @@ TEST_CASE("mmu_notifier callback body — fires on fault_inject invalidation",
   CHECK(log.invalidate_start_calls >= 1);
 
   /* Unregister to keep state clean for subsequent tests. */
-  iommu_invalidate_unregister_notifier_internal(&domain, &mn);
+  iommu_invalidate_unregister_notifier_internal(domain, &mn);
+  iommu_domain_free(domain);
 }
 
 TEST_CASE("mmu_notifier — direct framework registration fires callback",

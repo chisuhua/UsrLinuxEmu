@@ -16,6 +16,8 @@
 #include <linux_compat/iommu/iommu_domain.h>
 #include <linux_compat/iommu/iommu_group.h>
 #include <linux_compat/iommu/ioasid.h>
+#include <linux_compat/types.h>
+#include <linux_compat/mmu_notifier.h>
 
 #include <cstddef>
 #include <vector>
@@ -34,6 +36,21 @@ struct iommu_domain_state {
 	unsigned long aperture_start;
 	unsigned long aperture_end;
 	unsigned long capacity_bytes;
+	/*
+	 * Backing mm_struct pointer for the mmu_notifier framework.
+	 *
+	 * Why this field exists: prior to Stage 2.1.2 the iommu wrapper
+	 * did `mm = static_cast<mm_struct*>(domain->priv)`, treating priv
+	 * as a raw mm_struct*.  Stage 2.1.2 added mm_shim propagation which
+	 * reinterpreted the same pointer as iommu_domain_state*, producing
+	 * UB whenever a caller followed the legacy contract (test cases
+	 * and any driver not using iommu_domain_alloc).  Holding mm_struct*
+	 * inside the canonical state object lets the library use a single
+	 * contract (priv == iommu_domain_state*) for both reads.
+	 *
+	 * May be nullptr if the domain is not yet attached to a process.
+	 */
+	struct mm_struct* mm = nullptr;
 	::us_mm_shim* mm_shim = nullptr;
 };
 

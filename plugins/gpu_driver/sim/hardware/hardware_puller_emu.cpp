@@ -83,7 +83,28 @@ bool HardwarePullerEmu::fetchFromQueue(uint32_t queue_id, gpu_gpfifo_entry* out_
 }
 
 bool HardwarePullerEmu::scanQueues(uint32_t* out_queue_id, gpu_gpfifo_entry* out_entry) {
-  for (auto& [qid, queue] : active_queues_) {
+  /*
+   * Issue #21 race fix: take a snapshot of (qid, queue*) pairs under
+   * mutex_, then iterate the snapshot without holding the mutex.
+   *
+   * Previously this loop held no lock while iterating active_queues_,
+   * racing against unregisterQueue() (which holds mutex_ during erase).
+   * Concurrent std::map modification + iteration is UB — clang+libstdc++
+   * reliably surfaced it as a SIGSEGV inside _Rb_tree_increment when
+   * test_gpu_ioctl_standalone ran immediately before test_gpu_plugin
+   * (the prior test left pending fences/queues that got unregistered
+   * mid-iteration).  Snapshot pattern avoids the race without taking
+   * mutex_ across queue->dequeue() (which has its own per-queue lock).
+   */
+  std::vector<std::pair<uint32_t, GpuQueueEmu*>> snapshot;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    snapshot.reserve(active_queues_.size());
+    for (const auto& [qid, queue] : active_queues_) {
+      snapshot.emplace_back(qid, queue);
+    }
+  }
+  for (const auto& [qid, queue] : snapshot) {
     if (queue && queue->hasPending()) {
       if (queue->dequeue(out_entry)) {
         *out_queue_id = qid;
