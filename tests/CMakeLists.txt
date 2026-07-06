@@ -228,6 +228,9 @@ set(CATCH2_SIM_TESTS
     test_fence_id_lifecycle_standalone.cpp
     # sim-stream-primitive-support — §5.3 KFD IOCTL dispatch verification (compile-time)
     test_kfd_portability_phase31_standalone.cpp
+    # Issue #21 regression lock-in tests
+    test_iommu_priv_contract_regression_standalone.cpp
+    test_hardware_puller_emu_concurrent_regression_standalone.cpp
 )
 
 # Stage 2.2.4 — net driver plugin test (per ADR-038 D1)
