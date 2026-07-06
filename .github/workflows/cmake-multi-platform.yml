@@ -81,6 +81,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        # Required: docs-audit §6.2 verifies `external/TaskRunner/plans/sync-plan.md`
+        # exists in the submodule HEAD. Without submodules: true the audit fails
+        # on every PR (submodule dir is empty in CI even when pointer is correct).
+        # Fixed in PR #20 (commit will follow).
+        with:
+          submodules: true
 
       - name: Run docs-audit
         # Pure bash + grep/find — no extra dependencies needed.

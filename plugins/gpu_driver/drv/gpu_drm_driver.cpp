@@ -16,11 +16,16 @@
 
 #include <cerrno>
 #include <cstdint>
+#include <cstring>
 
 #include "hal/gpu_hal.h"
 #include "shared/gpu_ioctl.h"
 #include "linux_compat/drm/drm_ioctl.h"
 #include "drv/kfd_sim_bridge.h"
+#include "sim/fence_id.h"
+#include "sim/stream_capture.h"
+#include "sim/graph.h"
+#include "sim/mem_pool.h"
 
 /* DRM ioctl command numbers — mirror GPU_IOCTL_* values for zero-change kernel migration */
 #define DRM_IOCTL_GET_DEVICE_INFO GPU_IOCTL_GET_DEVICE_INFO
@@ -42,6 +47,25 @@
 #define DRM_IOCTL_UPDATE_QUEUE GPU_IOCTL_UPDATE_QUEUE
 #define DRM_IOCTL_MAP_MEMORY GPU_IOCTL_MAP_MEMORY
 #define DRM_IOCTL_UNMAP_MEMORY GPU_IOCTL_UNMAP_MEMORY
+/* sim-stream-primitive-support (Phase 3.1/3.2): 0x50-0x67 */
+#define DRM_IOCTL_STREAM_CAPTURE_BEGIN    GPU_IOCTL_STREAM_CAPTURE_BEGIN
+#define DRM_IOCTL_STREAM_CAPTURE_END      GPU_IOCTL_STREAM_CAPTURE_END
+#define DRM_IOCTL_STREAM_CAPTURE_STATUS   GPU_IOCTL_STREAM_CAPTURE_STATUS
+#define DRM_IOCTL_GRAPH_CREATE            GPU_IOCTL_GRAPH_CREATE
+#define DRM_IOCTL_GRAPH_DESTROY           GPU_IOCTL_GRAPH_DESTROY
+#define DRM_IOCTL_GRAPH_ADD_KERNEL_NODE   GPU_IOCTL_GRAPH_ADD_KERNEL_NODE
+#define DRM_IOCTL_GRAPH_ADD_MEMCPY_NODE   GPU_IOCTL_GRAPH_ADD_MEMCPY_NODE
+#define DRM_IOCTL_GRAPH_INSTANTIATE       GPU_IOCTL_GRAPH_INSTANTIATE
+#define DRM_IOCTL_GRAPH_LAUNCH            GPU_IOCTL_GRAPH_LAUNCH
+#define DRM_IOCTL_GRAPH_DESTROY_EXEC      GPU_IOCTL_GRAPH_DESTROY_EXEC
+#define DRM_IOCTL_MEM_POOL_CREATE         GPU_IOCTL_MEM_POOL_CREATE
+#define DRM_IOCTL_MEM_POOL_DESTROY        GPU_IOCTL_MEM_POOL_DESTROY
+#define DRM_IOCTL_MEM_POOL_ALLOC          GPU_IOCTL_MEM_POOL_ALLOC
+#define DRM_IOCTL_MEM_POOL_ALLOC_ASYNC    GPU_IOCTL_MEM_POOL_ALLOC_ASYNC
+#define DRM_IOCTL_MEM_POOL_FREE_ASYNC     GPU_IOCTL_MEM_POOL_FREE_ASYNC
+#define DRM_IOCTL_MEM_POOL_SET_ATTR       GPU_IOCTL_MEM_POOL_SET_ATTR
+#define DRM_IOCTL_MEM_POOL_GET_ATTR       GPU_IOCTL_MEM_POOL_GET_ATTR
+#define DRM_IOCTL_MEM_POOL_TRIM           GPU_IOCTL_MEM_POOL_TRIM
 
 /* Use the proper Linux 6.12 LTS ABI `struct drm_device` from
  * linux_compat/drm/drm_device.h (transitively included via gpgpu_device.h).
@@ -241,17 +265,31 @@ static long gpu_ioctl_wait_fence(struct drm_device* dev, void* data, struct drm_
     return -EFAULT;
 
   u64 fence_id = args->fence_id;
-  (void)fence_id;
 
   u64 elapsed_ms = 0;
   const u64 poll_interval_ms = 1;
 
   while (elapsed_ms < args->timeout_ms || args->timeout_ms == 0) {
     u64 signaled = 0;
-    int ret = hal_fence_read(self->hal_, fence_id, &signaled);
+
+    /* Fix-1 / Oracle H4: fence_id 范围分发
+     *   - driver 层 fence (HAL) : [1, (1<<32) - 1]  → hal_fence_read
+     *   - sim 层 fence           : [1<<32, INT64_MAX] → sim_fence_id_check
+     * 两层 fence_id 范围互不冲突。
+     */
+    int ret;
+    if (fence_id < (1ULL << 32)) {
+      ret = hal_fence_read(self->hal_, fence_id, &signaled);
+    } else {
+      bool sim_signaled = false;
+      ret = sim_fence_id_check(fence_id, &sim_signaled);
+      signaled = sim_signaled ? 1 : 0;
+    }
+
     if (ret == 0 && signaled) {
       args->status = 1;
-      std::cout << "[GpgpuDevice] WAIT_FENCE: id=" << fence_id << " signaled=true (waited "
+      std::cout << "[GpgpuDevice] WAIT_FENCE: id=" << fence_id
+                << (fence_id < (1ULL << 32) ? " (HAL)" : " (sim)") << " signaled=true (waited "
                 << elapsed_ms << "ms)\n";
       return 0;
     }
@@ -437,6 +475,205 @@ static long gpu_ioctl_unmap_memory(struct drm_device* dev, void* data, struct dr
   return ret;
 }
 
+/* ── Stream Capture + Graph + Memory Pool handlers (Phase 3.1 / 3.2) ──────── */
+
+/* Each handler follows: validate args → call sim primitive → map return code.
+ * _IOWR handlers write back the OUT fields via args; sim layer returns
+ *   int  → 0 on success, negative on error (mapped to -EINVAL/-ENOSYS/-1)
+ *   int64_t → fence_id (≥ 1<<32) on success, <0 on error */
+
+static long gpu_ioctl_stream_capture_begin(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_stream_capture_args*>(data);
+  if (!args) return -EFAULT;
+  return sim_stream_capture_begin(args->stream_id, args->mode);
+}
+
+static long gpu_ioctl_stream_capture_end(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_stream_capture_args*>(data);
+  if (!args) return -EFAULT;
+  /* Mode field unused on END; pass 0. */
+  args->mode = 0;
+  return sim_stream_capture_end(args->stream_id, &args->graph_handle_out);
+}
+
+static long gpu_ioctl_stream_capture_status(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_stream_capture_status_args*>(data);
+  if (!args) return -EFAULT;
+  /* IOCTL status_out is u32; sim enum is int-sized — copy through a local. */
+  sim_stream_capture_status_t local_status = SIM_STREAM_CAPTURE_NONE;
+  int rc = sim_stream_capture_status(args->stream_id, &local_status);
+  if (rc == 0) {
+    args->status_out = static_cast<u32>(local_status);
+    std::cout << "[GpgpuDevice] STREAM_CAPTURE_STATUS: stream=" << args->stream_id
+              << " status=" << args->status_out << "\n";
+  }
+  return rc;
+}
+
+static long gpu_ioctl_graph_create(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_graph_create_args*>(data);
+  if (!args) return -EFAULT;
+  return sim_graph_create(&args->graph_handle_out);
+}
+
+static long gpu_ioctl_graph_destroy(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_graph_destroy_args*>(data);
+  if (!args) return -EFAULT;
+  return sim_graph_destroy(args->graph_handle);
+}
+
+static long gpu_ioctl_graph_add_kernel_node(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_graph_add_kernel_node_args*>(data);
+  if (!args) return -EFAULT;
+  uint64_t bo = args->kernargs_bo_handle;  /* sim uses pointer; pass &bo */
+  return sim_graph_add_kernel_node(args->graph_handle, args->kernel_index,
+                                   args->grid_x, args->grid_y, args->grid_z,
+                                   args->block_x, args->block_y, args->block_z,
+                                   &bo);
+}
+
+static long gpu_ioctl_graph_add_memcpy_node(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_graph_add_memcpy_node_args*>(data);
+  if (!args) return -EFAULT;
+  return sim_graph_add_memcpy_node(args->graph_handle, args->src_va, args->dst_va,
+                                   args->size, static_cast<int>(args->is_h2d));
+}
+
+static long gpu_ioctl_graph_instantiate(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_graph_instantiate_args*>(data);
+  if (!args) return -EFAULT;
+  return sim_graph_instantiate(args->graph_handle, &args->exec_handle_out);
+}
+
+static long gpu_ioctl_graph_launch(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_graph_launch_args*>(data);
+  if (!args) return -EFAULT;
+  int64_t fence_id = sim_graph_launch(args->exec_handle, args->stream_id);
+  if (fence_id < 0)
+    return static_cast<long>(fence_id);
+  args->fence_id_out = fence_id;
+  std::cout << "[GpgpuDevice] GRAPH_LAUNCH: exec=" << args->exec_handle
+            << " stream=" << args->stream_id
+            << " fence_id=" << fence_id << "\n";
+  return 0;
+}
+
+static long gpu_ioctl_graph_destroy_exec(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_graph_destroy_exec_args*>(data);
+  if (!args) return -EFAULT;
+  return sim_graph_destroy_exec(args->exec_handle);
+}
+
+static long gpu_ioctl_mem_pool_create(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_mem_pool_create_args*>(data);
+  if (!args) return -EFAULT;
+  /* gpu_mem_pool_props and sim_mem_pool_props_t have identical field layout
+   * (u64 va_space_handle, u64 size, u64 va_base, u64 va_limit, u32 flags, u32 _pad);
+   * reinterpret_cast is safe. */
+  int rc = sim_mem_pool_create(reinterpret_cast<sim_mem_pool_props_t*>(&args->props),
+                               &args->pool_handle_out);
+  if (rc == 0) {
+    std::cout << "[GpgpuDevice] MEM_POOL_CREATE: handle=" << args->pool_handle_out
+              << " size=" << args->props.size
+              << " va=[0x" << std::hex << args->props.va_base
+              << ",0x" << args->props.va_limit << std::dec << "]\n";
+  }
+  return rc;
+}
+
+static long gpu_ioctl_mem_pool_destroy(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_mem_pool_destroy_args*>(data);
+  if (!args) return -EFAULT;
+  return sim_mem_pool_destroy(args->pool_handle);
+}
+
+static long gpu_ioctl_mem_pool_alloc(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_mem_pool_alloc_args*>(data);
+  if (!args) return -EFAULT;
+  return sim_mem_pool_alloc(args->pool_handle, args->size, &args->va_out);
+}
+
+static long gpu_ioctl_mem_pool_alloc_async(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_mem_pool_alloc_async_args*>(data);
+  if (!args) return -EFAULT;
+  int64_t fence = sim_mem_pool_alloc_async(args->pool_handle, args->size,
+                                           args->stream_id, &args->va_out);
+  if (fence < 0)
+    return static_cast<long>(fence);
+  args->fence_id_out = fence;
+  return 0;
+}
+
+static long gpu_ioctl_mem_pool_free_async(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_mem_pool_free_async_args*>(data);
+  if (!args) return -EFAULT;
+  int64_t fence = sim_mem_pool_free_async(args->va, args->stream_id);
+  if (fence < 0)
+    return static_cast<long>(fence);
+  args->fence_id_out = fence;
+  return 0;
+}
+
+static long gpu_ioctl_mem_pool_set_attr(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_mem_pool_attr_args*>(data);
+  if (!args) return -EFAULT;
+  /* value blob in args->value[0..3]; size inferred from attr type. */
+  size_t sz = 0;
+  switch (static_cast<sim_mem_pool_attr_t>(args->attr)) {
+    case SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD:               sz = 8; break;
+    case SIM_MEM_POOL_ATTR_REUSE_FOLLOW_EVENT_DEPENDENCIES: sz = 4; break;
+    default: return -ENOSYS;
+  }
+  return sim_mem_pool_set_attr(args->pool_handle,
+                               static_cast<sim_mem_pool_attr_t>(args->attr),
+                               args->value, sz);
+}
+
+static long gpu_ioctl_mem_pool_get_attr(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_mem_pool_attr_args*>(data);
+  if (!args) return -EFAULT;
+  size_t sz = 0;
+  switch (static_cast<sim_mem_pool_attr_t>(args->attr)) {
+    case SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD:               sz = 8; break;
+    case SIM_MEM_POOL_ATTR_REUSE_FOLLOW_EVENT_DEPENDENCIES: sz = 4; break;
+    default: return -ENOSYS;
+  }
+  /* Zero output first to avoid stale bytes leaking to userspace on failure. */
+  std::memset(args->value, 0, sizeof(args->value));
+  int rc = sim_mem_pool_get_attr(args->pool_handle,
+                                 static_cast<sim_mem_pool_attr_t>(args->attr),
+                                 args->value, sz);
+  if (rc == 0) {
+    std::cout << "[GpgpuDevice] MEM_POOL_GET_ATTR: handle=" << args->pool_handle
+              << " attr=" << args->attr << " size=" << sz << "\n";
+  }
+  return rc;
+}
+
+static long gpu_ioctl_mem_pool_trim(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_mem_pool_trim_args*>(data);
+  if (!args) return -EFAULT;
+  return sim_mem_pool_trim(args->pool_handle, args->min_bytes);
+}
+
 /* ── DRM ioctl table ─────────────────────────────────────────────────────── */
 
 static const struct drm_ioctl_desc gpu_ioctls[] = {
@@ -459,6 +696,25 @@ static const struct drm_ioctl_desc gpu_ioctls[] = {
     DRM_IOCTL_DEF_DRV(UPDATE_QUEUE, gpu_ioctl_update_queue, DRM_RENDER_ALLOW),
     DRM_IOCTL_DEF_DRV(MAP_MEMORY, gpu_ioctl_map_memory, DRM_RENDER_ALLOW),
     DRM_IOCTL_DEF_DRV(UNMAP_MEMORY, gpu_ioctl_unmap_memory, DRM_RENDER_ALLOW),
+    /* sim-stream-primitive-support — Phase 3.1 + 3.2 (0x50-0x67, 18 IOCTLs) */
+    DRM_IOCTL_DEF_DRV(STREAM_CAPTURE_BEGIN,    gpu_ioctl_stream_capture_begin,    DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(STREAM_CAPTURE_END,      gpu_ioctl_stream_capture_end,      DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(STREAM_CAPTURE_STATUS,   gpu_ioctl_stream_capture_status,   DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(GRAPH_CREATE,            gpu_ioctl_graph_create,            DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(GRAPH_DESTROY,           gpu_ioctl_graph_destroy,           DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(GRAPH_ADD_KERNEL_NODE,   gpu_ioctl_graph_add_kernel_node,   DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(GRAPH_ADD_MEMCPY_NODE,   gpu_ioctl_graph_add_memcpy_node,   DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(GRAPH_INSTANTIATE,       gpu_ioctl_graph_instantiate,       DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(GRAPH_LAUNCH,            gpu_ioctl_graph_launch,            DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(GRAPH_DESTROY_EXEC,      gpu_ioctl_graph_destroy_exec,      DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(MEM_POOL_CREATE,         gpu_ioctl_mem_pool_create,         DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(MEM_POOL_DESTROY,        gpu_ioctl_mem_pool_destroy,        DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(MEM_POOL_ALLOC,          gpu_ioctl_mem_pool_alloc,          DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(MEM_POOL_ALLOC_ASYNC,    gpu_ioctl_mem_pool_alloc_async,    DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(MEM_POOL_FREE_ASYNC,     gpu_ioctl_mem_pool_free_async,     DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(MEM_POOL_SET_ATTR,       gpu_ioctl_mem_pool_set_attr,       DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(MEM_POOL_GET_ATTR,       gpu_ioctl_mem_pool_get_attr,       DRM_RENDER_ALLOW),
+    DRM_IOCTL_DEF_DRV(MEM_POOL_TRIM,           gpu_ioctl_mem_pool_trim,           DRM_RENDER_ALLOW),
 };
 
 constexpr size_t kNumIoctls = sizeof(gpu_ioctls) / sizeof(gpu_ioctls[0]);

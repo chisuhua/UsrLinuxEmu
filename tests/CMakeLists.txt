@@ -220,6 +220,14 @@ set(CATCH2_SIM_TESTS
     test_migration_e2e_standalone.cpp
     # Stage 2.2.1 — Network socket + sk_buff compat (per ADR-038 D1/D2)
     test_socket_skbuff_standalone.cpp
+    # sim-stream-primitive-support — §5.1 Phase 3.1/3.2 sim primitives
+    test_sim_stream_capture_standalone.cpp
+    test_sim_graph_standalone.cpp
+    test_sim_mem_pool_standalone.cpp
+    # sim-stream-primitive-support — §5.6 fence_id lifecycle
+    test_fence_id_lifecycle_standalone.cpp
+    # sim-stream-primitive-support — §5.3 KFD IOCTL dispatch verification (compile-time)
+    test_kfd_portability_phase31_standalone.cpp
 )
 
 # Stage 2.2.4 — net driver plugin test (per ADR-038 D1)
