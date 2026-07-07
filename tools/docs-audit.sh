@@ -368,7 +368,7 @@ section_ioctl() {
     # 2.6 gpgpu_device ioctl handler count
     # Baseline 13 (pre-Phase 3, after LAUNCH_CB removal in b78edc9).
     # Phase 3 (PR #20 + PR #26) adds 19 stream/graph/mempool → current value 16-31.
-    # Phase 4 (PR #27) adds mem_pool_export → current max 31. Pass if ≥ baseline.
+    # Phase 4 (PR #27) adds mem_pool_export → current max 32. Pass if ≥ baseline.
     subsection "2.6 GpgpuDevice ioctl table size (≥ ${BASELINE_KNUMIOCTLS} baseline)"
     local kNumIoctls
     kNumIoctls=$(grep -E "kNumIoctls\s*=" "${REPO_ROOT}/plugins/gpu_driver/drv/gpgpu_device.h" 2>/dev/null | grep -oE "[0-9]+" | head -1)
