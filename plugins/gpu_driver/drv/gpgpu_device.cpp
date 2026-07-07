@@ -909,3 +909,12 @@ long GpgpuDevice::handleMemPoolTrim(void* argp) {
   return sim_mem_pool_trim(args->pool_handle, args->min_bytes);
 }
 
+long GpgpuDevice::handleMemPoolExport(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_export_args*>(argp);
+  if (!args) return -EFAULT;
+  int sim_ret = sim_mem_pool_export_shareable(
+      args->pool_handle, args->handle_type, args->flags, &args->fd_out);
+  if (sim_ret != 0) return sim_ret;
+  return 0;
+}
+
