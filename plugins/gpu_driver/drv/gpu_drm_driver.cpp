@@ -66,6 +66,7 @@
 #define DRM_IOCTL_MEM_POOL_SET_ATTR       GPU_IOCTL_MEM_POOL_SET_ATTR
 #define DRM_IOCTL_MEM_POOL_GET_ATTR       GPU_IOCTL_MEM_POOL_GET_ATTR
 #define DRM_IOCTL_MEM_POOL_TRIM           GPU_IOCTL_MEM_POOL_TRIM
+#define DRM_IOCTL_MEM_POOL_EXPORT         GPU_IOCTL_MEM_POOL_EXPORT
 
 /* Use the proper Linux 6.12 LTS ABI `struct drm_device` from
  * linux_compat/drm/drm_device.h (transitively included via gpgpu_device.h).
@@ -674,6 +675,17 @@ static long gpu_ioctl_mem_pool_trim(struct drm_device* dev, void* data, struct d
   return sim_mem_pool_trim(args->pool_handle, args->min_bytes);
 }
 
+static long gpu_ioctl_mem_pool_export(struct drm_device* dev, void* data, struct drm_file*) {
+  (void)dev;
+  auto* args = static_cast<struct gpu_mem_pool_export_args*>(data);
+  if (!args) return -EFAULT;
+  int rc = sim_mem_pool_export_shareable(args->pool_handle,
+                                          args->handle_type,
+                                          args->flags,
+                                          &args->fd_out);
+  return rc;
+}
+
 /* ── DRM ioctl table ─────────────────────────────────────────────────────── */
 
 static const struct drm_ioctl_desc gpu_ioctls[] = {
@@ -715,6 +727,8 @@ static const struct drm_ioctl_desc gpu_ioctls[] = {
     DRM_IOCTL_DEF_DRV(MEM_POOL_SET_ATTR,       gpu_ioctl_mem_pool_set_attr,       DRM_RENDER_ALLOW),
     DRM_IOCTL_DEF_DRV(MEM_POOL_GET_ATTR,       gpu_ioctl_mem_pool_get_attr,       DRM_RENDER_ALLOW),
     DRM_IOCTL_DEF_DRV(MEM_POOL_TRIM,           gpu_ioctl_mem_pool_trim,           DRM_RENDER_ALLOW),
+    /* sim-stream-primitive-support — Phase 4: MEM_POOL_EXPORT (0x68, 2026-07-07) */
+    DRM_IOCTL_DEF_DRV(MEM_POOL_EXPORT,         gpu_ioctl_mem_pool_export,         DRM_RENDER_ALLOW),
 };
 
 constexpr size_t kNumIoctls = sizeof(gpu_ioctls) / sizeof(gpu_ioctls[0]);

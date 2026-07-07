@@ -18,7 +18,7 @@ class GpuQueueEmu;
 
 class GpgpuDevice : public usr_linux_emu::FileOperations {
  public:
-  static constexpr size_t kNumIoctls = 13;
+  static constexpr size_t kNumIoctls = 16;
 
   explicit GpgpuDevice(struct gpu_hal_ops* hal);
   ~GpgpuDevice();
@@ -122,6 +122,9 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   long handleCreateVASpace(void* argp);
   long handleDestroyVASpace(void* argp);
   long handleRegisterGPU(void* argp);
+  long handleMemPoolCreate(void* argp);
+  long handleMemPoolTrim(void* argp);
+  long handleMemPoolExport(void* argp);
 
   struct IoctlEntry {
     unsigned long request;

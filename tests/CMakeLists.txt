@@ -112,6 +112,7 @@ set(STANDALONE_TESTS
     test_gpu_ioctl.cpp
     test_gpu_ioctl_number.cpp
     test_gpu_fence_return.cpp
+    test_gpu_mempool_export.cpp
     test_gpu_mmap.cpp
     test_gpu_mmap_and_submit.cpp
     test_gpu_pushbuffer_validation.cpp

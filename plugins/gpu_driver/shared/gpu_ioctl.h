@@ -622,6 +622,14 @@ struct gpu_graph_destroy_exec_args {
  */
 #define GPU_IOCTL_MEM_POOL_TRIM _IOW(GPU_IOCTL_BASE, 0x67, struct gpu_mem_pool_trim_args)
 
+/**
+ * GPU_IOCTL_MEM_POOL_EXPORT - Export pool as shareable handle (POSIX FD).
+ * Phase 4 (2026-07-07) added for cuMemPoolExportToShareableHandle support.
+ * Currently only CU_MEM_HANDLE_TYPE_POSIX_FILE_DESCRIPTOR=1 is supported.
+ * Imported Phase 5+. See docs/00_adr/adr-039-mem-pool-export-ioctl.md
+ */
+#define GPU_IOCTL_MEM_POOL_EXPORT _IOWR(GPU_IOCTL_BASE, 0x68, struct gpu_mem_pool_export_args)
+
 /* Pool attribute constants + error codes are defined in sim/mem_pool.h
  * (typed enum + #defines). Do NOT redefine here — including both this
  * header and sim/mem_pool.h in a single translation unit would otherwise
@@ -698,4 +706,12 @@ struct gpu_mem_pool_attr_args {
 struct gpu_mem_pool_trim_args {
   u64 pool_handle;   /* Pool handle (input) */
   u64 min_bytes;     /* Retain at least this many bytes (input) */
+};
+
+struct gpu_mem_pool_export_args {
+  u64 pool_handle;   /* input: pool handle from cuMemPoolCreate */
+  u32 handle_type;   /* input: CU_MEM_HANDLE_TYPE_POSIX_FILE_DESCRIPTOR=1 */
+  u32 flags;         /* input: reserved, must be 0 */
+  s32 fd_out;        /* OUT: POSIX FD (>= 0) or -1 */
+  u32 _pad;          /* alignment padding */
 };
