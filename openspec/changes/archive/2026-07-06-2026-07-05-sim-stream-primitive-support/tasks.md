@@ -291,3 +291,4 @@ Day 14:   Step 4 UsrLinuxEmu submodule bump + 最终回归验证
 - [ ] F.3 Pool VA 区间合并优化（NG3 范围外，Phase 3.x）
 - [ ] F.4 sim_stream_capture 增量 invalidate 优化（仅记录 invalidate 状态，不重置整个 stream）
 - [ ] F.5 IGpuDriver 31 → 46 方法扩展的 no-op 默认实现 review（CudaStub / MockGpuDriver 兼容性验证）
+- [ ] F.6 sim_graph_launch 替换 PoC 为真实 `GpuQueueEmu::submit()` 异步执行（per PR #20 review follow-up；当前 fence 立即 signal，需桥接到 `gpu_queue_emu.h:113` 的 `submit(gpfifo_addr, entry_count)` 路径，由 driver-side handler 完成 translation；与 TaskRunner cuGraphLaunch Phase 4 协调）
