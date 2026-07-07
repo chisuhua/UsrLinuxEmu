@@ -273,12 +273,12 @@ static long gpu_ioctl_wait_fence(struct drm_device* dev, void* data, struct drm_
     u64 signaled = 0;
 
     /* Fix-1 / Oracle H4: fence_id 范围分发
-     *   - driver 层 fence (HAL) : [1, (1<<32) - 1]  → hal_fence_read
-     *   - sim 层 fence           : [1<<32, INT64_MAX] → sim_fence_id_check
-     * 两层 fence_id 范围互不冲突。
+     *   - driver 层 fence (HAL) : [1, SIM_FENCE_ID_BASE - 1]  → hal_fence_read
+     *   - sim 层 fence           : [SIM_FENCE_ID_BASE, INT64_MAX] → sim_fence_id_check
+     * 两层 fence_id 范围互不冲突（SIM_FENCE_ID_BASE 宏定义见 sim/fence_id.h）。
      */
     int ret;
-    if (fence_id < (1ULL << 32)) {
+    if (fence_id < SIM_FENCE_ID_BASE) {
       ret = hal_fence_read(self->hal_, fence_id, &signaled);
     } else {
       bool sim_signaled = false;
@@ -289,7 +289,7 @@ static long gpu_ioctl_wait_fence(struct drm_device* dev, void* data, struct drm_
     if (ret == 0 && signaled) {
       args->status = 1;
       std::cout << "[GpgpuDevice] WAIT_FENCE: id=" << fence_id
-                << (fence_id < (1ULL << 32) ? " (HAL)" : " (sim)") << " signaled=true (waited "
+                << (fence_id < SIM_FENCE_ID_BASE ? " (HAL)" : " (sim)") << " signaled=true (waited "
                 << elapsed_ms << "ms)\n";
       return 0;
     }
