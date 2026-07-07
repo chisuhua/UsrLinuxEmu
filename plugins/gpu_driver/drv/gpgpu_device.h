@@ -18,7 +18,10 @@ class GpuQueueEmu;
 
 class GpgpuDevice : public usr_linux_emu::FileOperations {
  public:
-  static constexpr size_t kNumIoctls = 16;
+  // Pre-Phase 3 baseline: 13 (after LAUNCH_CB removal in b78edc9).
+  // Phase 3 (PR #20+#26) adds 18 IOCTLs (stream+graph+mempool).
+  // Phase 4 (PR #27) adds MEM_POOL_EXPORT.
+  static constexpr size_t kNumIoctls = 32;
 
   explicit GpgpuDevice(struct gpu_hal_ops* hal);
   ~GpgpuDevice();
@@ -122,7 +125,23 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   long handleCreateVASpace(void* argp);
   long handleDestroyVASpace(void* argp);
   long handleRegisterGPU(void* argp);
+  long handleStreamCaptureBegin(void* argp);
+  long handleStreamCaptureEnd(void* argp);
+  long handleStreamCaptureStatus(void* argp);
+  long handleGraphCreate(void* argp);
+  long handleGraphDestroy(void* argp);
+  long handleGraphAddKernelNode(void* argp);
+  long handleGraphAddMemcpyNode(void* argp);
+  long handleGraphInstantiate(void* argp);
+  long handleGraphLaunch(void* argp);
+  long handleGraphDestroyExec(void* argp);
   long handleMemPoolCreate(void* argp);
+  long handleMemPoolDestroy(void* argp);
+  long handleMemPoolAlloc(void* argp);
+  long handleMemPoolAllocAsync(void* argp);
+  long handleMemPoolFreeAsync(void* argp);
+  long handleMemPoolSetAttr(void* argp);
+  long handleMemPoolGetAttr(void* argp);
   long handleMemPoolTrim(void* argp);
   long handleMemPoolExport(void* argp);
 

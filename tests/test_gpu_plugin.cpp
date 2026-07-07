@@ -9,6 +9,11 @@
 #include "kernel/module_loader.h"
 #include "kernel/vfs.h"
 
+extern "C" {
+#include "sim/stream_capture.h"
+#include "sim/mem_pool.h"
+}
+
 using namespace usr_linux_emu;
 
 // 全局插件生命周期管理：加载一次，统一卸载
@@ -339,4 +344,281 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_WAIT_FENCE timeout", "[gpu][io
   long result = ioctl(GPU_IOCTL_WAIT_FENCE, &args);
   REQUIRE(result == 0);
   REQUIRE(args.status == 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_STREAM_CAPTURE_BEGIN (0x50)",
+                  "[gpu][ioctl][phase31][stream_capture]") {
+  struct gpu_stream_capture_args args = {};
+  args.stream_id = 1;
+  args.mode = SIM_CAPTURE_MODE_GLOBAL;
+
+  long result = ioctl(GPU_IOCTL_STREAM_CAPTURE_BEGIN, &args);
+  REQUIRE(result == 0);
+
+  /* Verify via STREAM_CAPTURE_STATUS ioctl (not direct sim_*) — test binary's
+   * sim state is a separate copy from plugin's sim state. */
+  struct gpu_stream_capture_status_args status_args = {};
+  status_args.stream_id = 1;
+  result = ioctl(GPU_IOCTL_STREAM_CAPTURE_STATUS, &status_args);
+  REQUIRE(result == 0);
+  REQUIRE(status_args.status_out == static_cast<u32>(SIM_STREAM_CAPTURE_ACTIVE));
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_STREAM_CAPTURE_END (0x51)",
+                  "[gpu][ioctl][phase31][stream_capture]") {
+  struct gpu_stream_capture_args begin_args = {};
+  begin_args.stream_id = 2;
+  begin_args.mode = SIM_CAPTURE_MODE_GLOBAL;
+  REQUIRE(ioctl(GPU_IOCTL_STREAM_CAPTURE_BEGIN, &begin_args) == 0);
+
+  struct gpu_stream_capture_args end_args = {};
+  end_args.stream_id = 2;
+  long result = ioctl(GPU_IOCTL_STREAM_CAPTURE_END, &end_args);
+  REQUIRE(result == 0);
+  REQUIRE(end_args.graph_handle_out >= 1);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_STREAM_CAPTURE_STATUS (0x52)",
+                  "[gpu][ioctl][phase31][stream_capture]") {
+  struct gpu_stream_capture_args begin_args = {};
+  begin_args.stream_id = 3;
+  begin_args.mode = SIM_CAPTURE_MODE_GLOBAL;
+  REQUIRE(ioctl(GPU_IOCTL_STREAM_CAPTURE_BEGIN, &begin_args) == 0);
+
+  struct gpu_stream_capture_status_args status_args = {};
+  status_args.stream_id = 3;
+  long result = ioctl(GPU_IOCTL_STREAM_CAPTURE_STATUS, &status_args);
+  REQUIRE(result == 0);
+  REQUIRE(status_args.status_out == static_cast<u32>(SIM_STREAM_CAPTURE_ACTIVE));
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_CREATE (0x53)",
+                  "[gpu][ioctl][phase31][graph]") {
+  struct gpu_graph_create_args args = {};
+  long result = ioctl(GPU_IOCTL_GRAPH_CREATE, &args);
+  REQUIRE(result == 0);
+  REQUIRE(args.graph_handle_out >= 1);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_DESTROY (0x54)",
+                  "[gpu][ioctl][phase31][graph]") {
+  struct gpu_graph_create_args create = {};
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_CREATE, &create) == 0);
+
+  struct gpu_graph_destroy_args destroy = {};
+  destroy.graph_handle = create.graph_handle_out;
+  long result = ioctl(GPU_IOCTL_GRAPH_DESTROY, &destroy);
+  REQUIRE(result == 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_ADD_KERNEL_NODE (0x55)",
+                  "[gpu][ioctl][phase31][graph]") {
+  struct gpu_graph_create_args create = {};
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_CREATE, &create) == 0);
+
+  struct gpu_graph_add_kernel_node_args kn_args = {};
+  kn_args.graph_handle = create.graph_handle_out;
+  kn_args.kernel_index = 0;
+  kn_args.grid_x = kn_args.grid_y = kn_args.grid_z = 1;
+  kn_args.block_x = kn_args.block_y = kn_args.block_z = 32;
+  kn_args.kernargs_bo_handle = 0xCAFE;
+  long result = ioctl(GPU_IOCTL_GRAPH_ADD_KERNEL_NODE, &kn_args);
+  REQUIRE(result == 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_ADD_MEMCPY_NODE (0x56)",
+                  "[gpu][ioctl][phase31][graph]") {
+  struct gpu_graph_create_args create = {};
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_CREATE, &create) == 0);
+
+  struct gpu_graph_add_memcpy_node_args mc_args = {};
+  mc_args.graph_handle = create.graph_handle_out;
+  mc_args.src_va = 0x1000;
+  mc_args.dst_va = 0x2000;
+  mc_args.size = 4096;
+  mc_args.is_h2d = 1;
+  long result = ioctl(GPU_IOCTL_GRAPH_ADD_MEMCPY_NODE, &mc_args);
+  REQUIRE(result == 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_INSTANTIATE (0x57)",
+                  "[gpu][ioctl][phase31][graph]") {
+  struct gpu_graph_create_args create = {};
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_CREATE, &create) == 0);
+
+  struct gpu_graph_add_kernel_node_args kn_args = {};
+  kn_args.graph_handle = create.graph_handle_out;
+  kn_args.kernargs_bo_handle = 0xCAFE;
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_ADD_KERNEL_NODE, &kn_args) == 0);
+
+  struct gpu_graph_instantiate_args inst = {};
+  inst.graph_handle = create.graph_handle_out;
+  long result = ioctl(GPU_IOCTL_GRAPH_INSTANTIATE, &inst);
+  REQUIRE(result == 0);
+  REQUIRE(inst.exec_handle_out >= 1);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_LAUNCH (0x58)",
+                  "[gpu][ioctl][phase31][graph]") {
+  struct gpu_graph_create_args create = {};
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_CREATE, &create) == 0);
+
+  struct gpu_graph_add_kernel_node_args kn_args = {};
+  kn_args.graph_handle = create.graph_handle_out;
+  kn_args.kernargs_bo_handle = 0xCAFE;
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_ADD_KERNEL_NODE, &kn_args) == 0);
+
+  struct gpu_graph_instantiate_args inst = {};
+  inst.graph_handle = create.graph_handle_out;
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_INSTANTIATE, &inst) == 0);
+
+  struct gpu_graph_launch_args launch = {};
+  launch.exec_handle = inst.exec_handle_out;
+  launch.stream_id = 1;
+  long result = ioctl(GPU_IOCTL_GRAPH_LAUNCH, &launch);
+  REQUIRE(result == 0);
+  REQUIRE(launch.fence_id_out >= static_cast<s64>(1ULL << 32));
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_DESTROY_EXEC (0x59)",
+                  "[gpu][ioctl][phase31][graph]") {
+  struct gpu_graph_create_args create = {};
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_CREATE, &create) == 0);
+
+  struct gpu_graph_add_kernel_node_args kn_args = {};
+  kn_args.graph_handle = create.graph_handle_out;
+  kn_args.kernargs_bo_handle = 0xCAFE;
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_ADD_KERNEL_NODE, &kn_args) == 0);
+
+  struct gpu_graph_instantiate_args inst = {};
+  inst.graph_handle = create.graph_handle_out;
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_INSTANTIATE, &inst) == 0);
+
+  struct gpu_graph_destroy_exec_args destroy = {};
+  destroy.exec_handle = inst.exec_handle_out;
+  long result = ioctl(GPU_IOCTL_GRAPH_DESTROY_EXEC, &destroy);
+  REQUIRE(result == 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_CREATE (0x60)",
+                  "[gpu][ioctl][phase32][mem_pool]") {
+  struct gpu_mem_pool_create_args args = {};
+  args.props.size = 1ULL * 1024 * 1024;
+  args.props.flags = GPU_MEM_POOL_FLAGS_DEFAULT;
+
+  long result = ioctl(GPU_IOCTL_MEM_POOL_CREATE, &args);
+  REQUIRE(result == 0);
+  REQUIRE(args.pool_handle_out >= 1);
+  REQUIRE(args.props.va_base != 0);
+  REQUIRE(args.props.va_limit == args.props.va_base + args.props.size);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_DESTROY (0x61)",
+                  "[gpu][ioctl][phase32][mem_pool]") {
+  struct gpu_mem_pool_create_args create = {};
+  create.props.size = 1024 * 1024;
+  REQUIRE(ioctl(GPU_IOCTL_MEM_POOL_CREATE, &create) == 0);
+
+  struct gpu_mem_pool_destroy_args destroy = {};
+  destroy.pool_handle = create.pool_handle_out;
+  long result = ioctl(GPU_IOCTL_MEM_POOL_DESTROY, &destroy);
+  REQUIRE(result == 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_ALLOC (0x62)",
+                  "[gpu][ioctl][phase32][mem_pool]") {
+  struct gpu_mem_pool_create_args create = {};
+  create.props.size = 1ULL * 1024 * 1024;
+  REQUIRE(ioctl(GPU_IOCTL_MEM_POOL_CREATE, &create) == 0);
+
+  struct gpu_mem_pool_alloc_args alloc = {};
+  alloc.pool_handle = create.pool_handle_out;
+  alloc.size = 4096;
+  long result = ioctl(GPU_IOCTL_MEM_POOL_ALLOC, &alloc);
+  REQUIRE(result == 0);
+  REQUIRE(alloc.va_out >= create.props.va_base);
+  REQUIRE(alloc.va_out < create.props.va_limit);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_ALLOC_ASYNC (0x63)",
+                  "[gpu][ioctl][phase32][mem_pool]") {
+  struct gpu_mem_pool_create_args create = {};
+  create.props.size = 1ULL * 1024 * 1024;
+  REQUIRE(ioctl(GPU_IOCTL_MEM_POOL_CREATE, &create) == 0);
+
+  struct gpu_mem_pool_alloc_async_args async = {};
+  async.pool_handle = create.pool_handle_out;
+  async.size = 4096;
+  async.stream_id = 1;
+  long result = ioctl(GPU_IOCTL_MEM_POOL_ALLOC_ASYNC, &async);
+  REQUIRE(result == 0);
+  REQUIRE(async.fence_id_out >= static_cast<s64>(1ULL << 32));
+  REQUIRE(async.va_out >= create.props.va_base);
+  REQUIRE(async.va_out < create.props.va_limit);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_FREE_ASYNC (0x64)",
+                  "[gpu][ioctl][phase32][mem_pool]") {
+  struct gpu_mem_pool_create_args create = {};
+  create.props.size = 1ULL * 1024 * 1024;
+  REQUIRE(ioctl(GPU_IOCTL_MEM_POOL_CREATE, &create) == 0);
+
+  struct gpu_mem_pool_alloc_args alloc = {};
+  alloc.pool_handle = create.pool_handle_out;
+  alloc.size = 4096;
+  REQUIRE(ioctl(GPU_IOCTL_MEM_POOL_ALLOC, &alloc) == 0);
+
+  struct gpu_mem_pool_free_async_args free_args = {};
+  free_args.va = alloc.va_out;
+  free_args.stream_id = 1;
+  long result = ioctl(GPU_IOCTL_MEM_POOL_FREE_ASYNC, &free_args);
+  REQUIRE(result == 0);
+  REQUIRE(free_args.fence_id_out >= static_cast<s64>(1ULL << 32));
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_SET_ATTR (0x65)",
+                  "[gpu][ioctl][phase32][mem_pool]") {
+  struct gpu_mem_pool_create_args create = {};
+  create.props.size = 1ULL * 1024 * 1024;
+  REQUIRE(ioctl(GPU_IOCTL_MEM_POOL_CREATE, &create) == 0);
+
+  struct gpu_mem_pool_attr_args set_args = {};
+  set_args.pool_handle = create.pool_handle_out;
+  set_args.attr = SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD;
+  set_args.value[0] = 65536;
+  long result = ioctl(GPU_IOCTL_MEM_POOL_SET_ATTR, &set_args);
+  REQUIRE(result == 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_GET_ATTR (0x66)",
+                  "[gpu][ioctl][phase32][mem_pool]") {
+  struct gpu_mem_pool_create_args create = {};
+  create.props.size = 1ULL * 1024 * 1024;
+  REQUIRE(ioctl(GPU_IOCTL_MEM_POOL_CREATE, &create) == 0);
+
+  struct gpu_mem_pool_attr_args set_args = {};
+  set_args.pool_handle = create.pool_handle_out;
+  set_args.attr = SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD;
+  set_args.value[0] = 131072;
+  REQUIRE(ioctl(GPU_IOCTL_MEM_POOL_SET_ATTR, &set_args) == 0);
+
+  struct gpu_mem_pool_attr_args get_args = {};
+  get_args.pool_handle = create.pool_handle_out;
+  get_args.attr = SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD;
+  long result = ioctl(GPU_IOCTL_MEM_POOL_GET_ATTR, &get_args);
+  REQUIRE(result == 0);
+  REQUIRE(get_args.value[0] == 131072);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_TRIM (0x67)",
+                  "[gpu][ioctl][phase32][mem_pool]") {
+  struct gpu_mem_pool_create_args create = {};
+  create.props.size = 1ULL * 1024 * 1024;
+  REQUIRE(ioctl(GPU_IOCTL_MEM_POOL_CREATE, &create) == 0);
+
+  struct gpu_mem_pool_trim_args trim = {};
+  trim.pool_handle = create.pool_handle_out;
+  trim.min_bytes = 4096;
+  long result = ioctl(GPU_IOCTL_MEM_POOL_TRIM, &trim);
+  REQUIRE(result == 0);
 }
