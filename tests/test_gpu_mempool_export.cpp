@@ -5,7 +5,6 @@
 #include <cstring>
 #include <iostream>
 
-#include "gpu_driver/shared/gpu_events.h"
 #include "gpu_driver/shared/gpu_ioctl.h"
 #include "gpu_driver/shared/gpu_types.h"
 #include "kernel/file_ops.h"
