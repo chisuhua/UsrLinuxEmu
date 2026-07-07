@@ -57,6 +57,7 @@ build_shadow/
 !/archive/old_gpu_device/
 !/archive/system_b_drivers/
 !/archive/orphaned_simulator/
+!/archive/deprecated-branches/
 
 .opencode/
 .mcp.json
