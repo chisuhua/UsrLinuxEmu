@@ -361,13 +361,13 @@ section_ioctl() {
     fi
 
     # 2.6 gpgpu_device ioctl handler count
-    subsection "2.6 GpgpuDevice ioctl table size (should be 13, was 11 before LAUNCH_CB removal)"
+    subsection "2.6 GpgpuDevice ioctl table size (should be 31 post-Phase 3: 13 baseline + 18 added in PR #20 for stream capture / graph / mempool)"
     local kNumIoctls
     kNumIoctls=$(grep -E "kNumIoctls\s*=" "${REPO_ROOT}/plugins/gpu_driver/drv/gpgpu_device.h" 2>/dev/null | grep -oE "[0-9]+" | head -1)
-    if [ -n "${kNumIoctls}" ] && [ "${kNumIoctls}" -eq 13 ]; then
+    if [ -n "${kNumIoctls}" ] && [ "${kNumIoctls}" -eq 31 ]; then
         check_pass "kNumIoctls = ${kNumIoctls}"
     else
-        check_warn "kNumIoctls = ${kNumIoctls:-?} (expected 13)"
+        check_warn "kNumIoctls = ${kNumIoctls:-?} (expected 31 post-Phase 3)"
     fi
 }
 
