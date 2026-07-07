@@ -157,10 +157,10 @@ int64_t sim_graph_launch(uint64_t exec_handle, uint32_t stream_id) {
   if (it == exec_table_.end())
     return -EINVAL;
 
-  /* Allocate sim-layer fence_id (range [(1<<32), INT64_MAX]) */
+  /* Allocate sim-layer fence_id (range [SIM_FENCE_ID_BASE, INT64_MAX]) */
   int64_t fence_id = sim_fence_id_alloc();
   if (fence_id < 0)
-    return -1;
+    return -ENOMEM;
 
   /* PoC: signal immediately to simulate completed execution.
    * Phase 3.x: defer to GpuQueueEmu::submit() path completion. */
