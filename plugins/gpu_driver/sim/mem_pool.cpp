@@ -146,7 +146,7 @@ int64_t sim_mem_pool_alloc_async(uint64_t pool_handle, uint64_t size,
 
   int64_t fence_id = sim_fence_id_alloc();
   if (fence_id < 0)
-    return -1;
+    return -ENOMEM;
   /* PoC: signal immediately */
   sim_fence_id_signal(static_cast<uint64_t>(fence_id));
   return fence_id;
@@ -164,7 +164,7 @@ int64_t sim_mem_pool_free_async(uint64_t va, uint32_t stream_id) {
       pool.allocated.erase(ait);
       int64_t fence_id = sim_fence_id_alloc();
       if (fence_id < 0)
-        return -1;
+        return -ENOMEM;
       sim_fence_id_signal(static_cast<uint64_t>(fence_id));
       return fence_id;
     }
