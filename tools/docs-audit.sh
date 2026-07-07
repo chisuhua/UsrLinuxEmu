@@ -48,6 +48,10 @@ EXIT_CODE=0
 STRICT=0
 RUN_SECTION="all"
 
+# Baseline for §2.6 kNumIoctls check (pre-Phase-3 count after LAUNCH_CB removal in b78edc9).
+# Table grows over time as new IOCTL families are added (Phase 3 added 19, Phase 4 added 1).
+BASELINE_KNUMIOCTLS=13
+
 # Track which sections to run
 RUN_ARCH=0
 RUN_IOCTL=0
@@ -55,6 +59,7 @@ RUN_ADR=0
 RUN_DOC=0
 RUN_BUILD=0
 RUN_SYNC=0
+RUN_STAGE2=0
 
 # ---------------------------------------------------------------------------
 # Output helpers
@@ -361,13 +366,16 @@ section_ioctl() {
     fi
 
     # 2.6 gpgpu_device ioctl handler count
-    subsection "2.6 GpgpuDevice ioctl table size (should be 13, was 11 before LAUNCH_CB removal)"
+    # Baseline 13 (pre-Phase 3, after LAUNCH_CB removal in b78edc9).
+    # Phase 3 (PR #20 + PR #26) adds 19 stream/graph/mempool → current value 16-31.
+    # Phase 4 (PR #27) adds mem_pool_export → current max 31. Pass if ≥ baseline.
+    subsection "2.6 GpgpuDevice ioctl table size (≥ ${BASELINE_KNUMIOCTLS} baseline)"
     local kNumIoctls
     kNumIoctls=$(grep -E "kNumIoctls\s*=" "${REPO_ROOT}/plugins/gpu_driver/drv/gpgpu_device.h" 2>/dev/null | grep -oE "[0-9]+" | head -1)
-    if [ -n "${kNumIoctls}" ] && [ "${kNumIoctls}" -eq 13 ]; then
-        check_pass "kNumIoctls = ${kNumIoctls}"
+    if [ -n "${kNumIoctls}" ] && [ "${kNumIoctls}" -ge "${BASELINE_KNUMIOCTLS}" ]; then
+        check_pass "kNumIoctls = ${kNumIoctls} (≥ ${BASELINE_KNUMIOCTLS} baseline)"
     else
-        check_warn "kNumIoctls = ${kNumIoctls:-?} (expected 13)"
+        check_warn "kNumIoctls = ${kNumIoctls:-?} (expected ≥ ${BASELINE_KNUMIOCTLS})"
     fi
 }
 
