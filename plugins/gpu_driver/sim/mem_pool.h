@@ -91,6 +91,15 @@ int sim_mem_pool_get_attr(uint64_t pool_handle, sim_mem_pool_attr_t attr,
 /* Trim pool: trivial in PoC (no reclamation). */
 int sim_mem_pool_trim(uint64_t pool_handle, uint64_t min_bytes);
 
+/*
+ * Export pool as a shareable handle (POSIX FD).
+ * Only CU_MEM_HANDLE_TYPE_POSIX_FILE_DESCRIPTOR=1 is supported.
+ * Returns 0 on success and writes an O_CLOEXEC pipe read-end fd to *fd_out.
+ * Phase 4 (2026-07-07) added for cuMemPoolExportToShareableHandle.
+ */
+int sim_mem_pool_export_shareable(uint64_t pool_handle, uint32_t handle_type,
+                                  uint32_t flags, int32_t* fd_out);
+
 /* Test-only helper. */
 void sim_mem_pool_reset_for_test(void);
 

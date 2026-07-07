@@ -119,6 +119,7 @@ const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
       {GPU_IOCTL_MEM_POOL_SET_ATTR, "MEM_POOL_SET_ATTR", &GpgpuDevice::handleMemPoolSetAttr},
       {GPU_IOCTL_MEM_POOL_GET_ATTR, "MEM_POOL_GET_ATTR", &GpgpuDevice::handleMemPoolGetAttr},
       {GPU_IOCTL_MEM_POOL_TRIM, "MEM_POOL_TRIM", &GpgpuDevice::handleMemPoolTrim},
+      {GPU_IOCTL_MEM_POOL_EXPORT, "MEM_POOL_EXPORT", &GpgpuDevice::handleMemPoolExport},
   };
   return kTable;
 }
