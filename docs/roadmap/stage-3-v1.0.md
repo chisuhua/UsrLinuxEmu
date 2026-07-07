@@ -130,3 +130,21 @@
 ## 下一步
 
 [终态蓝图](blueprint.md)
+
+---
+
+## 当前进展（2026-07-07）
+
+**Stage 3 已启动**（issue 跟踪见 GitHub）：
+
+| 子任务 | 状态 | 说明 |
+|--------|------|------|
+| **3.1 CI/CD 全平台验证** | 🔄 进行中 | 当前 CI 只测 `ubuntu-latest`，下一步加 ubuntu-22.04 LTS 显式 entry；macOS 待评估（`linux_compat/` ABI 兼容性） |
+| **3.2 性能优化** | 📋 规划中 | 需要先建立性能基准 |
+| **3.3 错误处理完善** | ✅ 部分完成 | PR #20 review follow-up #3 已修复 `sim_graph_launch` / `sim_mem_pool_*_async` 的 `-1` → `-ENOMEM`（commit `fc6f854`）|
+
+**已落地的稳定性 commit**（Phase 3.1/3.2 期间）:
+- `f180737` docs(openspec): archive sim-stream-primitive-support
+- `3b2eeef` docs(openspec): add F.6 follow-up — sim_graph_launch real async impl
+- `13477ff` refactor(gpu): use SIM_FENCE_ID_BASE macro (no magic number)
+- `fc6f854` fix(sim): return -ENOMEM instead of -1 in graph/mem_pool async paths

@@ -425,7 +425,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 | API 参考 | [docs/06-reference/](docs/06-reference/) | API 与 IOCTL |
 | TaskRunner 集成 | [docs/07-integration/](docs/07-integration/) | 与 TaskRunner 子模块的对接 |
 
-> ⚠️ docs/ 目录中部分子文档（`docs/02_architecture/architecture.md` 等）仍处于审计修复中。**架构与构建相关信息以本 README + AGENTS.md + post-refactor-architecture.md 为准**。
+> **架构与构建相关信息以本 README + AGENTS.md + post-refactor-architecture.md (SSOT) 为准**。`docs/02_architecture/architecture.md` 与 `architecture_design.md` 已标记 DEPRECATED（最后验证 2026-06-16 commit `374d463`，pre-v0.1.5 内容），请改读 SSOT。
 
 ## 贡献指南
 
