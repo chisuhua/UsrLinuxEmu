@@ -135,7 +135,6 @@ set(STANDALONE_TESTS
 set(CATCH2_TESTS
     test_gpu_memory.cpp
     test_gpu_mmap_bar.cpp
-    test_gpu_plugin.cpp
     test_module_loader_isolation.cpp
     test_pcie_emu_standalone.cpp
     test_config_space_standalone.cpp
@@ -231,6 +230,10 @@ set(CATCH2_SIM_TESTS
     # Issue #21 regression lock-in tests
     test_iommu_priv_contract_regression_standalone.cpp
     test_hardware_puller_emu_concurrent_regression_standalone.cpp
+    # Phase 3.1+3.2 — test_gpu_plugin extended with 18 new IOCTL dispatch cases
+    test_gpu_plugin.cpp
+    # Phase 3.1+3.2 — cross-repo integration test (GpuDriverClient-style ioctl chain)
+    test_gpu_driver_client_phase31_standalone.cpp
 )
 
 # Stage 2.2.4 — net driver plugin test (per ADR-038 D1)

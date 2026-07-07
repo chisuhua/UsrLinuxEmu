@@ -11,8 +11,11 @@
 #include "drv/gpgpu_device.h"
 #include "kernel/logger.h"
 #include "kernel/vfs.h"
+#include "sim/graph.h"
 #include "sim/hardware/hardware_puller_emu.h"
 #include "sim/gpu_queue_emu.h"
+#include "sim/mem_pool.h"
+#include "sim/stream_capture.h"
 #include "shared/gpu_events.h"
 #include "shared/gpu_ioctl.h"
 #include "shared/gpu_types.h"
@@ -98,6 +101,24 @@ const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
       {GPU_IOCTL_CREATE_VA_SPACE, "CREATE_VA_SPACE", &GpgpuDevice::handleCreateVASpace},
       {GPU_IOCTL_DESTROY_VA_SPACE, "DESTROY_VA_SPACE", &GpgpuDevice::handleDestroyVASpace},
       {GPU_IOCTL_REGISTER_GPU, "REGISTER_GPU", &GpgpuDevice::handleRegisterGPU},
+      {GPU_IOCTL_STREAM_CAPTURE_BEGIN, "STREAM_CAPTURE_BEGIN", &GpgpuDevice::handleStreamCaptureBegin},
+      {GPU_IOCTL_STREAM_CAPTURE_END, "STREAM_CAPTURE_END", &GpgpuDevice::handleStreamCaptureEnd},
+      {GPU_IOCTL_STREAM_CAPTURE_STATUS, "STREAM_CAPTURE_STATUS", &GpgpuDevice::handleStreamCaptureStatus},
+      {GPU_IOCTL_GRAPH_CREATE, "GRAPH_CREATE", &GpgpuDevice::handleGraphCreate},
+      {GPU_IOCTL_GRAPH_DESTROY, "GRAPH_DESTROY", &GpgpuDevice::handleGraphDestroy},
+      {GPU_IOCTL_GRAPH_ADD_KERNEL_NODE, "GRAPH_ADD_KERNEL_NODE", &GpgpuDevice::handleGraphAddKernelNode},
+      {GPU_IOCTL_GRAPH_ADD_MEMCPY_NODE, "GRAPH_ADD_MEMCPY_NODE", &GpgpuDevice::handleGraphAddMemcpyNode},
+      {GPU_IOCTL_GRAPH_INSTANTIATE, "GRAPH_INSTANTIATE", &GpgpuDevice::handleGraphInstantiate},
+      {GPU_IOCTL_GRAPH_LAUNCH, "GRAPH_LAUNCH", &GpgpuDevice::handleGraphLaunch},
+      {GPU_IOCTL_GRAPH_DESTROY_EXEC, "GRAPH_DESTROY_EXEC", &GpgpuDevice::handleGraphDestroyExec},
+      {GPU_IOCTL_MEM_POOL_CREATE, "MEM_POOL_CREATE", &GpgpuDevice::handleMemPoolCreate},
+      {GPU_IOCTL_MEM_POOL_DESTROY, "MEM_POOL_DESTROY", &GpgpuDevice::handleMemPoolDestroy},
+      {GPU_IOCTL_MEM_POOL_ALLOC, "MEM_POOL_ALLOC", &GpgpuDevice::handleMemPoolAlloc},
+      {GPU_IOCTL_MEM_POOL_ALLOC_ASYNC, "MEM_POOL_ALLOC_ASYNC", &GpgpuDevice::handleMemPoolAllocAsync},
+      {GPU_IOCTL_MEM_POOL_FREE_ASYNC, "MEM_POOL_FREE_ASYNC", &GpgpuDevice::handleMemPoolFreeAsync},
+      {GPU_IOCTL_MEM_POOL_SET_ATTR, "MEM_POOL_SET_ATTR", &GpgpuDevice::handleMemPoolSetAttr},
+      {GPU_IOCTL_MEM_POOL_GET_ATTR, "MEM_POOL_GET_ATTR", &GpgpuDevice::handleMemPoolGetAttr},
+      {GPU_IOCTL_MEM_POOL_TRIM, "MEM_POOL_TRIM", &GpgpuDevice::handleMemPoolTrim},
   };
   return kTable;
 }
@@ -738,5 +759,152 @@ long GpgpuDevice::handleRegisterGPU(void* argp) {
   std::cout << "[GpgpuDevice] REGISTER_GPU: va_space=" << args->va_space_handle
             << " gpu_id=" << args->gpu_id << " flags=0x" << std::hex << args->flags << "\n";
   return 0;
+}
+
+long GpgpuDevice::handleStreamCaptureBegin(void* argp) {
+  auto* args = static_cast<struct gpu_stream_capture_args*>(argp);
+  if (!args) return -EFAULT;
+  return sim_stream_capture_begin(args->stream_id, args->mode);
+}
+
+long GpgpuDevice::handleStreamCaptureEnd(void* argp) {
+  auto* args = static_cast<struct gpu_stream_capture_args*>(argp);
+  if (!args) return -EFAULT;
+  args->mode = 0;
+  return sim_stream_capture_end(args->stream_id, &args->graph_handle_out);
+}
+
+long GpgpuDevice::handleStreamCaptureStatus(void* argp) {
+  auto* args = static_cast<struct gpu_stream_capture_status_args*>(argp);
+  if (!args) return -EFAULT;
+  sim_stream_capture_status_t local_status = SIM_STREAM_CAPTURE_NONE;
+  int rc = sim_stream_capture_status(args->stream_id, &local_status);
+  if (rc == 0) {
+    args->status_out = static_cast<u32>(local_status);
+  }
+  return rc;
+}
+
+long GpgpuDevice::handleGraphCreate(void* argp) {
+  auto* args = static_cast<struct gpu_graph_create_args*>(argp);
+  if (!args) return -EFAULT;
+  return sim_graph_create(&args->graph_handle_out);
+}
+
+long GpgpuDevice::handleGraphDestroy(void* argp) {
+  auto* args = static_cast<struct gpu_graph_destroy_args*>(argp);
+  if (!args) return -EFAULT;
+  return sim_graph_destroy(args->graph_handle);
+}
+
+long GpgpuDevice::handleGraphAddKernelNode(void* argp) {
+  auto* args = static_cast<struct gpu_graph_add_kernel_node_args*>(argp);
+  if (!args) return -EFAULT;
+  uint64_t bo = args->kernargs_bo_handle;
+  return sim_graph_add_kernel_node(args->graph_handle, args->kernel_index,
+                                   args->grid_x, args->grid_y, args->grid_z,
+                                   args->block_x, args->block_y, args->block_z,
+                                   &bo);
+}
+
+long GpgpuDevice::handleGraphAddMemcpyNode(void* argp) {
+  auto* args = static_cast<struct gpu_graph_add_memcpy_node_args*>(argp);
+  if (!args) return -EFAULT;
+  return sim_graph_add_memcpy_node(args->graph_handle, args->src_va, args->dst_va,
+                                   args->size, static_cast<int>(args->is_h2d));
+}
+
+long GpgpuDevice::handleGraphInstantiate(void* argp) {
+  auto* args = static_cast<struct gpu_graph_instantiate_args*>(argp);
+  if (!args) return -EFAULT;
+  return sim_graph_instantiate(args->graph_handle, &args->exec_handle_out);
+}
+
+long GpgpuDevice::handleGraphLaunch(void* argp) {
+  auto* args = static_cast<struct gpu_graph_launch_args*>(argp);
+  if (!args) return -EFAULT;
+  int64_t fence_id = sim_graph_launch(args->exec_handle, args->stream_id);
+  if (fence_id < 0) return static_cast<long>(fence_id);
+  args->fence_id_out = fence_id;
+  return 0;
+}
+
+long GpgpuDevice::handleGraphDestroyExec(void* argp) {
+  auto* args = static_cast<struct gpu_graph_destroy_exec_args*>(argp);
+  if (!args) return -EFAULT;
+  return sim_graph_destroy_exec(args->exec_handle);
+}
+
+long GpgpuDevice::handleMemPoolCreate(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_create_args*>(argp);
+  if (!args) return -EFAULT;
+  return sim_mem_pool_create(reinterpret_cast<sim_mem_pool_props_t*>(&args->props),
+                              &args->pool_handle_out);
+}
+
+long GpgpuDevice::handleMemPoolDestroy(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_destroy_args*>(argp);
+  if (!args) return -EFAULT;
+  return sim_mem_pool_destroy(args->pool_handle);
+}
+
+long GpgpuDevice::handleMemPoolAlloc(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_alloc_args*>(argp);
+  if (!args) return -EFAULT;
+  return sim_mem_pool_alloc(args->pool_handle, args->size, &args->va_out);
+}
+
+long GpgpuDevice::handleMemPoolAllocAsync(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_alloc_async_args*>(argp);
+  if (!args) return -EFAULT;
+  int64_t fence = sim_mem_pool_alloc_async(args->pool_handle, args->size,
+                                            args->stream_id, &args->va_out);
+  if (fence < 0) return static_cast<long>(fence);
+  args->fence_id_out = fence;
+  return 0;
+}
+
+long GpgpuDevice::handleMemPoolFreeAsync(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_free_async_args*>(argp);
+  if (!args) return -EFAULT;
+  int64_t fence = sim_mem_pool_free_async(args->va, args->stream_id);
+  if (fence < 0) return static_cast<long>(fence);
+  args->fence_id_out = fence;
+  return 0;
+}
+
+long GpgpuDevice::handleMemPoolSetAttr(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_attr_args*>(argp);
+  if (!args) return -EFAULT;
+  size_t sz = 0;
+  switch (static_cast<sim_mem_pool_attr_t>(args->attr)) {
+    case SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD:               sz = 8; break;
+    case SIM_MEM_POOL_ATTR_REUSE_FOLLOW_EVENT_DEPENDENCIES: sz = 4; break;
+    default: return -ENOSYS;
+  }
+  return sim_mem_pool_set_attr(args->pool_handle,
+                                static_cast<sim_mem_pool_attr_t>(args->attr),
+                                args->value, sz);
+}
+
+long GpgpuDevice::handleMemPoolGetAttr(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_attr_args*>(argp);
+  if (!args) return -EFAULT;
+  size_t sz = 0;
+  switch (static_cast<sim_mem_pool_attr_t>(args->attr)) {
+    case SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD:               sz = 8; break;
+    case SIM_MEM_POOL_ATTR_REUSE_FOLLOW_EVENT_DEPENDENCIES: sz = 4; break;
+    default: return -ENOSYS;
+  }
+  std::memset(args->value, 0, sizeof(args->value));
+  return sim_mem_pool_get_attr(args->pool_handle,
+                                static_cast<sim_mem_pool_attr_t>(args->attr),
+                                args->value, sz);
+}
+
+long GpgpuDevice::handleMemPoolTrim(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_trim_args*>(argp);
+  if (!args) return -EFAULT;
+  return sim_mem_pool_trim(args->pool_handle, args->min_bytes);
 }
 
