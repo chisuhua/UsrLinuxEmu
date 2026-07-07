@@ -2,7 +2,7 @@
 
 本文档目录包含 UsrLinuxEmu 项目中所有已通过和提议中的架构决策记录。
 
-> **最后更新**: 2026-06-26（H-3.8 完成—ADR-034 Issue #1 → Accepted，H-7 deferred 3 issues 全部关闭）
+> **最后更新**: 2026-07-07（Phase 4 MEM_POOL_EXPORT IOCTL — ADR-039 新增）
 > **维护者**: UsrLinuxEmu Architecture Team + TaskRunner owner
 > **治理规则**: 见 [ADR-035](adr-035-governance-policy.md)
 
@@ -47,17 +47,19 @@
 | [adr-035](adr-035-governance-policy.md) | **Architecture Governance Policy** | ✅ 已接受 | 2026-06-23 |
 | [adr-036](adr-036-three-way-separation.md) | **3 区分架构原则 (3-Way Architectural Separation)** | ✅ 已接受 | 2026-06-23 |
 | [adr-037](adr-037-render-node-permissions.md) | **VFS Device Permission Model (Render Node 权限分离)** | ✅ 已接受 | 2026-07-03 |
+| [adr-038](adr-038-network-stack-three-way-separation.md) | **网络栈 3 区分架构边界** | 🔄 Proposed (Stage 2 前置 ADR) | 2026-07-05 |
+| [adr-039](adr-039-mem-pool-export-ioctl.md) | **MEM_POOL_EXPORT IOCTL (0x68) for cuMemPoolExportToShareableHandle** | ✅ 已接受 | 2026-07-07 |
 
-## 状态分布总览（截至 2026-07-03）
+## 状态分布总览（截至 2026-07-07）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 31 | 001-013, 015, 016, 018-024, 027, 031-037 |
+| ✅ 已接受 | 32 | 001-013, 015, 016, 018-024, 027, 031-037, 039 |
 | ⏸️ 显式 Deferred | 5 | 025, 026, 028-030 |
-| 🔄 提议中 | 0 | — |
-| **总计** | **36** | ADR-001 ~ ADR-037 |
+| 🔄 提议中 | 1 | 038 |
+| **总计** | **38** | ADR-001 ~ ADR-039 |
 
-> **2026-07-03 变更**：ADR-037 从 🔄 提议中 升 ✅ 已接受（Stage 1.2 closeout 同步，VFS-1~VFS-4 全部实现并测试通过；详见 `adr-037-render-node-permissions.md` §验收记录）。
+> **2026-07-07 变更**：ADR-039 新增 — Phase 4 MEM_POOL_EXPORT IOCTL (0x68)，为 TaskRunner cuMemPoolExportToShareableHandle 提供底层支持。
 
 ## ADR 状态说明
 

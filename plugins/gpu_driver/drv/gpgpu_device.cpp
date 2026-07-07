@@ -18,6 +18,7 @@
 #include "shared/gpu_types.h"
 #include "hal/gpu_hal.h"
 #include "hal/hal_user.h"
+#include "sim/mem_pool.h"
 
 constexpr u32 VENDOR_SIMULATED = 0x1000;
 constexpr u32 DEVICE_SIMULATED_V1 = 0x1001;
@@ -98,6 +99,9 @@ const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
       {GPU_IOCTL_CREATE_VA_SPACE, "CREATE_VA_SPACE", &GpgpuDevice::handleCreateVASpace},
       {GPU_IOCTL_DESTROY_VA_SPACE, "DESTROY_VA_SPACE", &GpgpuDevice::handleDestroyVASpace},
       {GPU_IOCTL_REGISTER_GPU, "REGISTER_GPU", &GpgpuDevice::handleRegisterGPU},
+      {GPU_IOCTL_MEM_POOL_CREATE, "MEM_POOL_CREATE", &GpgpuDevice::handleMemPoolCreate},
+      {GPU_IOCTL_MEM_POOL_TRIM, "MEM_POOL_TRIM", &GpgpuDevice::handleMemPoolTrim},
+      {GPU_IOCTL_MEM_POOL_EXPORT, "MEM_POOL_EXPORT", &GpgpuDevice::handleMemPoolExport},
   };
   return kTable;
 }
@@ -738,5 +742,35 @@ long GpgpuDevice::handleRegisterGPU(void* argp) {
   std::cout << "[GpgpuDevice] REGISTER_GPU: va_space=" << args->va_space_handle
             << " gpu_id=" << args->gpu_id << " flags=0x" << std::hex << args->flags << "\n";
   return 0;
+}
+
+long GpgpuDevice::handleMemPoolCreate(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_create_args*>(argp);
+  if (!args) return -EFAULT;
+  int rc = sim_mem_pool_create(reinterpret_cast<sim_mem_pool_props_t*>(&args->props),
+                               &args->pool_handle_out);
+  if (rc == 0) {
+    std::cout << "[GpgpuDevice] MEM_POOL_CREATE: handle=" << args->pool_handle_out
+              << " size=" << args->props.size
+              << " va=[0x" << std::hex << args->props.va_base
+              << ",0x" << args->props.va_limit << std::dec << "]\n";
+  }
+  return rc;
+}
+
+long GpgpuDevice::handleMemPoolTrim(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_trim_args*>(argp);
+  if (!args) return -EFAULT;
+  return sim_mem_pool_trim(args->pool_handle, args->min_bytes);
+}
+
+long GpgpuDevice::handleMemPoolExport(void* argp) {
+  auto* args = static_cast<struct gpu_mem_pool_export_args*>(argp);
+  if (!args) return -EFAULT;
+  int rc = sim_mem_pool_export_shareable(args->pool_handle,
+                                          args->handle_type,
+                                          args->flags,
+                                          &args->fd_out);
+  return rc;
 }
 

@@ -19,9 +19,12 @@
 
 #include <cerrno>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <map>
 #include <utility>
+#include <unistd.h>
+#include <fcntl.h>
 
 namespace {
 
@@ -239,6 +242,29 @@ void sim_mem_pool_reset_for_test(void) {
   pool_table_.clear();
   next_pool_handle_  = 1;
   next_pool_va_base_ = POOL_VA_BASE_START;
+}
+
+int sim_mem_pool_export_shareable(uint64_t pool_handle, uint32_t handle_type,
+                                  uint32_t flags, int32_t* fd_out) {
+  if (!fd_out) return SIM_POOL_ERR_INVAL;
+  if (flags != 0) return SIM_POOL_ERR_INVAL;
+  if (handle_type != 1) return SIM_POOL_ERR_INVAL;
+  auto it = pool_table_.find(pool_handle);
+  if (it == pool_table_.end())
+    return SIM_POOL_ERR_INVALID_HANDLE;
+
+  int pipefd[2];
+  if (pipe2(pipefd, O_CLOEXEC) < 0)
+    return -errno;
+
+  char blob[256];
+  int n = snprintf(blob, sizeof(blob), "POOL:%lx:0",
+                   (unsigned long)pool_handle);
+  (void)write(pipefd[1], blob, static_cast<size_t>(n));
+  close(pipefd[1]);
+
+  *fd_out = pipefd[0];
+  return SIM_POOL_ERR_OK;
 }
 
 }  // extern "C"
