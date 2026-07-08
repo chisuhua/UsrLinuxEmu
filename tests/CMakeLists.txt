@@ -235,6 +235,8 @@ set(CATCH2_SIM_TESTS
     test_gpu_plugin.cpp
     # Phase 3.1+3.2 — cross-repo integration test (GpuDriverClient-style ioctl chain)
     test_gpu_driver_client_phase31_standalone.cpp
+    # Phase 3.3 — error injection via HAL mock (links gpu_hal_mock for controlled failures)
+    test_error_inject_standalone.cpp
 )
 
 # Stage 2.2.4 — net driver plugin test (per ADR-038 D1)
@@ -273,6 +275,9 @@ foreach(src ${CATCH2_SIM_TESTS})
     get_filename_component(testname ${src} NAME_WE)
     add_catch_sim_test(${testname} ${src})
 endforeach()
+
+# test_error_inject_standalone needs gpu_hal_mock for HAL failure injection
+target_link_libraries(test_error_inject_standalone PRIVATE gpu_hal_mock)
 
 # 为每个 sim 测试源文件创建测试
 foreach(src ${SIM_TESTS})
