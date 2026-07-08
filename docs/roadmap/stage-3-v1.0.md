@@ -139,7 +139,7 @@
 
 | 子任务 | 状态 | 说明 |
 |--------|------|------|
-| **3.1 CI/CD 全平台验证** | 🔄 进行中 | 当前 CI 只测 `ubuntu-latest`，下一步加 ubuntu-22.04 LTS 显式 entry；macOS 待评估（`linux_compat/` ABI 兼容性） |
+| **3.1 CI/CD 全平台验证** | ✅ 部分完成 (2026-07-08) | `ubuntu-22.04` LTS 已加入 CI matrix（change `stage3-1-ci-matrix-multi-platform`），6 jobs × parallel fan-out；本地 build 85/85 ctest PASS、0 warnings；macOS / aarch64 deferred（需要 cross-ABI 隔离，独立 change 跟踪） |
 | **3.2 性能优化** | 📋 规划中 | 需要先建立性能基准 |
 | **3.3 错误处理完善** | ✅ 部分完成 | PR #20 review follow-up #3 已修复 `sim_graph_launch` / `sim_mem_pool_*_async` 的 `-1` → `-ENOMEM`（commit `fc6f854`）|
 

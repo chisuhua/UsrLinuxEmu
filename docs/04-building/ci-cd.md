@@ -44,7 +44,7 @@ on:
 
 | Job | OS | 说明 | 必检 |
 |-----|-----|------|------|
-| `build` | ubuntu-latest × {gcc, clang} | CMake configure + build + ctest | ✅ |
+| `build` | ubuntu-latest × ubuntu-22.04 × {gcc, clang} | CMake configure + build + ctest | ✅ |
 | `docs-audit` | ubuntu-latest | `tools/docs-audit.sh --strict` | ✅ |
 
 #### docs-audit Job 详情

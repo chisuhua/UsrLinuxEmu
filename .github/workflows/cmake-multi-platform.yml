@@ -16,14 +16,15 @@ jobs:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
 
-      # Set up a matrix to run the following 3 configurations:
-      # 1. <Windows, Release, latest MSVC compiler toolchain on the default runner image, default generator>
-      # 2. <Linux, Release, latest GCC compiler toolchain on the default runner image, default generator>
-      # 3. <Linux, Release, latest Clang compiler toolchain on the default runner image, default generator>
+      # Set up a matrix to run the following 4 configurations:
+      # 1. <ubuntu-latest, Release, GCC  toolchain, default generator>
+      # 2. <ubuntu-latest, Release, Clang toolchain, default generator>
+      # 3. <ubuntu-22.04,  Release, GCC  toolchain, default generator>
+      # 4. <ubuntu-22.04,  Release, Clang toolchain, default generator>
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, ubuntu-22.04]
         build_type: [Release]
         c_compiler: [gcc, clang]
         cpp_compiler: [g++, clang++]
@@ -31,8 +32,14 @@ jobs:
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
+          - os: ubuntu-22.04
+            c_compiler: gcc
+            cpp_compiler: g++
         exclude:
           - os: ubuntu-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+          - os: ubuntu-22.04
             c_compiler: clang
             cpp_compiler: clang++
 
