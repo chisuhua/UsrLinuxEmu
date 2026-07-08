@@ -622,3 +622,193 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_TRIM (0x67)",
   long result = ioctl(GPU_IOCTL_MEM_POOL_TRIM, &trim);
   REQUIRE(result == 0);
 }
+
+/*
+ * Error-injection tests — Phase 3/4 handler error paths
+ *
+ * Sim layer uses custom error codes (SIM_POOL_ERR_* = -1/-2/-3/-4)
+ * and raw -1 in some paths, so sim-layer errors use != 0.
+ * Handler-layer (arg validation) errors use == -E* where known.
+ */
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_STREAM_CAPTURE_BEGIN invalid capture mode",
+                 "[gpu][ioctl][phase31][stream_capture][error]") {
+  struct gpu_stream_capture_args args = {};
+  args.stream_id = 1;
+  args.mode = 0xFF;
+
+  long result = ioctl(GPU_IOCTL_STREAM_CAPTURE_BEGIN, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_STREAM_CAPTURE_END bogus stream_id",
+                 "[gpu][ioctl][phase31][stream_capture][error]") {
+  struct gpu_stream_capture_args args = {};
+  args.stream_id = 999;
+  args.mode = 0;
+
+  long result = ioctl(GPU_IOCTL_STREAM_CAPTURE_END, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_STREAM_CAPTURE_STATUS bogus stream_id",
+                 "[gpu][ioctl][phase31][stream_capture][error]") {
+  struct gpu_stream_capture_status_args args = {};
+  args.stream_id = 999;
+
+  long result = ioctl(GPU_IOCTL_STREAM_CAPTURE_STATUS, &args);
+  REQUIRE(result == 0);
+  REQUIRE(args.status_out == static_cast<u32>(SIM_STREAM_CAPTURE_NONE));
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_GRAPH_DESTROY zero handle",
+                 "[gpu][ioctl][phase31][graph][error]") {
+  struct gpu_graph_destroy_args args = {};
+  args.graph_handle = 0;
+
+  long result = ioctl(GPU_IOCTL_GRAPH_DESTROY, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_GRAPH_ADD_KERNEL_NODE zero graph handle",
+                 "[gpu][ioctl][phase31][graph][error]") {
+  struct gpu_graph_add_kernel_node_args args = {};
+  args.graph_handle = 0;
+  args.kernargs_bo_handle = 0xCAFE;
+
+  long result = ioctl(GPU_IOCTL_GRAPH_ADD_KERNEL_NODE, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_GRAPH_ADD_MEMCPY_NODE zero graph handle",
+                 "[gpu][ioctl][phase31][graph][error]") {
+  struct gpu_graph_add_memcpy_node_args args = {};
+  args.graph_handle = 0;
+
+  long result = ioctl(GPU_IOCTL_GRAPH_ADD_MEMCPY_NODE, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_GRAPH_INSTANTIATE zero graph handle",
+                 "[gpu][ioctl][phase31][graph][error]") {
+  struct gpu_graph_instantiate_args args = {};
+  args.graph_handle = 0;
+
+  long result = ioctl(GPU_IOCTL_GRAPH_INSTANTIATE, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_GRAPH_LAUNCH zero exec handle",
+                 "[gpu][ioctl][phase31][graph][error]") {
+  struct gpu_graph_launch_args args = {};
+  args.exec_handle = 0;
+
+  long result = ioctl(GPU_IOCTL_GRAPH_LAUNCH, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_GRAPH_DESTROY_EXEC zero exec handle",
+                 "[gpu][ioctl][phase31][graph][error]") {
+  struct gpu_graph_destroy_exec_args args = {};
+  args.exec_handle = 0;
+
+  long result = ioctl(GPU_IOCTL_GRAPH_DESTROY_EXEC, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_MEM_POOL_CREATE zero size",
+                 "[gpu][ioctl][phase32][mem_pool][error]") {
+  struct gpu_mem_pool_create_args args = {};
+  args.props.size = 0;
+  args.props.flags = GPU_MEM_POOL_FLAGS_DEFAULT;
+
+  long result = ioctl(GPU_IOCTL_MEM_POOL_CREATE, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_MEM_POOL_DESTROY zero pool",
+                 "[gpu][ioctl][phase32][mem_pool][error]") {
+  struct gpu_mem_pool_destroy_args args = {};
+  args.pool_handle = 0;
+
+  long result = ioctl(GPU_IOCTL_MEM_POOL_DESTROY, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_MEM_POOL_ALLOC zero pool",
+                 "[gpu][ioctl][phase32][mem_pool][error]") {
+  struct gpu_mem_pool_alloc_args args = {};
+  args.pool_handle = 0;
+  args.size = 4096;
+
+  long result = ioctl(GPU_IOCTL_MEM_POOL_ALLOC, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_MEM_POOL_ALLOC_ASYNC zero pool",
+                 "[gpu][ioctl][phase32][mem_pool][error]") {
+  struct gpu_mem_pool_alloc_async_args args = {};
+  args.pool_handle = 0;
+  args.size = 4096;
+
+  long result = ioctl(GPU_IOCTL_MEM_POOL_ALLOC_ASYNC, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_MEM_POOL_FREE_ASYNC zero va",
+                 "[gpu][ioctl][phase32][mem_pool][error]") {
+  struct gpu_mem_pool_free_async_args args = {};
+  args.va = 0;
+
+  long result = ioctl(GPU_IOCTL_MEM_POOL_FREE_ASYNC, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_MEM_POOL_SET_ATTR invalid attr",
+                 "[gpu][ioctl][phase32][mem_pool][error]") {
+  struct gpu_mem_pool_create_args create = {};
+  create.props.size = 1ULL * 1024 * 1024;
+  create.props.flags = GPU_MEM_POOL_FLAGS_DEFAULT;
+  REQUIRE(ioctl(GPU_IOCTL_MEM_POOL_CREATE, &create) == 0);
+
+  struct gpu_mem_pool_attr_args args = {};
+  args.pool_handle = create.pool_handle_out;
+  args.attr = 0xFF;
+  long result = ioctl(GPU_IOCTL_MEM_POOL_SET_ATTR, &args);
+  REQUIRE(result == -ENOSYS);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_MEM_POOL_TRIM zero pool",
+                 "[gpu][ioctl][phase32][mem_pool][error]") {
+  struct gpu_mem_pool_trim_args args = {};
+  args.pool_handle = 0;
+
+  long result = ioctl(GPU_IOCTL_MEM_POOL_TRIM, &args);
+  REQUIRE(result != 0);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_MEM_POOL_EXPORT zero pool",
+                 "[gpu][ioctl][phase32][mem_pool][error]") {
+  struct gpu_mem_pool_export_args args = {};
+  args.pool_handle = 0;
+
+  long result = ioctl(GPU_IOCTL_MEM_POOL_EXPORT, &args);
+  REQUIRE(result != 0);
+}
