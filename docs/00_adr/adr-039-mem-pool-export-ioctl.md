@@ -5,7 +5,7 @@
 **提案人**: TaskRunner Phase 4 Team
 **关联 ADR**: ADR-036 (3-way separation), ADR-015 (IOCTL unification), ADR-018 (driver-sim separation)
 **关联 Change**: `openspec/changes/phase3-real-impl-bridge/` (Phase 4 MEM_POOL_EXPORT)
-**关联 TaskRunner TADR**: tadr-302 (sync primitives — pending mempool export extension)
+**关联 TaskRunner TADR**: tadr-305 (IGpuDriver::mem_pool_export_shareable, Phase 4 新增 47 方法；TaskRunner commit `2595f16` 2026-07-08 完成真实桥接)
 
 ---
 
@@ -80,7 +80,9 @@ Phase 5+ 如需真正跨进程共享，需升级为：
 
 ## 关联 TaskRunner TADR
 
-TaskRunner `tadr-302` (sync primitives) 将引用本 ADR 的 IOCTL 编号和结构体定义，作为 `cuMemPoolExportToShareableHandle` Stub/C-ABI 层的基础。Phase 4 的 TaskRunner 实现（`phase3-real-impl-bridge-extended`）依赖于本 IOCTL 已合并到 UsrLinuxEmu main。
+TaskRunner `tadr-305` (IGpuDriver::mem_pool_export_shareable) 已引用本 ADR 的 IOCTL 编号和结构体定义，作为 `cuMemPoolExportToShareableHandle` Stub/C-ABI 层的基础。TaskRunner commit `2595f16` (2026-07-08) 已完成真实桥接（替换 TODO stub 为 `ioctl(fd_, GPU_IOCTL_MEM_POOL_EXPORT, &args)` forwarder），依赖项（UsrLinuxEmu GPU_IOCTL_MEM_POOL_EXPORT 0x68，PR #27 commit f315c3e）已合并到 UsrLinuxEmu main。
+
+> **编号变更历史**：`tadr-302-mempool-export-shareable` 在 TaskRunner 仓与 `tadr-302-sync-primitives` 发生编号冲突，commit `2595f16` 已重命名为 `tadr-305-mempool-export-shareable`。`tadr-302` 当前专指 Sync Primitives 抽象。
 
 ---
 
