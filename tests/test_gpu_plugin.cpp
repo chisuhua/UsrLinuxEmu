@@ -534,6 +534,89 @@ TEST_CASE_METHOD(GpuPluginTestFixture,
   REQUIRE(wait.status == 1);
 }
 
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                  "GPU_IOCTL_GRAPH_LAUNCH empty executable returns -EINVAL",
+                  "[gpu][ioctl][phase4][graph][error]") {
+  /* BG-01583a02 P1/C1 (HIGH) coverage: drv-layer handleGraphLaunch must
+   * reject launches where sim_graph_launch returns entry_count==0
+   * (an instantiated graph with no nodes). Sim layer is already covered
+   * by tests in test_sim_graph_standalone.cpp; this test exercises the
+   * full ioctl → GpgpuDevice::ioctl → handleGraphLaunch path. */
+  struct gpu_va_space_args va_args = {};
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_VA_SPACE, &va_args) == 0);
+
+  struct gpu_queue_args q_args = {};
+  q_args.va_space_handle = va_args.va_space_handle;
+  q_args.queue_type = 0;
+  q_args.priority = 0;
+  q_args.ring_buffer_size = 16;
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_QUEUE, &q_args) == 0);
+
+  /* Create a graph but DO NOT add any nodes — instantiate produces
+   * an exec with entry_count == 0. */
+  struct gpu_graph_create_args create = {};
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_CREATE, &create) == 0);
+
+  struct gpu_graph_instantiate_args inst = {};
+  inst.graph_handle = create.graph_handle_out;
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_INSTANTIATE, &inst) == 0);
+  REQUIRE(inst.exec_handle_out >= 1);
+
+  /* Launch should reject with -EINVAL (gpgpu_device.cpp:854-859). */
+  struct gpu_graph_launch_args launch = {};
+  launch.exec_handle = inst.exec_handle_out;
+  launch.stream_id = static_cast<u32>(q_args.queue_handle);
+  long result = ioctl(GPU_IOCTL_GRAPH_LAUNCH, &launch);
+  REQUIRE(result == -EINVAL);
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                  "GPU_IOCTL_GRAPH_LAUNCH missing queue returns -ENOENT",
+                  "[gpu][ioctl][phase4][graph][error]") {
+  /* BG-01583a02 P2/C2 (HIGH) coverage: drv-layer handleGraphLaunch must
+   * return -ENOENT when getQueue(stream_id) fails because the queue was
+   * destroyed after graph instantiation. */
+  struct gpu_va_space_args va_args = {};
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_VA_SPACE, &va_args) == 0);
+
+  struct gpu_queue_args q_args = {};
+  q_args.va_space_handle = va_args.va_space_handle;
+  q_args.queue_type = 0;
+  q_args.priority = 0;
+  q_args.ring_buffer_size = 16;
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_QUEUE, &q_args) == 0);
+  const gpu_queue_handle_t destroyed_stream_id =
+      static_cast<gpu_queue_handle_t>(q_args.queue_handle);
+
+  /* Create + populate + instantiate a graph (entry_count > 0) so that
+   * the empty-executable -EINVAL path is NOT triggered. The drv layer
+   * should fail later at getQueue() with -ENOENT. */
+  struct gpu_graph_create_args create = {};
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_CREATE, &create) == 0);
+
+  struct gpu_graph_add_kernel_node_args kn_args = {};
+  kn_args.graph_handle = create.graph_handle_out;
+  kn_args.kernargs_bo_handle = 0xCAFE;
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_ADD_KERNEL_NODE, &kn_args) == 0);
+
+  struct gpu_graph_instantiate_args inst = {};
+  inst.graph_handle = create.graph_handle_out;
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_INSTANTIATE, &inst) == 0);
+  REQUIRE(inst.exec_handle_out >= 1);
+
+  /* Destroy the queue — getQueue() will now return nullptr. */
+  long destroy_ret = ioctl(GPU_IOCTL_DESTROY_QUEUE, &q_args.queue_handle);
+  REQUIRE(destroy_ret == 0);
+
+  /* Launch with the now-invalid stream_id should return -ENOENT
+   * (gpgpu_device.cpp:864-869). */
+  struct gpu_graph_launch_args launch = {};
+  launch.exec_handle = inst.exec_handle_out;
+  launch.stream_id = static_cast<u32>(destroyed_stream_id);
+  long result = ioctl(GPU_IOCTL_GRAPH_LAUNCH, &launch);
+  REQUIRE(result == -ENOENT);
+}
+
 TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_DESTROY_EXEC (0x59)",
                   "[gpu][ioctl][phase31][graph]") {
   struct gpu_graph_create_args create = {};

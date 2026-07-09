@@ -297,3 +297,26 @@ TEST_CASE("graph — empty graph yields empty executable (gpfifo_addr=0, entry_c
   REQUIRE(gpfifo_addr == 0u);
   REQUIRE(entry_count == 0u);
 }
+
+/* BG-01583a02 defensive coverage: sim_graph_create must reject a NULL
+ * output pointer rather than dereferencing it (graph.cpp:173-174). */
+TEST_CASE("graph — create with NULL handle returns -EINVAL",
+          "[sim][graph][error][null]")
+{
+  sim_graph_reset_for_test();
+  REQUIRE(sim_graph_create(nullptr) == -EINVAL);
+}
+
+/* BG-01583a02 defensive coverage: sim_graph_instantiate must reject a NULL
+ * output pointer rather than dereferencing it (graph.cpp:236-237). */
+TEST_CASE("graph — instantiate with NULL exec handle returns -EINVAL",
+          "[sim][graph][error][null]")
+{
+  sim_graph_reset_for_test();
+  uint64_t g = 0;
+  REQUIRE(sim_graph_create(&g) == 0);
+  uint64_t kbo = 1;
+  REQUIRE(sim_graph_add_kernel_node(g, 1, 1,1,1,32,1,1, &kbo) == 0);
+
+  REQUIRE(sim_graph_instantiate(g, nullptr) == -EINVAL);
+}
