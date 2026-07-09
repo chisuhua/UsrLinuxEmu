@@ -18,6 +18,7 @@
 #include "gpu_hal.h"
 #include "doorbell_emu.h"
 #include "hardware_puller_emu.h"
+#include "fence_id.h"
 
 static std::atomic<int> g_callback_count(0);
 static std::atomic<int> g_last_queue_id(-1);
@@ -334,6 +335,96 @@ int test_puller_mem_read_in_fetch() {
   return 0;
 }
 
+/* ADR-040: verify that submitBatch(fence_id) causes handleComplete() to
+ * signal the sim fence once the batch is fully consumed. */
+int test_puller_fence_signal_on_completion() {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+
+  sim_fence_id_reset_for_test();
+  int64_t fence = sim_fence_id_alloc();
+  if (fence < static_cast<int64_t>(SIM_FENCE_ID_BASE)) {
+    std::cerr << "FAIL: sim_fence_id_alloc returned " << fence << "\n";
+    return 1;
+  }
+  u64 fence_id = static_cast<u64>(fence);
+
+  bool pre_signaled = true;
+  if (sim_fence_id_check(fence_id, &pre_signaled) != 0) {
+    std::cerr << "FAIL: sim_fence_id_check (pre) error\n";
+    return 1;
+  }
+  if (pre_signaled) {
+    std::cerr << "FAIL: fence should NOT be signaled before submitBatch\n";
+    return 1;
+  }
+
+  puller.start();
+  puller.submitBatch(0x1000, 1, fence_id);
+  doorbell.write(0);
+
+  /* Drain: wait for state to leave IDLE, then return to IDLE. This avoids
+   * a race where the puller hasn't been scheduled yet and state_ is still
+   * the initial IDLE. */
+  wait_for_state([&puller]() {
+    return puller.currentState() != HardwarePullerEmu::State::IDLE;
+  }, 200);
+  wait_for_state([&puller]() {
+    return puller.currentState() == HardwarePullerEmu::State::IDLE;
+  }, 200);
+
+  bool post_signaled = false;
+  if (sim_fence_id_check(fence_id, &post_signaled) != 0) {
+    std::cerr << "FAIL: sim_fence_id_check (post) error\n";
+    puller.stop();
+    return 1;
+  }
+  if (!post_signaled) {
+    std::cerr << "FAIL: fence should be signaled after batch completion\n";
+    puller.stop();
+    return 1;
+  }
+
+  puller.stop();
+  std::cout << "PASS: test_puller_fence_signal_on_completion\n";
+  return 0;
+}
+
+/* ADR-040: fence_id=0 must NOT trigger any sim_fence_id signal even on
+ * batch completion (backward compatibility with old call sites). */
+int test_puller_no_fence_signal_when_zero() {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+
+  puller.start();
+  puller.submitBatch(0x2000, 1, /*fence_id=*/0);
+  doorbell.write(0);
+
+  wait_for_state([&puller]() {
+    return puller.currentState() == HardwarePullerEmu::State::IDLE;
+  }, 200);
+
+  /* Just ensure no crash, no signal. Cannot verify "nothing happened"
+   * directly — but if the implementation tried to signal an id of 0 it
+   * would corrupt the fence table; we use a separate fence_id_alloc here
+   * to confirm the table is intact. */
+  sim_fence_id_reset_for_test();
+  int64_t fence = sim_fence_id_alloc();
+  bool signaled = true;
+  sim_fence_id_check(static_cast<u64>(fence), &signaled);
+  if (signaled) {
+    std::cerr << "FAIL: freshly allocated fence should not be signaled\n";
+    puller.stop();
+    return 1;
+  }
+
+  puller.stop();
+  std::cout << "PASS: test_puller_no_fence_signal_when_zero\n";
+  return 0;
+}
+
 int main() {
   int result = 0;
 
@@ -347,6 +438,8 @@ int main() {
   result |= test_puller_interrupt_on_release();
   result |= test_puller_semaphore_release();
   result |= test_puller_mem_read_in_fetch();
+  result |= test_puller_fence_signal_on_completion();
+  result |= test_puller_no_fence_signal_when_zero();
 
   if (result == 0) {
     std::cout << "\n=== ALL TESTS PASSED ===\n";

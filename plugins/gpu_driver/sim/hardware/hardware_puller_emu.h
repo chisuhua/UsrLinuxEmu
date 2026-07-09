@@ -13,6 +13,7 @@
 #include "gpu_types.h"
 #include "gpu_hal.h"
 #include "doorbell_emu.h"
+#include "fence_id.h"
 
 class GlobalScheduler;
 class GpuQueueEmu;
@@ -51,8 +52,16 @@ class HardwarePullerEmu {
   State currentState() const { return state_; }
   const char* stateName() const;
 
-  /** 提交 GPFIFO 批处理（ioctl 路径） */
-  void submitBatch(u64 gpfifo_gpu_addr, u32 entry_count);
+  /** 提交 GPFIFO 批处理（ioctl 路径）
+   *
+   * @param gpfifo_gpu_addr GPFIFO entries 起始 GPU VA
+   * @param entry_count     entry 数量
+   * @param fence_id        sim fence_id (>= SIM_FENCE_ID_BASE)；0 = 不触发完成回调
+   *
+   * ADR-040: 当 batch 全量完成（current_index_ >= total_entries_）时，handleComplete()
+   *          会调用 sim_fence_id_signal(pending_fence_id_) 通知等待者。
+   *          fence_id=0 表示不触发完成回调（向后兼容）。 */
+  void submitBatch(u64 gpfifo_gpu_addr, u32 entry_count, u64 fence_id = 0);
 
   /** Doorbell 触发回调（由 DoorbellEmu 调用） */
   void onDoorbell(u32 queue_id);
@@ -102,6 +111,7 @@ class HardwarePullerEmu {
   u64 current_gpfifo_addr_;
   size_t current_index_;
   size_t total_entries_;
+  u64 pending_fence_id_ = 0;  // ADR-040: batch 全量完成后由 handleComplete() signal
 
   // ========== Queue (Ring Buffer) 路径状态 ==========
   std::map<uint32_t, GpuQueueEmu*> active_queues_;

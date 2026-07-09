@@ -555,17 +555,13 @@ static long gpu_ioctl_graph_instantiate(struct drm_device* dev, void* data, stru
 }
 
 static long gpu_ioctl_graph_launch(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
-  auto* args = static_cast<struct gpu_graph_launch_args*>(data);
-  if (!args) return -EFAULT;
-  int64_t fence_id = sim_graph_launch(args->exec_handle, args->stream_id);
-  if (fence_id < 0)
-    return static_cast<long>(fence_id);
-  args->fence_id_out = fence_id;
-  std::cout << "[GpgpuDevice] GRAPH_LAUNCH: exec=" << args->exec_handle
-            << " stream=" << args->stream_id
-            << " fence_id=" << fence_id << "\n";
-  return 0;
+  /* ADR-043 D4: forward to GpgpuDevice::ioctl() so the same drv-side
+   * logic (sim_graph_launch lookup + getQueue + q->submit + doorbell)
+   * handles both the table-dispatch path and the DRM path. This avoids
+   * duplicating the fence lifecycle (ADR-040) across two code paths. */
+  if (!data) return -EFAULT;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
+  return self->ioctl(0, GPU_IOCTL_GRAPH_LAUNCH, data);
 }
 
 static long gpu_ioctl_graph_destroy_exec(struct drm_device* dev, void* data, struct drm_file*) {
