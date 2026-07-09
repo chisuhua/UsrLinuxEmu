@@ -52,8 +52,8 @@
 - [x] 6.1 ctest 全量 PASS（**86/86 baseline maintained**，+2 new test cases in sim_graph + 1 in test_gpu_plugin）
 - [x] 6.2 docs-audit 无新 warning（43 passed, 0 failed, 0 warnings）
 - [x] 6.3 cross-repo TaskRunner E2E PASS（**10/10 tests** in TaskRunner build）
-- [ ] 6.4 commit：`feat(sim): real async graph_launch via GpuQueueEmu::submit`（待用户授权后执行）
-- [ ] 6.5 PR + merge，通知 TaskRunner 侧（待用户授权后执行）
+- [x] 6.4 commit：`feat(sim): real async graph_launch via GpuQueueEmu::submit` — commits `7740a75`（13 files, +591/-111）+ `f0f7a03`（tasks.md update, 1 file, +49/-35），已 push 到 `origin/main`
+- [x] 6.5 PR + merge，通知 TaskRunner 侧 — 本仓库采用 direct-to-main 工作流（与 `1fb3e02`/`168b33b` 等前序 phase 4 commit 一致），无需 PR。跨仓通知通过 https://github.com/chisuhua/TaskRunner/issues/9 完成（明确说明 ioctl 边界稳定，TaskRunner shim 无需修改）
 
 ## 验证结果摘要
 
