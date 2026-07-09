@@ -1,0 +1,6 @@
+schema: spec-driven
+created: 2026-07-15
+adrs:
+  - adr-040-puller-fence-completion
+  - adr-041-graph-node-to-gpfifo-serialization
+  - adr-043-cp-portability-boundary
