@@ -1,0 +1,26 @@
+schema: spec-driven
+created: 2026-07-09
+name: mem-pool-async-fence-coverage
+status: PROPOSED
+scope: [shared, test-fixture]
+goal: Add GPU_IOCTL_WAIT_FENCE validation to MEM_POOL_ALLOC_ASYNC and MEM_POOL_FREE_ASYNC test cases to close the only async-fence signal verification gap in test_gpu_plugin.cpp.
+follow_up_to: TaskRunner/test-cu-graph-coverage-fixes (2026-07-09 commit 4d266a8)
+baseline:
+  test_gpu_plugin: PASS
+  ctest total: 86/86 PASS
+target:
+  test_gpu_plugin: PASS (with 2 enhanced cases)
+  ctest total: 86/86 PASS
+non_goals:
+  - Adding new test cases
+  - Modifying production code
+  - Modifying shared/ioctl headers
+  - Touching TaskRunner submodule
+out_of_scope_files:
+  - external/TaskRunner/  # no change
+  - plugins/gpu_driver/shared/gpu_ioctl.h  # reuse, not modified
+risk_level: low
+cross_repo:
+  - None (UsrLinuxEmu-only change)
+  - No submodule pointer bump required
+estimated_loc_change: +12 lines in test file only
