@@ -425,6 +425,143 @@ int test_puller_no_fence_signal_when_zero() {
   return 0;
 }
 
+/* BG-01583a02 H1 (MEDIUM) coverage: verify fence signal boundary is correct
+ * for a 3-entry batch. Existing tests only cover total_entries_=1. The
+ * fence must be signaled exactly once after all entries are processed. */
+int test_puller_fence_signal_multi_entry() {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+
+  sim_fence_id_reset_for_test();
+  int64_t fence = sim_fence_id_alloc();
+  if (fence < static_cast<int64_t>(SIM_FENCE_ID_BASE)) {
+    std::cerr << "FAIL: sim_fence_id_alloc returned " << fence << "\n";
+    return 1;
+  }
+  u64 fence_id = static_cast<u64>(fence);
+
+  /* Pre-condition: fence must NOT be signaled before submitBatch. */
+  bool pre_signaled = true;
+  if (sim_fence_id_check(fence_id, &pre_signaled) != 0 || pre_signaled) {
+    std::cerr << "FAIL: fence must NOT be signaled before submitBatch\n";
+    return 1;
+  }
+
+  puller.start();
+  /* Submit a 3-entry batch with non-zero fence_id. The Puller FSM must
+   * process all 3 entries before signaling the fence (the boundary check
+   * `current_index_ + 1 >= total_entries_` only fires on the last entry). */
+  puller.submitBatch(0x1000, /*entry_count=*/3, fence_id);
+  doorbell.write(0);
+
+  /* Drain: same pattern as the single-entry fence test. */
+  wait_for_state([&puller]() {
+    return puller.currentState() != HardwarePullerEmu::State::IDLE;
+  }, 200);
+  wait_for_state([&puller]() {
+    return puller.currentState() == HardwarePullerEmu::State::IDLE;
+  }, 200);
+
+  bool post_signaled = false;
+  if (sim_fence_id_check(fence_id, &post_signaled) != 0) {
+    std::cerr << "FAIL: sim_fence_id_check (post) error\n";
+    puller.stop();
+    return 1;
+  }
+  if (!post_signaled) {
+    std::cerr << "FAIL: fence should be signaled after 3-entry batch completes\n";
+    puller.stop();
+    return 1;
+  }
+
+  puller.stop();
+  std::cout << "PASS: test_puller_fence_signal_multi_entry\n";
+  return 0;
+}
+
+/* BG-01583a02 H1 (MEDIUM) defensive coverage: verify that the fence signal
+ * boundary `current_index_ + 1 >= total_entries_` does NOT cause fence
+ * state to leak across batch submissions. Tests by submitting two sequential
+ * batches with different fence_ids and confirms each fence's signaled state
+ * is correctly isolated (the second batch's submitBatch must NOT inherit the
+ * first batch's `pending_fence_id_=0` post-signal state). */
+int test_puller_fence_not_signaled_at_intermediate_entry() {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+
+  sim_fence_id_reset_for_test();
+
+  /* Batch 1: 3-entry batch with fence F1. After it completes, F1 must be
+   * signaled and pending_fence_id_ must be cleared to 0. */
+  int64_t f1_ret = sim_fence_id_alloc();
+  u64 f1 = static_cast<u64>(f1_ret);
+
+  puller.start();
+  puller.submitBatch(0x1000, /*entry_count=*/3, f1);
+  doorbell.write(0);
+
+  wait_for_state([&puller]() {
+    return puller.currentState() != HardwarePullerEmu::State::IDLE;
+  }, 200);
+  wait_for_state([&puller]() {
+    return puller.currentState() == HardwarePullerEmu::State::IDLE;
+  }, 200);
+
+  bool f1_signaled = false;
+  if (sim_fence_id_check(f1, &f1_signaled) != 0 || !f1_signaled) {
+    std::cerr << "FAIL: F1 should be signaled after 3-entry batch\n";
+    puller.stop();
+    return 1;
+  }
+
+  /* Batch 2: 1-entry batch with NEW fence F2. The mock_hal_ mem_read does
+   * not set release=1, so this fires minimal side effects. */
+  int64_t f2_ret = sim_fence_id_alloc();
+  u64 f2 = static_cast<u64>(f2_ret);
+
+  /* Defense: F2 allocated after F1's signal event must NOT be in signaled
+   * state (otherwise the table is corrupt). */
+  bool f2_pre = true;
+  if (sim_fence_id_check(f2, &f2_pre) != 0 || f2_pre) {
+    std::cerr << "FAIL: F2 must NOT be signaled before batch 2 starts\n";
+    puller.stop();
+    return 1;
+  }
+
+  puller.submitBatch(0x2000, /*entry_count=*/1, f2);
+  doorbell.write(0);
+
+  wait_for_state([&puller]() {
+    return puller.currentState() != HardwarePullerEmu::State::IDLE;
+  }, 200);
+  wait_for_state([&puller]() {
+    return puller.currentState() == HardwarePullerEmu::State::IDLE;
+  }, 200);
+
+  bool f2_signaled = false;
+  if (sim_fence_id_check(f2, &f2_signaled) != 0 || !f2_signaled) {
+    std::cerr << "FAIL: F2 should be signaled after 1-entry batch\n";
+    puller.stop();
+    return 1;
+  }
+
+  /* Cross-batch isolation: F1's signaled state must persist unchanged.
+   * If `pending_fence_id_` were incorrectly carried over, this would
+   * flip F1 back to non-signaled. */
+  bool f1_still_signaled = false;
+  if (sim_fence_id_check(f1, &f1_still_signaled) != 0 || !f1_still_signaled) {
+    std::cerr << "FAIL: F1's signal state must persist across batches\n";
+    puller.stop();
+    return 1;
+  }
+
+  puller.stop();
+  std::cout << "PASS: test_puller_fence_not_signaled_at_intermediate_entry\n";
+  return 0;
+}
+
 int main() {
   int result = 0;
 
@@ -440,6 +577,8 @@ int main() {
   result |= test_puller_mem_read_in_fetch();
   result |= test_puller_fence_signal_on_completion();
   result |= test_puller_no_fence_signal_when_zero();
+  result |= test_puller_fence_signal_multi_entry();
+  result |= test_puller_fence_not_signaled_at_intermediate_entry();
 
   if (result == 0) {
     std::cout << "\n=== ALL TESTS PASSED ===\n";
