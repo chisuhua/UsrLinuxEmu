@@ -1,7 +1,8 @@
 # Tasks: sim-fence-id-comments-ssot
 
-> **状态**: 📋 PROPOSED
+> **状态**: ✅ COMPLETED（2026-07-09）
 > **目标**: `sim/fence_id.h` + `sim/fence_id.cpp` 注释层完成 SSOT 化（使用宏名而非字面量）
+> **完成证据**: `e4b3378`
 
 ## 1. 替换 `sim/fence_id.h` 注释（5 分钟）
 

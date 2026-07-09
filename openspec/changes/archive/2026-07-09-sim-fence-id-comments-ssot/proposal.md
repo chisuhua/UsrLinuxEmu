@@ -1,11 +1,13 @@
 # Change: sim-fence-id-comments-ssot
 
-> **状态**: 📋 PROPOSED
+> **状态**: ✅ COMPLETED（2026-07-09，commit `e4b3378` 已合并）
 > **优先级**: 🟢 P3（纯注释 hygiene，非阻塞）
 > **创建**: 2026-07-09
 > **来源**: `sim-fence-id-base-cleanup` (C-03) 归档时的 Metis follow-up 建议
 > **依赖**: 无（`sim-fence-id-base-cleanup` 已归档）
-> **工作目录**: `openspec/changes/2026-07-09-sim-fence-id-comments-ssot/`
+> **工作目录**: ~~`openspec/changes/2026-07-09-sim-fence-id-comments-ssot/`~~ → `openspec/changes/archive/2026-07-09-sim-fence-id-comments-ssot/`
+> **完成证据**: `e4b3378 docs(sim+openspec): fence_id SSOT 化收尾 — 实施 C-13 + 归档 C-03`
+> **测试通过**: 86/86 ctest PASS, 0 编译 warnings
 
 ## Why
 
