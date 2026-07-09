@@ -1,6 +1,6 @@
 # ADR-043: 命令处理器可移植性边界
 
-**状态**: 📋 PROPOSED
+**状态**: ✅ Accepted
 **日期**: 2026-07-09
 **提案人**: Sisyphus（GPU 命令处理器架构完整性审查）
 **关联 ADR**: ADR-036 (3-way separation), ADR-018 (driver-sim separation), ADR-023 (HAL Interface), ADR-021 (Hardware Puller), ADR-024 (User Mode Queue)
@@ -80,6 +80,8 @@ drv/handler
 
 ### D4: sim_graph_launch 的边界 — sim 做翻译，drv 做提交
 
+> **注意**：以下为 Phase 4 实现后的**目标边界**。当前 `sim_graph_launch`（`sim/graph.cpp:153-170`）尚未达到此状态——它仍直接调用 `sim_fence_id_alloc()` + `sim_fence_id_signal()`（立即 signal fence），而 `handleGraphLaunch`（`drv/gpgpu_device.cpp:824-831`）仅做转发。Phase 4 实现时需按此目标状态重构。
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │ drv: handleGraphLaunch(args)                          │
@@ -126,6 +128,14 @@ drv/handler
 - drv handler 直接获取 `HardwarePullerEmu*` 指针并调 `submitBatch()`
 - drv handler 直接操作 `DoorbellEmu` 寄存器
 - drv handler 调 `sim_fence_id_alloc/signal/check` — 这些应提升为 HAL 接口（见下方迁移计划）
+- **drv 直接持有 `shared_ptr<GpuQueueEmu>` 并调 `q->submit()`**（`drv/gpgpu_device.h:157` / `gpgpu_device.cpp:334`）— 见下方 GpuQueueEmu 技术债
+
+> **GpuQueueEmu 技术债**：`GpuQueueEmu` 定义在 `sim/gpu_queue_emu.h`，是 sim 内部 C++ 类。drv 直接持有 `std::shared_ptr<GpuQueueEmu>` 并调 `q->submit()`，导致：
+> 1. drv `#include` sim 头文件（违反 ADR-036 §依赖规则）
+> 2. drv 依赖 sim 类的 C++ ABI（耦合到 name mangling）
+> 3. 真机内核中队列对象应是驱动内部 `struct amdgpu_queue`，非 sim 对象
+>
+> Phase 5 迁移方案：`hal_queue_submit(hal_, queue_handle, gpfifo_addr, count, fence_id)` 加入 HAL（ADR-023 扩展），drv 不再持有 `GpuQueueEmu*`。Phase 4 阶段暂不阻塞于此，但 Phase 4 实现时不在 drv 中新增对 `GpuQueueEmu` 的直接引用。
 
 > **迁移计划**：`sim_fence_id_alloc` / `sim_fence_id_signal` / `sim_fence_id_check` 将在 Phase 5 提升为 HAL 接口（`hal_fence_id_alloc` 等），作为 ADR-023 的扩展走 ADR 流程。在此之前，drv handler 对 sim fence 的直接调用视为"已规划迁移的技术债"，不在 Phase 4 阻塞。Phase 4 实现时不引入新的 sim 层直接调用。
 
@@ -156,3 +166,4 @@ drv/handler
 ## 讨论历史
 
 - **2026-07-09**: 初始提案。来自 GPU 命令处理器架构完整性审查：当前 CP 边界模糊，`sim_graph_launch` 职责过重（应只做翻译，由 drv handler 做提交）。
+- **2026-07-09 (Oracle review, ses_0bd56a380ffe2zW1E1drR0PZnG)**：ACCEPT WITH MINOR CHANGES。2 处修正：(1) D4 标注为目标状态（当前代码不匹配），(2) D5 显式记录 GpuQueueEmu 直接持有为技术债 + Phase 5 hal_queue_submit 迁移计划。

@@ -2,7 +2,7 @@
 
 本文档目录包含 UsrLinuxEmu 项目中所有已通过和提议中的架构决策记录。
 
-> **最后更新**: 2026-07-07（Phase 4 MEM_POOL_EXPORT IOCTL — ADR-039 新增）
+> **最后更新**: 2026-07-09（GPU CP Blueprint ADRs 040-057 新增，Phase 4 sim-graph-launch-real-impl 架构基础）
 > **维护者**: UsrLinuxEmu Architecture Team + TaskRunner owner
 > **治理规则**: 见 [ADR-035](adr-035-governance-policy.md)
 
@@ -49,17 +49,35 @@
 | [adr-037](adr-037-render-node-permissions.md) | **VFS Device Permission Model (Render Node 权限分离)** | ✅ 已接受 | 2026-07-03 |
 | [adr-038](adr-038-network-stack-three-way-separation.md) | **网络栈 3 区分架构边界** | 🔄 Proposed (Stage 2 前置 ADR) | 2026-07-05 |
 | [adr-039](adr-039-mem-pool-export-ioctl.md) | **MEM_POOL_EXPORT IOCTL (0x68) for cuMemPoolExportToShareableHandle** | ✅ 已接受 | 2026-07-07 |
+| [adr-040](adr-040-puller-fence-completion.md) | **HardwarePullerEmu Fence Completion 回调机制**（Phase 4 前置 ADR）| ✅ Accepted | 2026-07-09 |
+| [adr-041](adr-041-graph-node-to-gpfifo-serialization.md) | **Graph Node → GPFIFO Entry 序列化**（Phase 4 前置 ADR）| ✅ Accepted | 2026-07-09 |
+| [adr-042](adr-042-pushbuffer-method-encoding.md) | **Pushbuffer Method 编解码格式**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-043](adr-043-cp-portability-boundary.md) | **命令处理器可移植性边界**（Phase 4 前置 ADR）| ✅ Accepted | 2026-07-09 |
+| [adr-044](adr-044-multi-channel-hyperqueue-scheduling.md) | **多通道调度与 HyperQueue 语义**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-045](adr-045-priority-scheduling.md) | **优先级调度**（Phase 5.5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-046](adr-046-preemption-context-switch.md) | **抢占与上下文切换**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
+| [adr-047](adr-047-hardware-semaphore-barrier.md) | **Hardware Semaphore & Barrier Model**（Phase 5.5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-048](adr-048-interrupt-event-model.md) | **中断与事件模型**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-049](adr-049-cross-engine-synchronization.md) | **跨引擎同步**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
+| [adr-050](adr-050-indirect-buffer-command-chaining.md) | **Indirect Buffer 命令链**（Phase 5+）| 📋 PROPOSED | 2026-07-09 |
+| [adr-051](adr-051-predication-conditional-execution.md) | **Predication 条件执行**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
+| [adr-052](adr-052-aql-pm4-native-support.md) | **AQL/PM4 Native 支持**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
+| [adr-053](adr-053-doorbell-aggregation-oversubscription.md) | **Doorbell 聚合与过订阅** | ⏸️ Deferred (Never) | 2026-07-09 |
+| [adr-054](adr-054-mqd-hqd-state-management.md) | **MQD/HQD 状态管理**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-055](adr-055-cp-error-handling-engine-recovery.md) | **CP 错误处理与引擎恢复** | ⏸️ Deferred (Never) | 2026-07-09 |
+| [adr-056](adr-056-green-context-pdl.md) | **Green Context / PDL**（Phase 7）| 📋 PROPOSED | 2026-07-09 |
+| [adr-057](adr-057-cp-profiling-hooks-timestamp.md) | **CP Profiling Hooks / Timestamp**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
 
-## 状态分布总览（截至 2026-07-07）
+## 状态分布总览（截至 2026-07-09）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 32 | 001-013, 015, 016, 018-024, 027, 031-037, 039 |
-| ⏸️ 显式 Deferred | 5 | 025, 026, 028-030 |
-| 🔄 提议中 | 1 | 038 |
-| **总计** | **38** | ADR-001 ~ ADR-039 |
+| ✅ 已接受 | 35 | 001-010, 015-024, 027, 031-037, 039-041, 043 |
+| 📋 PROPOSED | 14 | 011-014, 038, 042, 044-052, 054, 056-057 |
+| ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
+| **总计** | **56** | ADR-001 ~ ADR-057 |
 
-> **2026-07-07 变更**：ADR-039 新增 — Phase 4 MEM_POOL_EXPORT IOCTL (0x68)，为 TaskRunner cuMemPoolExportToShareableHandle 提供底层支持。
+> **2026-07-09 变更**：ADR-040~057 新增 — GPU 命令处理器 Blueprint ADR 集（18 文档），覆盖 Phase 4–7 CP 子系统架构决策。**ADR-040/041/043 已升级为 Accepted**（Phase 4 sim-graph-launch-real-impl 架构基础），其余 Phase 5+ 暂保持 PROPOSED。
 
 ## ADR 状态说明
 
@@ -167,6 +185,25 @@ adr-001 (用户态模拟)
             └── adr-037 (VFS Device Permission Model / Render Node 权限分离) ✅
                     └── 关联: adr-019 (DRM/GEM/TTM 对齐), adr-035 (Governance)
                             → Stage 1.2 closeout 同步接受（VFS-1~VFS-4 全实施，52/52 tests pass）
+
+    └── GPU CP Blueprint (2026-07-09, 📋 PROPOSED)
+            │
+            ├── Phase 4: adr-040 (Puller Fence Completion) + adr-041 (Graph→GPFIFO) + adr-043 (CP Boundary)
+            │       └── 关联: adr-021 (Hardware Puller), adr-024 (User Mode Queue), adr-036 (3-Way Separation)
+            │
+            ├── Phase 5: adr-042 (Method Encoding), adr-044 (HyperQueue), adr-048 (Interrupt), adr-054 (MQD/HQD), adr-057 (Profiling)
+            │       └── 关联: adr-040 (Fence), adr-041 (Graph→GPFIFO), adr-043 (CP Boundary)
+            │
+            ├── Phase 5.5: adr-045 (Priority), adr-047 (Semaphore/Barrier)
+            │       └── 关联: adr-021 (Puller FSM), adr-040 (Completion Token)
+            │
+            ├── Phase 5+: adr-050 (Indirect Buffer)
+            │
+            ├── Phase 6: adr-046 (Preemption), adr-049 (Cross-Engine Sync), adr-051 (Predication), adr-052 (AQL/PM4)
+            │
+            ├── Phase 7: adr-056 (Green Context/PDL)
+            │
+            └── Deferred (Never): adr-053 (Over-subscription), adr-055 (Error Recovery)
 ```
 
 ## 维护指南
