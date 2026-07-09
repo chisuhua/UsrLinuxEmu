@@ -2,7 +2,7 @@
  * sim/fence_id.cpp — Sim 层 fence_id 分配器实现 (Fix-1 / Oracle H4)
  *
  * 设计：
- *  - next_sim_fence_id_ 原子计数器，从 SIM_FENCE_ID_BASE (1<<32) 开始
+ *  - next_sim_fence_id_ 原子计数器，从 SIM_FENCE_ID_BASE 开始
  *  - sim_fence_table_ std::map<id, signaled> 追踪已触发的 fence
  *  - Thread Safety §参见 design.md：本 change 不引入线程安全保证，
  *    但 fence_id 分配本身用 std::atomic 防御未来扩展

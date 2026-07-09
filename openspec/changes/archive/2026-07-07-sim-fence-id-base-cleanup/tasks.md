@@ -1,7 +1,8 @@
 # Tasks: sim-fence-id-base-cleanup
 
-> **状态**: 📋 PROPOSED
+> **状态**: ✅ SUPERSEDED（无需新建 commit；work 已由既有 commits 完成）
 > **目标**: 消除 driver 路径的 `(1ULL << 32)` magic number
+> **关闭方式**: 由 `13477ff`（HAL 路径）+ `7740a75`（driver 路径新增 handleWaitFence 时已使用宏）共同覆盖
 
 ## 1. 搜索 magic number（5 分钟）
 
