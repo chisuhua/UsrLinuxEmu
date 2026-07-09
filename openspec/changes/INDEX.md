@@ -2,8 +2,8 @@
 
 > **更新**: 2026-07-09
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: 7 个活跃 change (原 12+1+1 个，7 个已完成/已归档)
-> **Source**: 2026-07-07 后续工作梳理 + 2026-07-09 收割 + 2026-07-09 sim-fence-id-base-cleanup 归档 + 2026-07-09 新增 C-13 fence_id 注释 SSOT
+> **总数**: 6 个活跃 change (原 12+1+1 个，8 个已完成/已归档)
+> **Source**: 2026-07-07 后续工作梳理 + 2026-07-09 收割 + 2026-07-09 sim-fence-id-base-cleanup 归档 + 2026-07-09 新增 C-13 fence_id 注释 SSOT + 2026-07-09 C-13 闭环
 
 ---
 
@@ -18,18 +18,13 @@
 | C-06/07 | stage3-3-errno-and-error-injection (merged) | ✅ 已归档 | `07e40ef` `f5dd6ac` `ef962e2` `d24061d` |
 | C-04 | docs-tadr-mirror-sync | ✅ 已归档 | `f679763` `ecfc648` |
 | C-08 | mem-pool-async-fence-coverage | ✅ 已归档 | `a035e7b` (post-`TaskRunner/test-cu-graph-coverage-fixes` follow-up; async-fence round-trip for MEM_POOL_ALLOC_ASYNC + MEM_POOL_FREE_ASYNC) |
+| C-13 | sim-fence-id-comments-ssot | ✅ 已归档 | `e4b3378` (sim/fence_id.h + fence_id.cpp 注释字面量 `(1<<32)`/`INT64_MAX` → `SIM_FENCE_ID_BASE`/`SIM_FENCE_ID_MAX`；86/86 ctest PASS) |
 
 ---
 
 ## 🔄 活跃 Changes
 
 ### 本季度 (P3)
-
-### `2026-07-09-sim-fence-id-comments-ssot` 🟢 (C-13)
-**依赖**: C-03 ✅ (sim-fence-id-base-cleanup 已归档)
-**Effort**: 30 分钟
-**Why**: Metis follow-up 给 sim-fence-id-base-cleanup 归档 — `sim/fence_id.h` 头注释仍以字面量 `(1<<32)` / `INT64_MAX` 叙述 fence 范围，宏 (`SIM_FENCE_ID_BASE` / `SIM_FENCE_ID_MAX`) 仅在 SSOT 定义点 + drv 代码使用，未完全取代字面量叙事。注释层 SSOT 化收尾
-**Scope**: 仅 `sim/fence_id.h` + `sim/fence_id.cpp`；drv/README/test 注释不在范围（显式 out-of-scope 列举于 proposal）
 
 ### `2026-07-15-phase4-sim-graph-launch-real-impl` 🔵
 **依赖**: C-02 ✅
@@ -73,9 +68,9 @@
 ## 推荐执行顺序
 
 ### 本月
-0. **C-13** sim-fence-id-comments-ssot（30 分钟，可立即开始；纯注释 SSOT 收尾）
 1. **C-08** phase4-sim-graph-launch-real-impl（1 周）
 2. **C-09** phase4-cu-mempool-alloc-real-va（1 周）
+3. **C-13** ~~sim-fence-id-comments-ssot~~ ✅ archived（commit `e4b3378`）
 
 ### 本季度
 3. **C-10** stage3-2-perf-bench-baseline（1 周）
