@@ -1,6 +1,6 @@
 # ADR-040: HardwarePullerEmu Fence Completion 回调机制
 
-**状态**: 📋 PROPOSED
+**状态**: ✅ Accepted
 **日期**: 2026-07-09
 **提案人**: Sisyphus（Phase 4 sim-graph-launch-real-impl 架构审查）
 **关联 ADR**: ADR-021 (Hardware Puller FSM), ADR-023 (HAL Interface), ADR-024 (User Mode Queue), ADR-036 (3-way separation)
@@ -134,3 +134,4 @@ int GpuQueueEmu::submit(uint64_t gpfifo_addr, uint32_t entry_count, uint64_t fen
 ## 讨论历史
 
 - **2026-07-09**: 初始提案。来自 Phase 4 `sim-graph-launch-real-impl` Metis 审查（session `ses_0be73d6d1ffeD9w0kS5ukUX6ND`）：识别出 Puller 无 fence completion 机制为阻塞问题。
+- **2026-07-09 (升级为 Accepted)**：基于 Metis 二次审查 + 代码追踪验证（`hardware_puller_emu.cpp:241-246` `handleComplete()` 仅发中断不 signal fence；`HardwarePullerEmu` 独立 runLoop 线程模型；sim/HAL fence 双命名空间 `[1,2³²-1]` vs `[2³²,INT64_MAX]`）。线程安全：`pending_fence_id_` 在 batch 完成后由 `handleComplete()` 读取，与 `submitBatch()` 写入时序无重叠（D2 的 `current_index_ >= total_entries_` 检测保证）。`fence_id=0` 哨兵安全（不在 sim fence 范围内）。Oracle 审查因任务超时未返回，采用 Metis 审查 + 代码直接验证作为升级依据。
