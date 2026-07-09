@@ -692,6 +692,13 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_ALLOC_ASYNC (0x63)",
   REQUIRE(async.fence_id_out >= static_cast<s64>(1ULL << 32));
   REQUIRE(async.va_out >= create.props.va_base);
   REQUIRE(async.va_out < create.props.va_limit);
+
+  /* Puller must signal the alloc fence within 100ms (ADR-040 pattern). */
+  struct gpu_wait_fence_args wait = {};
+  wait.fence_id = async.fence_id_out;
+  wait.timeout_ms = 100;
+  REQUIRE(ioctl(GPU_IOCTL_WAIT_FENCE, &wait) == 0);
+  REQUIRE(wait.status == 1);
 }
 
 TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_FREE_ASYNC (0x64)",
@@ -711,6 +718,13 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_FREE_ASYNC (0x64)",
   long result = ioctl(GPU_IOCTL_MEM_POOL_FREE_ASYNC, &free_args);
   REQUIRE(result == 0);
   REQUIRE(free_args.fence_id_out >= static_cast<s64>(1ULL << 32));
+
+  /* Puller must signal the free fence within 100ms (ADR-040 pattern). */
+  struct gpu_wait_fence_args wait = {};
+  wait.fence_id = free_args.fence_id_out;
+  wait.timeout_ms = 100;
+  REQUIRE(ioctl(GPU_IOCTL_WAIT_FENCE, &wait) == 0);
+  REQUIRE(wait.status == 1);
 }
 
 TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MEM_POOL_SET_ATTR (0x65)",
