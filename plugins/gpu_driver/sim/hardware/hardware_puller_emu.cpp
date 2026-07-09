@@ -243,6 +243,17 @@ void HardwarePullerEmu::handleComplete() {
     hal_->interrupt_raise(hal_->ctx, 0);
     interrupt_count_.fetch_add(1);
   }
+
+  /* ADR-040: batch 全量完成时 signal pending_fence_id_ (driven by runLoop()
+   * 自身的 current_index_++ 检查，本函数被调用即代表一条 entry 已完成。
+   * current_index_ 在 handleComplete() 返回后才自增 — 此处读到的 current_index_
+   * 是"已完成最后一条"的语义。设计 D2: 仅当 current_index_ == total_entries_-1
+   * 时才触发 signal。 */
+  if (pending_fence_id_ != 0 &&
+      current_index_ + 1 >= total_entries_) {
+    sim_fence_id_signal(pending_fence_id_);
+    pending_fence_id_ = 0;  // 单次触发，避免重复 signal
+  }
 }
 
 void HardwarePullerEmu::transitionTo(State next) {
@@ -264,13 +275,14 @@ const char* HardwarePullerEmu::stateName() const {
   }
 }
 
-void HardwarePullerEmu::submitBatch(u64 gpfifo_gpu_addr, u32 entry_count) {
+void HardwarePullerEmu::submitBatch(u64 gpfifo_gpu_addr, u32 entry_count, u64 fence_id) {
   std::lock_guard<std::mutex> lock(mutex_);
   current_gpfifo_addr_ = gpfifo_gpu_addr;
   current_index_ = 0;
   total_entries_ = entry_count;
   waiting_semaphore_va_ = 0;
   semaphore_signaled_.store(false);
+  pending_fence_id_ = fence_id;  // ADR-040: fence_id=0 表示不触发完成回调
 }
 
 int HardwarePullerEmu::getInterruptCount() const {

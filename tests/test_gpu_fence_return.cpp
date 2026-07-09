@@ -109,18 +109,17 @@ int test_fence_return_on_puller_path() {
   }
 
   // 检查 fence_id 是否被设置 (S3.5 核心要求)
-  // 注意：fence_id=0 是有效的（第一个 fence 槽位）
-  // 我们检查是否返回了任何有效的 fence_id（通过返回值判断是否创建成功）
-  // 实际上，由于 hal_fence_create 会覆盖 out_fence_id，即使出错也不应该是 0
-  // 所以这里检查 args->fence_id 是否有意义地变化了
-
-  // 更简单的检查：fence_id 应该在合理范围内 (0-255 是 HAL_MAX_FENCES)
-  if (pb_args.fence_id >= 256) {
-    std::cerr << "[FAIL] fence_id out of valid range: " << pb_args.fence_id << "\n";
+  // ADR-040 D3: puller path 现在使用 sim_fence_id_alloc()，返回 range [1<<32, INT64_MAX]。
+  // 旧测试检查 fence_id < 256 (HAL range) 已被 sim fence 命名空间替代。
+  // 验证 fence_id 在 sim fence 范围 (>= SIM_FENCE_ID_BASE) 即可。
+  if (pb_args.fence_id < (1ULL << 32)) {
+    std::cerr << "[FAIL] fence_id out of sim range: " << pb_args.fence_id
+              << " (expected >= " << (1ULL << 32) << ")\n";
     return 1;
   }
 
-  std::cout << "[INFO] fence_id returned: " << pb_args.fence_id << "\n";
+  std::cout << "[INFO] fence_id returned: " << pb_args.fence_id
+            << " (sim range, ADR-040 D3)\n";
 
   // 等待 fence (最多 100ms，应该足够完成一个 memcpy)
   struct gpu_wait_fence_args fence_args = {};

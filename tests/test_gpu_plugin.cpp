@@ -460,6 +460,18 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_INSTANTIATE (0x57)",
 
 TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_LAUNCH (0x58)",
                   "[gpu][ioctl][phase31][graph]") {
+  /* VA Space + Queue required for handleGraphLaunch to find the queue
+   * (Phase 4 ADR-043 ownership: drv handler does getQueue + q->submit). */
+  struct gpu_va_space_args va_args = {};
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_VA_SPACE, &va_args) == 0);
+
+  struct gpu_queue_args q_args = {};
+  q_args.va_space_handle = va_args.va_space_handle;
+  q_args.queue_type = 0;     /* COMPUTE */
+  q_args.priority = 0;
+  q_args.ring_buffer_size = 16;
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_QUEUE, &q_args) == 0);
+
   struct gpu_graph_create_args create = {};
   REQUIRE(ioctl(GPU_IOCTL_GRAPH_CREATE, &create) == 0);
 
@@ -474,10 +486,52 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_LAUNCH (0x58)",
 
   struct gpu_graph_launch_args launch = {};
   launch.exec_handle = inst.exec_handle_out;
-  launch.stream_id = 1;
+  launch.stream_id = static_cast<u32>(q_args.queue_handle);
   long result = ioctl(GPU_IOCTL_GRAPH_LAUNCH, &launch);
   REQUIRE(result == 0);
   REQUIRE(launch.fence_id_out >= static_cast<s64>(1ULL << 32));
+}
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                  "GPU_IOCTL_GRAPH_LAUNCH fence signaled after Puller completion (ADR-040)",
+                  "[gpu][ioctl][phase4][graph][async]") {
+  /* Same setup as the launch test. After launch, we wait on the fence
+   * with a short timeout. Puller's runLoop thread should process the
+   * batch and signal the fence. */
+  struct gpu_va_space_args va_args = {};
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_VA_SPACE, &va_args) == 0);
+
+  struct gpu_queue_args q_args = {};
+  q_args.va_space_handle = va_args.va_space_handle;
+  q_args.queue_type = 0;
+  q_args.priority = 0;
+  q_args.ring_buffer_size = 16;
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_QUEUE, &q_args) == 0);
+
+  struct gpu_graph_create_args create = {};
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_CREATE, &create) == 0);
+
+  struct gpu_graph_add_kernel_node_args kn_args = {};
+  kn_args.graph_handle = create.graph_handle_out;
+  kn_args.kernargs_bo_handle = 0xCAFE;
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_ADD_KERNEL_NODE, &kn_args) == 0);
+
+  struct gpu_graph_instantiate_args inst = {};
+  inst.graph_handle = create.graph_handle_out;
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_INSTANTIATE, &inst) == 0);
+
+  struct gpu_graph_launch_args launch = {};
+  launch.exec_handle = inst.exec_handle_out;
+  launch.stream_id = static_cast<u32>(q_args.queue_handle);
+  REQUIRE(ioctl(GPU_IOCTL_GRAPH_LAUNCH, &launch) == 0);
+  REQUIRE(launch.fence_id_out >= static_cast<s64>(1ULL << 32));
+
+  /* Wait for fence signal — Puller must signal within 100ms. */
+  struct gpu_wait_fence_args wait = {};
+  wait.fence_id = launch.fence_id_out;
+  wait.timeout_ms = 100;
+  REQUIRE(ioctl(GPU_IOCTL_WAIT_FENCE, &wait) == 0);
+  REQUIRE(wait.status == 1);
 }
 
 TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_GRAPH_DESTROY_EXEC (0x59)",

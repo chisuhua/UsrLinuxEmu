@@ -3,18 +3,21 @@
  *
  * Phase 3.1 of the sim-stream-primitive-support change (ACCEPTED 2026-07-05).
  * Records kernel/memcpy node metadata attached to a graph; instantiate
- * validates node BO handles and emits an executable. Launch returns a
- * sim-layer fence_id (range [(1<<32), INT64_MAX]) per Fix-1/Oracle H4.
+ * validates node BO handles, precompiles graph nodes into GPFIFO entries
+ * (ADR-041), and emits an executable carrying a HAL-addressable GPFIFO
+ * buffer. Launch is a pure lookup — it does NOT signal a fence. The drv
+ * layer's handleGraphLaunch allocates a sim fence and submits via
+ * GpuQueueEmu::submit() → HardwarePullerEmu, which signals the fence on
+ * batch completion (ADR-040, ADR-043).
  *
  * Architecture: ③ Hardware Simulation layer.
  * Per ADR-036 three-way separation.
  *
- * Out of scope (Phase 3.1 PoC):
- *   - Real DAG execution (instantiate/launch only record + return fence)
- *   - Kernel arg serialization (recorded by kernargs_bo_handle only)
+ * Out of scope:
  *   - Multi-device / cross-stream graph dependencies
+ *   - Conditional nodes
  *
- * Thread Safety (per design.md): NOT required (single-threaded).
+ * Thread Safety (per design.md): NOT required (single-threaded dispatch).
  */
 
 #ifndef SIM_GRAPH_H
@@ -77,8 +80,10 @@ int sim_graph_add_memcpy_node(uint64_t graph_handle,
 /**
  * Validate graph and produce an executable.
  *
- * For PoC: validation = all kernel node kernargs_bo_handle != 0.
- * Full BO resolution deferred (per design §Decisions).
+ * Per ADR-041: precompiles graph nodes into GPFIFO entries and stores
+ * them in a HAL-addressable sim-internal heap. Per ADR-043: this is the
+ * only sim function that performs serialization; sim_graph_launch is a
+ * pure read-only lookup.
  *
  * @param graph_handle      Input graph
  * @param exec_handle_out   Output executable handle (≥ 1 on success)
@@ -87,14 +92,20 @@ int sim_graph_add_memcpy_node(uint64_t graph_handle,
 int sim_graph_instantiate(uint64_t graph_handle, uint64_t *exec_handle_out);
 
 /**
- * Launch an executable. Returns a sim-layer fence_id (≥ 1<<32) which is
- * signaled immediately (PoC simplification; Phase 3.x may defer to queue).
+ * Look up an executable's precompiled GPFIFO buffer (ADR-043 D4).
  *
- * @return fence_id (≥ 1<<32) on success;
- *         -EINVAL if exec_handle unknown;
- *         -1 on generic error.
+ * Pure read-only: returns the HAL-addressable GPU VA and entry count of
+ * the precompiled GPFIFO buffer. Does NOT allocate or signal a fence;
+ * the drv layer (handleGraphLaunch) is responsible for those.
+ *
+ * @param exec_handle        Input executable handle
+ * @param stream_id          Target queue (currently unused; reserved)
+ * @param gpfifo_addr_out    Output: GPU VA of precompiled GPFIFO buffer
+ * @param entry_count_out    Output: number of entries in buffer
+ * @return 0 on success; -EINVAL if exec_handle unknown or output null.
  */
-int64_t sim_graph_launch(uint64_t exec_handle, uint32_t stream_id);
+int sim_graph_launch(uint64_t exec_handle, uint32_t stream_id,
+                     uint64_t *gpfifo_addr_out, uint32_t *entry_count_out);
 
 /**
  * Destroy an executable. Does NOT destroy source graph.

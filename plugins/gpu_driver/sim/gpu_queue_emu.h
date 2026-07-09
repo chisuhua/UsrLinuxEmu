@@ -108,9 +108,13 @@ class GpuQueueEmu {
    * 提交 GPFIFO 批处理（委托给 HardwarePullerEmu）
    * @param gpfifo_addr GPFIFO GPU 地址
    * @param entry_count entry 数量
+   * @param fence_id    sim fence_id (>= SIM_FENCE_ID_BASE)；0 = 不触发完成回调
    * @return 0=成功，-ENODEV=puller 未绑定
+   *
+   * ADR-040: fence_id 由 drv 层在调用前通过 sim_fence_id_alloc() 分配。
+   *          Puller 在 batch 全量完成后自动 signal。
    */
-  int submit(uint64_t gpfifo_addr, uint32_t entry_count);
+  int submit(uint64_t gpfifo_addr, uint32_t entry_count, uint64_t fence_id = 0);
 
   /** 绑定 HardwarePullerEmu（供 GpgpuDevice 在注册时调用） */
   void setPuller(HardwarePullerEmu* puller) { puller_ = puller; }

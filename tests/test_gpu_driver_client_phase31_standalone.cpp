@@ -180,6 +180,18 @@ TEST_CASE_METHOD(GpuClientFixture, "Phase 3.1 — GRAPH_CREATE then INSTANTIATE 
 
 TEST_CASE_METHOD(GpuClientFixture, "Phase 3.1 — GRAPH_LAUNCH returns sim-layer fence_id (>= 1<<32)",
                   "[gpu][phase31][graph][cross_repo]") {
+  /* Set up: VA Space + Queue first (required for handleGraphLaunch to find
+   * the queue and call q->submit()). */
+  gpu_va_space_args va_args{};
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_VA_SPACE, &va_args) == 0);
+
+  gpu_queue_args q_args{};
+  q_args.va_space_handle = va_args.va_space_handle;
+  q_args.queue_type = 0;     /* COMPUTE */
+  q_args.priority = 0;
+  q_args.ring_buffer_size = 16;
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_QUEUE, &q_args) == 0);
+
   /* Set up: create + add + instantiate. */
   gpu_graph_create_args create_args{};
   REQUIRE(ioctl(GPU_IOCTL_GRAPH_CREATE, &create_args) == 0);
@@ -196,7 +208,7 @@ TEST_CASE_METHOD(GpuClientFixture, "Phase 3.1 — GRAPH_LAUNCH returns sim-layer
   /* Launch — fence_id_out should be in sim-layer range. */
   gpu_graph_launch_args launch_args{};
   launch_args.exec_handle = inst_args.exec_handle_out;
-  launch_args.stream_id = 1;
+  launch_args.stream_id = static_cast<u32>(q_args.queue_handle);
   long ret = ioctl(GPU_IOCTL_GRAPH_LAUNCH, &launch_args);
   REQUIRE(ret == 0);
   REQUIRE(launch_args.fence_id_out >= static_cast<s64>(1ULL << 32));
