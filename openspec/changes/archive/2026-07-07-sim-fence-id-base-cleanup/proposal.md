@@ -1,11 +1,15 @@
 # Change: sim-fence-id-base-cleanup
 
-> **状态**: 📋 PROPOSED
+> **状态**: ✅ ARCHIVED（2026-07-09，work 已完成于既有 commits）
 > **优先级**: 🟡 P1
 > **创建**: 2026-07-07
 > **来源**: PR #20 review follow-up #2（部分完成）
 > **依赖**: 无
-> **工作目录**: `openspec/changes/2026-07-07-sim-fence-id-base-cleanup/`
+> **工作目录**: ~~`openspec/changes/2026-07-07-sim-fence-id-base-cleanup/`~~ → `openspec/changes/archive/2026-07-07-sim-fence-id-base-cleanup/`
+>
+> **实际完成证据**（无需新 commit）：
+> - `13477ff refactor(gpu): use SIM_FENCE_ID_BASE macro instead of (1ULL << 32) magic number` — `gpu_drm_driver.cpp` (HAL 路径)
+> - `7740a75 feat(sim): real async graph_launch via GpuQueueEmu::submit` — `gpgpu_device.cpp::handleWaitFence` 引入时即按 SIM_FENCE_ID_BASE 模式实现，driver 路径从未遗留 magic number
 
 ## Why
 

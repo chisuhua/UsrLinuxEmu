@@ -2,9 +2,9 @@
  * sim/fence_id.h — Sim 层 fence_id 分配器 (Fix-1 / Oracle H4)
  *
  * 背景：现有 HAL 层 (hal_fence_create) 分配 driver 层 fence_id，范围
- *       [1, (1<<32) - 1]。本 change 新增的 sim 原语
+ *       [1, SIM_FENCE_ID_BASE - 1]。本 change 新增的 sim 原语
  *       (sim_graph_launch / sim_mem_pool_alloc_async / sim_mem_pool_free_async)
- *       也返回 fence_id，但属于 sim 层分配，范围 [(1<<32), INT64_MAX]。
+ *       也返回 fence_id，但属于 sim 层分配，范围 [SIM_FENCE_ID_BASE, SIM_FENCE_ID_MAX]。
  *       两层 fence_id 不冲突，由 gpu_ioctl_wait_fence 按值范围分发。
  *
  * 架构：③ 硬件模拟层 (Hardware Simulation)
@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-/* Range constants (Fix-1: sim 层 fence_id 范围 [(1<<32), INT64_MAX]) */
+/* Range constants (Fix-1: sim 层 fence_id 范围 [SIM_FENCE_ID_BASE, SIM_FENCE_ID_MAX]) */
 #define SIM_FENCE_ID_BASE  (1ULL << 32)
 #define SIM_FENCE_ID_MAX   INT64_MAX
 
