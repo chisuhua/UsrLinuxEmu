@@ -177,9 +177,11 @@ long GpgpuDevice::handleGetDeviceInfo(void* argp) {
   std::strncpy(info->marketing_name, SIMULATED_MARKETING_NAME, sizeof(info->marketing_name) - 1);
   info->marketing_name[sizeof(info->marketing_name) - 1] = '\0';
 
+  #ifndef NDEBUG
   std::cout << "[GpgpuDevice] GET_DEVICE_INFO: vendor=0x" << std::hex << info->vendor_id
             << " device=0x" << info->device_id << " vram=" << std::dec << info->vram_size
             << "\n";
+#endif
   return 0;
 }
 
