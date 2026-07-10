@@ -140,3 +140,44 @@ TEST_CASE("perf: pushbuffer throughput (100 submits/sec, single-entry)",
   }
   REQUIRE(actual_rate >= kTargetRate * 0.6);
 }
+
+TEST_CASE("perf: pushbuffer max throughput (no rate-limit)",
+          "[perf][pushbuffer][max-throughput]") {
+  GpuPerfFixture fix;
+  PushbufferSetup setup(&fix);
+
+  constexpr int kEntries = 1;
+  gpu_gpfifo_entry entries[kEntries];
+  make_single_entry(&entries[0]);
+
+  constexpr int kWarmup = 5;
+  constexpr int kMeasured = 1000;
+
+  for (int i = 0; i < kWarmup; ++i) {
+    struct gpu_pushbuffer_args pb{};
+    pb.stream_id = setup.queue_handle;
+    pb.va_space_handle = setup.va_space_handle;
+    pb.entries_addr = reinterpret_cast<uintptr_t>(entries);
+    pb.count = kEntries;
+    long r = fix.ioctl(GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
+    REQUIRE(r == 0);
+  }
+
+  auto t0 = std::chrono::steady_clock::now();
+  for (int i = 0; i < kMeasured; ++i) {
+    struct gpu_pushbuffer_args pb{};
+    pb.stream_id = setup.queue_handle;
+    pb.va_space_handle = setup.va_space_handle;
+    pb.entries_addr = reinterpret_cast<uintptr_t>(entries);
+    pb.count = kEntries;
+    long r = fix.ioctl(GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
+    REQUIRE(r == 0);
+  }
+  auto t1 = std::chrono::steady_clock::now();
+  double elapsed_sec = std::chrono::duration<double>(t1 - t0).count();
+  double actual_rate = kMeasured / elapsed_sec;
+  std::printf("\n[perf][pushbuffer] max-throughput (no sleep):\n");
+  std::printf("  measured    = %d submits\n", kMeasured);
+  std::printf("  elapsed     = %.3f sec\n", elapsed_sec);
+  std::printf("  actual rate = %.1f submits/sec\n", actual_rate);
+}
