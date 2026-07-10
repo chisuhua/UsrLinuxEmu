@@ -2,8 +2,10 @@
 
 本文档介绍 UsrLinuxEmu 项目的性能分析方法和优化技巧。
 
-**最后更新**: 2026-03-24  
+**最后更新**: 2026-07-10
 **作者**: UsrLinuxEmu Team
+**基准报告**: [`docs/04-building/perf-baseline-2026-Q3.md`](../04-building/perf-baseline-2026-Q3.md)（C-10，已 commit `d63da5e`）
+**优化实施**: `openspec/changes/2026-07-10-stage3-2-hotpath-optimization/`（C-11，PROPOSED）
 
 ---
 
@@ -480,57 +482,65 @@ void process() {
 
 ## 性能基准测试
 
-### 创建 Benchmark
+> **重大变更（2026-07-10）**：本节从 Google Benchmark 迁移到项目实际的 Catch2 框架（[ADR-010](../../00_adr/adr-010-gtest-migration.md) Catch2-only 决策）。
+>
+> 真实 perf benchmarks 见 [`tests/perf/`](../../tests/perf/)：3 个 benchmark 二进制由 `tests/perf/CMakeLists.txt` 通过 `option(USR_LINUX_EMU_PERF_TESTS)` 开关编译。
+
+### Catch2 框架（项目实际选用）
 
 ```cpp
-// benchmarks/benchmark_memory.cpp
-#include <benchmark/benchmark.h>
-#include "kernel/device/gpgpu_device.h"
+// tests/perf/ioctl_dispatch_bench.cpp
+#include <catch_amalgamated.hpp>
+#include "perf_fixture.h"
 
-static void BM_MemoryAllocate(benchmark::State& state) {
-    GpgpuDevice device;
+TEST_CASE("ioctl GET_DEVICE_INFO per-op", "[perf][ioctl]") {
+    GpuPluginTestFixture fix;
     
-    for (auto _ : state) {
-        GpuMemoryHandle handle;
-        device.allocate_memory(1024, &handle);
-        device.free_memory(handle);
-    }
+    BENCHMARK("ioctl GET_DEVICE_INFO per-op") {
+        return [&fix](int iters) {
+            for (int i = 0; i < iters; ++i) {
+                gpu_device_info info{};
+                fix.dev->fops->ioctl(fix.dev->fd,
+                                     GPU_IOCTL_GET_DEVICE_INFO, &info);
+            }
+        };
+    };
 }
-
-BENCHMARK(BM_MemoryAllocate);
-
-BENCHMARK_MAIN();
 ```
 
-### 运行 Benchmark
+> Catch2 `BENCHMARK()` macro 等价于 Google Benchmark `for (auto _ : state)`，但**不需要**新依赖（项目已 vendor `catch_amalgamated.{hpp,cpp}`）。
+
+### 启用并运行 Benchmark
 
 ```bash
-# 编译 benchmark
-cmake -DBUILD_BENCHMARKS=ON ..
-make -j$(nproc)
+# 1. 启用 perf tests（默认 OFF，避免 Release 编译开销）
+cd /workspace/project/UsrLinuxEmu
+cmake -DUSR_LINUX_EMU_PERF_TESTS=ON -DCMAKE_BUILD_TYPE=Release -B build
+cmake --build build --target ioctl_dispatch_bench_standalone \
+                            pushbuffer_bench_standalone \
+                            mmap_overhead_bench_standalone
 
-# 运行所有基准测试
-./bin/benchmarks
-
-# 运行特定基准
-./bin/benchmarks --benchmark_filter=Memory
-
-# 输出 CSV
-./bin/benchmarks --benchmark_out=results.csv --benchmark_out_format=csv
+# 2. 跑全部（必须从项目根目录，PluginLoader 用相对路径）
+./build/bin/ioctl_dispatch_bench_standalone    # ioctl mean / p50/p99/p999
+./build/bin/pushbuffer_bench_standalone        # sustained throughput
+./build/bin/mmap_overhead_bench_standalone     # BO ALLOC+FREE / bare mmap 对照
 ```
+
+### Baseline 数字与对比
+
+Baseline（2026-07-10 已固化）：
+
+| Metric | 测量值 | 来源 |
+|--------|-------|------|
+| ioctl mean | 0.51 μs（p50=0.42, p99=3.73, p999=17.17） | `ioctl_dispatch_bench_standalone` |
+| pushbuffer sustained | 100 submits/sec | `pushbuffer_bench_standalone`（**注：bench 用 `sleep_until` 限速，真实 max throughput 待 C-11 bench 解除限速后重测**） |
+| BO ALLOC+FREE mean | 0.76 μs（p50=0.62, p99=5.49） | `mmap_overhead_bench_standalone` |
+
+> 完整 baseline 报告 + 调整后目标（adjusted targets）见 [`docs/04-building/perf-baseline-2026-Q3.md`](../04-building/perf-baseline-2026-Q3.md)。
 
 ### 对比结果
 
-```bash
-# 使用 compare.py 对比
-python3 tools/compare.py old_results.json new_results.json
-
-# 输出示例：
-# Benchmark                  Before     After      Change
-# ----------------------------------------------------------------
-# BM_MemoryAllocate          100 ns     80 ns      -20%
-# BM_CommandSubmit           500 ns     450 ns     -10%
-```
+每次 C-11 优化实施后，把 before/after 数字追加到 baseline 文档 §C-11 Results 段，**不**使用独立 `tests/perf/HISTORY.md`（文件不存在，统一在 baseline 文档聚合）。
 
 ---
 
