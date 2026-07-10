@@ -1,13 +1,22 @@
 # H-5 TaskRunner Scope Clarification Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **⚠️ PARTIALLY SUPERSEDED (2026-07-09)**: The CMake `TASKRUNNER_BUILD_MODE`
+> decision from this plan was reversed by
+> [`external/TaskRunner/openspec/changes/umd-evolution-build-default-on`](../external/TaskRunner/openspec/changes/umd-evolution-build-default-on/)
+> which **flipped the default** to `umd-evolution` (was `test-fixture`).
+> The corresponding TaskRunner ADR `tadr-108-build-mode-selection` is now
+> marked SUPERSEDED. **The rest of this plan (TADR remap, 3-phase migration,
+> scope separation) is still valid and has been executed** — only the
+> build-mode default is reversed. See the linked change for rationale.
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-step. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Reorganize the TaskRunner submodule (`external/TaskRunner/`) into two clearly-separated scopes (test-fixture default + umd-evolution experimental) to eliminate documentation/code/TADR confusion currently mixing stub-tracker with UMD-vision content.
 
 **Architecture:**
 - **Single git repo** with directory-level scope separation (no submodule split)
 - **TADR remap**: 8 existing TADRs (tadr-001~008) → 16 reclassified TADRs (1xx test-fixture / 2xx umd-evolution / 3xx shared)
-- **CMake `TASKRUNNER_BUILD_MODE` option**: default `test-fixture`, optional `umd-evolution` (experimental skeleton only)
+- **CMake `TASKRUNNER_BUILD_MODE` option**: ~~default `test-fixture`~~ → **default `umd-evolution` as of 2026-07-09** (see supersede notice above); `test-fixture` retained as opt-out
 - **3-phase migration**: A (docs + TADR) → B (code + CMake) → C (cross-repo sync)
 - Phase D (UMD PoC) and Phase E (H-3.5/H-7 parallel work) are independent, not in this plan
 
@@ -813,9 +822,10 @@ The umd-evolution scope describes a future evolution path toward a CUDA Runtime 
 - **`STATUS: ACCEPTED` is FORBIDDEN** for unimplemented features
 - All `.cpp`/`.hpp` files in `src/umd/` and `include/umd/` MUST have `// SCOPE: UMD-EVOLUTION` header comment
 
-**Build mode:**
-- Default `TASKRUNNER_BUILD_MODE=test-fixture` does NOT compile umd-evolution code
-- Opt-in `TASKRUNNER_BUILD_MODE=umd-evolution` compiles experimental skeleton
+**Build mode (SUPERSEDED 2026-07-09 — see file-top notice):**
+- ~~Default `TASKRUNNER_BUILD_MODE=test-fixture` does NOT compile umd-evolution code~~ → Now: default `umd-evolution` compiles full UMD + tests
+- ~~Opt-in `TASKRUNNER_BUILD_MODE=umd-evolution` compiles experimental skeleton~~ → Now: opt-out `test-fixture` excludes `libcuda_shim` + `tests/umd/`
+- See [`external/TaskRunner/openspec/changes/umd-evolution-build-default-on`](../external/TaskRunner/openspec/changes/umd-evolution-build-default-on/) for the reversal rationale
 
 ## Consequences
 
@@ -1036,7 +1046,7 @@ All TaskRunner content MUST be classified into one of three scopes:
 - **test-fixture** (`docs/test-fixture/`, `include/test_fixture/`, `src/test_fixture/`, `tests/test_fixture/`):
   Currently-shippable state. STATUS: ACCEPTED. Code is in main branch.
 - **umd-evolution** (`docs/umd-evolution/`, `include/umd/`, `src/umd/`, `tests/umd/`):
-  Experimental vision + skeleton. STATUS: PROPOSED/DRAFT only. Code compiles only under `TASKRUNNER_BUILD_MODE=umd-evolution`.
+  Experimental vision + skeleton. STATUS: PROPOSED/DRAFT only. **As of 2026-07-09** (build-default-on change), code compiles **by default** (`cmake -B build`); opt-out via `TASKRUNNER_BUILD_MODE=test-fixture` excludes `libcuda_shim/` and `tests/umd/`.
 - **shared** (`docs/shared/`, `include/shared/`, `src/shared/`, `tests/shared/`):
   Cross-cutting abstractions. STATUS: ACCEPTED. Dual review required for changes.
 
