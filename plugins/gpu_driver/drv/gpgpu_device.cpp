@@ -64,8 +64,8 @@ void GpgpuDevice::setPuller(std::shared_ptr<HardwarePullerEmu> puller) {
 u32 GpgpuDevice::HandleManager::allocate() {
   std::lock_guard<std::mutex> lock(mutex_);
   for (u32 i = 1; i <= max_handles_; ++i) {
-    if (handles_.find(i) == handles_.end()) {
-      handles_[i] = true;
+    if (!allocated_bits_.test(i)) {
+      allocated_bits_.set(i);
       return i;
     }
   }
@@ -74,16 +74,16 @@ u32 GpgpuDevice::HandleManager::allocate() {
 
 bool GpgpuDevice::HandleManager::free(u32 handle) {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (handle == 0 || handles_.find(handle) == handles_.end()) {
+  if (handle == 0 || handle > max_handles_ || !allocated_bits_.test(handle)) {
     return false;
   }
-  handles_.erase(handle);
+  allocated_bits_.reset(handle);
   return true;
 }
 
 bool GpgpuDevice::HandleManager::valid(u32 handle) const {
   std::lock_guard<std::mutex> lock(mutex_);
-  return handle != 0 && handles_.find(handle) != handles_.end();
+  return handle != 0 && handle <= max_handles_ && allocated_bits_.test(handle);
 }
 
 const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
