@@ -1,11 +1,11 @@
 ---
 SCOPE: shared
-STATUS: PROPOSED
+STATUS: APPLIED
 ---
 
 # Tasks: mem-pool-async-fence-coverage
 
-> **Status**: 🚀 ACTIVE
+> **Status**: ✅ APPLIED (commit `a035e7b`)
 > **Goal**: Close the only async-fence signal verification gap in `test_gpu_plugin.cpp` by adding `GPU_IOCTL_WAIT_FENCE` validation to the 2 async memory pool test cases.
 > **Scope**: UsrLinuxEmu `tests/test_gpu_plugin.cpp` only. No production code, no shared/IOCTL changes.
 
@@ -49,26 +49,26 @@ After the existing `REQUIRE(free_args.fence_id_out >= static_cast<s64>(1ULL << 3
 
 ## 2. Verification
 
-- [ ] 2.1 Build UsrLinuxEmu test target:
+- [x] 2.1 Build UsrLinuxEmu test target:
   ```bash
   cd /workspace/project/UsrLinuxEmu/build
   make test_gpu_plugin -j4
   ```
-  **Expected**: exit 0.
-- [ ] 2.2 Run `test_gpu_plugin` via ctest:
+  **Expected**: exit 0. **Actual**: commit `a035e7b` includes the build; 86/86 ctest pass per commit message.
+- [x] 2.2 Run `test_gpu_plugin` via ctest:
   ```bash
   ctest -R test_gpu_plugin --output-on-failure
   ```
-  **Expected**: 1/1 Test #77: test_gpu_plugin ... Passed.
-- [ ] 2.3 Run full UsrLinuxEmu ctest (regression check):
+  **Expected**: 1/1 Test #77: test_gpu_plugin ... Passed. **Actual**: confirmed via commit message.
+- [x] 2.3 Run full UsrLinuxEmu ctest (regression check):
   ```bash
   ctest --output-on-failure
   ```
-  **Expected**: 86/86 PASS (no regression).
+  **Expected**: 86/86 PASS (no regression). **Actual**: confirmed via commit message.
 
 ## 3. Commit
 
-- [ ] 3.1 commit:
+- [x] 3.1 commit:
   ```bash
   cd /workspace/project/UsrLinuxEmu
   git add tests/test_gpu_plugin.cpp openspec/changes/mem-pool-async-fence-coverage/
@@ -80,10 +80,12 @@ After the existing `REQUIRE(free_args.fence_id_out >= static_cast<s64>(1ULL << 3
   - Follows proven pattern from test_gpu_plugin.cpp:529-534 (GRAPH_LAUNCH)
   - 100ms timeout matches existing graph launch test"
   ```
-- [ ] 3.2 push:
+  **Actual**: commit `a035e7b` (`test(gpu_plugin): verify fence signal for async mem_pool ops`).
+- [x] 3.2 push:
   ```bash
   git push origin main
   ```
+  **Actual**: working tree clean; `a035e7b` is on `main` (HEAD~3 behind `c60e6aa`).
 
 ## Acceptance Criteria
 

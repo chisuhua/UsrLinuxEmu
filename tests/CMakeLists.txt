@@ -2,6 +2,11 @@
 enable_testing()
 set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+# Stage 3.2 — perf benchmark framework (C-10, see openspec/changes/2026-07-22-*)
+# OFF by default；opt-in build via:
+#   cmake -DUSR_LINUX_EMU_PERF_TESTS=ON -B build
+option(USR_LINUX_EMU_PERF_TESTS "Build performance benchmarks (Stage 3.2 baseline)" OFF)
+
 
 # 遍历每个测试源文件，创建可执行文件和链接 kernel 库
 function(add_catch_test TEST_NAME)
@@ -285,3 +290,9 @@ foreach(src ${SIM_TESTS})
     string(APPEND testname "_standalone")
     add_sim_test(${testname} ${src})
 endforeach()
+
+# Stage 3.2 — performance benchmarks (opt-in via -DUSR_LINUX_EMU_PERF_TESTS=ON)
+# 不通过 ctest 运行，手动跑（夜测 CI 走 .github/workflows/perf-nightly.yml）。
+if(USR_LINUX_EMU_PERF_TESTS)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/perf)
+endif()
