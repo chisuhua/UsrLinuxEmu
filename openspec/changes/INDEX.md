@@ -2,12 +2,12 @@
 
 > **更新**: 2026-07-10
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: 4 个活跃 change (原 12+1+1 个，10 个已完成/已归档)
-> **Source**: 2026-07-07 后续工作梳理 + 2026-07-09 收割 + 2026-07-09 sim-fence-id-base-cleanup 归档 + 2026-07-09 新增 C-13 fence_id 注释 SSOT + 2026-07-09 C-13 闭环 + 2026-07-10 C-10 perf-bench 归档 + 2026-07-10 C-11 目录日期修正 2026-08-01 → 2026-07-10
+> **总数**: 3 个活跃 change (原 12+1+1 个，11 个已完成/已归档)
+> **Source**: 2026-07-07 后续工作梳理 + 2026-07-09 收割 + 2026-07-09 sim-fence-id-base-cleanup 归档 + 2026-07-09 新增 C-13 fence_id 注释 SSOT + 2026-07-09 C-13 闭环 + 2026-07-10 C-10 perf-bench 归档 + 2026-07-10 C-11 目录日期修正 2026-08-01 → 2026-07-10 + 2026-07-10 INDEX stale entry 清理（C-08 sim-graph-launch 已在 archive）
 
 ---
 
-## ✅ 已完成 (10 归档)
+## ✅ 已完成 (11 归档)
 
 | 原 ID | Change | 状态 | 证据 |
 |-------|--------|------|------|
@@ -18,6 +18,7 @@
 | C-06/07 | stage3-3-errno-and-error-injection (merged) | ✅ 已归档 | `07e40ef` `f5dd6ac` `ef962e2` `d24061d` |
 | C-04 | docs-tadr-mirror-sync | ✅ 已归档 | `f679763` `ecfc648` |
 | C-08 | mem-pool-async-fence-coverage | ✅ 已归档 | `a035e7b` (post-`TaskRunner/test-cu-graph-coverage-fixes` follow-up; async-fence round-trip for MEM_POOL_ALLOC_ASYNC + MEM_POOL_FREE_ASYNC) |
+| C-08 | phase4-sim-graph-launch-real-impl | ✅ 已归档 | `openspec/changes/archive/2026-07-09-2026-07-15-phase4-sim-graph-launch-real-impl/` (完整 artifacts: proposal.md + design.md + spec.md + tasks.md + .openspec.yaml；INDEX 未及时同步，现已修复) |
 | C-13 | sim-fence-id-comments-ssot | ✅ 已归档 | `e4b3378` (sim/fence_id.h + fence_id.cpp 注释字面量 `(1<<32)`/`INT64_MAX` → `SIM_FENCE_ID_BASE`/`SIM_FENCE_ID_MAX`；86/86 ctest PASS) |
 | **C-10** | **stage3-2-perf-bench-baseline** | ✅ 已归档 | `d63da5e` (tests/perf/ Catch2 BENCHMARK 框架 + 3 个 benchmark binary；docs/04-building/perf-baseline-2026-Q3.md baseline 文档；adjusted targets 表) |
 
@@ -26,12 +27,6 @@
 ## 🔄 活跃 Changes
 
 ### 本季度 (P3)
-
-### `2026-07-15-phase4-sim-graph-launch-real-impl` 🔵
-**依赖**: C-02 ✅
-**Effort**: 1 周
-**Why**: F.6 follow-up。当前 `sim_graph_launch` PoC 立即 signal，要改成真实 `GpuQueueEmu::submit(uint64_t, uint32_t)` 异步
-**Ref**: `external/TaskRunner/docs/superpowers/cross-repo-prs/...` B-1 decision
 
 ### `2026-07-15-phase4-cu-mempool-alloc-real-va` 🔵
 **依赖**: C-02 ✅
@@ -52,7 +47,6 @@
 ## 依赖图
 
 ```
-[C-08/sim-graph-launch] ──> (C-02 ✅)
 [C-09/cu-mempool-real-va] ──> (C-02 ✅)
 
 [C-10/perf-bench ✅] ──> [C-11/hotpath-optimize]
@@ -64,15 +58,11 @@
 
 ## 推荐执行顺序
 
-### 本月
-1. **C-08** phase4-sim-graph-launch-real-impl（1 周）
-2. **C-09** phase4-cu-mempool-alloc-real-va（1 周）
-3. **C-13** ~~sim-fence-id-comments-ssot~~ ✅ archived（commit `e4b3378`）
-
 ### 本季度
-3. **C-10** ~~stage3-2-perf-bench-baseline~~ ✅ archived（commit `d63da5e`）
-4. **C-11** stage3-2-hotpath-optimize（2 周，after C-10 ✅）
-5. **C-12** kfd-multi-file（6-8 周 sub-project）
+1. **C-09** phase4-cu-mempool-alloc-real-va（1 周）— 需先补 proposal.md + tasks.md
+2. **C-10** ~~stage3-2-perf-bench-baseline~~ ✅ archived（commit `d63da5e`）
+3. **C-11** stage3-2-hotpath-optimize（2 周，after C-10 ✅）— 当前 ready，proposal+tasks 完备
+4. **C-12** kfd-multi-file（6-8 周 sub-project）
 
 ---
 
