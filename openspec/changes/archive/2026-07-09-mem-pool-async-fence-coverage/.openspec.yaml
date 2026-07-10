@@ -1,16 +1,24 @@
 schema: spec-driven
 created: 2026-07-09
+archived_at: 2026-07-09
+applied_commit: a035e7b
+applied_commit_subject: "test(gpu_plugin): verify fence signal for async mem_pool ops"
 name: mem-pool-async-fence-coverage
-status: PROPOSED
+status: ARCHIVED
 scope: [shared, test-fixture]
 goal: Add GPU_IOCTL_WAIT_FENCE validation to MEM_POOL_ALLOC_ASYNC and MEM_POOL_FREE_ASYNC test cases to close the only async-fence signal verification gap in test_gpu_plugin.cpp.
-follow_up_to: TaskRunner/test-cu-graph-coverage-fixes (2026-07-09 commit 4d266a8)
+follow_up_to: TaskRunner/test-cu-graph-coverage-fixes (TaskRunner commit 4d266a8; UsrLinuxEmu submodule pointer was subsequently bumped to e8f2c66 in c60e6aa)
 baseline:
   test_gpu_plugin: PASS
   ctest total: 86/86 PASS
 target:
   test_gpu_plugin: PASS (with 2 enhanced cases)
   ctest total: 86/86 PASS
+actual:
+  test_gpu_plugin: PASS
+  ctest total: 86/86 PASS
+  net_loc_change: +14 lines in tests/test_gpu_plugin.cpp (2 test cases, 7 lines each)
+  ctest_post: "86/86 PASS, no regression"
 non_goals:
   - Adding new test cases
   - Modifying production code
@@ -24,3 +32,4 @@ cross_repo:
   - None (UsrLinuxEmu-only change)
   - No submodule pointer bump required
 estimated_loc_change: +12 lines in test file only
+actual_loc_change: +14 lines in test file only

@@ -1,0 +1,74 @@
+# Stage 3.2 — Performance baseline nightly workflow
+#
+# Runs tests/perf/ benchmarks on a nightly schedule + on manual dispatch.
+# Non-blocking by default (PR merges do not require perf pass).
+# Artifacts: text logs of each benchmark for trend tracking.
+#
+# Reference: openspec/changes/2026-07-22-stage3-2-perf-bench-baseline
+
+name: perf-nightly
+
+on:
+  schedule:
+    # 每周日 02:00 UTC 跑一次 baseline
+    - cron: "0 2 * * 0"
+  workflow_dispatch:  # 手动 trigger
+
+jobs:
+  perf-baseline:
+    name: Run perf benchmarks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++
+
+      - name: Configure (with USR_LINUX_EMU_PERF_TESTS=ON)
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DUSR_LINUX_EMU_PERF_TESTS=ON
+          -S .
+
+      - name: Build perf benchmarks
+        run: cmake --build build --target perf-tests -j4
+
+      - name: Run ioctl_dispatch_bench
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./build/bin/ioctl_dispatch_bench_standalone \
+            > bench-ioctl.txt 2>&1 || echo "ioctl bench returned non-zero"
+          cat bench-ioctl.txt
+
+      - name: Run pushbuffer_bench
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./build/bin/pushbuffer_bench_standalone \
+            > bench-pushbuffer.txt 2>&1 || echo "pushbuffer bench returned non-zero"
+          cat bench-pushbuffer.txt
+
+      - name: Run mmap_overhead_bench
+        working-directory: ${{ github.workspace }}
+        run: |
+          ./build/bin/mmap_overhead_bench_standalone \
+            > bench-mmap.txt 2>&1 || echo "mmap bench returned non-zero"
+          cat bench-mmap.txt
+
+      - name: Upload benchmark artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-baseline
+          path: |
+            bench-ioctl.txt
+            bench-pushbuffer.txt
+            bench-mmap.txt
+          if-no-files-found: warn
+          retention-days: 90
