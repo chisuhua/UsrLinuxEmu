@@ -1,13 +1,13 @@
 # Active Changes Index
 
-> **更新**: 2026-07-10
+> **更新**: 2026-07-11
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: 2 个活跃 change (原 12+1+1 个，12 个已完成/已归档)
-> **Source**: 2026-07-07 后续工作梳理 + 2026-07-09 收割 + 2026-07-09 sim-fence-id-base-cleanup 归档 + 2026-07-09 新增 C-13 fence_id 注释 SSOT + 2026-07-09 C-13 闭环 + 2026-07-10 C-10 perf-bench 归档 + 2026-07-10 C-11 目录日期修正 2026-08-01 → 2026-07-10 + 2026-07-10 INDEX stale entry 清理（C-08 sim-graph-launch 已在 archive） + 2026-07-10 C-11 stage3-2-hotpath-optimization 归档（PR #30）
+> **总数**: 1 个活跃 change (原 12+1+1+1 个，13 个已完成/已归档)
+> **Source**: 2026-07-07 后续工作梳理 + 2026-07-09 收割 + 2026-07-09 sim-fence-id-base-cleanup 归档 + 2026-07-09 新增 C-13 fence_id 注释 SSOT + 2026-07-09 C-13 闭环 + 2026-07-10 C-10 perf-bench 归档 + 2026-07-10 C-11 目录日期修正 2026-08-01 → 2026-07-10 + 2026-07-10 INDEX stale entry 清理（C-08 sim-graph-launch 已在 archive） + 2026-07-10 C-11 stage3-2-hotpath-optimization 归档（PR #30） + 2026-07-11 C-09 phase4-cu-mempool-alloc-real-va 归档（commit `ba88b5f` + ADR-058 + Oracle 报告）
 
 ---
 
-## ✅ 已完成 (12 归档)
+## ✅ 已完成 (13 归档)
 
 | 原 ID | Change | 状态 | 证据 |
 |-------|--------|------|------|
@@ -22,17 +22,13 @@
 | C-13 | sim-fence-id-comments-ssot | ✅ 已归档 | `e4b3378` (sim/fence_id.h + fence_id.cpp 注释字面量 `(1<<32)`/`INT64_MAX` → `SIM_FENCE_ID_BASE`/`SIM_FENCE_ID_MAX`；86/86 ctest PASS) |
 | **C-10** | **stage3-2-perf-bench-baseline** | ✅ 已归档 | `d63da5e` (tests/perf/ Catch2 BENCHMARK 框架 + 3 个 benchmark binary；docs/04-building/perf-baseline-2026-Q3.md baseline 文档；adjusted targets 表) |
 | **C-11** | **stage3-2-hotpath-optimization** | ✅ 已归档 | PR #30 `perf/stage3-2-hotpath` branch（6 commits: tasks.md + P1 cout 移除 handleGetDeviceInfo `893715b` + P2 BO path cout 移除 `41f3704` + P3 HandleManager bitset no-op `a7bae7e` + P4 pushbuffer max-throughput bench `98ee8a1` + perf-baseline §C-11 Results `b064aa5`）；acceptance 2/3 hit（ioctl 11.6× / pushbuffer 1296× / BO 2.1× speedup） |
+| **C-09** | **phase4-cu-mempool-alloc-real-va** | ✅ 已归档 | `ba88b5f feat(sim): real VA allocation in sim_mem_pool via gpu_buddy + mmap backing`（ADR-058 + Oracle report AMD KFD v6.10 + Nvidia UVM `uvm_range_allocator` 调研；新增 `sim_device_va_allocator.{h,cpp}` per-device gpu_buddy + std::mutex；`mem_pool.cpp` 重写 + mmap(MAP_ANONYMOUS\|MAP_PRIVATE\|MAP_FIXED_NOREPLACE) backing；18/18 tests, 86/86 ctest PASS, docs-audit clean, libgpu_core zero-modify per ADR-020） |
 
 ---
 
 ## 🔄 活跃 Changes
 
 ### 本季度 (P3)
-
-### `2026-07-15-phase4-cu-mempool-alloc-real-va` 🔵
-**依赖**: C-02 ✅
-**Effort**: 1 周
-**Why**: TaskRunner PR #7 deferred #2 — synthetic VA → 真实 gpu_buddy first-fit VA
 
 ### `2026-08-15-stage1-4-kfd-multi-file-integration` ⚫ (sub-project)
 **Effort**: 6-8 周
@@ -43,8 +39,6 @@
 ## 依赖图
 
 ```
-[C-09/cu-mempool-real-va] ──> (C-02 ✅)
-
 [C-12/kfd-multi-file] ──> (Phase 4 mainline stable prerequisite)
 ```
 
@@ -53,7 +47,7 @@
 ## 推荐执行顺序
 
 ### 本季度
-1. **C-09** phase4-cu-mempool-alloc-real-va（1 周）— 需先补 proposal.md + tasks.md
+1. **C-09** ~~phase4-cu-mempool-alloc-real-va~~ ✅ archived（commit `ba88b5f`）
 2. **C-10** ~~stage3-2-perf-bench-baseline~~ ✅ archived（commit `d63da5e`）
 3. **C-11** ~~stage3-2-hotpath-optimize~~ ✅ archived（PR #30，acceptance PASS 2/3）
 4. **C-12** kfd-multi-file（6-8 周 sub-project）
