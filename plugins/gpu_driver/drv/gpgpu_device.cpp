@@ -64,8 +64,8 @@ void GpgpuDevice::setPuller(std::shared_ptr<HardwarePullerEmu> puller) {
 u32 GpgpuDevice::HandleManager::allocate() {
   std::lock_guard<std::mutex> lock(mutex_);
   for (u32 i = 1; i <= max_handles_; ++i) {
-    if (handles_.find(i) == handles_.end()) {
-      handles_[i] = true;
+    if (!allocated_bits_.test(i)) {
+      allocated_bits_.set(i);
       return i;
     }
   }
@@ -74,16 +74,16 @@ u32 GpgpuDevice::HandleManager::allocate() {
 
 bool GpgpuDevice::HandleManager::free(u32 handle) {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (handle == 0 || handles_.find(handle) == handles_.end()) {
+  if (handle == 0 || handle > max_handles_ || !allocated_bits_.test(handle)) {
     return false;
   }
-  handles_.erase(handle);
+  allocated_bits_.reset(handle);
   return true;
 }
 
 bool GpgpuDevice::HandleManager::valid(u32 handle) const {
   std::lock_guard<std::mutex> lock(mutex_);
-  return handle != 0 && handles_.find(handle) != handles_.end();
+  return handle != 0 && handle <= max_handles_ && allocated_bits_.test(handle);
 }
 
 const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
@@ -177,9 +177,11 @@ long GpgpuDevice::handleGetDeviceInfo(void* argp) {
   std::strncpy(info->marketing_name, SIMULATED_MARKETING_NAME, sizeof(info->marketing_name) - 1);
   info->marketing_name[sizeof(info->marketing_name) - 1] = '\0';
 
+  #ifndef NDEBUG
   std::cout << "[GpgpuDevice] GET_DEVICE_INFO: vendor=0x" << std::hex << info->vendor_id
             << " device=0x" << info->device_id << " vram=" << std::dec << info->vram_size
             << "\n";
+#endif
   return 0;
 }
 
@@ -189,22 +191,28 @@ long GpgpuDevice::handleAllocBo(void* argp) {
     return -EFAULT;
 
   if (args->domain == 0) {
+#ifndef NDEBUG
     std::cerr << "[GpgpuDevice] ALLOC_BO: invalid domain (0)\n";
+#endif
     return -EINVAL;
   }
 
   u64 gpu_va = 0;
   int ret = hal_mem_alloc(hal_, args->size, &gpu_va);
   if (ret != 0 || gpu_va == 0) {
+#ifndef NDEBUG
     std::cerr << "[GpgpuDevice] ALLOC_BO: hal_mem_alloc failed (size=" << args->size
               << ", ret=" << ret << ")\n";
+#endif
     return -ENOMEM;
   }
 
   u32 handle = handles_.allocate();
   if (handle == 0) {
     hal_mem_free(hal_, gpu_va);
+#ifndef NDEBUG
     std::cerr << "[GpgpuDevice] ALLOC_BO: no available handles\n";
+#endif
     return -ENOMEM;
   }
 
@@ -213,8 +221,10 @@ long GpgpuDevice::handleAllocBo(void* argp) {
   args->handle = handle;
   args->gpu_va = gpu_va;
 
+  #ifndef NDEBUG
   std::cout << "[GpgpuDevice] ALLOC_BO: handle=" << handle << " va=0x" << std::hex << gpu_va
             << " size=" << std::dec << args->size << "\n";
+#endif
   return 0;
 }
 
@@ -224,7 +234,9 @@ long GpgpuDevice::handleFreeBo(void* argp) {
     return -EINVAL;
 
   if (!handles_.valid(handle)) {
+#ifndef NDEBUG
     std::cerr << "[GpgpuDevice] FREE_BO: invalid handle " << handle << "\n";
+#endif
     return -EINVAL;
   }
 
@@ -235,7 +247,9 @@ long GpgpuDevice::handleFreeBo(void* argp) {
   }
 
   handles_.free(handle);
+#ifndef NDEBUG
   std::cout << "[GpgpuDevice] FREE_BO: handle=" << handle << "\n";
+#endif
   return 0;
 }
 
@@ -245,7 +259,9 @@ long GpgpuDevice::handleMapBo(void* argp) {
     return -EFAULT;
 
   if (!handles_.valid(args->handle)) {
+#ifndef NDEBUG
     std::cerr << "[GpgpuDevice] MAP_BO: invalid handle " << args->handle << "\n";
+#endif
     return -EINVAL;
   }
 
@@ -255,8 +271,10 @@ long GpgpuDevice::handleMapBo(void* argp) {
   }
 
   args->gpu_va = it->second.gpu_va;
+#ifndef NDEBUG
   std::cout << "[GpgpuDevice] MAP_BO: handle=" << args->handle << " va=0x" << std::hex
             << args->gpu_va << "\n";
+#endif
   return 0;
 }
 

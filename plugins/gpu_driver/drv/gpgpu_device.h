@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bitset>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -61,7 +62,7 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
     bool valid(u32 handle) const;
    private:
     static constexpr u32 max_handles_ = 65535;
-    std::map<u32, bool> handles_;
+    std::bitset<max_handles_ + 1> allocated_bits_;
     mutable std::mutex mutex_;
   };
   HandleManager handles_;
