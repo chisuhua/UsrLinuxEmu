@@ -67,16 +67,19 @@
 | [adr-055](adr-055-cp-error-handling-engine-recovery.md) | **CP 错误处理与引擎恢复** | ⏸️ Deferred (Never) | 2026-07-09 |
 | [adr-056](adr-056-green-context-pdl.md) | **Green Context / PDL**（Phase 7）| 📋 PROPOSED | 2026-07-09 |
 | [adr-057](adr-057-cp-profiling-hooks-timestamp.md) | **CP Profiling Hooks / Timestamp**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-058](adr-058-sim-mem-pool-real-va.md) | **sim_mem_pool Real VA Allocation via gpu_buddy + mmap Backing**（Phase 4）| 📋 PROPOSED | 2026-07-11 |
 
 ## 状态分布总览（截至 2026-07-09）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
 | ✅ 已接受 | 35 | 001-010, 015-024, 027, 031-037, 039-041, 043 |
-| 📋 PROPOSED | 14 | 011-014, 038, 042, 044-052, 054, 056-057 |
+| 📋 PROPOSED | 15 | 011-014, 038, 042, 044-052, 054, 056-058 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
-| **总计** | **56** | ADR-001 ~ ADR-057 |
+| **总计** | **57** | ADR-001 ~ ADR-058 |
 
+> **2026-07-11 变更**：ADR-058 新增 — sim_mem_pool Real VA Allocation（Phase 4 cu-mempool-alloc-real-va change 架构基础）。镜像 Nvidia UVM `uvm_range_allocator` per-pool + per-device gpu_buddy + mmap backing at pool create 模式。
+>
 > **2026-07-09 变更**：ADR-040~057 新增 — GPU 命令处理器 Blueprint ADR 集（18 文档），覆盖 Phase 4–7 CP 子系统架构决策。**ADR-040/041/043 已升级为 Accepted**（Phase 4 sim-graph-launch-real-impl 架构基础），其余 Phase 5+ 暂保持 PROPOSED。
 
 ## ADR 状态说明
@@ -230,7 +233,7 @@ adr-001 (用户态模拟)
 
 ---
 
-**最后更新**: 2026-07-03（Stage 1.2 closeout 同步接受 ADR-037；总 Accepted 数 30 → 31，Proposed 1 → 0）
+**最后更新**: 2026-07-11（Phase 4 cu-mempool-alloc-real-va change 架构 ADR-058 新增；研究基础见 `docs/05-advanced/kfd-nvidia-mempool-va-research.md`）
 
 ## 编号 gap 治理（2026-06-16 → 2026-06-17）
 

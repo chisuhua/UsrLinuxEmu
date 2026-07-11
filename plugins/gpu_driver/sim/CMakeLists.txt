@@ -16,6 +16,8 @@ add_library(gpu_sim STATIC
     graph.cpp
     # sim-stream-primitive-support — §2.3 Memory Pool (Phase 3.2, Fix-2 Option B)
     mem_pool.cpp
+    # phase4-cu-mempool-alloc-real-va — per-device VA sub-range allocator (ADR-058 D1)
+    sim_device_va_allocator.cpp
 )
 
 set_target_properties(gpu_sim PROPERTIES POSITION_INDEPENDENT_CODE ON)

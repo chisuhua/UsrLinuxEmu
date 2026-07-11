@@ -221,3 +221,117 @@ TEST_CASE("mem_pool — trim is no-op in PoC but returns 0",
   REQUIRE(sim_mem_pool_create(&props, &h) == 0);
   REQUIRE(sim_mem_pool_trim(h, /*min_bytes=*/4096) == 0);
 }
+
+/* Phase 4 cu-mempool-alloc-real-va (ADR-058 D3) — VA must be dereferenceable
+ * because mmap(MAP_ANONYMOUS|MAP_PRIVATE) backs the whole pool range at create. */
+TEST_CASE("mem_pool — alloc VA is dereferenceable (read/write smoke test)",
+          "[sim][mem_pool][phase4][dereferenceable]")
+{
+  sim_mem_pool_reset_for_test();
+  sim_mem_pool_props_t props{};
+  props.va_space_handle = 1;
+  props.size = 1024 * 1024;
+  uint64_t h = 0;
+  REQUIRE(sim_mem_pool_create(&props, &h) == 0);
+
+  uint64_t va = 0;
+  REQUIRE(sim_mem_pool_alloc(h, 4096, &va) == 0);
+
+  /* Write a sentinel then read it back. With ADR-058 D3 mmap backing, this
+   * must succeed without segfault. The synthetic VA PoC would crash here. */
+  uint64_t* p = reinterpret_cast<uint64_t*>(va);
+  *p = 0xDEADBEEFCAFEBABEULL;
+  uint64_t readback = *p;
+  REQUIRE(readback == 0xDEADBEEFCAFEBABEULL);
+}
+
+/* ADR-058 D2: gpu_buddy first-fit allocates distinct VAs all within pool range. */
+TEST_CASE("mem_pool — three sequential allocs return distinct VAs within pool range",
+          "[sim][mem_pool][phase4][first-fit]")
+{
+  sim_mem_pool_reset_for_test();
+  sim_mem_pool_props_t props{};
+  props.va_space_handle = 1;
+  props.size = 1024 * 1024;
+  uint64_t h = 0;
+  REQUIRE(sim_mem_pool_create(&props, &h) == 0);
+
+  uint64_t va1 = 0, va2 = 0, va3 = 0;
+  REQUIRE(sim_mem_pool_alloc(h, 4096, &va1) == 0);
+  REQUIRE(sim_mem_pool_alloc(h, 8192, &va2) == 0);
+  REQUIRE(sim_mem_pool_alloc(h, 4096, &va3) == 0);
+
+  /* All three allocations are distinct (buddy ensures non-overlap). */
+  REQUIRE(va1 != va2);
+  REQUIRE(va2 != va3);
+  REQUIRE(va1 != va3);
+  /* Each VA falls within pool's reserved range. */
+  REQUIRE((va1 >= props.va_base && va1 + 4096 <= props.va_limit));
+  REQUIRE((va2 >= props.va_base && va2 + 8192 <= props.va_limit));
+  REQUIRE((va3 >= props.va_base && va3 + 4096 <= props.va_limit));
+  /* Each VA is 4K-aligned (gpu_buddy alignment guarantee). */
+  REQUIRE((va1 & 0xFFFULL) == 0);
+  REQUIRE((va2 & 0xFFFULL) == 0);
+  REQUIRE((va3 & 0xFFFULL) == 0);
+}
+
+/* ADR-058 D4 + free path: alloc A, free A, alloc B (same size) → B reuses A. */
+TEST_CASE("mem_pool — free + realloc same size reuses same VA",
+          "[sim][mem_pool][phase4][reuse]")
+{
+  sim_mem_pool_reset_for_test();
+  sim_mem_pool_props_t props{};
+  props.va_space_handle = 1;
+  props.size = 1024 * 1024;
+  uint64_t h = 0;
+  REQUIRE(sim_mem_pool_create(&props, &h) == 0);
+
+  uint64_t va_a = 0;
+  REQUIRE(sim_mem_pool_alloc(h, 8192, &va_a) == 0);
+
+  /* Free via async path (PoC: synchronous). */
+  int64_t fence = sim_mem_pool_free_async(va_a, /*stream=*/0);
+  REQUIRE(fence >= 0);
+
+  /* Allocate same size — gpu_buddy free + alloc returns the same base. */
+  uint64_t va_b = 0;
+  REQUIRE(sim_mem_pool_alloc(h, 8192, &va_b) == 0);
+  REQUIRE(va_b == va_a);
+
+  /* Re-verify dereferenceability on the reused VA. */
+  volatile uint64_t* p = reinterpret_cast<volatile uint64_t*>(va_b);
+  *p = 0xCAFEBABE;
+  REQUIRE(*p == 0xCAFEBABE);
+}
+
+/* Multiple pools get distinct VA sub-ranges from per-device gpu_buddy. */
+TEST_CASE("mem_pool — two pools get non-overlapping VA sub-ranges",
+          "[sim][mem_pool][phase4][isolation]")
+{
+  sim_mem_pool_reset_for_test();
+
+  sim_mem_pool_props_t props_a{};
+  props_a.va_space_handle = 1;
+  props_a.size = 16 * 1024 * 1024;
+  uint64_t ha = 0;
+  REQUIRE(sim_mem_pool_create(&props_a, &ha) == 0);
+
+  sim_mem_pool_props_t props_b{};
+  props_b.va_space_handle = 2;
+  props_b.size = 16 * 1024 * 1024;
+  uint64_t hb = 0;
+  REQUIRE(sim_mem_pool_create(&props_b, &hb) == 0);
+
+  /* Distinct VA ranges, no overlap. */
+  REQUIRE(props_a.va_base != props_b.va_base);
+  bool overlap = (props_a.va_base < props_b.va_limit)
+               && (props_b.va_base < props_a.va_limit);
+  REQUIRE_FALSE(overlap);
+
+  /* Allocations from pool A are within A's range; same for B. */
+  uint64_t va_a = 0, va_b = 0;
+  REQUIRE(sim_mem_pool_alloc(ha, 4096, &va_a) == 0);
+  REQUIRE(sim_mem_pool_alloc(hb, 4096, &va_b) == 0);
+  REQUIRE((va_a >= props_a.va_base && va_a < props_a.va_limit));
+  REQUIRE((va_b >= props_b.va_base && va_b < props_b.va_limit));
+}
