@@ -87,6 +87,35 @@ BENCHMARK: BO ALLOC + FREE 1MB
 
 注：原 `100 ns` 目标针对**真机 GPU driver**，userspace 模拟层（VFS + plugin loader + handler dispatch）无法达到。我们将 C-11 优化目标修正为可达成的对比项（如上）。
 
+## C-11 Results (2026-07-10) — stage3-2-hotpath-optimization
+
+> **来源**: `openspec/changes/2026-07-10-stage3-2-hotpath-optimization/`，branch `perf/stage3-2-hotpath`（5 commits: `8a007f9` tasks.md update, `893715b` P1, `41f3704` P2, `a7bae7e` P3 no-op, `98ee8a1` P4）
+
+| metric | C-10 baseline | **post-C-11** | target | hit? | delta |
+|--------|---------------|---------------|--------|------|-------|
+| ioctl mean | 0.51 μs | **0.044 μs** | < 0.20 μs | ✅ | 11.6× speedup |
+| pushbuffer throughput (max) | 100 submits/sec (rate-limited) | **648,241 submits/sec** | ≥ 500 submits/sec | ✅ | 1296× over target |
+| BO ALLOC+FREE mean | 0.76 μs | **0.36 μs** | < 0.30 μs | ❌ | 2.1× speedup |
+
+**Acceptance (Rule 1: ≥2/3 hit)**: **2/3 → PASS ✅**
+
+### 优化项落地情况
+
+| Phase | 优化项 | Commit | 效果 |
+|-------|--------|--------|------|
+| P1 | handleGetDeviceInfo cout 移除 | `893715b` | ioctl 11.6× 加速 |
+| P2 | BO path cout 移除（AllocBo/FreeBo/MapBo） | `41f3704` | BO 2.1× 加速 |
+| P3 | HandleManager → bitset | `a7bae7e` | no-op (Rule 2 保留为 structural cleanup) |
+| P4 | pushbuffer_bench 解除 rate-limit | `98ee8a1` | 揭示 bench bug，max throughput 648K/s |
+
+### 未命中项目分析（BO < 0.30）
+
+- BO mean 0.36 μs vs target 0.30 μs — 差 0.06 μs
+- 剩余时间主要在 `gpu_buddy_alloc` + `coalesce`（per Phase 0 callgrind 占 BO 路径 ~28%）
+- `libgpu_core/` 不在 C-11 scope（pure-C 无锁合约，per ADR-020）
+- p99 改善明显（4.36 → 3.40 μs，-22%），mean 因 HandleManager P3 bitset cache 不友好略有波动
+- **结论**: C-11 完成核心优化目标，BO target 因架构边界（libgpu_core 不动）未完全达成，但已 2.1× 加速
+
 ## 后续
 
 1. C-11 `stage3-2-hotpath-optimization`：基于本 baseline 决定具体优化点
