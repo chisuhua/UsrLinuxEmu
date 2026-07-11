@@ -1,36 +1,37 @@
 /*
- * sim/mem_pool.cpp — Memory pool simulation (Phase 3.2 PoC)
+ * sim/mem_pool.cpp — Memory pool simulation (Phase 4 real VA)
  *
- * Implements Option B (VA subrange, Fix-2) without modifying
- * libgpu_core/gpu_buddy. Pool reserves a contiguous VA range inside its
- * parent VA Space; per-allocation search is first-fit (per design.md
- * §Pool VA 分配算法).
+ * Phase 4 cu-mempool-alloc-real-va change (ADR-058).
+ * Implements Option B (VA subrange, Fix-2) with real VA backing via
+ * libgpu_core/gpu_buddy (per-pool) + per-device sub-range allocator
+ * (sim_device_va_allocator) + mmap backing at pool create.
  *
- * PoC simplification: va_base is allocated by a global monotonic counter
- * (start 0x100000000, stride aligned up to 64MB). Real backing by
- * gpu_buddy is intentionally NOT performed (per Decision 4 — avoid
- * modifying libgpu_core).
+ * Architecture: ③ Hardware Simulation layer (per ADR-036 three-way separation).
  *
- * Thread Safety: NOT required (single-threaded driver dispatch).
+ * Thread Safety (per ADR-058 D4): each per-pool buddy is guarded by a
+ * std::mutex; the per-device allocator has its own std::mutex. The underlying
+ * gpu_buddy remains lock-free per ADR-020 libgpu_core purity constraint.
  */
 
 #include "mem_pool.h"
 #include "fence_id.h"
+#include "sim_device_va_allocator.h"
+#include "gpu_buddy.h"
 
 #include <cerrno>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <map>
+#include <mutex>
 #include <utility>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/mman.h>
 
 namespace {
 
-constexpr uint64_t POOL_VA_BASE_START = 0x100000000ULL;  /* 1 GiB */
-constexpr uint64_t POOL_VA_STRIDE     = 0x04000000ULL;  /* 64 MiB */
-constexpr uint64_t PAGE_MASK          = ~0xFFFULL;
+constexpr uint64_t PAGE_MASK = ~0xFFFULL;
 
 struct PoolInternalEntry {
   uint64_t va;
@@ -45,35 +46,21 @@ struct PoolAttrs {
 
 struct PoolTableEntry {
   sim_mem_pool_props_t props;
-  std::map<uint64_t, PoolInternalEntry> allocated;  /* VA → entry */
-  uint64_t next_va_hint = 0;                        /* first-fit scan start */
+  std::map<uint64_t, PoolInternalEntry> allocated;  /* VA → entry (for free lookup) */
   PoolAttrs attrs;
+  /* Phase 4 real-VA additions (ADR-058 D2/D3): */
+  void* mmap_base = nullptr;                       /* mmap backing for [va_base, va_limit) */
+  uint64_t mmap_size = 0;                          /* size passed to mmap (aligned to 4KB) */
+  struct gpu_buddy pool_buddy_;                    /* per-pool buddy for sub-allocation */
+  std::mutex buddy_mutex;                          /* protects pool_buddy_ + allocated */
 };
 
 std::map<uint64_t, PoolTableEntry> pool_table_;
-uint64_t next_pool_handle_   = 1;
-uint64_t next_pool_va_base_  = POOL_VA_BASE_START;
+uint64_t next_pool_handle_ = 1;
 
 /* Round-up helper for 4KB alignment. */
 inline uint64_t align_up_4k(uint64_t x) {
   return (x + 0xFFFULL) & PAGE_MASK;
-}
-
-/* Find first-fit gap of `aligned_size` bytes within [start, end). */
-uint64_t find_first_fit(const PoolTableEntry &pool,
-                        uint64_t start, uint64_t aligned_size) {
-  uint64_t cursor = start;
-  for (const auto &kv : pool.allocated) {
-    uint64_t entry_va = kv.second.va;
-    if (entry_va < cursor) continue;  /* skip entries before hint */
-    if (entry_va - cursor >= aligned_size)
-      return cursor;  /* gap before this entry */
-    cursor = entry_va + kv.second.size;
-    if (cursor > pool.props.va_limit) return 0;  /* overran */
-  }
-  if (pool.props.va_limit - cursor >= aligned_size)
-    return cursor;
-  return 0;  /* no fit */
 }
 
 }  // anonymous namespace
@@ -87,20 +74,40 @@ int sim_mem_pool_create(sim_mem_pool_props_t *props,
   if (props->size == 0)
     return SIM_POOL_ERR_INVAL;
 
-  uint64_t h = next_pool_handle_++;
-  /* Allocate a VA base from the global counter (PoC: no gpu_buddy backing). */
-  uint64_t va_base  = next_pool_va_base_;
-  uint64_t va_limit = va_base + props->size;
-  next_pool_va_base_ += align_up_4k(props->size + POOL_VA_STRIDE);
+  /* ADR-058 D1: va_base comes from per-device global gpu_buddy allocator. */
+  uint64_t pool_size_aligned = align_up_4k(props->size);
+  uint64_t va_base = 0;
+  int rc = sim_device_va_alloc(pool_size_aligned, &va_base);
+  if (rc != 0)
+    return SIM_POOL_ERR_NOSPC;  /* device VA space exhausted */
+
+  uint64_t va_limit = va_base + props->size;  /* user-visible limit = original size */
+
+  /* ADR-058 D3: mmap backing at pool create so returned VAs are dereferenceable.
+   * MAP_ANONYMOUS|MAP_PRIVATE = demand-paged (1 GiB virtual, only used pages physical).
+   * MAP_FIXED_NOREPLACE (Linux 4.17+) prevents silent overwrite of existing maps. */
+  void* backing = mmap(reinterpret_cast<void*>(va_base), pool_size_aligned,
+                       PROT_READ | PROT_WRITE,
+                       MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED_NOREPLACE, -1, 0);
+  if (backing == MAP_FAILED) {
+    sim_device_va_free(va_base);
+    return SIM_POOL_ERR_NOSPC;
+  }
 
   /* Write back OUT fields via the props pointer (handler ownership). */
   props->va_base  = va_base;
   props->va_limit = va_limit;
 
-  PoolTableEntry entry;
-  entry.props = *props;  /* copy with OUT fields now filled */
-  entry.next_va_hint = entry.props.va_base;
-  pool_table_[h] = std::move(entry);
+  /* ADR-058 D2: per-pool buddy for sub-allocation within [va_base, va_base+pool_size_aligned).
+   * try_emplace + in-place field-assign (std::mutex in PoolTableEntry is not movable,
+   * so std::move(entry) would fail to compile). */
+  uint64_t h = next_pool_handle_++;
+  auto ins = pool_table_.try_emplace(h);
+  auto &entry = ins.first->second;
+  entry.props = *props;       /* copy with OUT fields now filled */
+  entry.mmap_base = backing;
+  entry.mmap_size = pool_size_aligned;
+  gpu_buddy_init(&entry.pool_buddy_, va_base, pool_size_aligned);
 
   *pool_handle_out = h;
   return SIM_POOL_ERR_OK;
@@ -110,6 +117,14 @@ int sim_mem_pool_destroy(uint64_t pool_handle) {
   auto it = pool_table_.find(pool_handle);
   if (it == pool_table_.end())
     return SIM_POOL_ERR_INVALID_HANDLE;
+
+  /* Release per-pool mmap + return VA sub-range to device allocator. */
+  auto &pool = it->second;
+  if (pool.mmap_base) {
+    munmap(pool.mmap_base, pool.mmap_size);
+  }
+  sim_device_va_free(pool.props.va_base);
+
   pool_table_.erase(it);
   return SIM_POOL_ERR_OK;
 }
@@ -126,17 +141,19 @@ int sim_mem_pool_alloc(uint64_t pool_handle, uint64_t size, uint64_t *va_out) {
     return SIM_POOL_ERR_INVAL;
 
   uint64_t aligned = align_up_4k(size);
-  uint64_t found = find_first_fit(pool, pool.next_va_hint, aligned);
-  if (found == 0) {
-    /* wrap-around: also scan from pool base */
-    found = find_first_fit(pool, pool.props.va_base, aligned);
-    if (found == 0)
+
+  /* ADR-058 D2: per-pool gpu_buddy for first-fit 4K-aligned sub-allocation.
+   * Lock guard for thread safety (D4). */
+  uint64_t addr = 0;
+  {
+    std::lock_guard<std::mutex> lock(pool.buddy_mutex);
+    int rc = gpu_buddy_alloc(&pool.pool_buddy_, aligned, &addr);
+    if (rc != 0)
       return SIM_POOL_ERR_NOSPC;
+    pool.allocated[addr] = {addr, aligned, 0};
   }
 
-  pool.allocated[found] = {found, aligned, 0};
-  pool.next_va_hint = found + aligned;
-  *va_out = found;
+  *va_out = addr;
   return SIM_POOL_ERR_OK;
 }
 
@@ -157,20 +174,25 @@ int64_t sim_mem_pool_alloc_async(uint64_t pool_handle, uint64_t size,
 
 int64_t sim_mem_pool_free_async(uint64_t va, uint32_t stream_id) {
   (void)stream_id;
-  /* Find pool owning this VA, then erase entry. */
+  /* Find pool owning this VA, then return to per-pool buddy + erase entry. */
   for (auto &kv : pool_table_) {
     auto &pool = kv.second;
-    if (va >= pool.props.va_base && va < pool.props.va_limit) {
-      auto ait = pool.allocated.find(va);
-      if (ait == pool.allocated.end())
-        return SIM_POOL_ERR_INVALID_HANDLE;
-      pool.allocated.erase(ait);
-      int64_t fence_id = sim_fence_id_alloc();
-      if (fence_id < 0)
-        return -ENOMEM;
-      sim_fence_id_signal(static_cast<uint64_t>(fence_id));
-      return fence_id;
+    if (va < pool.props.va_base || va >= pool.props.va_limit)
+      continue;
+    auto ait = pool.allocated.find(va);
+    if (ait == pool.allocated.end())
+      return SIM_POOL_ERR_INVALID_HANDLE;
+    /* ADR-058 D4: lock guard for buddy_free */
+    {
+      std::lock_guard<std::mutex> lock(pool.buddy_mutex);
+      gpu_buddy_free(&pool.pool_buddy_, va);
     }
+    pool.allocated.erase(ait);
+    int64_t fence_id = sim_fence_id_alloc();
+    if (fence_id < 0)
+      return -ENOMEM;
+    sim_fence_id_signal(static_cast<uint64_t>(fence_id));
+    return fence_id;
   }
   return SIM_POOL_ERR_INVALID_HANDLE;
 }
@@ -239,9 +261,17 @@ int sim_mem_pool_trim(uint64_t pool_handle, uint64_t min_bytes) {
 }
 
 void sim_mem_pool_reset_for_test(void) {
+  /* Release all per-pool mmap regions before clearing the table. */
+  for (auto &kv : pool_table_) {
+    auto &pool = kv.second;
+    if (pool.mmap_base) {
+      munmap(pool.mmap_base, pool.mmap_size);
+    }
+  }
   pool_table_.clear();
-  next_pool_handle_  = 1;
-  next_pool_va_base_ = POOL_VA_BASE_START;
+  next_pool_handle_ = 1;
+  /* Reset the per-device VA allocator so subsequent tests start fresh. */
+  sim_device_va_reset_for_test();
 }
 
 int sim_mem_pool_export_shareable(uint64_t pool_handle, uint32_t handle_type,
