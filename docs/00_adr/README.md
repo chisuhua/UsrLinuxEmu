@@ -68,17 +68,25 @@
 | [adr-056](adr-056-green-context-pdl.md) | **Green Context / PDL**（Phase 7）| 📋 PROPOSED | 2026-07-09 |
 | [adr-057](adr-057-cp-profiling-hooks-timestamp.md) | **CP Profiling Hooks / Timestamp**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
 | [adr-058](adr-058-sim-mem-pool-real-va.md) | **sim_mem_pool Real VA Allocation via gpu_buddy + mmap Backing**（Phase 4）| 📋 PROPOSED | 2026-07-11 |
+| [adr-059](adr-059-kfd-multi-file-integration.md) | **KFD Multi-File Integration Architecture Boundary**（C-12 sub-project, Stage 1.4 后续子项目）| ✅ Accepted | 2026-07-14 |
+| [adr-060](adr-060-message-notification-threading.md) | **Linux Kernel Message Notification Threading for KFD Simulation**（C-12 前置 gate，kernel_thread_base + kernel_workqueue）| ✅ Accepted | 2026-07-14 |
 
 ## 状态分布总览（截至 2026-07-09）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 35 | 001-010, 015-024, 027, 031-037, 039-041, 043 |
+| ✅ 已接受 | 37 | 001-010, 015-024, 027, 031-037, 039-041, 043, 059, 060 |
 | 📋 PROPOSED | 15 | 011-014, 038, 042, 044-052, 054, 056-058 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
-| **总计** | **57** | ADR-001 ~ ADR-058 |
+| **总计** | **59** | ADR-001 ~ ADR-060 |
 
 > **2026-07-11 变更**：ADR-058 新增 — sim_mem_pool Real VA Allocation（Phase 4 cu-mempool-alloc-real-va change 架构基础）。镜像 Nvidia UVM `uvm_range_allocator` per-pool + per-device gpu_buddy + mmap backing at pool create 模式。
+>
+> **2026-07-11 变更**：ADR-059 新增 — KFD Multi-File Integration Architecture Boundary（C-12 sub-project）。记录 6 个新 KFD 模块（kfd_module/process/pasid/dispatch/mmu/events）的架构边界，严格遵循 ADR-036（3 区分）+ ADR-018（dr/hal/sim 分离）+ ADR-027（spec-driven）。关联文档：`docs/05-advanced/kfd-multi-file.md`（C-12 Phase A.1 设计文档）。
+>
+> **2026-07-11 变更（修订）**：原 ADR-060 引入 `kfd_thread_base`/`kfd_workqueue`（raw pthread_* 包装，规避 GCC 13 bug，2026-07-11 Oracle session `ses_0a20c2cc1ffeuc3KgE6isVHGtz` 10 决策点全部采纳）。**2026-07-14 修订**：rename `kfd_thread_base` → `kernel_thread_base`、`kfd_workqueue` → `kernel_workqueue`（命名对齐 ① layer；去 `kfd_` 前缀避免误读为 KFD 内部，per Oracle §CRIT-4 评审）。明确 C-12 6 模块 sync/async 边界：events 异步 + 其它 sync（mmu async opt-in）。**HardwarePullerEmu 重构明确不在本 ADR 范围**（未来单独 ADR）。
+>
+> **2026-07-14 变更**：ADR-059 + ADR-060 状态升 ✅ Accepted（Oracle 评审 session `ses_0a1fabadfffeJRp6kcN6p6j02S` 10 critical/risk 项全部修复 + docs-audit 43/43 PASS）。C-12 启动 gate 解锁；进入 Phase A.2 ABI 对比分析（per tasks.md §A.2 硬性 gate）。
 >
 > **2026-07-09 变更**：ADR-040~057 新增 — GPU 命令处理器 Blueprint ADR 集（18 文档），覆盖 Phase 4–7 CP 子系统架构决策。**ADR-040/041/043 已升级为 Accepted**（Phase 4 sim-graph-launch-real-impl 架构基础），其余 Phase 5+ 暂保持 PROPOSED。
 
@@ -207,6 +215,19 @@ adr-001 (用户态模拟)
             ├── Phase 7: adr-056 (Green Context/PDL)
             │
             └── Deferred (Never): adr-053 (Over-subscription), adr-055 (Error Recovery)
+
+    └── Linux 内核消息通知线程架构 (2026-07-11, 📋 PROPOSED)
+            │
+            └── adr-060 (Linux Kernel Message Notification Threading for KFD Simulation)
+                    │       C-12 前置 gate
+                    │       └── 引入: kernel_thread_base (raw pthread_*) + kernel_workqueue (workqueue 模拟)
+                    │       └── 关联: adr-035 (Governance), adr-018 (dr/sim 分离), adr-023 (HAL), adr-036 (3-Way)
+                    │       └── 关联: adr-059 (KFD 多文件集成, C-12 依赖本 ADR)
+                    │       └── 规避: GCC 13 + glibc pthread/sched_yield weakref bug (kfd-portability-report.md §4.2)
+                    │       └── 同步 vs 异步: events 异步 + process/pasid/dispatch sync + mmu sync (async opt-in)
+                    │       └── 验证: ASan+UBSan 基线 + 新增 TSan (Clang) + stress tests
+                    │       └── Non-Decisions: HardwarePullerEmu 重构 / kthread/completion/fasync 模拟 / per-CPU workqueue
+                    │                       → 均不在本 ADR 范围，留作未来 ADR
 ```
 
 ## 维护指南
@@ -233,7 +254,7 @@ adr-001 (用户态模拟)
 
 ---
 
-**最后更新**: 2026-07-11（Phase 4 cu-mempool-alloc-real-va change 架构 ADR-058 新增；研究基础见 `docs/05-advanced/kfd-nvidia-mempool-va-research.md`）
+**最后更新**: 2026-07-11（ADR-058 sim_mem_pool Real VA + ADR-059 KFD 多文件集成架构边界 + ADR-060 Linux 内核消息通知线程架构；C-12 启动需 ADR-059 + ADR-060 均 Accepted）
 
 ## 编号 gap 治理（2026-06-16 → 2026-06-17）
 
