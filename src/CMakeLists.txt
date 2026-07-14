@@ -47,6 +47,10 @@ add_library(kernel SHARED
     kernel/net/sk_buff.cpp
     # Stage 2.3.1 — Storage block compat (bio_compat, per plan §2.3.1 决策)
     kernel/block/bio_compat.cpp
+    # C-12 B.1.10 — Thread infrastructure (per ADR-060)
+    # raw pthread_* wrapper + workqueue模拟，规避 GCC 13 gthr-default.h bug
+    kernel/thread/kernel_thread_base.cpp
+    kernel/thread/kernel_workqueue.cpp
 
 )
 

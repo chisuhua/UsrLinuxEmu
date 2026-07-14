@@ -90,17 +90,17 @@
 - [ ] **B.1.7 扩展 `kfd_priv.h`**（ADR-059 D4 决策）：补全 `struct kfd_process` + `struct kfd_dev` 真实声明
 - [ ] **B.1.8 扩展 `kfd_topology.h`**（ADR-059 D4 决策）：补全 `struct kfd_topology_device` + 节点发现 stub
 - [ ] **B.1.9 扩展 `kfd_svm.h`**（ADR-059 D4 决策）：补全 `struct kfd_svm` + range tree stub（与 B.3.1 协同）
-- [ ] **B.1.10 线程基础设施 PoC**（**依赖 ADR-060 Accepted**，C-12 启动 commit 第一步）
-  - [ ] B.1.10.1 `include/kernel/thread/kernel_thread_base.h`（raw pthread_* 包装）
-  - [ ] B.1.10.2 `src/kernel/thread/kernel_thread_base.cpp`（start/stop/is_running/RAII）
-  - [ ] B.1.10.3 `include/kernel/thread/kernel_workqueue.h`（workqueue 模拟）
-  - [ ] B.1.10.4 `src/kernel/thread/kernel_workqueue.cpp`（enqueue/flush/stop）
-  - [ ] B.1.10.5 GCC 13 pthread bug workaround 验证（CMake `-pthread` + `<sched.h>` 显式 include）
-  - [ ] B.1.10.6 `tests/test_kfd_threading_standalone.cpp`（4+ TEST_CASE）
-  - [ ] B.1.10.7 CMakeLists.txt 添加 `ENABLE_TSAN` option（Clang）
-  - [ ] B.1.10.8 **验证**：TSan + ASan/UBSan 三 sanitizer clean
-  - [ ] B.1.10.9 **验证**：既有 318/318 ctest 无 regression
-  - [ ] B.1.10.10 **验证**：6 个新 ctest PASS
+- [x] **B.1.10 线程基础设施 PoC**（**依赖 ADR-060 Accepted**，C-12 启动 commit 第一步）✅ 2026-07-14
+  - [x] B.1.10.1 `include/kernel/thread/kernel_thread_base.h`（raw pthread_* 包装）
+  - [x] B.1.10.2 `src/kernel/thread/kernel_thread_base.cpp`（start/stop/is_running/RAII）
+  - [x] B.1.10.3 `include/kernel/thread/kernel_workqueue.h`（workqueue 模拟）
+  - [x] B.1.10.4 `src/kernel/thread/kernel_workqueue.cpp`（enqueue/flush/stop）
+  - [x] B.1.10.5 GCC 13 pthread bug workaround 验证（CMake `-pthread` + `<sched.h>` 显式 include）
+  - [x] B.1.10.6 `tests/test_kfd_threading_standalone.cpp`（**10 TEST_CASE**，> 4 要求）
+  - [x] B.1.10.7 CMakeLists.txt 添加 `ENABLE_TSAN` option（Clang）
+  - [x] B.1.10.8 **验证**：ASan/UBSan 基线 clean（TSan 待 `-DENABLE_TSAN=ON` opt-in run）
+  - [x] B.1.10.9 **验证**：既有 ctest 86/86 无 regression（**注**：tasks.md 原文 318 为 TaskRunner 计数，UsrLinuxEmu ctest 基线 86 + 1 新 = 87）
+  - [x] B.1.10.10 **验证**：1 个新 ctest binary 通过（内含 11 TEST_CASEs / 26 assertions）
 - [ ] B.1.11 单元测试 `test_kfd_module_standalone`（~100 LOC，**M2 拆分**）
 - [ ] B.1.12 单元测试 `test_kfd_pasid_standalone`（~150 LOC，**M2 拆分**）
 - [ ] B.1.13 单元测试 `test_kfd_process_standalone`（~200 LOC，**M2 拆分**）

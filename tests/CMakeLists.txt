@@ -182,6 +182,8 @@ set(CATCH2_TESTS
     test_zone_device_standalone.cpp
     # Stage 1.3 — UVM/HMM SVM ioctl integration test (tasks.md §10.3)
     test_svm_ioctl_standalone.cpp
+    # C-12 B.1.10 — Thread infrastructure PoC (per ADR-060)
+    test_kfd_threading_standalone.cpp
 )
 
 # 定义 sim 相关测试的列表（链接 gpu_sim）
@@ -295,4 +297,13 @@ endforeach()
 # 不通过 ctest 运行，手动跑（夜测 CI 走 .github/workflows/perf-nightly.yml）。
 if(USR_LINUX_EMU_PERF_TESTS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/perf)
+endif()
+
+# C-12 B.1.10.7 — Apply TSan to kernel threading test when ENABLE_TSAN=ON
+# 仅作用于 test_kfd_threading_standalone（其他测试不需要 TSan 监控线程）
+if(ENABLE_TSAN)
+    target_compile_options(test_kfd_threading_standalone PRIVATE
+        -fsanitize=thread -fno-omit-frame-pointer -g -O1)
+    target_link_options(test_kfd_threading_standalone PRIVATE -fsanitize=thread)
+    message(STATUS "[C-12 B.1.10.7] TSan enabled for test_kfd_threading_standalone")
 endif()

@@ -29,3 +29,8 @@ add_subdirectory(libgpu_core)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# C-12 B.1.10.7 — ThreadSanitizer opt-in (Clang only)
+# 启用方法：cmake -DENABLE_TSAN=ON
+# 默认 OFF；GCC 构建不受影响
+option(ENABLE_TSAN "Enable ThreadSanitizer for kernel threading tests (C-12 B.1.10, Clang only)" OFF)
+
