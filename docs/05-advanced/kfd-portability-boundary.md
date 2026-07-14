@@ -3,7 +3,7 @@
 > **目的**：固化 Stage 1.4 PoC 的诚实发现，明确 Stage 1 真正达成的边界（Tier-1）与实际超界的边界（Tier-2），作为 1.4 集成策略与未来 Stage 2+ 规划的架构 SSOT。
 >
 > **创建日期**：2026-07-04
-> **状态**：✅ 架构边界 SSOT（v1.2）— Stage 1 全部达成 + Stage 2 Tier-2 deferred §3.2/§3.3 已吸收
+> **状态**：✅ 架构边界 SSOT（v1.3）— Stage 1+2 全部达成 + ADR-059/060 Accepted unblock C-12 sub-project（Tier-2 §3.2/§3.3/§3.4 进入 C-12 实施路径）
 > **基础证据**：[5341c3f](https://github.com/chisuhua/UsrLinuxEmu/commit/5341c3f) "stage-1.4 PoC integration attempt" + 1.0-1.3 全部 commit 历史 + 63/63 ctest 全绿基线 + Stage 1.4 Tier-2 10 commits 穿透 + Stage 2 multi-device 14 commits
 > **关联 SSOT**：
 > - 路线图: [stage-1-kernel-emu.md](../roadmap/stage-1-kernel-emu.md) + [stage-2-multi-device.md](../roadmap/stage-2-multi-device.md)
@@ -149,6 +149,8 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 - 但 **IOTLB flush 是 fprintf(stderr) + return**，ATS 响应路由未实现
 - KFD 调 `iommu_unmap()` 后**不会真正触发硬件 invalidation**
 
+**2026-07-14 更新**: ADR-059 + ADR-060 Accepted 后此 Tier-2 项进入 C-12 Phase C.1 实施路径（API 契约已就绪；具体 iommu_map 真机触发待 C-12 tasks.md 进度）。仍为 Tier-2 直到 C-12 归档后首次升 Tier-1。
+
 ### 3.3 mmu_notifier 集成层（register-only + callback TODO）
 
 | 模块 | 状态 | 证据 |
@@ -161,6 +163,8 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 **Tier-2 价值影响**：
 - API 完整（driver code 可链接），**但 callback 触发后无实际行为**
 - 1.3 已完成 mmu_interval_notifier（Linux 6.12 LTS 移除 hmm_mirror 后的替代），**但 callback 路径未联调**
+
+**2026-07-14 更新**: 此 Tier-2 项进入 C-12 Phase C.2 实施路径（API 已 complete，callback body 全链路已 commit `58777e5`，剩余是 mmu_shim PID+VMA 真实联调，Stage 2.1.2 已铺路）。
 
 ### 3.4 多文件 KFD 集成（架构差距，超出 Stage 1 范围）
 
@@ -175,6 +179,8 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 | `kfd_process.c` | ❌ 卡 amdgpu_ctx.h | 同上 | Stage 3+ 独立子项目 |
 | `kfd_doorbell.c` | ❌ 卡 amdgpu_ctx.h | 同上 | Stage 3+ 独立子项目 |
 | `kfd_chardev.c`（候选）| ❌ 卡 amdgpu_ctx.h | 同上 | Stage 3+ 独立子项目 |
+
+**v1.3 §3.4 更新 (2026-07-14)**：ADR-059 + ADR-060 Accepted 解锁 C-12 sub-project 6 模块实施入口。`kfd_module.c` / `kfd_process.c` / `kfd_pasid.c` / `kfd_dispatch.c` / `kfd_mmu.c` / `kfd_events.c` 从原 Tier-2 阻塞态进入 C-12 实施跟踪；`kfd_device.c` / `kfd_doorbell.c` / `kfd_chardev.c` 因 transitive amdgpu_ctx_mgr_* 依赖仍延后（不在 C-12 scope，Stage 3+ 独立评估是否纳入或重新设计 3 区分边界）。
 
 **架构差距量化**（1.4 PoC 报告，Stage 2 验证）：
 - **53+ amdgpu_* headers** transitive 依赖
@@ -331,6 +337,7 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 | 2026-07-04 | v1.0 | 初版：基于 5341c3f PoC attempt + 1.0-1.3 commit 历史 + 63/63 ctest 基线，固化 Tier-1/Tier-2 架构边界 SSOT |
 | 2026-07-05 | v1.1 | Tier-2 穿透：§3.1 4 个 handler logging stub → Penetrated (Tier-1 已穿透)；§3.2 IOTLB flush fprintf stub → Real Implementation (user-space page-table walk, commit `62d2353`)；§3.3 mmu_notifier callback TODO → Implemented (commit `58777e5`)；附加 9 个 STUB_HANDLER 升级 (commits `c33d824`+`8b6a33d`+`4261bb4`)。10 commits / 73/73 ctest PASS / 0 regression。详见 [tier2-runtime-penetration-report.md](tier2-runtime-penetration-report.md)。 |
 | 2026-07-05 | v1.2 | Stage 2 完成 (commit `fb75ed2` merge to main)：§3.2 IOTLB flush → vfio opt-in 真实 invalidation (Stage 2.1.1)；§3.3 mmu_notifier callback → mm_shim PID+VMA 跟踪 (Stage 2.1.2)；§3.4 多文件 KFD 集成 → 仍延后 Stage 3+ 独立子项目 (Stage 2 评估确认)。14 Stage 2 commits / 76/76 ctest PASS / 0 regression。详见 [stage-2-multi-device.md](../roadmap/stage-2-multi-device.md) + [ADR-038](../00_adr/adr-038-network-stack-three-way-separation.md)。|
+| 2026-07-14 | v1.3 | ADR-059 (`docs/00_adr/adr-059-kfd-multi-file-integration.md`) + ADR-060 (`docs/00_adr/adr-060-message-notification-threading.md`) 状态升 ✅ Accepted（Oracle 评审 session `ses_0a1fabadfffeJRp6kcN6p6j02S`，10 critical/risk 修复 + docs-audit 43/43 PASS），C-12 启动 gate 解锁。**Tier-2 项 follow-up**：(a) §3.2 IOMMU 真实 invalidation — 进入 C-12 Phase C.1 实施（结合 vfio opt-in Stage 2.1.1）；(b) §3.3 mmu_notifier callback 完整联调 — 进入 C-12 Phase C.2（结合 mm_shim PID+VMA Stage 2.1.2）；(c) §3.4 多文件 KFD 集成 — 进入 C-12 Phase B.1-B.4（6 个模块 `kfd_module.c`/`kfd_process.c`/`kfd_pasid.c`/`kfd_dispatch.c`/`kfd_mmu.c`/`kfd_events.c`，不再延后 Stage 3+）。C-12 tasks.md §A.2 amdgpu KFD ABI 对比报告为 Phase B 启动硬性 gate（per ADR-059 §R-10）；C-12 Phase E.4 归档后本 SSOT 升 v1.4（标记全部 Tier-2 项已完成或分解）。 |
 
 ---
 
@@ -344,7 +351,7 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
-**最后更新**: 2026-07-06 (v1.2 — Phase 3.1/3.2 sim primitives 扩 0x50-0x67)
+**最后更新**: 2026-07-14 (v1.3 — ADR-059/060 Accepted 解锁 C-12 sub-project；Tier-2 §3.2/§3.3/§3.4 进入授权实施路径)
 **对应 SSOT 章节**: post-refactor-architecture.md §1.10
 **对应 ADR**: ADR-015 (IOCTL unification) + ADR-035 (governance) + ADR-027 (compat strategy) + ADR-036 (3-way principle)
 
