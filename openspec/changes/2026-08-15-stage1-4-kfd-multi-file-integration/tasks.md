@@ -91,6 +91,14 @@
 
 ## Phase B: 模块切分（2 周，**串行**，B.1 → B.2 → B.3 → B.4）
 
+> **🔄 2026-07-15 Oracle/Metis 审查 + Pre-fixes**：
+> - ✅ Pre-fix #1: `kfd_types.h` SSOT（消除 3 处 u32/u64 重复 typedef — Oracle PoC failure #1 根因）
+> - ✅ Pre-fix #2: `MUTEX_INITIALIZER` 宏（pthread_mutex_t 静态初始化）
+> - ✅ Pre-fix #3: `gpu_kfd` 改为 `PRIVATE` link on kernel（防 VFS 单例 split）
+> - ✅ Pre-fix #4: `mm_struct.mm_users/mm_count` → `atomic_int`（避免并发 UAF）+ `MAX_KFD_DEVICES=8` 约束
+> - 📋 Oracle **修订顺序**：B.1.3 + B.1.5 并行 → B.2.1 → B.3 → B.4（原 Metis 顺序：B.1.1 → B.1.3 → B.1.5 串行）
+> - 📋 关键修复点：B.1.5 实施时必须提供 `kfd_process_gpuid_from_node` 定义（kfd_queue.c:104 undefined symbol）
+
 > **🔀 Metis 调整（2026-07-15）**：B.1 内部实施顺序应为
 > **B.1.7 → B.1.8 → B.1.9（头文件扩展）→ B.1.1 → B.1.3 → B.1.5（模块实现）→ B.1.11/12/13（单元测试）**
 > 而非线性的 B.1.1 → B.1.2 → …。原因：模块实现依赖头文件中扩展的 struct 声明
@@ -103,15 +111,15 @@
 
 ### B.1 基础设施（module / pasid / process）
 
-- [ ] B.1.1 `plugins/gpu_driver/drv/kfd/kfd_module.c` — module init/exit
-- [ ] B.1.2 `plugins/gpu_driver/drv/kfd/kfd_module.h`
-- [ ] B.1.3 `plugins/gpu_driver/drv/kfd/kfd_pasid.c` — PASID mgmt
-- [ ] B.1.4 `plugins/gpu_driver/drv/kfd/kfd_pasid.h`
-- [ ] B.1.5 `plugins/gpu_driver/drv/kfd/kfd_process.c` — process aperture
-- [ ] B.1.6 `plugins/gpu_driver/drv/kfd/kfd_process.h`
-- [ ] **B.1.7 扩展 `kfd_priv.h`**（ADR-059 D4 决策）：补全 `struct kfd_process` + `struct kfd_dev` 真实声明
-- [ ] **B.1.8 扩展 `kfd_topology.h`**（ADR-059 D4 决策）：补全 `struct kfd_topology_device` + 节点发现 stub
-- [ ] **B.1.9 扩展 `kfd_svm.h`**（ADR-059 D4 决策）：补全 `struct kfd_svm` + range tree stub（与 B.3.1 协同）
+- [x] B.1.1 `plugins/gpu_driver/drv/kfd/kfd_module.c` — module init/exit bridge stub（commit `e46c3a1`，30 行）✅ 2026-07-15
+- [x] B.1.2 `plugins/gpu_driver/drv/kfd/kfd_module.h` — bridge contract only（保持 64 行，按 Metis/Oracle Q1 决策不扩展为 full linux/module.h）✅ 2026-07-15
+- [x] B.1.3 `plugins/gpu_driver/drv/kfd/kfd_pasid.c` — PASID mgmt（bitmap 分配器，pthread_mutex_t 保护）✅ 2026-07-15
+- [x] B.1.4 `plugins/gpu_driver/drv/kfd/kfd_pasid.h`（5 API: init/exit/allocate/free/allocated_count）✅ 2026-07-15
+- [x] B.1.5 `plugins/gpu_driver/drv/kfd/kfd_process.c` — process aperture（含 `kfd_process_gpuid_from_node` 修复 kfd_queue.c:104 undefined symbol）✅ 2026-07-15
+- [x] B.1.6 `plugins/gpu_driver/drv/kfd/kfd_process.h`（7 API: init/exit/create/destroy/find_by_pid/count/gpuid_from_node）✅ 2026-07-15
+- [x] **B.1.7 扩展 `kfd_priv.h`**（ADR-059 D4 决策）：补全 `struct kfd_process` + `struct kfd_dev` 真实声明（commit `f9eb6c5` + `e46c3a1`）✅ 2026-07-15
+- [x] **B.1.8 扩展 `kfd_topology.h`**（ADR-059 D4 决策）：补全 `struct kfd_topology_device` + 节点发现 stub（commit `a2b58ee`）✅ 2026-07-15
+- [x] **B.1.9 扩展 `kfd_svm.h`**（ADR-059 D4 决策）：补全 `struct kfd_svm` + range tree stub（commit `a2b58ee`，与 B.3.1 协同）✅ 2026-07-15
 - [x] **B.1.10 线程基础设施 PoC**（**依赖 ADR-060 Accepted**，C-12 启动 commit 第一步）✅ 2026-07-14
   - [x] B.1.10.1 `include/kernel/thread/kernel_thread_base.h`（raw pthread_* 包装）
   - [x] B.1.10.2 `src/kernel/thread/kernel_thread_base.cpp`（start/stop/is_running/RAII）
@@ -121,18 +129,18 @@
   - [x] B.1.10.6 `tests/test_kfd_threading_standalone.cpp`（**10 TEST_CASE**，> 4 要求）
   - [x] B.1.10.7 CMakeLists.txt 添加 `ENABLE_TSAN` option（Clang）
   - [x] B.1.10.8 **验证**：ASan/UBSan 基线 clean（TSan 待 `-DENABLE_TSAN=ON` opt-in run）
-  - [x] B.1.10.9 **验证**：既有 ctest 86/86 无 regression（**注**：tasks.md 原文 318 为 TaskRunner 计数，UsrLinuxEmu ctest 基线 86 + 1 新 = 87）
+  - [x] B.1.10.9 **验证**：既有 ctest 88/88 无 regression（**注**：tasks.md 原文 86 系 baseline，2026-07-14 后 + hal thread safety → 88）
   - [x] B.1.10.10 **验证**：1 个新 ctest binary 通过（内含 11 TEST_CASEs / 26 assertions）
 - [ ] B.1.11 单元测试 `test_kfd_module_standalone`（~100 LOC，**M2 拆分**）
-- [ ] B.1.12 单元测试 `test_kfd_pasid_standalone`（~150 LOC，**M2 拆分**）
-- [ ] B.1.13 单元测试 `test_kfd_process_standalone`（~200 LOC，**M2 拆分**）
+- [x] B.1.12 单元测试 `test_kfd_pasid_standalone`（9 TEST_CASE，77584 assertions，PASID 分配/释放/边界/并发）✅ 2026-07-15
+- [x] B.1.13 单元测试 `test_kfd_process_standalone`（11 TEST_CASE，63 assertions，process lifecycle + gpuid_from_node）✅ 2026-07-15
 
 ### B.2 派发（dispatch）
 
-- [ ] B.2.1 `plugins/gpu_driver/drv/kfd/kfd_dispatch.c` — IOCTL dispatch 表扩展
-- [ ] B.2.2 `plugins/gpu_driver/drv/kfd/kfd_dispatch.h`
-- [ ] B.2.3 保持 `drm_ioctl_desc[]` ≥ 38 entries（含 5 KFD 0x40-0x47 已就位 + Stage 1.4 ~19 + Phase 3 stream/graph/mem_pool ~18）。C-12 **不新增** dispatch entry，仅保持现有 entries + 完成 6 个新 KFD module 编译通过（如未来需要新增 ioctl，按 ADR-023 + ADR-035 流程单独走 ADR）。
-- [ ] B.2.4 单元测试 `test_kfd_dispatch_standalone`（~180 LOC，**M2 拆分**）
+- [x] B.2.1 `plugins/gpu_driver/drv/kfd/kfd_dispatch.c` — IOCTL dispatch 路由表（不修改 drm_ioctl_desc[]，仅提供 kfd_dispatch 内部路由）✅ 2026-07-15
+- [x] B.2.2 `plugins/gpu_driver/drv/kfd/kfd_dispatch.h`（4 API: init/dispatch/exit/call_count + 8 个 KFD_IOC_* enum）✅ 2026-07-15
+- [x] B.2.3 保持 `drm_ioctl_desc[]` ≥ 38 entries（含 5 KFD 0x40-0x47 已就位 + Stage 1.4 ~19 + Phase 3 stream/graph/mem_pool ~18）。C-12 **不新增** dispatch entry，仅保持现有 entries + 完成 6 个新 KFD module 编译通过（如未来需要新增 ioctl，按 ADR-023 + ADR-035 流程单独走 ADR）✅ 2026-07-15（policy committed，entries unchanged）
+- [x] B.2.4 单元测试 `test_kfd_dispatch_standalone`（10 TEST_CASE，144 assertions，init/exit/route/concurrent）✅ 2026-07-15
 
 ### B.3 内存（mmu + HAL ops + sim bridge）
 
@@ -140,11 +148,11 @@
 - [ ] B.3.2 `plugins/gpu_driver/drv/kfd/kfd_mmu.h`
 - [ ] B.3.3 集成 `sim_pm_*` 真实 IOMMU invalidation
 - [ ] **B.3.4 HAL op 扩展**（**H1 修复**，ADR-023 + ADR-035 流程）：
-  - [ ] B.3.4.1 修改 `struct gpu_hal_ops`（`plugins/gpu_driver/hal/gpu_hal_ops.h`）新增 `hal_iommu_map()` / `hal_iommu_unmap()`
+  - [x] B.3.4.1 修改 `struct gpu_hal_ops`（`plugins/gpu_driver/hal/gpu_hal_ops.h`）新增 `hal_iommu_map()` / `hal_iommu_unmap()`（commit `c12c8c6`，HAL ops 11→14）✅ 2026-07-15
   - [ ] B.3.4.2 `hal_mock.cpp` 实现（路由 `sim_pm_migrate_to_device/system`）
-  - [ ] B.3.4.3 `hal_user.cpp` 桩实现（真机路径）
+  - [x] B.3.4.3 `hal_user.cpp` 桩实现（真机路径，commit `c12c8c6`）✅ 2026-07-15
   - [ ] B.3.4.4 MockGpuDriver 测试覆盖（ADR-032 IGpuDriver 模式）
-  - [ ] B.3.4.5 **单独走 ADR 流程**（ADR-023 §新增 HAL ops 流程 + ADR-059 §D3）：创建 `adr-061-hal-iommu-extension.md`
+  - [x] B.3.4.5 **单独走 ADR 流程**（ADR-023 §新增 HAL ops 流程 + ADR-059 §D3）：创建 `adr-061-hal-iommu-extension.md`（commit `ea8e6d1` PROPOSED → commit `af6e678` Accepted）✅ 2026-07-15
 - [ ] **B.3.5 扩展 `kfd_sim_bridge`**（**M3 修复**）：现有 5 handler 集成到 `kfd_mmu.c`（map/unmap）+ `kfd_pasid.c`（PASID 索引）
 - [ ] B.3.6 单元测试 `test_kfd_mmu_standalone`（~250 LOC，**M2 拆分**）
 - [ ] **B.3.7 暴露 `kfd_mmu_get_workqueue()` accessor**（per ADR-060 §2.1 + Migration:400；day-1 **不启用** async 路径，仅暴露返回 `kernel_workqueue*` 的 accessor；return 值当前不被任何 caller 使用，未来 1 行 switch 启用 async mmu_notifier callback）：
@@ -159,11 +167,11 @@
 - [ ] B.4.2 `plugins/gpu_driver/drv/kfd/kfd_events.h`
 - [ ] B.4.3 集成 sim signal path
 - [ ] **B.4.4 HAL op 扩展**（**H1 修复**，ADR-023 + ADR-035 流程）：
-  - [ ] B.4.4.1 修改 `struct gpu_hal_ops` 新增 `hal_event_signal()`
-  - [ ] B.4.4.2 `hal_mock.cpp` 实现（路由 sim signal）
-  - [ ] B.4.4.3 `hal_user.cpp` 桩实现
+  - [x] B.4.4.1 修改 `struct gpu_hal_ops` 新增 `hal_event_signal()`（commit `c12c8c6`，HAL ops 11→14）✅ 2026-07-15
+  - [ ] B.4.4.2 `hal_mock.cpp` 实现（路由 sim signal）— **阻塞**: `sim_signal_event` 不存在（Oracle finding），需先创建
+  - [x] B.4.4.3 `hal_user.cpp` 桩实现（commit `c12c8c6`）✅ 2026-07-15
   - [ ] B.4.4.4 MockGpuDriver 测试覆盖
-  - [ ] B.4.4.5 **追加到 ADR-062 (HAL ops event signal 扩展)**（与 B.3.4 同流程但独立 ADR；ADR-061 专管 IOMMU，ADR-062 专管 event signal；C-12 实施时与 ADR-061 同时创建）
+  - [x] B.4.4.5 **追加到 ADR-062 (HAL ops event signal 扩展)**（与 B.3.4 同流程但独立 ADR；ADR-061 专管 IOMMU，ADR-062 专管 event signal；C-12 实施时与 ADR-061 同时创建）（commit `ea8e6d1` PROPOSED → commit `af6e678` Accepted）✅ 2026-07-15
 - [ ] B.4.5 单元测试 `test_kfd_events_standalone`（~180 LOC，**M2 拆分**）
 - [ ] **B.4.6 kfd_events 后台线程**（**ADR-060 §2.1 异步决策**：kfd_event_work_handler 模拟）
   - [ ] B.4.6.1 `kfd_events_thread_`（基于 kernel_thread_base）
