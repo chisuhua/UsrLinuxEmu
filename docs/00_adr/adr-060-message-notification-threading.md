@@ -206,6 +206,19 @@ kernel_workqueue* kfd_mmu_get_workqueue();  // day-1 暴露，未来 1 行切换
 
 **HAL ops 线程安全契约（R-7）**：HAL 函数（`hal_iommu_*`、`hal_event_signal`、未来新增 ops）可能在 worker 线程上下文调用 —— mmu_notifier、deferred event delivery、deferred cleanup 路径。**所有 HAL op 必须 thread-safe，或由调用方持共享锁**。实施选项：(a) HAL 实现内部用 mutex 保护 state；(b) 调用方在调用前持锁。ADR-023 当前未规范此契约（**本 ADR 触发 ADR-023 后续 v2 补丁同步更新**）；C-12 实施时若实现 half-thread-safe，纳入 OpenSpec change 注明。
 
+**实施验证**：已在 `tests/test_hal_thread_safety_standalone.cpp` 中为所有 11 个 HAL ops（及未来新增）提供 TSan 冒烟测试覆盖。测试包含 7 个 `TEST_CASE`（register_read、register_write、mem_read/write、mem_alloc/free、fence_create/read、void-return ops、全混合），对 `hal_user`（mutex 保护实现）和 `hal_mock`（非原子计数器基准）各运行 4 线程 × 100 迭代并发测试。通过 `cmake -DENABLE_TSAN=ON` 启用 Clang ThreadSanitizer。
+
+**双实现验证策略**（per Oracle 4th-2）：
+- **`hal_user` SECTION**（验证目标）：TSan **0 race** 报告。所有 11 个 HAL ops 由 mutex + `__sync_fetch_and_add` 保护，C-12 业务路径必须使用 `hal_user`（或 `hal_user`-style 实现）。
+- **`hal_mock` SECTION**（预期行为）：TSan **报告 race 是预期行为**。Mock 故意保留非原子计数器，**目的是避免被 `std::atomic` 掩盖真实问题**（per Oracle 4th-2）。Mock 不是 thread-safe 是设计意图；如果未来 mock 需要 thread-safe，应在 PR review 中显式论证，而不是默认 atomic 化所有计数器。
+- **测试通过条件**：`All tests passed (16 assertions in 7 test cases)` + `hal_user SECTION 0 race` + `hal_mock SECTION 报告 race > 0`（验证设计意图正确）。
+
+**实测结果**（R-3 验证阶段）：
+- 非 TSan build：编译 + 运行 7/7 PASS（16 assertions）
+- TSan build：编译成功，运行 7/7 PASS，hal_user 0 race，hal_mock 23 warnings（**符合设计意图**）
+- 链接：`gpu_hal` + `gpu_hal_mock` + pthread
+- 测试注册于 `tests/CMakeLists.txt`，`ENABLE_TSAN=ON` 时启用 `-fsanitize=thread -g -O1`
+
 #### 2.2 生命周期：module init/exit
 
 ```cpp
@@ -334,12 +347,69 @@ TEST_CASE("kernel_thread_base derived dtor must stop before base", "[thread][lif
 
 | 项 | 原因 |
 |----|------|
-| HardwarePullerEmu 重构 | 已有 std::thread pattern 正常；未来单独 ADR |
+| HardwarePullerEmu 重构 | 已有 std::thread pattern 正常；未来单独 ADR（详见 §5 占位）|
 | `kthread` 模拟 | C-12 不需要；workqueue 已覆盖 |
 | `completion` 模拟 | C-12 不需要；可用 cv+mutex 替代 |
 | `fasync / SIGIO` 模拟 | C-12 不需要；未来 UVM/HMM 可能需要 |
 | Per-CPU workqueue | 用户态无 NUMA 概念，无意义 |
 | `kernel_workqueue` 优先级/调度 | Linux workqueue 本身无显式优先级 |
+
+### 5. Future: HardwarePullerEmu Threading 统一（路线图占位）
+
+> **本节是路线图占位**，不是绑定决策。C-12 完成后、进入下一个 threading 相关 sub-project 时重新评估。
+
+#### 5.1 现状
+
+`HardwarePullerEmu`（`plugins/gpu_driver/sim/hardware/hardware_puller_emu.{h,cpp}`）使用 `std::thread` 创建后台工作线程（`hardware_puller_emu.h:105` 声明 `std::thread thread_`，`hardware_puller_emu.cpp:26-30` 启动模式），而本 ADR 在 ① 层引入 `kernel_thread_base`（raw pthread_* 包装）。
+
+两条线程栈路径共存但不一致：
+
+| 属性 | HardwarePullerEmu | kernel_thread_base |
+|------|-------------------|-------------------|
+| 所属层 | ③ sim | ① kernel env |
+| 线程原语 | `std::thread` | `pthread_t`（pthread_create/join）|
+| 是否受 ADR-060 管辖 | ❌（§4 明确排除）| ✅ |
+| GCC 13 weakref bug | 不受影响（C++ 编译单元）| 为此 workaround 引入 |
+
+#### 5.2 迁移触发条件
+
+当以下任一满足时，应当评估 HardwarePullerEmu 的 `std::thread → kernel_thread_base` 迁移：
+
+1. **HardwarePullerEmu 逻辑需要被移植到内核**（蓝图终态验收尝试）
+2. **GCC 13 weakref bug 基础编译器版本提升至 GCC ≥ 14**（此时 `kernel_thread_base` 可考虑替换为 `std::thread`，统一方向反过来）
+3. **HardwarePullerEmu 需要访问 ① 层服务**（如 `kernel_workqueue` 事件投递）—— 此时 `std::thread` 和 `kernel_thread_base` 的互操作性成为 issue
+4. **C-12 完成后，项目进入下一个 threading 扩展 sub-project**（如 per-CPU workqueue、kthread 模拟）
+
+#### 5.3 建议迁移策略（讨论起点，非绑定决策）
+
+```
+┌─────────────────────────────────────────────────────┐
+│ 选项 A: HardwarePullerEmu 改用 kernel_thread_base   │
+│   Pros: 统一 ①③ 层 threading 模型                    │
+│   Cons: 重构 ~50 LOC（低 cost）                      │
+│         现有测试需 TSan 验证                          │
+│   Effort: ~2 天（含测试）                            │
+└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│ 选项 B: kernel_thread_base 改用 std::thread          │
+│   （GCC bug 修复后）                                 │
+│   Pros: 统一的 C++ std 模式                          │
+│   Cons: 需要等待 GCC ≥ 14 基础编译器                  │
+│         会改变 ① 层公共 API                          │
+│   Effort: ~3 天（含迁移 + 回归测试）                  │
+└─────────────────────────────────────────────────────┘
+```
+
+#### 5.4 此占位的生命周期
+
+- 本占位**不是** ADR 决策，不创建 OpenSpec change
+- 当触发条件满足时，由相应的 sub-project owner 评估并决定是否创建独立 ADR
+- 如果 C-12 完成后 6 个月仍未触发，此占位进入 ⏸️ Deferred 状态
+
+#### 5.5 与其他 ADR 的关系
+
+- [ADR-036](../00_adr/adr-036-three-way-separation.md)：统一 threading 后，③ 层代码的"可移植性"提升
+- [ADR-023](../00_adr/adr-023-hal-interface.md)：如果 HardwarePullerEmu 通过 HAL 回调，跨层 threading 交互更清晰
 
 ---
 

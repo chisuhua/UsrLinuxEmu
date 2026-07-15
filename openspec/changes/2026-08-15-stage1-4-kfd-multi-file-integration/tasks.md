@@ -9,6 +9,18 @@
 
 ---
 
+## 标签索引 (Glossary)
+
+- **M2 拆分** = Module 2 拆分 (kfd_dispatch.c 切分, refs: B.2.4)
+- **H1 修复** = HAL wave 1 修复 (HAL ops 扩展 in B.3.4 + B.4.4, refs: ADR-061 + ADR-062)
+- **M3 修复** = Module 3 修复 (kfd_sim_bridge 扩展 in B.3.5)
+- **L2 修复** = Layer 2 cross-repo 修复 (TaskRunner L1↔L2 bridge in E.2.4, 交付 TADR-401 Entry 3b)
+- **L4 修复** = Layer 4 docs 修复 (docs 更新 in E.3)
+
+（缩写源自 ADR-035 cross-repo sync protocol wave 分层 + KFD 模块切分顺序）
+
+---
+
 ## Phase A: 文档化（2 天）
 
 ### A.0 启动 gate（**C-12 启动前必填**）
@@ -28,10 +40,14 @@
 ### A.1-A.4 文档化（2 天）
 
 - [ ] A.1 `docs/05-advanced/kfd-multi-file.md` 设计文档（**已完成** ✅）
-- [ ] **A.2** amdgpu KFD driver 公开 ABI 对比分析（**Hard gate** — 见下 Gate contract + 执行规范；artifact: `docs/05-advanced/kfd-abi-comparison-report.md`；owner: Architecture Team lead）
-  - [ ] 识别 Linux 6.12 LTS amdkfd/*.c 文件清单
-  - [ ] 标注本 sub-project 范围内的 6 个核心模块（kfd_module/process/pasid/dispatch/mmu/events）
-  - [ ] 标注 out-of-scope 模块（kfd_doorbell/topology/dbgev/device 等）
+- [⏳] **A.2** amdgpu KFD driver 公开 ABI 对比分析（**Hard gate**；artifact: `docs/05-advanced/kfd-abi-comparison-report.md` 已生成，834 行，6 段齐全 — 见下 Gate contract；per R-1 blueprint 措辞限定 + R-7 条件 4 已就绪，待 reviewer 签字）
+  - [x] A.2.1 amdgpu KFD driver 公开 ABI 对比分析报告已生成（artifact 路径同上）
+  - [⏳] A.2.2 dual reviewer 签字确认 (Architecture Team lead + 1 independent reviewer) — **Step 1/4 已准备；Step 2-3 待 reviewer 在线签字**
+  - [⏳] A.2.3 reviewer approval comment + reviewer github handle 添加到 report §6 — **待 reviewer 在线签字**
+  - [⏳] A.2.4 Phase B 准入 CI 检查项就绪: `tools/docs-audit.sh --strict` + 禁止 `plugins/gpu_driver/drv/kfd/` 直接 `#include` amdgpu 头 (per ADR-027 §R-6) — **CI 脚本验证中**
+  - [x] A.2.5 识别 Linux 6.12 LTS amdkfd/*.c 文件清单
+  - [x] A.2.6 标注本 sub-project 范围内的 6 个核心模块（kfd_module/process/pasid/dispatch/mmu/events）
+  - [x] A.2.7 标注 out-of-scope 模块（kfd_doorbell/topology/dbgev/device 等）
 
 > **🔒 Gate contract（硬性门控）**: Phase A.2 完成**前不得进入 Phase B.1**（模块切分）。
 >
@@ -122,7 +138,7 @@
   - [ ] B.3.4.2 `hal_mock.cpp` 实现（路由 `sim_pm_migrate_to_device/system`）
   - [ ] B.3.4.3 `hal_user.cpp` 桩实现（真机路径）
   - [ ] B.3.4.4 MockGpuDriver 测试覆盖（ADR-032 IGpuDriver 模式）
-  - [ ] B.3.4.5 **单独走 ADR 流程**（ADR-035 §Rule 3）：创建 `adr-060-hal-iommu-extension.md`
+  - [ ] B.3.4.5 **单独走 ADR 流程**（ADR-023 §新增 HAL ops 流程 + ADR-059 §D3）：创建 `adr-061-hal-iommu-extension.md`
 - [ ] **B.3.5 扩展 `kfd_sim_bridge`**（**M3 修复**）：现有 5 handler 集成到 `kfd_mmu.c`（map/unmap）+ `kfd_pasid.c`（PASID 索引）
 - [ ] B.3.6 单元测试 `test_kfd_mmu_standalone`（~250 LOC，**M2 拆分**）
 - [ ] **B.3.7 暴露 `kfd_mmu_get_workqueue()` accessor**（per ADR-060 §2.1 + Migration:400；day-1 **不启用** async 路径，仅暴露返回 `kernel_workqueue*` 的 accessor；return 值当前不被任何 caller 使用，未来 1 行 switch 启用 async mmu_notifier callback）：
@@ -141,7 +157,7 @@
   - [ ] B.4.4.2 `hal_mock.cpp` 实现（路由 sim signal）
   - [ ] B.4.4.3 `hal_user.cpp` 桩实现
   - [ ] B.4.4.4 MockGpuDriver 测试覆盖
-  - [ ] B.4.4.5 **追加到 ADR-XX (HAL ops 扩展)**（与 B.3.4 同一 ADR 流程，C-12 实施时创建）
+  - [ ] B.4.4.5 **追加到 ADR-062 (HAL ops event signal 扩展)**（与 B.3.4 同流程但独立 ADR；ADR-061 专管 IOMMU，ADR-062 专管 event signal；C-12 实施时与 ADR-061 同时创建）
 - [ ] B.4.5 单元测试 `test_kfd_events_standalone`（~180 LOC，**M2 拆分**）
 - [ ] **B.4.6 kfd_events 后台线程**（**ADR-060 §2.1 异步决策**：kfd_event_work_handler 模拟）
   - [ ] B.4.6.1 `kfd_events_thread_`（基于 kernel_thread_base）
@@ -195,7 +211,7 @@
 
 - [ ] E.1.1 `cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j4` 0 errors
 - [ ] E.1.2 86/86 ctest PASS（Stage 2 baseline `fb75ed2` 保持，无 regression）
-- [ ] E.1.3 6+30=36 新测试 PASS（test_kfd_module/process/pasid/dispatch/mmu/events + 3 集成）
+- [ ] E.1.3 10 新增 ctest binary + 30+ 新增 TEST_CASE 全 PASS（B.1.11-B.1.13、B.2.4、B.3.6、B.4.5 共 6 单元；E.0.1-E.0.3 共 3 集成；E.2.4.1 共 1 L1↔L2 bridge）
 
 ### E.2 TaskRunner E2E（含双赢，**L2 修复**）
 
@@ -231,6 +247,14 @@
 
 ---
 
+## Open Issue 队列
+
+- **#22 [PENDING DEFINITION]**: KFD multi-file 相关 issue,占位,owner 待补
+  - [ ] A.5 创建 issue #22 (owner: C-12 Architecture Team lead)
+  - [ ] A.6 在此处追加 #22 链接 + 修复 commit
+
+---
+
 ## Done 验收（继承自 proposal.md §Acceptance）
 
 ### 功能验收（5 项）
@@ -239,7 +263,7 @@
 - [ ] 编译通过（CMake target 可选启用）
 - [ ] 6 单元测试 + 3 集成测试覆盖关键路径（module init / process attach / dispatch / mmu / events / fault_handling / concurrent_processes / end_to_end）
 - [ ] 与 amdgpu KFD 真实 driver ABI 对齐（mock comparison，stub 升级 + 关键结构 1:1）
-- [ ] Issue #21/#22/#23 修复后无 regression
+- [ ] Issue #21 + Issue #23 修复后无 regression（#22 占位待补 — 见 §Open Issue 队列）
 
 ### 架构验收（5 项，ADR-018/020/023/027/035）
 
@@ -253,7 +277,7 @@
 
 - [ ] 6 个新 standalone 单元测试二进制（test_kfd_module/process/pasid/dispatch/mmu/events）
 - [ ] 3 个集成测试（test_kfd_end_to_end / fault_handling / concurrent_processes）
-- [ ] **总 ctest ≥ 116**（Stage 2 baseline **86** + 30 新增 ctests planned）
+- [ ] **总 ctest = 96 binary**（Stage 2 baseline **86** + 10 新增 ctest binary；含 B.1.10 threading PoC 共 11 新 binary；per §E.1.3）
 - [ ] TaskRunner E2E 318/318 PASS（无回归）
 - [ ] ASan/UBSan/TSan 三 sanitizer clean
 
@@ -276,7 +300,7 @@
 
 - **设计文档**: [`docs/05-advanced/kfd-multi-file.md`](../../../docs/05-advanced/kfd-multi-file.md)
 - **架构 ADR**: [ADR-059](../../../docs/00_adr/adr-059-kfd-multi-file-integration.md)（KFD 多文件集成架构边界）
-- **HAL ops ADR**（待创建）: ADR-060（hal_iommu_map/unmap + hal_event_signal）
+- **HAL ops ADR**（待创建）: ADR-061（hal_iommu_map/unmap，B.3.4）+ ADR-062（hal_event_signal，B.4.4）
 - **历史 SSOT**: [kfd-portability-boundary.md v1.2](../../../docs/05-advanced/kfd-portability-boundary.md)（Tier-1/Tier-2 边界）
 - **蓝图**: [blueprint.md §蓝图验收](../../../roadmap/blueprint.md)（C-12 直接目标）
 - **OpenSpec 索引**: [INDEX.md](../INDEX.md)（C-12 推荐执行顺序）

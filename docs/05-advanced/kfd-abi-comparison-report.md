@@ -1,7 +1,14 @@
 # KFD ABI Comparison Report (Phase A.2 — C-12 Hard Gate Deliverable)
 
 > **目的**: 为 C-12 sub-project Phase B 划定可移植性边界（per ADR-059 §R-6）
-> **状态**: ⏸️ DRAFT — 待 reviewer 签字（UsrLinuxEmu Architecture Team lead per tasks.md §A.2）
+> **状态**: ⏳ IN-REVIEW — Step 1/4 已完成（报告生成 + 文档 patch R-1 完成 + R-7 条件 4 证据就绪）；Step 2/3 待 reviewer 签字（@chisuhua + TaskRunner owner per D-2）
+>
+> **Owner Checklist for Reviewer Sign-off**（per R-2 Step 5 步流程）：
+> 1. Reviewer 1 (@chisuhua) 执行 §6.2 7 项决策（每项 `[x]` + comment + date）
+> 2. Reviewer 2 (TaskRunner owner) 执行 §6.2 7 项决策
+> 3. Reviewer 1+2 执行 §6.3 gate exit 签字
+> 4. Owner 更新 report.md header: ⏳ IN-REVIEW → ✅ SIGNED-OFF
+> 5. Owner 更新 tasks.md A.2.2-A.2.4: [⏳] → [x]
 > **创建日期**: 2026-07-14
 > **关联**: openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/tasks.md §A.2（硬性 gate）
 > **必须输出**: 6 段强制模板（per tasks.md:57-64）+ 4 报告约束自检（per tasks.md:65-69）
@@ -40,6 +47,8 @@
 ## §2 kfd_dev / kfd_process / struct mm_struct 字段子集
 
 > **本节目标**：固化 C-12 必需的 `struct kfd_dev`、`struct kfd_process`、`struct kfd_process_device_private_data`、`struct mm_struct` 字段子集。**不追求** amdgpu KFD 完整 ABI 1:1 对齐（per ADR-059 §R-6 + ADR-059 §D4 scope boundary 决策）。
+>
+> ⚠️ **与蓝图的关系**：本白名单是 [blueprint.md §蓝图验收](../../roadmap/blueprint.md) 第 1 条"驱动可移植性达成"的范围边界。超出本白名单的字段对齐属于蓝图后 work，不在 C-12 scope 内。
 >
 > **Linux 6.12 LTS 源路径引用规范**：所有字段的"源路径"列均使用 `linux/drivers/gpu/drm/amd/amdkfd/{file}.h` 或 `linux/include/linux/{file}.h` 形式，标注**字段定义**所在行（如有不确定，引用文件 + struct 名称即可）。
 
@@ -473,7 +482,7 @@ struct kfd_dev {
 | `kfd_priv.h` stub 扩展（B.1.7）| **B.1.7**：按 §2.1/§2.2/§2.3 白名单扩展；保持 `kfd_priv.h` < 250 行 | line count 检查 |
 | `kfd_topology.h` stub 扩展（B.1.8）| **B.1.8**：按 §2.1.1 字段 #1 必需 `kfd_topology_device_by_id` 函数声明 | unit test |
 | `kfd_svm.h` stub 扩展（B.1.9）| **B.1.9**：扩展 `svm_range_list`（`objects` / `list` / `deferred_range_list` 字段已有），加 `svm_range_from_addr` 实现 | `kfd_queue.c:97` + `test_kfd_svm_standalone` |
-| HAL op 扩展走 ADR-023 + ADR-035 | **B.3.4**（`hal_iommu_*`）+ **B.4.4**（`hal_event_signal`）| 各自走 ADR 流程：创建 `adr-060-hal-iommu-extension.md` |
+| HAL op 扩展走 ADR-023 + ADR-035 | **B.3.4**（`hal_iommu_*`）+ **B.4.4**（`hal_event_signal`）| 各自走 ADR 流程：创建 `adr-061-hal-iommu-extension.md` (IOMMU) + `adr-062-hal-event-signal-extension.md` (event signal)；原 `adr-060-` 命名与 `adr-060-message-notification-threading.md` 冲突，已修正 |
 | DPM/RAS/寄存器头不实现 | **E.3.5**：更新 [iommu-error-semantics.md](iommu-error-semantics.md) + [kfd-portability-boundary.md](kfd-portability-boundary.md) v1.4 标注 | docs-audit.sh --strict 验证 |
 | mm_shim + `struct mm_struct` 本地重声明 | **B.1.7**（白名单 4 字段）+ **C.2.1**（mm_shim PID+VMA tracking）| `test_kfd_concurrent_processes_standalone` 验证 PID 隔离 |
 
@@ -829,6 +838,6 @@ bash tools/docs-audit.sh --strict 2>&1 | tail -8
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
-**最后更新**: 2026-07-14（DRAFT v0.1）
+**最后更新**: 2026-07-15（IN-REVIEW v0.2 — R-1 限定措辞 + R-7 条件 4 证据就绪，待 reviewer 签字）
 **对应 commit**: pending（C-12 启动 commit 引用本 report；模拟签字 2026-07-14）
-**状态**: ⏸️ DRAFT — 待 reviewer 签字（tasks.md §A.2 gate）
+**状态**: ⏳ IN-REVIEW — Reviewer 签字中（per R-2 owner checklist）

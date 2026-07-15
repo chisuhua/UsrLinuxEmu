@@ -70,15 +70,23 @@
 | [adr-058](adr-058-sim-mem-pool-real-va.md) | **sim_mem_pool Real VA Allocation via gpu_buddy + mmap Backing**（Phase 4）| 📋 PROPOSED | 2026-07-11 |
 | [adr-059](adr-059-kfd-multi-file-integration.md) | **KFD Multi-File Integration Architecture Boundary**（C-12 sub-project, Stage 1.4 后续子项目）| ✅ Accepted | 2026-07-14 |
 | [adr-060](adr-060-message-notification-threading.md) | **Linux Kernel Message Notification Threading for KFD Simulation**（C-12 前置 gate，kernel_thread_base + kernel_workqueue）| ✅ Accepted | 2026-07-14 |
+| [adr-061](adr-061-hal-iommu-extension.md) | **HAL IOMMU ops 扩展**（C-12, B.3.4, hal_iommu_map/unmap）| 📋 PROPOSED | 2026-07-14 |
+| [adr-062](adr-062-hal-event-signal-extension.md) | **HAL Event Signal ops 扩展**（C-12, B.4.4, hal_event_signal）| 📋 PROPOSED | 2026-07-14 |
 
-## 状态分布总览（截至 2026-07-09）
+> **2026-07-14 变更（C-12 命名修复 + HAL ops ADR 创建）**：ADR-061 + ADR-062 创建 — 原 tasks.md B.3.4.5 误用 `adr-060` 编号，与 `Linux 内核消息通知线程架构` 冲突。已修正：
+> - **ADR-061**（HAL IOMMU ops 扩展，237 行）：覆盖 C-12 tasks B.3.4 — `hal_iommu_map()` / `hal_iommu_unmap()` 2 个新 fn-ptr，遵循 ADR-023 Decision 4 spec-driven "追加不改" 原则
+> - **ADR-062**（HAL Event Signal ops 扩展，276 行）：覆盖 C-12 tasks B.4.4 — `hal_event_signal()` 1 个新 fn-ptr，**硬依赖 ADR-060 `kernel_workqueue`** 实现 events 异步分发
+> - 姊妹 ADR：ADR-061 + ADR-062 建议在 C-12 实施时**同一 commit** 同步追加 fn-ptr 到 `struct gpu_hal_ops`，但**走两个独立 ADR**（per ADR-059 D3 + ADR-035 §R3）
+> - 状态分布总览已同步更新（PROPOSED 15 → 17；总计 59 → 61）
+
+## 状态分布总览（截至 2026-07-14）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
 | ✅ 已接受 | 37 | 001-010, 015-024, 027, 031-037, 039-041, 043, 059, 060 |
-| 📋 PROPOSED | 15 | 011-014, 038, 042, 044-052, 054, 056-058 |
+| 📋 PROPOSED | 17 | 011-014, 038, 042, 044-052, 054, 056-058, 061, 062 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
-| **总计** | **59** | ADR-001 ~ ADR-060 |
+| **总计** | **61** | ADR-001 ~ ADR-062 |
 
 > **2026-07-11 变更**：ADR-058 新增 — sim_mem_pool Real VA Allocation（Phase 4 cu-mempool-alloc-real-va change 架构基础）。镜像 Nvidia UVM `uvm_range_allocator` per-pool + per-device gpu_buddy + mmap backing at pool create 模式。
 >
@@ -228,6 +236,21 @@ adr-001 (用户态模拟)
                     │       └── 验证: ASan+UBSan 基线 + 新增 TSan (Clang) + stress tests
                     │       └── Non-Decisions: HardwarePullerEmu 重构 / kthread/completion/fasync 模拟 / per-CPU workqueue
                     │                       → 均不在本 ADR 范围，留作未来 ADR
+
+    └── KFD HAL ops 扩展 (2026-07-14, 📋 PROPOSED)
+            │
+            ├── adr-061 (HAL IOMMU ops 扩展, B.3.4)
+            │       └── 追加 hal_iommu_map / hal_iommu_unmap 2 个 fn-ptr
+            │       └── 路由: hal_mock → sim_pm_migrate_to_device/system;hal_user 桩 (-ENOSYS)
+            │       └── 关联: adr-023 (HAL Decision 4 spec-driven 扩展), adr-018, adr-059 (D3)
+            │       └── 关联: adr-060 (mmu async opt-in via kfd_mmu_get_workqueue accessor)
+            │
+            └── adr-062 (HAL Event Signal ops 扩展, B.4.4)
+                    └── 追加 hal_event_signal 1 个 fn-ptr
+                    └── 路由: hal_mock → kfd_events_thread_ (kernel_workqueue) → sim_signal_event;hal_user 桩 (-ENOSYS)
+                    └── 关联: adr-023 (HAL Decision 4 spec-driven 扩展), adr-018, adr-059 (D3)
+                    └── 硬依赖: adr-060 (events 异步路径必须用 kernel_workqueue)
+                    └── 建议与 adr-061 同一 commit 追加 fn-ptr 到 struct gpu_hal_ops
 ```
 
 ## 维护指南
