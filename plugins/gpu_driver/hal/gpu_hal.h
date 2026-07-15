@@ -42,6 +42,15 @@ struct gpu_hal_ops {
   void (*doorbell_ring)(void *ctx, uint32_t queue_id);
   void (*interrupt_raise)(void *ctx, uint32_t vector);
   void (*time_wait)(void *ctx, uint64_t us);
+
+  /* ── ADR-061 扩展（KFD page migration） ────────────────── */
+
+  int (*iommu_map)(void *ctx, uint64_t va, uint64_t size, uint32_t domain_id);
+  int (*iommu_unmap)(void *ctx, uint64_t va, uint64_t size);
+
+  /* ── ADR-062 扩展（KFD event signal） ──────────────────── */
+
+  int (*event_signal)(void *ctx, uint32_t pasid, uint32_t event_id, uint64_t events);
 };
 
 /* ── inline 包装函数：零开销简化调用 ──────────────────────── */
@@ -89,6 +98,24 @@ static inline void hal_interrupt_raise(struct gpu_hal_ops *hal, uint32_t vec) {
 
 static inline void hal_time_wait(struct gpu_hal_ops *hal, uint64_t us) {
   hal->time_wait(hal->ctx, us);
+}
+
+/* ── ADR-061 inline wrapper（KFD page migration） ───────────── */
+
+static inline int hal_iommu_map(struct gpu_hal_ops *hal, uint64_t va, uint64_t size,
+                                uint32_t domain_id) {
+  return hal->iommu_map(hal->ctx, va, size, domain_id);
+}
+
+static inline int hal_iommu_unmap(struct gpu_hal_ops *hal, uint64_t va, uint64_t size) {
+  return hal->iommu_unmap(hal->ctx, va, size);
+}
+
+/* ── ADR-062 inline wrapper（KFD event signal） ─────────────── */
+
+static inline int hal_event_signal(struct gpu_hal_ops *hal, uint32_t pasid,
+                                   uint32_t event_id, uint64_t events) {
+  return hal->event_signal(hal->ctx, pasid, event_id, events);
 }
 
 #ifdef __cplusplus

@@ -22,6 +22,15 @@ struct hal_mock_state {
   int interrupt_raise_count;
   int time_wait_count;
 
+  /* ── ADR-061/062 扩展（C-12 KFD） ────────────────────── */
+  int iommu_map_count;
+  int iommu_unmap_count;
+  int event_signal_count;
+
+  int iommu_map_result;
+  int iommu_unmap_result;
+  int event_signal_result;
+
   /* 控制返回值 */
   int register_read_result;
   int register_write_result;

@@ -85,6 +85,26 @@ static void mock_time_wait(void *ctx, uint64_t us) {
   state->last_time_wait_us = us;
 }
 
+/* ── ADR-061/062 扩展 mock（C-12 KFD） ────────────────────── */
+
+static int mock_iommu_map(void *ctx, uint64_t va, uint64_t size, uint32_t domain_id) {
+  auto *state = static_cast<struct hal_mock_state *>(ctx);
+  state->iommu_map_count++;
+  return state->iommu_map_result;
+}
+
+static int mock_iommu_unmap(void *ctx, uint64_t va, uint64_t size) {
+  auto *state = static_cast<struct hal_mock_state *>(ctx);
+  state->iommu_unmap_count++;
+  return state->iommu_unmap_result;
+}
+
+static int mock_event_signal(void *ctx, uint32_t pasid, uint32_t event_id, uint64_t events) {
+  auto *state = static_cast<struct hal_mock_state *>(ctx);
+  state->event_signal_count++;
+  return state->event_signal_result;
+}
+
 /* ── 公开初始化函数 ────────────────────────────────── */
 
 void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
@@ -114,4 +134,7 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
   hal->doorbell_ring = mock_doorbell_ring;
   hal->interrupt_raise = mock_interrupt_raise;
   hal->time_wait = mock_time_wait;
+  hal->iommu_map = mock_iommu_map;
+  hal->iommu_unmap = mock_iommu_unmap;
+  hal->event_signal = mock_event_signal;
 }

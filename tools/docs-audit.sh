@@ -234,15 +234,15 @@ section_arch() {
         check_warn "archive/historical-plans-2026-06-15 has ${plans_n} files (Appendix B claims 8)"
     fi
 
-    # 1.5 HAL function pointer count (doc says 11)
-    subsection "1.5 struct gpu_hal_ops has 11 function pointers"
+    # 1.5 HAL function pointer count (doc says 14 post-ADR-061/062)
+    subsection "1.5 struct gpu_hal_ops has 14 function pointers"
     if [ -f "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" ]; then
         local hal_count
         hal_count=$(grep -cE "^\s+(int|void)\s+\(\*.*\)\s*\(" "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" 2>/dev/null || echo "0")
-        if [ "${hal_count}" -eq 11 ]; then
+        if [ "${hal_count}" -eq 14 ]; then
             check_pass "gpu_hal.h has ${hal_count} fn-ptrs (matches doc)"
         else
-            check_warn "gpu_hal.h has ${hal_count} fn-ptrs (doc claims 11)"
+            check_warn "gpu_hal.h has ${hal_count} fn-ptrs (doc claims 14)"
         fi
     else
         check_warn "plugins/gpu_driver/hal/gpu_hal.h not found"
