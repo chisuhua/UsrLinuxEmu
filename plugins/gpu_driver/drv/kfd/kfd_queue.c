@@ -211,11 +211,7 @@ out_err:
 	return -EINVAL;
 }
 
-/* FIXME: remove this function, just call amdgpu_bo_unref directly */
-void kfd_queue_buffer_put(struct amdgpu_bo **bo)
-{
-	amdgpu_bo_unref(bo);
-}
+
 
 int kfd_queue_acquire_buffers(struct kfd_process_device *pdd, struct queue_properties *properties)
 {
@@ -305,10 +301,14 @@ out_unreserve:
 	return 0;
 
 out_err_unreserve:
+	kfd_queue_unref_bo_vas_locked(pdd, properties);
 	amdgpu_bo_unreserve(vm->root.bo);
+	kfd_queue_release_buffers(pdd, properties);
+	return err;
+
 out_err_release:
-	/* FIXME: make a _locked version of this that can be called before
-	 * dropping the VM reservation.
+	/* Reached after vm->root.bo already unreserved (line 294).
+	 * kfd_queue_unref_bo_vas will re-reserve internally.
 	 */
 	kfd_queue_unref_bo_vas(pdd, properties);
 	kfd_queue_release_buffers(pdd, properties);
@@ -320,11 +320,11 @@ int kfd_queue_release_buffers(struct kfd_process_device *pdd, struct queue_prope
 	struct kfd_topology_device *topo_dev;
 	u32 total_cwsr_size;
 
-	kfd_queue_buffer_put(&properties->wptr_bo);
-	kfd_queue_buffer_put(&properties->rptr_bo);
-	kfd_queue_buffer_put(&properties->ring_bo);
-	kfd_queue_buffer_put(&properties->eop_buf_bo);
-	kfd_queue_buffer_put(&properties->cwsr_bo);
+	amdgpu_bo_unref(&properties->wptr_bo);
+	amdgpu_bo_unref(&properties->rptr_bo);
+	amdgpu_bo_unref(&properties->ring_bo);
+	amdgpu_bo_unref(&properties->eop_buf_bo);
+	amdgpu_bo_unref(&properties->cwsr_bo);
 
 	topo_dev = kfd_topology_device_by_id(pdd->dev->id);
 	if (!topo_dev)
@@ -366,6 +366,19 @@ int kfd_queue_unref_bo_vas(struct kfd_process_device *pdd,
 	kfd_queue_unref_bo_va(vm, &properties->cwsr_bo);
 
 	amdgpu_bo_unreserve(vm->root.bo);
+	return 0;
+}
+
+int kfd_queue_unref_bo_vas_locked(struct kfd_process_device *pdd,
+				  struct queue_properties *properties)
+{
+	struct amdgpu_vm *vm = drm_priv_to_vm(pdd->drm_priv);
+
+	kfd_queue_unref_bo_va(vm, &properties->wptr_bo);
+	kfd_queue_unref_bo_va(vm, &properties->rptr_bo);
+	kfd_queue_unref_bo_va(vm, &properties->ring_bo);
+	kfd_queue_unref_bo_va(vm, &properties->eop_buf_bo);
+	kfd_queue_unref_bo_va(vm, &properties->cwsr_bo);
 	return 0;
 }
 
