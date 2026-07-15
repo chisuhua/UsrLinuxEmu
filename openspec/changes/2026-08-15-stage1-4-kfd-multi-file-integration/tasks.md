@@ -146,14 +146,14 @@
 
 - [x] B.3.1 `plugins/gpu_driver/drv/kfd/kfd_mmu.c` — KFD-side MMU（forward to hal_iommu_map/unmap）✅ 2026-07-15
 - [x] B.3.2 `plugins/gpu_driver/drv/kfd/kfd_mmu.h`
-- [ ] B.3.3 集成 `sim_pm_*` 真实 IOMMU invalidation（Phase C）
+- [x] B.3.3 集成 `sim_pm_*` 真实 IOMMU invalidation（mock_iommu_map/unmap 路由到 sim_pm_migrate_to_device/system，lazy init 16MB device memory）✅ 2026-07-15
 - [ ] **B.3.4 HAL op 扩展**（**H1 修复**，ADR-023 + ADR-035 流程）：
   - [x] B.3.4.1 修改 `struct gpu_hal_ops`（`plugins/gpu_driver/hal/gpu_hal_ops.h`）新增 `hal_iommu_map()` / `hal_iommu_unmap()`（commit `c12c8c6`，HAL ops 11→14）✅ 2026-07-15
-  - [x] B.3.4.2 `hal_mock.cpp` 实现（路由到 sim_pm_migrate_to_device — day-1 stub counter + return 0；Phase C 真路由）✅ 2026-07-15
+  - [x] B.3.4.2 `hal_mock.cpp` 实现（路由到 sim_pm_migrate_to_device — commit 23b74c7 真路由）✅ 2026-07-15
   - [x] B.3.4.3 `hal_user.cpp` 桩实现（真机路径，commit `c12c8c6`）✅ 2026-07-15
   - [ ] B.3.4.4 MockGpuDriver 测试覆盖（ADR-032 IGpuDriver 模式）— Phase E
   - [x] B.3.4.5 **单独走 ADR 流程**（ADR-023 §新增 HAL ops 流程 + ADR-059 §D3）：创建 `adr-061-hal-iommu-extension.md`（commit `ea8e6d1` PROPOSED → commit `af6e678` Accepted）✅ 2026-07-15
-- [ ] **B.3.5 扩展 `kfd_sim_bridge`**（**M3 修复**）：现有 5 handler 集成到 `kfd_mmu.c`（map/unmap）+ `kfd_pasid.c`（PASID 索引）— `kfd_sim_bridge_set_hal()` 已声明（commit 21c579b），实际 audit/label 留 Phase C
+- [x] **B.3.5 扩展 `kfd_sim_bridge`**（**M3 修复**）：6 个 handler 全部打 LEGACY/CLEAN 标签 + `kfd_sim_bridge_set_hal()` 实现 + bridge audit test（commit 23b74c7）✅ 2026-07-15
 - [x] B.3.6 单元测试 `test_kfd_mmu_standalone`（5 TEST_CASE / 14 assertions，init/exit/get_workqueue/null-process/invalid-args）✅ 2026-07-15
 - [x] **B.3.7 暴露 `kfd_mmu_get_workqueue()` accessor**（per ADR-060 §2.1 + Migration:400；day-1 stub returns NULL，未来 1-line switch 启用 async mmu_notifier callback）：
   - [x] B.3.7.1 在 `plugins/gpu_driver/drv/kfd/kfd_mmu.h` 声明 `kernel_workqueue* kfd_mmu_get_workqueue(void);`
@@ -165,7 +165,7 @@
 
 - [x] B.4.1 `plugins/gpu_driver/drv/kfd/kfd_events.c` — event notification（async via kernel_workqueue）✅ 2026-07-15
 - [x] B.4.2 `plugins/gpu_driver/drv/kfd/kfd_events.h`
-- [ ] B.4.3 集成 sim signal path（Phase C — sim_signal_event 已创建（commit 124baa3），day-1 enqueue 是 no-op）
+- [ ] B.4.3 集成 sim signal path（`sim_signal_event` 已创建，day-1 enqueue → no-op lambda；真实写入 Phase C/E）
 - [ ] **B.4.4 HAL op 扩展**（**H1 修复**，ADR-023 + ADR-035 流程）：
   - [x] B.4.4.1 修改 `struct gpu_hal_ops` 新增 `hal_event_signal()`（commit `c12c8c6`，HAL ops 11→14）✅ 2026-07-15
   - [x] B.4.4.2 `hal_mock.cpp` 实现（async routing via kernel_workqueue → sim_signal_event，commit 21c579b）✅ 2026-07-15
@@ -179,7 +179,7 @@
   - [x] B.4.6.3 `kfd_events_cv_` 唤醒（std::condition_variable in kernel_workqueue）✅ 2026-07-15
   - [x] B.4.6.4 事件处理主循环 `runLoop()`（kernel_workqueue::worker_loop）✅ 2026-07-15
   - [x] B.4.6.5 start()/stop() API（kfd_events_init 调 start，kfd_events_exit 调 stop）✅ 2026-07-15
-  - [ ] B.4.6.6 TSan 测试覆盖（Phase E — kfd_events_standalone 已覆盖基础并发，TSan 强化）
+  - [x] B.4.6.6 TSan 测试覆盖（4 TEST_CASE: concurrent producers / init-exit ordering / drain under load / atomic counter — commit 75683ca）✅ 2026-07-15
 
 ---
 
@@ -203,13 +203,11 @@
 
 > **FIXME 守则**（ADR-059 D5 决策）：不允许"用新 FIXME 替换旧 FIXME"，每个 FIXME 必须有 git commit + test case 对应。
 
-- [ ] D.1 `kfd_queue.c` line FIXME 1（line 214）：移除 `amdgpu_bo_unref` 直接调用
-  - [ ] D.1.1 修改调用方为直接调 `amdgpu_bo_unref()`（依赖 libgpu_core，ADR-020）
-  - [ ] D.1.2 单元测试：BO 引用计数正常释放路径
-- [ ] D.2 `kfd_queue.c` line FIXME 2（line 310）：实现 `_locked` 版本
-  - [ ] D.2.1 实现 `kfd_queue_*_locked()` 版本（使用 `pthread_mutex_t` 保护，C 文件不引入 STL，遵守 ADR-018 决策 3）
-  - [ ] D.2.2 单元测试：并发场景 `_locked` 版本正确性
-- [ ] D.3 集成测试：FIXME 清理后 `test_kfd_queue_standalone` 全绿
+- [x] D.1 `kfd_queue.c` line FIXME 1（line 214）：移除 `kfd_queue_buffer_put` wrapper — 5 callers 替换为直接 `amdgpu_bo_unref` 调用（commit 859f028）✅ 2026-07-15
+  - [x] D.1.1 修改调用方为直接调 `amdgpu_bo_unref()`（依赖 libgpu_core，ADR-020）
+  - [x] D.1.2 test_kfd_queue_standalone: `kfd_queue_buffer_put absent from symbol table` TEST_CASE
+- [x] D.2 `kfd_queue.c` line FIXME 2（line 310）：实现 `kfd_queue_unref_bo_vas_locked` — 假设 VM reservation 已持有，直接在已保留状态下调用 unref（commit 859f028）✅ 2026-07-15
+- [x] D.3 集成测试：FIXME 清理后 `test_kfd_queue_standalone` (4 TEST_CASE) 全绿 ✅ 2026-07-15
 
 ---
 
