@@ -2,11 +2,15 @@
 // Stage 1.2 PoC + C-12 B.1.7 prep: minimal KFD private header stub for kfd_queue.c compilation
 // Source: linux/drivers/gpu/drm/amd/amdkfd/kfd_priv.h (Linux 6.12)
 
+#include "kfd_types.h"
+
 #ifdef __cplusplus
 #include <cstdint>
+#include <atomic>
 #else
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 #endif
 #include <pthread.h>
 #include "linux_compat/slab.h"
@@ -33,6 +37,8 @@ struct mutex {
   pthread_mutex_t lock;
 };
 
+#define MUTEX_INITIALIZER { .lock = PTHREAD_MUTEX_INITIALIZER }
+
 static inline void mutex_init(struct mutex *m) {
   pthread_mutex_init(&m->lock, NULL);
 }
@@ -49,11 +55,9 @@ static inline void mutex_destroy(struct mutex *m) {
 #include "kfd_svm.h"
 #include "kfd_topology.h"
 
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-
 struct kfd_node { u32 id; u32 xcc_mask; };
+
+#define MAX_KFD_DEVICES 8
 
 /*
  * struct mm_struct — minimal local declaration (C-12 B.1.7, per ABI §2.4)
@@ -67,8 +71,8 @@ struct kfd_node { u32 id; u32 xcc_mask; };
  * linux_compat, change int → atomic_t for mm_users/mm_count.
  */
 struct mm_struct {
-  int mm_users;
-  int mm_count;
+  atomic_int mm_users;
+  atomic_int mm_count;
   void *pgd;
   void *mmap;
 };

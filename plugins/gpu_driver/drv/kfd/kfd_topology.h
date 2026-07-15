@@ -2,14 +2,13 @@
 // Stage 1.2 PoC: minimal KFD topology stub for kfd_queue.c compilation
 // Source: linux/drivers/gpu/drm/amd/amdkfd/kfd_topology.h (Linux 6.12)
 
+#include "kfd_types.h"
+
 #ifdef __cplusplus
 #include <cstdint>
 #else
 #include <stdint.h>
 #endif
-
-typedef uint32_t u32;
-typedef uint64_t u64;
 
 struct kfd_node;
 
