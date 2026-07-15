@@ -44,7 +44,7 @@
   - [x] A.2.1 amdgpu KFD driver 公开 ABI 对比分析报告已生成（artifact 路径同上）
   - [⏳] A.2.2 dual reviewer 签字确认 (Architecture Team lead + 1 independent reviewer) — **Step 1/4 已准备；Step 2-3 待 reviewer 在线签字**
   - [⏳] A.2.3 reviewer approval comment + reviewer github handle 添加到 report §6 — **待 reviewer 在线签字**
-  - [⏳] A.2.4 Phase B 准入 CI 检查项就绪: `tools/docs-audit.sh --strict` + 禁止 `plugins/gpu_driver/drv/kfd/` 直接 `#include` amdgpu 头 (per ADR-027 §R-6) — **CI 脚本验证中**
+  - [x] A.2.4 Phase B 准入 CI 检查项就绪: `tools/docs-audit.sh --strict` + `tools/ci/check_kfd_includes.sh --strict`（禁止 `plugins/gpu_driver/drv/kfd/` 直接 `#include` amdgpu 头, per ADR-027 §R-6）— ✅ 已创建，当前 0 violation（2026-07-15）
   - [x] A.2.5 识别 Linux 6.12 LTS amdkfd/*.c 文件清单
   - [x] A.2.6 标注本 sub-project 范围内的 6 个核心模块（kfd_module/process/pasid/dispatch/mmu/events）
   - [x] A.2.7 标注 out-of-scope 模块（kfd_doorbell/topology/dbgev/device 等）
