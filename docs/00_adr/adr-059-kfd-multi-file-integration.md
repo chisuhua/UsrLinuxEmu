@@ -45,7 +45,7 @@
 
 1. **kfd_queue.c 单文件 PoC 不足以代表 KFD 真实架构**：
    - 真实 amdgpu KFD 包含 ~20+ .c 文件（kfd_module.c, kfd_process.c, kfd_pasid.c, kfd_mmu.c, kfd_events.c, kfd_dispatch.c, kfd_doorbell.c, kfd_topology.c, kfd_device.c, kfd_dbgdev.c, ...）
-   - 单文件无法支撑蓝图终态验收："KFD .c 文件零修改可编译进真实内核模块"
+   - 单文件无法支撑蓝图终态验收："借鉴 KFD 风格、`drv/kfd/` 子目录下用 Linux kernel idioms 编写的 .c 文件零修改可编译进真实内核模块"（per ADR-036）
 
 2. **README 显式提及的"后续子项目"未启动**：
    > "**后续子项目**：完整 KFD 多文件集成（独立子项目，~50K 行 amdgpu driver 移植）"
@@ -147,6 +147,24 @@ int hal_iommu_map(uint64_t pasid, uint64_t va, uint64_t pfn) {
 1. KFD 编译/运行时**实际调用**某 HAL op（如 `hal_iommu_map` 被 `kfd_mmu.c` 调用）
 2. Stage 1.4 Tier-2 deferred §3.2/§3.3 需要新 op
 3. 不能用现有 11 个 `gpu_hal_ops` 函数指针组合实现
+4. **组合不可行性验证**（per R-7 引入）：提议者需通过代码演示（或原型）证明 ≤ 5 行 inline wrapper 无法用现有 ops 组合达到等效语义。验收标准：提供"使用现有 ops 的组合实现"的具体 C 代码段 + 说明不可行的理由。该代码段附在 ADR 的 Context 段底部作为证据。
+
+> **第 4 条的设计理由**：前 3 条是"是否必要"的定性判断，第 4 条增加可执行的定量门槛。如果提议者写不出不能组合的证据，说明 op 可能不需要新增。
+>
+> **工作示例**（假设提议新增 `hal_iommu_map`）：
+> ```c
+> // 为什么不能用现有 ops 组合实现 iommu_map？
+> //
+> // 尝试 1：通过 mem_write 将页表条目写入 IOMMU 页表所在的模拟 BAR 空间
+> //   → 缺陷：kfd_mmu.c 不知道 IOMMU 页表物理地址（抽象屏蔽）
+> //   → hal_mem_write(hal, IOMMU_PAGE_TABLE_BASE + offset, pte, 8) 不可行
+> //
+> // 尝试 2：通过 register_write 设置 IOMMU 寄存器
+> //   → 缺陷：真实 IOMMU 的 map 操作不是一个寄存器写入，而是 DMA 页表 + TLB invalidation
+> //   → 单次 hal_register_write 无法保证多步操作的原子性
+> //
+> // 结论：≤ 5 行 inline wrapper 无法用现有 ops 组合实现 → 满足条件 4
+> ```
 
 **新增 HAL ops 候选清单**（C-12 评估后确认）：
 
@@ -161,10 +179,12 @@ int hal_iommu_map(uint64_t pasid, uint64_t va, uint64_t pfn) {
 2. 修改 `struct gpu_hal_ops`（`plugins/gpu_driver/hal/gpu_hal_ops.h`）
 3. `hal_mock.cpp` + `hal_user.cpp` 双实现
 4. MockGpuDriver 测试覆盖（ADR-032 IGpuDriver 模式）
+5. **条件 4 组合不可行性证据**（per R-7）—— 附在 ADR Context 段底部
 
 **禁止**：
 - ❌ 一次性扩展 HAL ops 集（避免大爆炸）
 - ❌ 跳过 ADR 流程直接改 `struct gpu_hal_ops`
+- ❌ 缺少条件 4 组合不可行性证据的新增 op（per R-7）
 
 ### D4: 现有 KFD stub 升级为真实声明
 
@@ -236,7 +256,7 @@ struct kfd_process_device_private_data {
 
 ### 正面影响
 
-- ✅ **蓝图终态第 1-2 条验收对应**：KFD .c 文件零修改可编译 + 5 核心 ioctl 跑通
+- ✅ **蓝图终态第 1-2 条验收对应**：借鉴 KFD 风格、`drv/kfd/` 子目录下用 Linux kernel idioms 编写的 .c 文件零修改可编译 + 5 核心 ioctl 跑通
 - ✅ **README 后续子项目正式落地**：~50K LOC amdgpu KFD 子集移植（最高 ROI）
 - ✅ **Stage 1.4 Tier-2 deferred §3.2 §3.3 闭环**：IOMMU invalidation + mm_struct PID/VMA
 - ✅ **2 个 FIXME 清理**：提升代码整洁度 + 并发安全性

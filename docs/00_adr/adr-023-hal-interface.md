@@ -215,6 +215,7 @@ static inline void hal_time_wait(struct gpu_hal_ops *hal, u64 us) {
 | `ctx` 指针类型不安全（`void *`） | 内部实现各自 cast 到已知类型；提供类型安全的 C++ 包装 |
 | inline wrapper 在内核中编译问题 | 验证内核的 `__init`/`__iomem` 标注兼容性 |
 | HAL 接口数量不够 | 预留扩展空间，Phase 2 可新增但不修改现有函数签名 |
+| **HAL ops 膨胀（"fat interface"）** | ADR-059 D3 条件 4 增加定量门槛：新增 op 必须提供"≤5 行现有 ops 组合不可行性证据"附在 ADR 中（§D6）|
 
 ---
 

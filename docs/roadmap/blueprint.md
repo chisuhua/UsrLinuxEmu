@@ -12,6 +12,7 @@
 成熟态的 UsrLinuxEmu 应满足：
 
 1. **驱动可移植性达成**: 在 UsrLinuxEmu 开发的驱动 .c 文件能直接拷贝到 `drivers/gpu/xxx/` 下编译通过（除 #include 路径调整）
+   **限定**：移植性限于 C-12 [kfd-abi-comparison-report.md §2](../05-advanced/kfd-abi-comparison-report.md) 字段白名单范围内（~38 必需字段）。完整 amdgpu KFD ABI 对齐归入蓝图后 work（per ADR-059 D4 scope boundary）。
 2. **真实内核驱动可运行**: 编译并运行 KFD/amdgpu/NV 子集，至少 5 个核心 ioctl 跑通
 3. **多设备类型支持**: 至少 3 种设备类型（GPU + 网络 + 存储）能加载并响应 syscall
 4. **v1.0 稳定**: CI 全平台绿、性能基准达标、文档审计 36/36 PASS
@@ -89,7 +90,8 @@
 
 ## 蓝图验收（阶段 3 完成时）
 
-- [ ] KFD .c 文件零修改可编译进真实内核模块
+- [ ] 借鉴 KFD 风格、`drv/kfd/` 子目录下用 Linux kernel idioms 编写的 .c 文件零修改可编译进真实内核模块（per ADR-036）
+      **限定**：字段白名单范围见 [kfd-abi-comparison-report.md §2](../../05-advanced/kfd-abi-comparison-report.md)。超出白名单的字段需走扩展流程（per ADR-059 D4 scope boundary）。
 - [ ] KFD 5 个核心 ioctl 在 UsrLinuxEmu 内跑通
 - [ ] 多设备插件（GPU + 网络 + 存储）全部能加载
 - [ ] CI 全平台绿（Linux x86_64 + aarch64）

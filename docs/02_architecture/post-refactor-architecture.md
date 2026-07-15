@@ -58,6 +58,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 - **HAL** — ②③ 之间的桥接适配器（per [ADR-036](../00_adr/adr-036-three-way-separation.md) §Decision）
 
 **验证标准**：在 UsrLinuxEmu 开发的驱动代码**逻辑零修改**（仅 `#include` 路径需调整）即可在真实 Linux 内核中编译并运行。
+**限定**：此标准的"可编译"范围限于各 sub-project ABI 对比报告定义的字段白名单（C-12 范围见 [kfd-abi-comparison-report.md §2](../05-advanced/kfd-abi-comparison-report.md)）。超出白名单的 ABI 对齐属于蓝图终态 work（per ADR-059 D4 scope boundary）。
 
 ### 本文与现有 docs 的关系
 

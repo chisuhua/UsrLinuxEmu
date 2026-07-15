@@ -60,7 +60,7 @@ C-12 (kfd-multi-file-integration)
 
 | ADR | 标题 | 状态 | 与本子项目关联 |
 |-----|------|------|---------------|
-| [ADR-008](../00_adr/adr-008-linux-api-compat.md) | Linux API 兼容层基础 | ✅ Accepted | KFD .c 零修改编译的基础 |
+| [ADR-008](../00_adr/adr-008-linux-api-compat.md) | Linux API 兼容层基础 | ✅ Accepted | 借鉴 KFD 风格、`drv/kfd/` 子目录下用 Linux kernel idioms 编写的 .c 文件零修改编译的基础 |
 | [ADR-019](../00_adr/adr-019-drm-gem-ttm-alignment.md) | DRM/GEM/TTM 对齐 | ✅ Accepted | 现有 entries 基础（Stage 1.4 + Phase 3）|
 | [ADR-027](../00_adr/adr-027-linux-compat-strategy.md) | Linux 兼容层扩展策略 | ✅ Accepted | **spec-driven 原则**：仅按 KFD 实际需要增量补 API |
 | [ADR-037](../00_adr/adr-037-render-node-permissions.md) | VFS Device Permission Model | ✅ Accepted | 3 设备节点 `/dev/kfd` `/dev/dri/*` mode=0666 |

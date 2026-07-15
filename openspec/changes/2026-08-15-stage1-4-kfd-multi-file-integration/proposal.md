@@ -59,7 +59,7 @@ Stage 1.4 Tier-2 deferred 仍有工作：
 `plugins/gpu_driver/drv/kfd/kfd_queue.c` 有 2 个 FIXME 标记。
 
 蓝图终态对应验收（[blueprint.md](../roadmap/blueprint.md)）：
-- [ ] KFD .c 文件零修改可编译进真实内核模块（**第 1 条**）
+- [ ] 借鉴 KFD 风格、`drv/kfd/` 子目录下用 Linux kernel idioms 编写的 .c 文件零修改可编译进真实内核模块（**第 1 条**，per ADR-036）
 - [ ] KFD 5 个核心 ioctl 在 UsrLinuxEmu 内跑通（**第 2 条**）
 
 ## 范围（独立子项目，不阻塞主线）
@@ -122,7 +122,7 @@ Stage 1.4 Tier-2 deferred 仍有工作：
 - [ ] 编译通过（CMake target 可选启用）
 - [ ] 5+ 单元测试覆盖关键路径（module init, process attach, dispatch）
 - [ ] 与 amdgpu KFD 真实 driver ABI 对齐（mock comparison）
-- [ ] Issue #21/#22/#23 修复后无 regression
+- [ ] Issue #21 + Issue #23 修复后无 regression（#22 占位待补 — 见 tasks.md §Open Issue 队列）
 
 ### 架构验收（5 项，来自 ADR-059 §Consequences + ADR-018/020/023/027/035）
 
@@ -136,7 +136,7 @@ Stage 1.4 Tier-2 deferred 仍有工作：
 
 - [ ] **6 个新 standalone 单元测试二进制**（test_kfd_module/process/pasid/dispatch/mmu/events，tasks B.1.5/B.1.6/B.1.7 + B.2.2 + B.3.2-test + B.4.2-test）
 - [ ] **3 个集成测试**（test_kfd_end_to_end / fault_handling / concurrent_processes，tasks Phase E.0）
-- [ ] **总 ctest ≥ 116**（Stage 2 baseline **86** + 30 新增 ctests planned；per tasks.md §E.1.2）
+- [ ] **总 ctest = 96 binary**（Stage 2 baseline **86** + 10 新增 unit/integration binary；含 30+ 新增 TEST_CASE per tasks.md §E.1.3）
 - [ ] TaskRunner E2E 318/318 PASS（无回归）
 - [ ] ASan/UBSan/TSan 三 sanitizer clean
 
@@ -167,7 +167,7 @@ Stage 1.4 Tier-2 deferred 仍有工作：
 | 影响 | 风险等级 | 缓解 |
 |------|---------|------|
 | `test_cu_mem_pool` 真实 KFD ABI 验证 | 🟢 低 | KFD ABI 变更不影响 TaskRunner 测试（MockGpuDriver 隔离）|
-| `libcuda_shim` 新增 cuKFD* 桥接（如需要）| 🟡 中 | 走 ADR-023 + tadr-301 流程 |
+| `libcuda_shim` 新增 cuKFD* 桥接（KFD↔CUDA runtime bridge,**C-12 OUT OF SCOPE** — 归属未来 sub-project）| ⚪ N/A | 暂不实施；如用户需求触发，独立 sub-project 走 ADR-035 流程 |
 | **双赢机会**：Phase E.2 实现 TADR-401 Entry 3b | 🟢 低 | UsrLinuxEmu 端实装真实 L1↔L2 test |
 
 ### 同步协议（ADR-035 §Rule 5.1）
@@ -202,7 +202,7 @@ cd /workspace/project/UsrLinuxEmu && git diff main HEAD --stat | grep external/T
 | 2 | Stage 1.4 Tier-2 穿透（9 STUB_HANDLER 升级）| ✅ 已交付 | commit `6a7f4ab` (2026-07-05) |
 | 3 | Stage 2 multi-device（mm_shim.cpp 引入）| ✅ 已交付 | commit `fb75ed2` (2026-07-05) |
 | 4 | Phase 4 主线（`cuda_runtime_api` + `cu*` shim 稳定）| ✅ 已稳定 | commit `2595f16` (TaskRunner, 2026-07-08)；318/318 tests PASS，5 cu* API 真实桥接，3 sanitizer clean |
-| 5 | 蓝图终态验收第 1-2 条已识别（KFD .c 零修改 + 5 ioctl 跑通）| ✅ 已定义 | [blueprint.md](../roadmap/blueprint.md) §蓝图验收 |
+| 5 | 蓝图终态验收第 1-2 条已识别（KFD 风格 .c 零修改 + 5 ioctl 跑通）| ✅ 已定义 | [blueprint.md](../roadmap/blueprint.md) §蓝图验收 |
 | 6 | **ADR-060（消息通知线程架构）** | ✅ **Accepted**（2026-07-14，模拟 owner 签字）| docs/00_adr/adr-060-message-notification-threading.md |
 | 7 | **ADR-059（KFD 多文件集成架构边界）** | ✅ **Accepted**（2026-07-14，模拟 owner 签字）| docs/00_adr/adr-059-kfd-multi-file-integration.md |
 
