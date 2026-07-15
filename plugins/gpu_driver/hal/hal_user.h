@@ -10,6 +10,7 @@
 #pragma once
 
 #include <cstddef>
+#include <atomic>
 #include <mutex>
 #include "gpu_buddy.h"
 #include "gpu_hal.h"
@@ -32,8 +33,8 @@ struct hal_user_context {
   bool fence_signaled[HAL_MAX_FENCES];
   uint64_t fence_counter;
   std::mutex fence_lock;
-  uint64_t doorbell_count;
-  uint64_t interrupt_count;
+  std::atomic<uint64_t> doorbell_count{0};
+  std::atomic<uint64_t> interrupt_count{0};
 
   /* Doorbell 回调（由仿真层设置，HAL 在 doorbell_ring 时调用） */
   void (*doorbell_ring_cb)(void* cb_ctx, uint32_t queue_id);
