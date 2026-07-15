@@ -10,6 +10,8 @@
 add_library(gpu_kfd STATIC
     kfd_queue.c
     kfd_module.c  # C-12 B.1.1 stub: kfd_module_init/exit bridge
+    kfd_topology.c  # C-12 B.1.8 stub: kfd_topology_device_by_id + kfd_topology_init
+    kfd_svm.c  # C-12 B.1.9 stub: svm_range_from_addr + svm_range_list_init
 )
 
 set_source_files_properties(
@@ -19,6 +21,16 @@ set_source_files_properties(
 
 set_source_files_properties(
     kfd_module.c
+    PROPERTIES LANGUAGE C
+)
+
+set_source_files_properties(
+    kfd_topology.c
+    PROPERTIES LANGUAGE C
+)
+
+set_source_files_properties(
+    kfd_svm.c
     PROPERTIES LANGUAGE C
 )
 
