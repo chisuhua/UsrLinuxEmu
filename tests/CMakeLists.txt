@@ -357,6 +357,54 @@ target_compile_options(test_kfd_pasid_standalone PRIVATE -Wno-implicit-function-
 add_test(NAME test_kfd_pasid_standalone COMMAND test_kfd_pasid_standalone)
 set_tests_properties(test_kfd_pasid_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+# C-12 B.4.4 — sim_event standalone test (links sim_event.c + kfd_types)
+add_executable(test_sim_event_standalone
+    test_sim_event_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
+)
+set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
+    PROPERTIES LANGUAGE C
+)
+target_link_libraries(test_sim_event_standalone PRIVATE kernel)
+target_include_directories(test_sim_event_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_sim_event_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_sim_event_standalone COMMAND test_sim_event_standalone)
+set_tests_properties(test_sim_event_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# C-12 B.4.4 + B.3.4 — HAL event_signal async integration test
+# Links: kfd_events.c (Agent A), sim_event.c, hal_mock.cpp
+add_executable(test_hal_event_signal_standalone
+    test_hal_event_signal_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_mock.cpp
+)
+set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
+    PROPERTIES LANGUAGE C
+)
+target_link_libraries(test_hal_event_signal_standalone PRIVATE kernel)
+target_include_directories(test_hal_event_signal_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/kernel
+    ${PROJECT_SOURCE_DIR}/include/kernel/thread
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_hal_event_signal_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_hal_event_signal_standalone COMMAND test_hal_event_signal_standalone)
+set_tests_properties(test_hal_event_signal_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 # C-12 B.2.1 — KFD dispatch table standalone test (links kfd_dispatch.c directly)
 add_executable(test_kfd_dispatch_standalone
     test_kfd_dispatch_standalone.cpp
@@ -373,3 +421,77 @@ target_include_directories(test_kfd_dispatch_standalone PRIVATE
 target_compile_options(test_kfd_dispatch_standalone PRIVATE -Wno-implicit-function-declaration)
 add_test(NAME test_kfd_dispatch_standalone COMMAND test_kfd_dispatch_standalone)
 set_tests_properties(test_kfd_dispatch_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# C-12 B.1.11 — kfd_module standalone test (lifecycle + idempotency)
+add_executable(test_kfd_module_standalone
+    test_kfd_module_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_module.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_topology.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_svm.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_pasid.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_process.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_dispatch.c
+)
+target_link_libraries(test_kfd_module_standalone PRIVATE kernel)
+target_include_directories(test_kfd_module_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_module_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_kfd_module_standalone COMMAND test_kfd_module_standalone)
+set_tests_properties(test_kfd_module_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# C-12 B.3.6 — kfd_mmu standalone test (init/exit/map/unmap/get_workqueue)
+add_executable(test_kfd_mmu_standalone
+    test_kfd_mmu_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_mmu.c
+    # NO hal_mock.cpp yet (B.3.4 is Agent B)
+)
+# kfd_mmu.c uses kernel_workqueue (C++ class) → compile as C++
+set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_mmu.c
+    PROPERTIES LANGUAGE CXX
+)
+target_link_libraries(test_kfd_mmu_standalone PRIVATE kernel)
+target_include_directories(test_kfd_mmu_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_mmu_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_kfd_mmu_standalone COMMAND test_kfd_mmu_standalone)
+set_tests_properties(test_kfd_mmu_standalone PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    ENVIRONMENT "TSAN_OPTIONS=report_signal_unsafe=0"
+)
+
+# C-12 B.4.5 — kfd_events standalone test (init/exit/signal/get_workqueue)
+add_executable(test_kfd_events_standalone
+    test_kfd_events_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
+)
+# kfd_events.c uses kernel_workqueue (C++ class) → compile as C++
+set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
+    PROPERTIES LANGUAGE CXX
+)
+target_link_libraries(test_kfd_events_standalone PRIVATE kernel)
+target_include_directories(test_kfd_events_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_events_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_kfd_events_standalone COMMAND test_kfd_events_standalone)
+set_tests_properties(test_kfd_events_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

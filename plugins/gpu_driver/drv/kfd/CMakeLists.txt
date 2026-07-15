@@ -15,6 +15,8 @@ add_library(gpu_kfd STATIC
     kfd_svm.c  # C-12 B.1.9 stub: svm_range_from_addr + svm_range_list_init
     kfd_pasid.c  # C-12 B.1.3: PASID bitmap allocator (standalone, no cross-deps)
     kfd_process.c  # C-12 B.1.5: process management (depends on pasid, svm)
+    kfd_mmu.c  # C-12 B.3.1: IOMMU map/unmap (depends on kernel_workqueue C++ class)
+    kfd_events.c  # C-12 B.4.1: event signal (depends on kernel_workqueue C++ class)
 )
 
 set_source_files_properties(
@@ -52,6 +54,18 @@ set_source_files_properties(
     PROPERTIES LANGUAGE C
 )
 
+# kfd_mmu.c and kfd_events.c need C++ (use kernel_workqueue class, new/delete).
+# Do NOT set LANGUAGE C for these files.
+set_source_files_properties(
+    kfd_mmu.c
+    PROPERTIES LANGUAGE CXX
+)
+
+set_source_files_properties(
+    kfd_events.c
+    PROPERTIES LANGUAGE CXX
+)
+
 set_target_properties(gpu_kfd PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     C_STANDARD 11
@@ -64,6 +78,7 @@ target_include_directories(gpu_kfd PUBLIC
     ${PROJECT_SOURCE_DIR}/include/linux_compat
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
 )
 

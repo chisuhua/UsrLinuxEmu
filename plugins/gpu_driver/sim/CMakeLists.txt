@@ -18,6 +18,13 @@ add_library(gpu_sim STATIC
     mem_pool.cpp
     # phase4-cu-mempool-alloc-real-va — per-device VA sub-range allocator (ADR-058 D1)
     sim_device_va_allocator.cpp
+    # C-12 B.4.4 — KFD event signal sim-layer stub (per ADR-062 §D3)
+    sim_event.c
+)
+
+set_source_files_properties(
+    sim_event.c
+    PROPERTIES LANGUAGE C
 )
 
 set_target_properties(gpu_sim PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -26,6 +33,7 @@ target_include_directories(gpu_sim PUBLIC
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/kernel
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
