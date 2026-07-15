@@ -8,6 +8,7 @@
 #include <atomic>
 #include <cerrno>
 #include <functional>
+#include <pthread.h>
 #include "kernel/thread/kernel_workqueue.h"
 
 /* Forward declarations for C-12 B.3.4 + B.4.4 integration (Agent A's kfd_events + sim layer)
@@ -20,6 +21,20 @@ extern "C" {
 
   /* sim_signal_event — sim-layer event signal (see sim/sim_event.h) */
   int sim_signal_event(uint32_t pasid, uint32_t event_id, uint64_t events);
+
+  /* sim_pm_* — page migration primitives (see sim/page_migration.h)
+   * Phase B.3.3: hal_mock routes iommu_map/unmap through these. */
+  struct sim_page_migration;
+  struct sim_page_migration *sim_pm_create(unsigned long device_mem_size);
+  void sim_pm_destroy(struct sim_page_migration *pm);
+  int sim_pm_migrate_to_device(struct sim_page_migration *pm,
+                                unsigned long offset,
+                                const void *src, unsigned long size);
+  int sim_pm_migrate_to_system(struct sim_page_migration *pm,
+                                unsigned long offset,
+                                void *dst, unsigned long size);
+  unsigned long sim_pm_lookup_pfn(struct sim_page_migration *pm,
+                                   unsigned long offset);
 }
 
 /* ── mock 回调函数 ────────────────────────────────── */
@@ -102,25 +117,43 @@ static void mock_time_wait(void *ctx, uint64_t us) {
 
 /* ── ADR-061/062 扩展 mock（C-12 KFD） ────────────────────── */
 
+/* Phase B.3.3 (C-12): sim_pm_* integration replaces Day-1 counter stub.
+ * Per ADR-061: mock_iommu_map/unmap now route through real sim_pm_* primitives.
+ * The sim_page_migration singleton is lazily initialized on first iommu_map call. */
+static struct sim_page_migration *mock_pm_ = nullptr;
+static pthread_mutex_t mock_pm_lock_ = PTHREAD_MUTEX_INITIALIZER;
+
+static int mock_pm_init_if_needed() {
+  pthread_mutex_lock(&mock_pm_lock_);
+  if (!mock_pm_) {
+    mock_pm_ = sim_pm_create(16UL * 1024 * 1024);  /* 16 MB device memory */
+  }
+  pthread_mutex_unlock(&mock_pm_lock_);
+  return mock_pm_ ? 0 : -12;  /* -ENOMEM */
+}
+
 static int mock_iommu_map(void *ctx, uint64_t va, uint64_t size, uint32_t domain_id) {
   (void)ctx;
-  (void)va;
-  (void)size;
   (void)domain_id;
-  /* Per ADR-061: route to sim_pm_migrate_to_device in Phase C.
-   * Day-1 stub: counter + return 0. */
-  static std::atomic<uint64_t> map_count{0};
-  map_count.fetch_add(1, std::memory_order_relaxed);
-  return 0;
+  if (mock_pm_init_if_needed() != 0) return -12; /* -ENOMEM */
+
+  /* va → device-memory offset; src → zero-init (real impl migrates CPU pages) */
+  unsigned char src[4096] = {};
+  unsigned long offset = (unsigned long)(va & 0xFFFFFFFF);
+  if (offset + size > 16UL * 1024 * 1024) return -22; /* -EINVAL */
+  return sim_pm_migrate_to_device(mock_pm_, offset, src, (unsigned long)size);
 }
 
 static int mock_iommu_unmap(void *ctx, uint64_t va, uint64_t size) {
   (void)ctx;
-  (void)va;
-  (void)size;
-  static std::atomic<uint64_t> unmap_count{0};
-  unmap_count.fetch_add(1, std::memory_order_relaxed);
-  return 0;
+  if (!mock_pm_) return 0;  /* idempotent: nothing to unmap */
+
+  unsigned long offset = (unsigned long)(va & 0xFFFFFFFF);
+  if (offset + size > 16UL * 1024 * 1024) return -22; /* -EINVAL */
+  /* migrate_to_system reads device memory to caller buffer;
+   * we discard the result since no caller buffer exists here. */
+  unsigned char dst[4096];
+  return sim_pm_migrate_to_system(mock_pm_, offset, dst, (unsigned long)size);
 }
 
 static int mock_event_signal(void *ctx, uint32_t pasid, uint32_t event_id, uint64_t events) {
