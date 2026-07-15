@@ -10,8 +10,11 @@
 add_library(gpu_kfd STATIC
     kfd_queue.c
     kfd_module.c  # C-12 B.1.1 stub: kfd_module_init/exit bridge
+    kfd_dispatch.c  # C-12 B.2.1: ioctl dispatch table scaffolding
     kfd_topology.c  # C-12 B.1.8 stub: kfd_topology_device_by_id + kfd_topology_init
     kfd_svm.c  # C-12 B.1.9 stub: svm_range_from_addr + svm_range_list_init
+    kfd_pasid.c  # C-12 B.1.3: PASID bitmap allocator (standalone, no cross-deps)
+    kfd_process.c  # C-12 B.1.5: process management (depends on pasid, svm)
 )
 
 set_source_files_properties(
@@ -25,12 +28,27 @@ set_source_files_properties(
 )
 
 set_source_files_properties(
+    kfd_dispatch.c
+    PROPERTIES LANGUAGE C
+)
+
+set_source_files_properties(
     kfd_topology.c
     PROPERTIES LANGUAGE C
 )
 
 set_source_files_properties(
     kfd_svm.c
+    PROPERTIES LANGUAGE C
+)
+
+set_source_files_properties(
+    kfd_pasid.c
+    PROPERTIES LANGUAGE C
+)
+
+set_source_files_properties(
+    kfd_process.c
     PROPERTIES LANGUAGE C
 )
 
@@ -49,4 +67,4 @@ target_include_directories(gpu_kfd PUBLIC
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
 )
 
-target_link_libraries(gpu_kfd PUBLIC kernel)
+target_link_libraries(gpu_kfd PRIVATE kernel)
