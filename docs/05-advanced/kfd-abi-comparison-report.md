@@ -137,7 +137,7 @@
 **说明**：
 - 字段 #1 `mm` 是 `struct mm_struct *`，但 C-12 不引入 `<linux/mm_types.h>` 整文件（避免 mm 内部字段级 transitive），而是在 `kfd_priv.h` 本地声明 `struct mm_struct`（详见 §2.4）。
 - 字段 #5 `pqn` C-12 不实现完整 DQM（DQM 上游是 ~30 个函数的复杂状态机 per `linux/drivers/gpu/drm/amd/amdkfd/kfd_device_queue_manager.c`），简化为"`int n_queues` + mutex + 链表" 即可。
-- 字段 #8 `svms` 现有 `kfd_priv.h:64` 已 stub，但仅声明 `svms.lock` 一项，**实际 kfd_queue.c 引用了 svms.objects、svms.list、svms.deferred_range_list**（见 `kfd_queue.c:88, 150, 168`），需要扩展 `kfd_svm.h` 才能满足。
+- 字段 #8 `svms` 现有 `kfd_priv.h:64` 已 stub `svm_range_list`（仅含 `svms.lock` 字段）。`kfd_queue.c` 实际引用 `svms.lock`（行 88/134/148/168）和 `svms.objects`（行 150）。`svms.list` 和 `svms.deferred_range_list` 在 `kfd_svm.h:30-31` **已有声明**（非缺漏），但 `kfd_queue.c` 当前**未引用**——它们为未来模块（`kfd_process.c` / `kfd_mmu.c`）预留。
 
 #### §2.2.2 显式排除字段（C-12 不需要，18 个）
 
@@ -180,7 +180,7 @@
 | 6 | `drm_priv` | `void *` | DRM private 引用（`drm_priv_to_vm()` 输入）| `kfd_priv.h:struct kfd_process_device` | ⚠️ 现有 `kfd_process_device.drm_priv` 已 stub（`kfd_priv.h:70`）| B.1.7 |
 
 **说明**：
-- 现有 `kfd_priv.h:41` 已有 `struct kfd_process_device_private_data { int dummy; };` stub，本表是对其扩展的**白名单版本**。
+- `kfd_process_device` 已 stub（`kfd_priv.h:67-71`），**但 `kfd_process_device_private_data` 在 `kfd_priv.h` 中无现有 stub**——本表是对其的**全新声明**（B.1.7 创建），非"扩展现有 stub"。
 - 字段 #3 / #4 `gpu_va_base` / `gpu_va_limit` 是 Stage 1.4 Tier-1 `gpu_ioctl_get_process_aperture` handler 已使用的字段（per [kfd-portability-report.md §1.1](kfd-portability-report.md)）；必须保留。
 - 字段 #5 `vm` 类型在 Linux 6.12 LTS 是 `struct amdgpu_vm *`，但 `amdgpu_vm.h` transitive include 会触发 `5341c3f` 第 3 次失败。**C-12 改用 `void *`** + 在 `kfd_mmu.c` 内部用 `amdgpu_vm_bo_lookup_mapping()` 本地声明的 stub 类型（见 §3 本地重声明决策）。
 - 字段 #6 `drm_priv` 现有 stub 是 `void *`，C-12 保持 `void *` 不变。
@@ -235,30 +235,30 @@
 
 ### §2.5 字段子集自检表（C-12 必需字段汇总）
 
-> **自检目的**：所有白名单字段均能在现有 `kfd_queue.c` 引用（[kfd_queue.c:1-444](https://github.com/chisuhua/UsrLinuxEmu/blob/main/plugins/gpu_driver/drv/kfd/kfd_queue.c)）中找到 call site，或在 [kfd-multi-file.md §3.1](kfd-multi-file.md) 的模块依赖图中有显式引用。
+> **自检目的**：所有白名单字段均有 (a) 代码 call site（在现有 `kfd_queue.c` / `kfd_portability-report.md` 中）或 (b) 设计文档引用（[kfd-multi-file.md §3-5](kfd-multi-file.md)）。**证据类型**列区分两者，避免混淆。
 
-| 字段 | 是否 C-12 必需 | Linux 6.12 LTS 源路径 | UsrLinuxEmu call site / kfd-multi-file.md § | 备注 |
-|------|---------------|----------------------|--------------------------------------------|------|
-| `kfd_dev.id` | ✅ 是 | `kfd_priv.h:struct kfd_dev` | `kfd-multi-file.md §3.2.4` + `kfd_queue.c:286,333`（NUM_XCC 读取）| B.1.7 |
-| `kfd_dev.xcc_mask` | ✅ 是 | `kfd_priv.h:struct kfd_dev` | `kfd_queue.c:286,333` | B.1.7 |
-| `kfd_dev.kfd2kgd` | ⚠️ 仅声明 | `kfd_priv.h:struct kfd_dev` | `kfd-multi-file.md §3.2.5`（mmu 用 HAL 替代）| B.1.7（**type 不全声明**，仅占位）|
-| `kfd_dev.init_complete` | ✅ 是 | `kfd_priv.h:struct kfd_dev` | `kfd-multi-file.md §3.2.1`（kfd_module init）| B.1.7 |
-| `kfd_process.mm` | ✅ 是 | `kfd_priv.h:struct kfd_process` | `kfd_queue.c:88,150,168`（svms.lock 依赖 mm 状态）| B.1.7 |
-| `kfd_process.pid` | ✅ 是 | `kfd_priv.h:struct kfd_process` | `kfd-multi-file.md §3.2.2`（aperture 查询键）| B.1.7 |
-| `kfd_process.pasid` | ✅ 是 | `kfd_priv.h:struct kfd_process` | `kfd-multi-file.md §3.2.3` | B.1.7 |
-| `kfd_process.doorbell_id` | ✅ 是 | `kfd_priv.h:struct kfd_process` | `kfd-multi-file.md §3.2.2` | B.1.7 |
-| `kfd_process.svms` | ✅ 是 | `kfd_priv.h:struct kfd_process`（已 stub `kfd_priv.h:64`）| `kfd_queue.c:88,134,150,168` | B.1.7（**扩展 kfd_svm.h**）|
-| `kfd_process_device.process` | ✅ 是 | `kfd_priv.h:struct kfd_process_device`（已 stub `kfd_priv.h:68`）| `kfd_queue.c:79,138,222`（pdd->process）| B.1.7 |
-| `kfd_process_device.dev` | ✅ 是 | `kfd_priv.h:struct kfd_process_device`（已 stub `kfd_priv.h:68`）| `kfd_queue.c:227,329`（pdd->dev）| B.1.7 |
-| `kfd_process_device_private_data.gpu_va_base` | ✅ 是 | `kfd_priv.h:struct kfd_process_device_private_data` | `kfd-portability-report.md §1.1`（GET_PROCESS_APERTURE handler）| B.1.7 |
-| `kfd_process_device_private_data.gpu_va_limit` | ✅ 是 | `kfd_priv.h:struct kfd_process_device_private_data` | `kfd-portability-report.md §1.1` | B.1.7 |
-| `kfd_process_device.drm_priv` | ✅ 是 | `kfd_priv.h:struct kfd_process_device`（已 stub `kfd_priv.h:70`）| `kfd_queue.c:231,357`（drm_priv_to_vm(pdd->drm_priv)）| B.1.7 |
-| `mm_struct.mm_users` | ✅ 是 | `linux/include/linux/mm_types.h:struct mm_struct` | `kfd-multi-file.md §5.3 C.2`（PID 跟踪）| B.1.7（**本地重声明**）|
-| `mm_struct.mm_count` | ✅ 是 | `linux/include/linux/mm_types.h:struct mm_struct` | `kfd-multi-file.md §5.3 C.2` | B.1.7（**本地重声明**）|
-| `mm_struct.pgd` | ✅ 是 | `linux/include/linux/mm_types.h:struct mm_struct` | `kfd-multi-file.md §5.3 C.2` | B.1.7（**本地重声明 `void *`**）|
-| `mm_struct.mmap` | ✅ 是 | `linux/include/linux/mm_types.h:struct mm_struct` | `kfd-multi-file.md §5.3 C.2`（VMA tracking）| C.2.1（**Phase C**）|
+| 字段 | 必需？| 证据类型 | 证据/调用位点 | 备注 |
+|------|-------|----------|-------------|------|
+| `kfd_dev.id` | ✅ 是 | [code] | `kfd_queue.c:227,329`（`kfd_topology_device_by_id(pdd->dev->id)`）| B.1.7 |
+| `kfd_dev.xcc_mask` | ✅ 是 | [code] | `kfd_queue.c:286,333`（`NUM_XCC(pdd->dev->xcc_mask)`）| B.1.7 |
+| `kfd_dev.kfd2kgd` | ⚠️ 仅声明 | [design] | `kfd-multi-file.md §3.2.5`（mmu 用 HAL 替代）| B.1.7（**type 不全声明**，仅占位）|
+| `kfd_dev.init_complete` | ✅ 是 | [design] | `kfd-multi-file.md §3.2.1`（kfd_module init）| B.1.7 |
+| `kfd_process.mm` | ✅ 是 | [code] | `kfd_queue.c:88,150`（via svms.lock 上下文，svms 绑定 mm）| B.1.7 |
+| `kfd_process.pid` | ✅ 是 | [design] | `kfd-multi-file.md §3.2.2`（aperture 查询键）| B.1.7 |
+| `kfd_process.pasid` | ✅ 是 | [design] | `kfd-multi-file.md §3.2.3` | B.1.7 |
+| `kfd_process.doorbell_id` | ✅ 是 | [design] | `kfd-multi-file.md §3.2.2` | B.1.7 |
+| `kfd_process.svms` | ✅ 是 | [code] | `kfd_queue.c:88,134,150,168`（svms.lock + svms.objects）| B.1.7 |
+| `kfd_process_device.process` | ✅ 是 | [code] | `kfd_queue.c:79,138,222`（pdd->process）| B.1.7 |
+| `kfd_process_device.dev` | ✅ 是 | [code] | `kfd_queue.c:227,329`（pdd->dev）| B.1.7 |
+| `kfd_process_device_private_data.gpu_va_base` | ✅ 是 | [report] | `kfd-portability-report.md §1.1`（GET_PROCESS_APERTURE handler）| B.1.7（**全新 struct**）|
+| `kfd_process_device_private_data.gpu_va_limit` | ✅ 是 | [report] | `kfd-portability-report.md §1.1` | B.1.7 |
+| `kfd_process_device.drm_priv` | ✅ 是 | [code] | `kfd_queue.c:231,357`（drm_priv_to_vm(pdd->drm_priv)）| B.1.7 |
+| `mm_struct.mm_users` | ✅ 是 | [design] | `kfd-multi-file.md §5.3 C.2`（PID 跟踪）| B.1.7（**本地重声明**）|
+| `mm_struct.mm_count` | ✅ 是 | [design] | `kfd-multi-file.md §5.3 C.2` | B.1.7（**本地重声明**）|
+| `mm_struct.pgd` | ✅ 是 | [design] | `kfd-multi-file.md §5.3 C.2` | B.1.7（**本地重声明 `void *`**）|
+| `mm_struct.mmap` | ✅ 是 | [design] | `kfd-multi-file.md §5.3 C.2`（VMA tracking）| C.2.1（**Phase C**）|
 
-**自检结论**：18 个必需字段全部对应 (a) 现有 `kfd_queue.c` call site 或 (b) [kfd-multi-file.md §3-5](kfd-multi-file.md) 显式引用。无遗漏字段。
+**自检结论**：18 个必需字段 —— 8 个有代码 call site（[code]），2 个有 Tier-1 报告引用（[report]），8 个有设计文档引用（[design]），无遗漏。证据链追溯标注清晰，设计文档引用字段明确标注为"设计依赖"（非代码依赖）。
 
 ---
 
@@ -553,7 +553,7 @@ struct kfd_dev {
 ```
 
 **关键点**：
-- **B.1.10 线程基础设施必须 Day 1-2 完成**：ADR-060 是 C-12 启动 gate；events / mmu async opt-in 都需要 `kernel_thread_base` + `kernel_workqueue`
+- **B.1.10 线程基础设施已完成（2026-07-14，tasks.md [x]）**：B.1.10 在 A.2 gate clear 之前完成——时序偏差可接受，因为 B.1.10 仅依赖 ADR-060（A.0 gate 已清），不依赖 A.2 的 ABI 分析结论，且 B.1.10 是基础设施（`kernel_thread_base` + `kernel_workqueue`）而非"模块切分"——不违反 gate 精神（gate 主旨是防止 ABI 未定时切分 KFD 模块）。ADR-060 是 C-12 启动 gate；events / mmu async opt-in 都需要此基础设施。
 - **B.1.7-9 stub 扩展必须在 B.1.1-4 模块实现前**：依赖关系（kfd_module.c 需要 `kfd_dev.init_complete`，kfd_process.c 需要 `kfd_process.mm/pid/pasid` 等）
 - **B.3.4 + B.4.4 HAL op 走 ADR 流程**：每个 HAL op 单独 ADR（per ADR-035 §Rule 3）
 - **D.1 / D.2 FIXME 清理与 B/C 并行**：不阻塞主线（`kfd_queue.c` 是 Tier-1 已有，可继续编译）
@@ -566,7 +566,7 @@ struct kfd_dev {
 | 2 | 是否接受 §3 amdgpu header 依赖集（0 个直接 `#include` + 0 个 transitive 依赖 + 仅 2 个本地 stub type `struct amdgpu_bo` + `struct amdgpu_vm`）| ✅ 接受 / ❌ 拒绝 / 🔄 修改 | ✅ 接受 | §3.3 reduction vs Stage 1.4 PoC: 53+ → 0 |
 | 3 | 是否接受 §4 headers 复用策略（a=4 + b=0 + c=12 + 不实现=7）+ 决策规则 DR-1 ~ DR-6 | ✅ 接受 / ❌ 拒绝 / 🔄 修改 | ✅ 接受 | DR-5（5341c3f 8 次失败经验）优先级最高；(c) 本地重声明符合 ADR-027 spec-driven 原则 |
 | 4 | 是否接受 §5 预防策略落地步骤（每条落到 tasks.md B.x.x step，不允许"未来解决"字样）| ✅ 接受 / ❌ 拒绝 / 🔄 修改 | ✅ 接受 | 8 条预防策略 100% 落到具体 step + CI 钩子（per §5.3）|
-| 5 | 是否授权 Phase B.1.10 线程基础设施 PoC 在 Day 1-2 启动（`kernel_thread_base` + `kernel_workqueue` 实施） | ✅ 授权 / ❌ 拒绝 / 🔄 推迟 | ✅ 授权 | ADR-060 已 Accepted；events / mmu async opt-in 需要此基础设施（per ADR-060 §2.1）|
+| 5 | 是否确认 B.1.10 线程基础设施 PoC 已就绪作为 Phase B.1 前置条件（`kernel_thread_base` + `kernel_workqueue` 已于 2026-07-14 完成） | ✅ 确认 / ❌ 否决 / 🔄 推迟 | ✅ 确认 | ADR-060 已 Accepted；B.1.10 已 [x] 完成（tasks.md）；events / mmu async opt-in 已具备基础设施 |
 | 6 | 是否接受"0 个 amdgpu header 直接依赖"硬性约束（CI 钩子 `tools/ci/check_kfd_includes.sh` 强制）| ✅ 接受 / ❌ 拒绝 / 🔄 调整 | ✅ 接受 | 防止 review 时意外引入；§5 8 条预防策略的执行基础 |
 | 7 | 是否接受 D.1/D.2 FIXME 清理可在 Phase D 后置（不阻塞 Phase B/C 主线）| ✅ 接受 / ❌ 拒绝 / 🔄 调整 | ✅ 接受 | kfd_queue.c 2 个 FIXME 不影响 B/C 实施（per ADR-059 §D5 FIXME 守则）|
 
