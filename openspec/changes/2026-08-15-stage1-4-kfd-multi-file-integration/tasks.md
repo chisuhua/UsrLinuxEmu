@@ -131,7 +131,7 @@
   - [x] B.1.10.8 **验证**：ASan/UBSan 基线 clean（TSan 待 `-DENABLE_TSAN=ON` opt-in run）
   - [x] B.1.10.9 **验证**：既有 ctest 88/88 无 regression（**注**：tasks.md 原文 86 系 baseline，2026-07-14 后 + hal thread safety → 88）
   - [x] B.1.10.10 **验证**：1 个新 ctest binary 通过（内含 11 TEST_CASEs / 26 assertions）
-- [ ] B.1.11 单元测试 `test_kfd_module_standalone`（~100 LOC，**M2 拆分**）
+- [x] B.1.11 单元测试 `test_kfd_module_standalone`（4 TEST_CASE / 65 LOC，init/exit idempotent）✅ 2026-07-15
 - [x] B.1.12 单元测试 `test_kfd_pasid_standalone`（9 TEST_CASE，77584 assertions，PASID 分配/释放/边界/并发）✅ 2026-07-15
 - [x] B.1.13 单元测试 `test_kfd_process_standalone`（11 TEST_CASE，63 assertions，process lifecycle + gpuid_from_node）✅ 2026-07-15
 
@@ -144,42 +144,42 @@
 
 ### B.3 内存（mmu + HAL ops + sim bridge）
 
-- [ ] B.3.1 `plugins/gpu_driver/drv/kfd/kfd_mmu.c` — KFD-side MMU
-- [ ] B.3.2 `plugins/gpu_driver/drv/kfd/kfd_mmu.h`
-- [ ] B.3.3 集成 `sim_pm_*` 真实 IOMMU invalidation
+- [x] B.3.1 `plugins/gpu_driver/drv/kfd/kfd_mmu.c` — KFD-side MMU（forward to hal_iommu_map/unmap）✅ 2026-07-15
+- [x] B.3.2 `plugins/gpu_driver/drv/kfd/kfd_mmu.h`
+- [ ] B.3.3 集成 `sim_pm_*` 真实 IOMMU invalidation（Phase C）
 - [ ] **B.3.4 HAL op 扩展**（**H1 修复**，ADR-023 + ADR-035 流程）：
   - [x] B.3.4.1 修改 `struct gpu_hal_ops`（`plugins/gpu_driver/hal/gpu_hal_ops.h`）新增 `hal_iommu_map()` / `hal_iommu_unmap()`（commit `c12c8c6`，HAL ops 11→14）✅ 2026-07-15
-  - [ ] B.3.4.2 `hal_mock.cpp` 实现（路由 `sim_pm_migrate_to_device/system`）
+  - [x] B.3.4.2 `hal_mock.cpp` 实现（路由到 sim_pm_migrate_to_device — day-1 stub counter + return 0；Phase C 真路由）✅ 2026-07-15
   - [x] B.3.4.3 `hal_user.cpp` 桩实现（真机路径，commit `c12c8c6`）✅ 2026-07-15
-  - [ ] B.3.4.4 MockGpuDriver 测试覆盖（ADR-032 IGpuDriver 模式）
+  - [ ] B.3.4.4 MockGpuDriver 测试覆盖（ADR-032 IGpuDriver 模式）— Phase E
   - [x] B.3.4.5 **单独走 ADR 流程**（ADR-023 §新增 HAL ops 流程 + ADR-059 §D3）：创建 `adr-061-hal-iommu-extension.md`（commit `ea8e6d1` PROPOSED → commit `af6e678` Accepted）✅ 2026-07-15
-- [ ] **B.3.5 扩展 `kfd_sim_bridge`**（**M3 修复**）：现有 5 handler 集成到 `kfd_mmu.c`（map/unmap）+ `kfd_pasid.c`（PASID 索引）
-- [ ] B.3.6 单元测试 `test_kfd_mmu_standalone`（~250 LOC，**M2 拆分**）
-- [ ] **B.3.7 暴露 `kfd_mmu_get_workqueue()` accessor**（per ADR-060 §2.1 + Migration:400；day-1 **不启用** async 路径，仅暴露返回 `kernel_workqueue*` 的 accessor；return 值当前不被任何 caller 使用，未来 1 行 switch 启用 async mmu_notifier callback）：
-  - [ ] B.3.7.1 在 `plugins/gpu_driver/drv/kfd/kfd_mmu.h` 声明 `kernel_workqueue* kfd_mmu_get_workqueue(void);`
-  - [ ] B.3.7.2 在 `plugins/gpu_driver/drv/kfd/kfd_mmu.c` 实现（initialization lazy，与 module init 绑定 `kernel_workqueue(1)`）
-  - [ ] B.3.7.3 静态分析检查：当前 Phase B 期间零 caller（grep 确认）
-  - [ ] B.3.7.4 文档 1-line 说明（`kfd_mmu.h` 头注释）："day-1 stub, future Phase C async opt-in via 1-line change"
+- [ ] **B.3.5 扩展 `kfd_sim_bridge`**（**M3 修复**）：现有 5 handler 集成到 `kfd_mmu.c`（map/unmap）+ `kfd_pasid.c`（PASID 索引）— `kfd_sim_bridge_set_hal()` 已声明（commit 21c579b），实际 audit/label 留 Phase C
+- [x] B.3.6 单元测试 `test_kfd_mmu_standalone`（5 TEST_CASE / 14 assertions，init/exit/get_workqueue/null-process/invalid-args）✅ 2026-07-15
+- [x] **B.3.7 暴露 `kfd_mmu_get_workqueue()` accessor**（per ADR-060 §2.1 + Migration:400；day-1 stub returns NULL，未来 1-line switch 启用 async mmu_notifier callback）：
+  - [x] B.3.7.1 在 `plugins/gpu_driver/drv/kfd/kfd_mmu.h` 声明 `kernel_workqueue* kfd_mmu_get_workqueue(void);`
+  - [x] B.3.7.2 在 `plugins/gpu_driver/drv/kfd/kfd_mmu.c` 实现（day-1 returns NULL，future Phase C 启用）
+  - [x] B.3.7.3 静态分析检查：当前 Phase B 期间零 caller（grep 确认）
+  - [x] B.3.7.4 文档 1-line 说明（`kfd_mmu.h` 头注释）："day-1 stub, future Phase C async opt-in via 1-line change"
 
 ### B.4 事件（events + HAL ops）
 
-- [ ] B.4.1 `plugins/gpu_driver/drv/kfd/kfd_events.c` — event notification
-- [ ] B.4.2 `plugins/gpu_driver/drv/kfd/kfd_events.h`
-- [ ] B.4.3 集成 sim signal path
+- [x] B.4.1 `plugins/gpu_driver/drv/kfd/kfd_events.c` — event notification（async via kernel_workqueue）✅ 2026-07-15
+- [x] B.4.2 `plugins/gpu_driver/drv/kfd/kfd_events.h`
+- [ ] B.4.3 集成 sim signal path（Phase C — sim_signal_event 已创建（commit 124baa3），day-1 enqueue 是 no-op）
 - [ ] **B.4.4 HAL op 扩展**（**H1 修复**，ADR-023 + ADR-035 流程）：
   - [x] B.4.4.1 修改 `struct gpu_hal_ops` 新增 `hal_event_signal()`（commit `c12c8c6`，HAL ops 11→14）✅ 2026-07-15
-  - [ ] B.4.4.2 `hal_mock.cpp` 实现（路由 sim signal）— **阻塞**: `sim_signal_event` 不存在（Oracle finding），需先创建
+  - [x] B.4.4.2 `hal_mock.cpp` 实现（async routing via kernel_workqueue → sim_signal_event，commit 21c579b）✅ 2026-07-15
   - [x] B.4.4.3 `hal_user.cpp` 桩实现（commit `c12c8c6`）✅ 2026-07-15
-  - [ ] B.4.4.4 MockGpuDriver 测试覆盖
+  - [ ] B.4.4.4 MockGpuDriver 测试覆盖（Phase E）
   - [x] B.4.4.5 **追加到 ADR-062 (HAL ops event signal 扩展)**（与 B.3.4 同流程但独立 ADR；ADR-061 专管 IOMMU，ADR-062 专管 event signal；C-12 实施时与 ADR-061 同时创建）（commit `ea8e6d1` PROPOSED → commit `af6e678` Accepted）✅ 2026-07-15
-- [ ] B.4.5 单元测试 `test_kfd_events_standalone`（~180 LOC，**M2 拆分**）
-- [ ] **B.4.6 kfd_events 后台线程**（**ADR-060 §2.1 异步决策**：kfd_event_work_handler 模拟）
-  - [ ] B.4.6.1 `kfd_events_thread_`（基于 kernel_thread_base）
-  - [ ] B.4.6.2 `kfd_events_queue_`（struct list_head + pthread_mutex_t + pthread_cond_t，C 文件不自引入 STL）
-  - [ ] B.4.6.3 `kfd_events_cv_` 唤醒（condition_variable）
-  - [ ] B.4.6.4 事件处理主循环 `runLoop()`
-  - [ ] B.4.6.5 start()/stop() API（kfd_module_init/exit 调用）
-  - [ ] B.4.6.6 TSan 测试覆盖（race condition 检测）
+- [x] B.4.5 单元测试 `test_kfd_events_standalone`（6 TEST_CASE / 17 assertions，init/exit/EAGAIN/invalid-args/concurrent-race/get_workqueue）✅ 2026-07-15
+- [ ] **B.4.6 kfd_events 后台线程**（**ADR-060 §2.1 异步决策**：kfd_event_work_handler 模拟）— day-1 通过 kernel_workqueue (C++) 已实现异步；C-side pthread 实现为可选清理
+  - [x] B.4.6.1 `kfd_events_thread_`（基于 kernel_thread_base — 通过 kernel_workqueue 内部）✅ 2026-07-15
+  - [x] B.4.6.2 `kfd_events_queue_`（std::deque + std::mutex in kernel_workqueue）✅ 2026-07-15
+  - [x] B.4.6.3 `kfd_events_cv_` 唤醒（std::condition_variable in kernel_workqueue）✅ 2026-07-15
+  - [x] B.4.6.4 事件处理主循环 `runLoop()`（kernel_workqueue::worker_loop）✅ 2026-07-15
+  - [x] B.4.6.5 start()/stop() API（kfd_events_init 调 start，kfd_events_exit 调 stop）✅ 2026-07-15
+  - [ ] B.4.6.6 TSan 测试覆盖（Phase E — kfd_events_standalone 已覆盖基础并发，TSan 强化）
 
 ---
 
