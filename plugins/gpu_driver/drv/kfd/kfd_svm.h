@@ -4,8 +4,10 @@
 
 #ifdef __cplusplus
 #include <cstdint>
+#include <cstdbool>
 #else
 #include <stdint.h>
+#include <stdbool.h>
 #endif
 #include "linux_compat/list.h"
 
@@ -50,3 +52,12 @@ struct svm_range {
 };
 
 struct svm_range *svm_range_from_addr(struct svm_range_list *svms, u64 addr, void *unused);
+
+/*
+ * svm_range_list_init — C-12 B.1.9 stub (per tasks.md §B.1.9)
+ *
+ * Initializes lock + list heads. Called from kfd_process_create() (B.1.5
+ * future module). Real kernel uses RB-tree + interval-tree initialization
+ * in drivers/gpu/drm/amd/amdkfd/kfd_svm.c.
+ */
+void svm_range_list_init(struct svm_range_list *svms);

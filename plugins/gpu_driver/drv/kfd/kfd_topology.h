@@ -32,3 +32,15 @@ struct kfd_topology_device {
 };
 
 struct kfd_topology_device *kfd_topology_device_by_id(u32 gpu_id);
+
+/*
+ * kfd_topology_init — C-12 B.1.8 stub (per tasks.md §B.1.8)
+ *
+ * Single-GPU topology: registers one static device (GPU 0).
+ * Real kernel: ~3000 lines in drivers/gpu/drm/amd/amdkfd/kfd_topology.c
+ * doing PCI scan + capability bitmap parsing.
+ *
+ * Called from kfd_module_init() (B.1.1 stub currently returns 0;
+ * future module impl will call this first).
+ */
+int kfd_topology_init(void);
