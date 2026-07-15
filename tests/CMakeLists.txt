@@ -320,3 +320,56 @@ if(ENABLE_TSAN)
     # R-3 — HAL thread-safety smoke test (originally per-test, now covered by global flags)
     message(STATUS "[R-3] TSan active for test_hal_thread_safety_standalone")
 endif()
+
+# C-12 B.1.5 — kfd_process standalone test (pure C impl, isolated)
+add_executable(test_kfd_process_standalone
+    test_kfd_process_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_process.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_pasid.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_svm.c
+)
+target_link_libraries(test_kfd_process_standalone PRIVATE kernel)
+target_include_directories(test_kfd_process_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_process_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_kfd_process_standalone COMMAND test_kfd_process_standalone)
+set_tests_properties(test_kfd_process_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# C-12 B.1.3 — PASID allocator standalone test (links kfd_pasid.c directly)
+add_executable(test_kfd_pasid_standalone
+    test_kfd_pasid_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_pasid.c
+)
+target_link_libraries(test_kfd_pasid_standalone PRIVATE kernel)
+target_include_directories(test_kfd_pasid_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_pasid_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_kfd_pasid_standalone COMMAND test_kfd_pasid_standalone)
+set_tests_properties(test_kfd_pasid_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# C-12 B.2.1 — KFD dispatch table standalone test (links kfd_dispatch.c directly)
+add_executable(test_kfd_dispatch_standalone
+    test_kfd_dispatch_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_dispatch.c
+)
+target_link_libraries(test_kfd_dispatch_standalone PRIVATE kernel)
+target_include_directories(test_kfd_dispatch_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_dispatch_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_kfd_dispatch_standalone COMMAND test_kfd_dispatch_standalone)
+set_tests_properties(test_kfd_dispatch_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
