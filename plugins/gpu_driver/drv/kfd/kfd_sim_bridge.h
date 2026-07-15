@@ -24,6 +24,9 @@ struct gpu_hal_ops;
  */
 void kfd_sim_bridge_set_hal(struct gpu_hal_ops *hal);
 
+/* kfd_sim_bridge_get_hal — Read back registered HAL pointer (test-only). */
+struct gpu_hal_ops *kfd_sim_bridge_get_hal(void);
+
 #ifdef __cplusplus
 }
 #endif

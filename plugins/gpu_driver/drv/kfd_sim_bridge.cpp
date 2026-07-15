@@ -8,6 +8,7 @@
  */
 
 #include "kfd_sim_bridge.h"
+#include "kfd/kfd_sim_bridge.h"   /* B.3.5: kfd_sim_bridge_set_hal declaration */
 
 #include <cstring>
 #include <map>
@@ -87,6 +88,10 @@ u32 kfd_sim_get_page_count(void) {
 }
 
 long kfd_sim_handle_map_memory(struct gpu_map_memory_args *args) {
+  /* LEGACY (Tier-1) — HAL hal_iommu_map exists (ADR-061) but not yet routed.
+   * Phase B.3.5 audit: future migration routes through hal_iommu_map
+   * (sets up src buffer + calls hal->iommu_map(hal->ctx, va, size, domain_id)).
+   * Day-1: direct sim_pm_migrate_to_device (Tier-1 PoC preserved). */
   if (!args) return -1;
   if (args->size == 0) return -22;
   if (args->n_devices == 0 || args->n_devices > 8) return -22;
@@ -115,6 +120,10 @@ long kfd_sim_handle_map_memory(struct gpu_map_memory_args *args) {
 }
 
 long kfd_sim_handle_unmap_memory(struct gpu_unmap_memory_args *args) {
+  /* LEGACY (Tier-1) — HAL hal_iommu_unmap exists (ADR-061) but not routed.
+   * Phase B.3.5 audit: future migration routes through hal_iommu_unmap
+   * (calls hal->iommu_unmap(hal->ctx, va, size)).
+   * Day-1: direct handle_to_gpu_va erase (Tier-1 PoC preserved). */
   if (!args) return -1;
   if (args->n_devices == 0 || args->n_devices > 8) return -22;
   if (!g_state.pm) return -19;
@@ -134,6 +143,7 @@ long kfd_sim_handle_unmap_memory(struct gpu_unmap_memory_args *args) {
 }
 
 long kfd_sim_handle_get_process_aperture(struct gpu_get_process_aperture_args *args) {
+  /* LEGACY (Tier-1) — no HAL equivalent (apertures are sim-internal state). */
   if (!args) return -1;
   if (args->num_nodes == 0 || args->num_nodes > 8) return -22;
   if (args->apertures_ptr == 0) return -14;
@@ -155,6 +165,7 @@ long kfd_sim_handle_get_process_aperture(struct gpu_get_process_aperture_args *a
 }
 
 long kfd_sim_handle_update_queue(struct gpu_update_queue_args *args) {
+  /* LEGACY (Tier-1) — no HAL equivalent (queue state is sim-internal). */
   if (!args) return -1;
   if (args->queue_handle == 0) return -22;
   if (args->queue_flags & ~0xFu) return -22;
@@ -162,6 +173,7 @@ long kfd_sim_handle_update_queue(struct gpu_update_queue_args *args) {
 }
 
 long kfd_sim_register_mmu_cb(struct gpu_mmu_event_cb_args *args) {
+  /* LEGACY (Tier-1) — MMU callback is plugin-internal state, no HAL op. */
   if (!args) return -1;
   if (args->callback_fn == 0) return -22;
   std::lock_guard<std::mutex> lock(g_mutex);
@@ -188,6 +200,7 @@ u64 kfd_sim_get_mmu_cb_user_data(void) {
 }
 
 long kfd_sim_register_firmware_cb(struct gpu_firmware_cb_args *args) {
+  /* LEGACY (Tier-1) — firmware callback is plugin-internal state, no HAL op. */
   if (!args) return -1;
   if (args->callback_fn == 0) return -22;
   std::lock_guard<std::mutex> lock(g_mutex);
@@ -210,6 +223,18 @@ u64 kfd_sim_get_firmware_cb_fn(void) {
 u64 kfd_sim_get_firmware_cb_user_data(void) {
   std::lock_guard<std::mutex> lock(g_mutex);
   return g_state.firmware_cb_user_data;
+}
+
+/* ── B.3.5: HAL registration ─────────────────────────────────── */
+
+static struct gpu_hal_ops *g_bridge_hal_ = nullptr;
+
+void kfd_sim_bridge_set_hal(struct gpu_hal_ops *hal) {
+  g_bridge_hal_ = hal;
+}
+
+struct gpu_hal_ops *kfd_sim_bridge_get_hal(void) {
+  return g_bridge_hal_;
 }
 
 } // extern "C"
