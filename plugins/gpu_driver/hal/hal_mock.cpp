@@ -5,7 +5,22 @@
  * 每个函数记录调用参数，返回值由测试可控。
  */
 #include "hal_mock.h"
+#include <atomic>
 #include <cerrno>
+#include <functional>
+#include "kernel/thread/kernel_workqueue.h"
+
+/* Forward declarations for C-12 B.3.4 + B.4.4 integration (Agent A's kfd_events + sim layer)
+ * These are resolved at link time by kfd_events.c and sim_event.c respectively.
+ */
+extern "C" {
+  /* kfd_events_get_workqueue — returns the kfd_events_thread_ workqueue.
+   * Defined by Agent A in kfd_events.c (returns usr_linux_emu::kernel_workqueue* via C-linkage).  */
+  void *kfd_events_get_workqueue(void);
+
+  /* sim_signal_event — sim-layer event signal (see sim/sim_event.h) */
+  int sim_signal_event(uint32_t pasid, uint32_t event_id, uint64_t events);
+}
 
 /* ── mock 回调函数 ────────────────────────────────── */
 
@@ -88,21 +103,38 @@ static void mock_time_wait(void *ctx, uint64_t us) {
 /* ── ADR-061/062 扩展 mock（C-12 KFD） ────────────────────── */
 
 static int mock_iommu_map(void *ctx, uint64_t va, uint64_t size, uint32_t domain_id) {
-  auto *state = static_cast<struct hal_mock_state *>(ctx);
-  state->iommu_map_count++;
-  return state->iommu_map_result;
+  (void)ctx;
+  (void)va;
+  (void)size;
+  (void)domain_id;
+  /* Per ADR-061: route to sim_pm_migrate_to_device in Phase C.
+   * Day-1 stub: counter + return 0. */
+  static std::atomic<uint64_t> map_count{0};
+  map_count.fetch_add(1, std::memory_order_relaxed);
+  return 0;
 }
 
 static int mock_iommu_unmap(void *ctx, uint64_t va, uint64_t size) {
-  auto *state = static_cast<struct hal_mock_state *>(ctx);
-  state->iommu_unmap_count++;
-  return state->iommu_unmap_result;
+  (void)ctx;
+  (void)va;
+  (void)size;
+  static std::atomic<uint64_t> unmap_count{0};
+  unmap_count.fetch_add(1, std::memory_order_relaxed);
+  return 0;
 }
 
 static int mock_event_signal(void *ctx, uint32_t pasid, uint32_t event_id, uint64_t events) {
-  auto *state = static_cast<struct hal_mock_state *>(ctx);
-  state->event_signal_count++;
-  return state->event_signal_result;
+  (void)ctx;
+  /* Per ADR-060 §2.1 + ADR-062 §D3: async via kernel_workqueue.
+   * Route through kfd_events_thread_ → sim_signal_event. */
+  usr_linux_emu::kernel_workqueue *wq =
+      static_cast<usr_linux_emu::kernel_workqueue *>(kfd_events_get_workqueue());
+  if (!wq) return -11;  /* -EAGAIN: kfd_events_thread_ not started */
+
+  wq->enqueue([pasid, event_id, events]() {
+    sim_signal_event(pasid, event_id, events);
+  });
+  return 0;
 }
 
 /* ── 公开初始化函数 ────────────────────────────────── */
