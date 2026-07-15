@@ -11,6 +11,7 @@
 #include "sim/hardware/doorbell_emu.h"
 #include "sim/hardware/hardware_puller_emu.h"
 #include "sim/scheduler/global_scheduler.h"
+#include "drv/kfd/kfd_module.h"
 
 namespace {
 struct HalHolder {
@@ -64,6 +65,13 @@ static int plugin_init_internal() {
     return ret;
   }
 
+  // C-12 B.1.1: KFD subsystem init (per kfd_module.h bridge contract)
+  int kfd_ret = kfd_module_init();
+  if (kfd_ret != 0) {
+    std::cerr << "[GpuPlugin] Failed to init KFD subsystem: " << kfd_ret << "\n";
+    return kfd_ret;
+  }
+
   hal_holder.puller->start();
 
   auto device = std::make_shared<GpgpuDevice>(&hal_holder.hal);
@@ -84,6 +92,8 @@ static void plugin_fini_internal() {
       g_hal->puller->stop();
     }
     g_hal->puller.reset();
+    // C-12 B.1.1: KFD subsystem exit (must precede HAL destroy)
+    kfd_module_exit();
     hal_user_destroy(&g_hal->ctx);
     g_hal = nullptr;
   }

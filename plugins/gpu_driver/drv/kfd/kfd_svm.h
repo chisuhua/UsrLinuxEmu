@@ -20,9 +20,14 @@ typedef uint64_t u64;
 #define IS_ENABLED(config) (config)
 #endif
 
-struct mutex { int dummy; };
 struct rb_root { void *rb_node; };
 struct interval_tree_node { unsigned long start, last; };
+
+/*
+ * struct mutex is defined in kfd_priv.h (see C-12 B.1.7, Metis AMB-4).
+ * kfd_svm.h uses struct mutex but must NOT redefine it (kfd_priv.h includes
+ * kfd_svm.h, so the proper definition flows from kfd_priv.h).
+ */
 
 struct svm_range_list {
   struct mutex lock;

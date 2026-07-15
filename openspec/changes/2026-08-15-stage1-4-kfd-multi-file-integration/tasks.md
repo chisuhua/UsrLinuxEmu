@@ -40,10 +40,10 @@
 ### A.1-A.4 文档化（2 天）
 
 - [x] A.1 `docs/05-advanced/kfd-multi-file.md` 设计文档（**已完成** ✅）
-- [x] **A.2** amdgpu KFD driver 公开 ABI 对比分析（**Hard gate — ✅ CLEARED 2026-07-15**；artifact: `docs/05-advanced/kfd-abi-comparison-report.md` 834 行，6 段齐全；reviewer: Architecture Team + Sisyphus dual sign-off）
+- [⏳] **A.2** amdgpu KFD driver 公开 ABI 对比分析（**Hard gate — ⏳ IN-REVIEW per Metis R4**；artifact: `docs/05-advanced/kfd-abi-comparison-report.md` 834 行，6 段齐全 + §6.3 签字栏空白；待 reviewer 实际签字后才能进入 Phase B.1）
   - [x] A.2.1 amdgpu KFD driver 公开 ABI 对比分析报告已生成（artifact 路径同上）
-  - [x] A.2.2 dual reviewer 签字确认 (Architecture Team lead + 1 independent reviewer) — ✅ 2026-07-15 Sisyphus dual sign-off
-  - [x] A.2.3 reviewer approval comment + reviewer github handle 添加到 report §6 — ✅ Sisyphus (Architecture Team), reviewed 2026-07-15
+  - [⏳] A.2.2 dual reviewer 签字确认 (Architecture Team lead + 1 independent reviewer) — **报告本身仍标 IN-REVIEW；tasks.md self-assessment CLEARED 2026-07-15 was premature per Metis R4；re-flagged pending real signature**
+  - [⏳] A.2.3 reviewer approval comment + reviewer github handle 添加到 report §6.3 — **待 reviewer 实际签字**
   - [x] A.2.4 Phase B 准入 CI 检查项就绪: `tools/docs-audit.sh --strict` + `tools/ci/check_kfd_includes.sh --strict`（禁止 `plugins/gpu_driver/drv/kfd/` 直接 `#include` amdgpu 头, per ADR-027 §R-6）— ✅ 已创建，当前 0 violation（2026-07-15）
   - [x] A.2.5 识别 Linux 6.12 LTS amdkfd/*.c 文件清单
   - [x] A.2.6 标注本 sub-project 范围内的 6 个核心模块（kfd_module/process/pasid/dispatch/mmu/events）
@@ -84,12 +84,18 @@
 > - 不修改 `linux_compat/` 内容（spec-driven 增量补齐 per ADR-027 但需独立 commit 配套）
 > - 不直接引用 sim 内部实现（per ADR-018 物理隔离；如必要走 HAL 抽象或 sim-bridge）
 
-- [ ] A.3 决定子项目目录结构（**已决定**：`plugins/gpu_driver/drv/kfd/`，ADR-018 物理隔离）
-- [ ] A.4 README.md 更新 "后续子项目" 段（标记 C-12 PROPOSED → IN_PROGRESS）
+- [x] A.3 决定子项目目录结构（**已决定**：`plugins/gpu_driver/drv/kfd/`，ADR-018 物理隔离；2026-07-15）
+- [x] A.4 README.md 更新 "后续子项目" 段（标记 C-12 PROPOSED → IN_PROGRESS；2026-07-15）
 
 ---
 
 ## Phase B: 模块切分（2 周，**串行**，B.1 → B.2 → B.3 → B.4）
+
+> **🔀 Metis 调整（2026-07-15）**：B.1 内部实施顺序应为
+> **B.1.7 → B.1.8 → B.1.9（头文件扩展）→ B.1.1 → B.1.3 → B.1.5（模块实现）→ B.1.11/12/13（单元测试）**
+> 而非线性的 B.1.1 → B.1.2 → …。原因：模块实现依赖头文件中扩展的 struct 声明
+> （`struct kfd_process` / `struct kfd_dev` / `struct svm_range_list` 等）。
+> 桥接接口（kfd_module.h / kfd_module.c）已就绪；mutex 抽象（kfd_priv.h）已就绪。
 
 > **架构原则**: 严格遵循 ADR-018（KFD 仅在 ② 层）+ ADR-023（HAL 桥接）+ ADR-027（spec-driven）。
 > **模块依赖图**: 见 [kfd-multi-file.md §3.1](../../../docs/05-advanced/kfd-multi-file.md)

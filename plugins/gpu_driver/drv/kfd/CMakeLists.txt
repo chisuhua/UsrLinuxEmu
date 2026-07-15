@@ -1,18 +1,24 @@
-# kfd/CMakeLists.txt — KFD Tier-1 single-file PoC (Stage 1.4)
-# Source: linux/drivers/gpu/drm/amd/amdkfd/kfd_queue.c (Linux 6.12 LTS)
-# Per kfd-portability-boundary.md §3.4: only kfd_queue.c compiles cleanly.
-# Multi-file KFD integration (kfd_module/device/doorbell/process) is
-# Tier-2, out of Stage 1.4 scope (53+ amdgpu_* headers dependency gap).
+# kfd/CMakeLists.txt — KFD multi-file integration (C-12)
+# Source: linux/drivers/gpu/drm/amd/amdkfd/ (Linux 6.12 LTS)
+# Per kfd-multi-file.md §3-5 + ADR-059: 6-module split.
+# Phase B.1.1: kfd_module.c stub + kfd_queue.c (Tier-1 PoC)
+# Phase B.1.3+: kfd_pasid.c, kfd_process.c, etc.
 #
 # NOTE: Compiled as C++17 (not C11) because linux_compat/* headers are
 # C++ namespace-scoped implementations. Linux kernel C code is valid C++.
 
 add_library(gpu_kfd STATIC
     kfd_queue.c
+    kfd_module.c  # C-12 B.1.1 stub: kfd_module_init/exit bridge
 )
 
 set_source_files_properties(
     kfd_queue.c
+    PROPERTIES LANGUAGE C
+)
+
+set_source_files_properties(
+    kfd_module.c
     PROPERTIES LANGUAGE C
 )
 

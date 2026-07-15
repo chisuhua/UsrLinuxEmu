@@ -1,5 +1,5 @@
 #pragma once
-// Stage 1.2 PoC: minimal KFD private header stub for kfd_queue.c compilation
+// Stage 1.2 PoC + C-12 B.1.7 prep: minimal KFD private header stub for kfd_queue.c compilation
 // Source: linux/drivers/gpu/drm/amd/amdkfd/kfd_priv.h (Linux 6.12)
 
 #ifdef __cplusplus
@@ -8,8 +8,44 @@
 #include <stdint.h>
 #include <stdbool.h>
 #endif
+#include <pthread.h>
 #include "linux_compat/slab.h"
 #include "linux_compat/list.h"
+
+/*
+ * struct mutex — KFD subsystem mutex (C-12 B.1.7, Metis AMB-4 resolution)
+ *
+ * MUST be defined BEFORE kfd_svm.h is included (svm_range_list has a
+ * `struct mutex lock` field, so it needs the complete type visible).
+ *
+ * Userspace: wraps pthread_mutex_t (PTHREAD_MUTEX_DEFAULT).
+ * Real Linux kernel: struct mutex is defined in <linux/mutex.h> with
+ *   mutex_lock()/mutex_unlock() API. This wrapper is a no-op in kernel
+ *   builds (selected by #ifdef __KERNEL__ below).
+ *
+ * Migration to real kernel:
+ *   1. Delete this struct + macros
+ *   2. #include <linux/mutex.h> from linux_compat
+ *   3. All kfd_*.c files compile without changes
+ */
+#ifndef __KERNEL__
+struct mutex {
+  pthread_mutex_t lock;
+};
+
+static inline void mutex_init(struct mutex *m) {
+  pthread_mutex_init(&m->lock, NULL);
+}
+
+static inline void mutex_destroy(struct mutex *m) {
+  pthread_mutex_destroy(&m->lock);
+}
+
+#define mutex_lock(m)   pthread_mutex_lock(&(m)->lock)
+#define mutex_unlock(m) pthread_mutex_unlock(&(m)->lock)
+#define mutex_trylock(m) pthread_mutex_trylock(&(m)->lock)
+#endif /* __KERNEL__ */
+
 #include "kfd_svm.h"
 #include "kfd_topology.h"
 
