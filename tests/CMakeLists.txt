@@ -244,6 +244,8 @@ set(CATCH2_SIM_TESTS
     test_gpu_driver_client_phase31_standalone.cpp
     # Phase 3.3 — error injection via HAL mock (links gpu_hal_mock for controlled failures)
     test_error_inject_standalone.cpp
+    # R-3 — HAL thread-safety smoke test via TSan
+    test_hal_thread_safety_standalone.cpp
 )
 
 # Stage 2.2.4 — net driver plugin test (per ADR-038 D1)
@@ -286,6 +288,12 @@ endforeach()
 # test_error_inject_standalone needs gpu_hal_mock for HAL failure injection
 target_link_libraries(test_error_inject_standalone PRIVATE gpu_hal_mock)
 
+# R-3 — test_hal_thread_safety_standalone links gpu_hal + gpu_hal_mock
+# TSan instrumentation is applied globally via add_compile_options(-fsanitize=thread) below
+target_link_libraries(test_hal_thread_safety_standalone PRIVATE gpu_hal gpu_hal_mock)
+find_package(Threads REQUIRED)
+target_link_libraries(test_hal_thread_safety_standalone PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+
 # 为每个 sim 测试源文件创建测试
 foreach(src ${SIM_TESTS})
     get_filename_component(testname ${src} NAME_WE)
@@ -302,8 +310,13 @@ endif()
 # C-12 B.1.10.7 — Apply TSan to kernel threading test when ENABLE_TSAN=ON
 # 仅作用于 test_kfd_threading_standalone（其他测试不需要 TSan 监控线程）
 if(ENABLE_TSAN)
-    target_compile_options(test_kfd_threading_standalone PRIVATE
-        -fsanitize=thread -fno-omit-frame-pointer -g -O1)
-    target_link_options(test_kfd_threading_standalone PRIVATE -fsanitize=thread)
-    message(STATUS "[C-12 B.1.10.7] TSan enabled for test_kfd_threading_standalone")
+    # Apply TSan globally to all test targets (simple, single-point control)
+    add_compile_options(-fsanitize=thread -fno-omit-frame-pointer -g -O1)
+    add_link_options(-fsanitize=thread)
+    message(STATUS "[TSan] ThreadSanitizer enabled globally (ENABLE_TSAN=ON)")
+
+    # C-12 B.1.10.7 — kernel threading test (originally per-test, now covered by global flags)
+    message(STATUS "[C-12 B.1.10.7] TSan active for test_kfd_threading_standalone")
+    # R-3 — HAL thread-safety smoke test (originally per-test, now covered by global flags)
+    message(STATUS "[R-3] TSan active for test_hal_thread_safety_standalone")
 endif()

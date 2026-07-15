@@ -101,7 +101,7 @@ static int user_fence_read(void *ctx, uint64_t fence_id, uint64_t *out_val) {
 
 static void user_doorbell_ring(void *ctx, uint32_t queue_id) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
-  hc->doorbell_count++;
+  hc->doorbell_count.fetch_add(1, std::memory_order_relaxed);
   if (hc->doorbell_ring_cb) {
     hc->doorbell_ring_cb(hc->doorbell_ring_cb_ctx, queue_id);
   }
@@ -109,7 +109,8 @@ static void user_doorbell_ring(void *ctx, uint32_t queue_id) {
 
 static void user_interrupt_raise(void *ctx, uint32_t vector) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
-  hc->interrupt_count++;
+  hc->interrupt_count.fetch_add(1, std::memory_order_relaxed);
+  // TODO(vector-dispatch): MSI-X vector routing for per-IH handlers
   (void)vector;
 }
 
@@ -121,8 +122,19 @@ static void user_time_wait(void *ctx, uint64_t us) {
 /* ── 公开初始化函数 ────────────────────────────────── */
 
 void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
-  /* 清零上下文 */
-  memset(ctx, 0, sizeof(*ctx));
+  /* Zero-initialize POD members (avoid memset which is UB with std::mutex and std::atomic) */
+  memset(ctx->regs, 0, sizeof(ctx->regs));
+  memset(&ctx->buddy, 0, sizeof(ctx->buddy));
+  memset(ctx->fence_signaled, 0, sizeof(ctx->fence_signaled));
+  ctx->heap = nullptr;
+  ctx->buddy_initialized = false;
+  ctx->fence_counter = 0;
+  ctx->doorbell_count.store(0, std::memory_order_relaxed);
+  ctx->interrupt_count.store(0, std::memory_order_relaxed);
+  ctx->doorbell_ring_cb = nullptr;
+  ctx->doorbell_ring_cb_ctx = nullptr;
+  /* NOTE: std::mutex members (regs_lock, heap_lock, fence_lock) retain their
+     default-constructed valid state; hal_user_init() must not destroy them. */
 
   /* 分配设备内存堆 */
   ctx->heap = static_cast<uint8_t*>(std::malloc(HAL_HEAP_SIZE));
@@ -147,6 +159,16 @@ void hal_user_destroy(struct hal_user_context *ctx) {
   ctx->heap = nullptr;
 }
 
+/** @brief Set the doorbell ring callback (set-once contract).
+ *
+ *  The callback, once set, is immutable — no reset/replace API exists.
+ *  Must be called BEFORE any concurrent `doorbell_ring` invocation.
+ *
+ *  @param ctx    HAL user context
+ *  @param cb     Callback invoked on every doorbell ring
+ *  @param cb_ctx Opaque context forwarded to the callback
+ *  @return 0 on success, -EBUSY if callback already set
+ */
 int hal_user_set_doorbell_cb(struct hal_user_context* ctx,
                                 void (*cb)(void*, uint32_t),
                                 void* cb_ctx) {
