@@ -119,6 +119,25 @@ static void user_time_wait(void *ctx, uint64_t us) {
   std::this_thread::sleep_for(std::chrono::microseconds(us));
 }
 
+/* ── ADR-061 stub: KFD page migration（真机 KFD 路径，C-12 阶段不实施）── */
+
+static int user_iommu_map(void *ctx, uint64_t va, uint64_t size, uint32_t domain_id) {
+  (void)ctx; (void)va; (void)size; (void)domain_id;
+  return -ENOSYS;
+}
+
+static int user_iommu_unmap(void *ctx, uint64_t va, uint64_t size) {
+  (void)ctx; (void)va; (void)size;
+  return -ENOSYS;
+}
+
+/* ── ADR-062 stub: KFD event signal（真机 KFD 路径，C-12 阶段不实施）── */
+
+static int user_event_signal(void *ctx, uint32_t pasid, uint32_t event_id, uint64_t events) {
+  (void)ctx; (void)pasid; (void)event_id; (void)events;
+  return -ENOSYS;
+}
+
 /* ── 公开初始化函数 ────────────────────────────────── */
 
 void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
@@ -152,6 +171,9 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   hal->doorbell_ring = user_doorbell_ring;
   hal->interrupt_raise = user_interrupt_raise;
   hal->time_wait = user_time_wait;
+  hal->iommu_map = user_iommu_map;
+  hal->iommu_unmap = user_iommu_unmap;
+  hal->event_signal = user_event_signal;
 }
 
 void hal_user_destroy(struct hal_user_context *ctx) {

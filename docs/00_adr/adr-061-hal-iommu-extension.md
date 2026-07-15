@@ -1,6 +1,6 @@
 # ADR-061: HAL IOMMU ops 扩展（KFD page migration 桥接）
 
-**状态**: 📋 PROPOSED（2026-07-14，C-12 启动后由 Architecture Team 评审）
+**状态**: ✅ Accepted（2026-07-15，Architecture Team 评审通过；实施 see commit `<pending>`）
 **日期**: 2026-07-14
 **提案人**: Sisyphus（基于 C-12 tasks.md B.3.4 起草）
 **评审者**: UsrLinuxEmu Architecture Team（待签字 per ADR-035 §R2.3；正式签字待 owner 复核 + 配套实现 B.3.4.1-B.3.4.4 完成）
