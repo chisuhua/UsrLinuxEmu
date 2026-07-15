@@ -391,7 +391,7 @@ set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
     PROPERTIES LANGUAGE C
 )
-target_link_libraries(test_hal_event_signal_standalone PRIVATE kernel)
+target_link_libraries(test_hal_event_signal_standalone PRIVATE kernel gpu_sim)
 target_include_directories(test_hal_event_signal_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/kernel
@@ -495,3 +495,86 @@ target_include_directories(test_kfd_events_standalone PRIVATE
 target_compile_options(test_kfd_events_standalone PRIVATE -Wno-implicit-function-declaration)
 add_test(NAME test_kfd_events_standalone COMMAND test_kfd_events_standalone)
 set_tests_properties(test_kfd_events_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# C-12 B.3.3 + B.3.5 — kfd_sim_bridge audit + set_hal + sim_pm_* integration test
+add_executable(test_kfd_sim_bridge_audit_standalone
+    test_kfd_sim_bridge_audit_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd_sim_bridge.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/page_migration.cpp
+)
+target_link_libraries(test_kfd_sim_bridge_audit_standalone PRIVATE kernel gpu_sim)
+target_include_directories(test_kfd_sim_bridge_audit_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_sim_bridge_audit_standalone PRIVATE -Wno-implicit-function-declaration)
+target_compile_definitions(test_kfd_sim_bridge_audit_standalone PRIVATE
+    PROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+add_test(NAME test_kfd_sim_bridge_audit_standalone COMMAND test_kfd_sim_bridge_audit_standalone)
+set_tests_properties(test_kfd_sim_bridge_audit_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# C-12 B.4.6.6 — TSan hardening for kfd_events async path
+# Exercises concurrent producers, drain contract, init/exit ordering, atomic counters.
+# TSan instrumentation applied globally via add_compile_options(-fsanitize=thread) above.
+add_executable(test_kfd_events_tsan_standalone
+    test_kfd_events_tsan_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/page_migration.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_mock.cpp
+)
+set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
+    PROPERTIES LANGUAGE C
+)
+# kfd_events.c uses kernel_workqueue (C++ class) → compile as C++
+set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
+    PROPERTIES LANGUAGE CXX
+)
+target_link_libraries(test_kfd_events_tsan_standalone PRIVATE kernel)
+target_include_directories(test_kfd_events_tsan_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/kernel
+    ${PROJECT_SOURCE_DIR}/include/kernel/thread
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_events_tsan_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_kfd_events_tsan_standalone COMMAND test_kfd_events_tsan_standalone)
+set_tests_properties(test_kfd_events_tsan_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# C-12 Phase D — kfd_queue FIXME cleanup verification
+# Verifies: kfd_queue_unref_bo_vas_locked exists, kfd_queue_buffer_put is removed.
+add_executable(test_kfd_queue_standalone
+    test_kfd_queue_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_queue.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_topology.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_svm.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_pasid.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_process.c
+)
+target_link_libraries(test_kfd_queue_standalone PRIVATE kernel)
+target_include_directories(test_kfd_queue_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_queue_standalone PRIVATE -Wno-implicit-function-declaration)
+# TSan: when ENABLE_TSAN=ON, C files compiled with -fsanitize=thread need TSan runtime at link
+if(ENABLE_TSAN)
+    target_link_libraries(test_kfd_queue_standalone PRIVATE -fsanitize=thread)
+endif()
+add_test(NAME test_kfd_queue_standalone COMMAND test_kfd_queue_standalone)
+set_tests_properties(test_kfd_queue_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
