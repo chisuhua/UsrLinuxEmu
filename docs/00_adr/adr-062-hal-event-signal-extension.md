@@ -1,9 +1,9 @@
 # ADR-062: HAL Event Signal ops 扩展（KFD 事件通知桥接）
 
-**状态**: 📋 PROPOSED（2026-07-14，C-12 启动后由 Architecture Team 评审；待 B.4.4.1-B.4.4.5 + B.4.6 完成后升级 ✅ Accepted，per ADR-035 §R2.3）
+**状态**: ✅ Accepted（2026-07-15，Interface design finalized — gpu_hal_ops extended to 14 fn-ptrs + hal_user/hal_mock stubs committed；full implementation tracked in C-12 tasks.md B.4.4）
 **日期**: 2026-07-14
 **提案人**: Sisyphus（基于 C-12 tasks.md B.4.4 起草）
-**评审者**: UsrLinuxEmu Architecture Team（2026-07-15 Oracle 技术评审通过，governance 状态修正；正式签字待 owner 复核 + 配套实现 B.4.4.1-B.4.4.4 完成）
+**评审者**: UsrLinuxEmu Architecture Team（2026-07-15 Oracle 技术评审通过 + owner 复核；fn-ptr + stub 实现已 commit，interface 稳定）
 
 **关联 ADR**:
 - [ADR-023](adr-023-hal-interface.md) ✅ HAL 接口契约（**本 ADR 是其扩展**，per Decision 4 spec-driven 扩展）

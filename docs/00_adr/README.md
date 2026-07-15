@@ -77,9 +77,11 @@
 > - **ADR-061**（HAL IOMMU ops 扩展，237 行）：覆盖 C-12 tasks B.3.4 — `hal_iommu_map()` / `hal_iommu_unmap()` 2 个新 fn-ptr，遵循 ADR-023 Decision 4 spec-driven "追加不改" 原则
 > - **ADR-062**（HAL Event Signal ops 扩展，276 行）：覆盖 C-12 tasks B.4.4 — `hal_event_signal()` 1 个新 fn-ptr，**硬依赖 ADR-060 `kernel_workqueue`** 实现 events 异步分发
 > - 姊妹 ADR：ADR-061 + ADR-062 建议在 C-12 实施时**同一 commit** 同步追加 fn-ptr 到 `struct gpu_hal_ops`，但**走两个独立 ADR**（per ADR-059 D3 + ADR-035 §R3）
-> - 状态分布总览已同步更新（PROPOSED 15 → 17；总计 59 → 61）
+> - 状态分布总览已同步更新（Accepted 37→39，PROPOSED 17→15；061/062 ✅ Accepted）
+> 
+> **2026-07-15 变更**：ADR-061（HAL IOMMU ops 扩展）+ ADR-062（HAL Event Signal ops 扩展）状态升 ✅ Accepted。fn-ptrs 已 commit 到 `struct gpu_hal_ops`（11→14），hal_user/hal_mock stub 实现已落地。C-12 Phase A.2 hard gate CLEARED；Phase B 可启动。
 
-## 状态分布总览（截至 2026-07-14）
+## 状态分布总览（截至 2026-07-15）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
