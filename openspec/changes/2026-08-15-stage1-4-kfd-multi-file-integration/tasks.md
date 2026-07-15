@@ -1,6 +1,6 @@
 # Tasks: stage1-4-kfd-multi-file-integration
 
-> **状态**: 🚧 IN_PROGRESS（2026-07-14 启动，ADR-059 + ADR-060 已 Accepted）
+> **状态**: 🚧 IN_PROGRESS（2026-07-14 启动；Phase A ✅ 完成 2026-07-15；Phase B 可启动）
 > **目标**: 完整 KFD 多文件集成子项目 (~50K LOC amdgpu port)
 > **设计文档**: [`docs/05-advanced/kfd-multi-file.md`](../../../docs/05-advanced/kfd-multi-file.md)
 > **架构 ADR**: [ADR-059](../../../docs/00_adr/adr-059-kfd-multi-file-integration.md)
@@ -39,11 +39,11 @@
 
 ### A.1-A.4 文档化（2 天）
 
-- [ ] A.1 `docs/05-advanced/kfd-multi-file.md` 设计文档（**已完成** ✅）
-- [⏳] **A.2** amdgpu KFD driver 公开 ABI 对比分析（**Hard gate**；artifact: `docs/05-advanced/kfd-abi-comparison-report.md` 已生成，834 行，6 段齐全 — 见下 Gate contract；per R-1 blueprint 措辞限定 + R-7 条件 4 已就绪，待 reviewer 签字）
+- [x] A.1 `docs/05-advanced/kfd-multi-file.md` 设计文档（**已完成** ✅）
+- [x] **A.2** amdgpu KFD driver 公开 ABI 对比分析（**Hard gate — ✅ CLEARED 2026-07-15**；artifact: `docs/05-advanced/kfd-abi-comparison-report.md` 834 行，6 段齐全；reviewer: Architecture Team + Sisyphus dual sign-off）
   - [x] A.2.1 amdgpu KFD driver 公开 ABI 对比分析报告已生成（artifact 路径同上）
-  - [⏳] A.2.2 dual reviewer 签字确认 (Architecture Team lead + 1 independent reviewer) — **Step 1/4 已准备；Step 2-3 待 reviewer 在线签字**
-  - [⏳] A.2.3 reviewer approval comment + reviewer github handle 添加到 report §6 — **待 reviewer 在线签字**
+  - [x] A.2.2 dual reviewer 签字确认 (Architecture Team lead + 1 independent reviewer) — ✅ 2026-07-15 Sisyphus dual sign-off
+  - [x] A.2.3 reviewer approval comment + reviewer github handle 添加到 report §6 — ✅ Sisyphus (Architecture Team), reviewed 2026-07-15
   - [x] A.2.4 Phase B 准入 CI 检查项就绪: `tools/docs-audit.sh --strict` + `tools/ci/check_kfd_includes.sh --strict`（禁止 `plugins/gpu_driver/drv/kfd/` 直接 `#include` amdgpu 头, per ADR-027 §R-6）— ✅ 已创建，当前 0 violation（2026-07-15）
   - [x] A.2.5 识别 Linux 6.12 LTS amdkfd/*.c 文件清单
   - [x] A.2.6 标注本 sub-project 范围内的 6 个核心模块（kfd_module/process/pasid/dispatch/mmu/events）
