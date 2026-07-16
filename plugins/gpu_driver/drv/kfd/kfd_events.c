@@ -1,11 +1,17 @@
 /*
- * kfd_events.c — KFD 事件子系统实现 (C-12 B.4.1)
+ * kfd_events.c — KFD 事件子系统实现 (C-12 B.4.1 + B.4.3)
  *
  * 提供异步事件信号基础设施。
  * 当前为 day-1 实现：
  *   - kfd_events_signal() 将事件入队到 events_wq_
- *   - 工作线程暂不写入事件页面（B.4.6 Phase C/E 待 Agent B）
+ *   - 工作线程调用 sim_signal_event() 完成 day-1 信号写入（B.4.3 已集成）
  *   - 入队即返回 0（火后不管语义）
+ *
+ * Architecture notes:
+ *   - B.4.3 (current): lambda 直接调用 sim_signal_event()（day-1 stub, 简化集成）
+ *   - B.4.6 (Phase C/E): 重构为通过 hal_event_signal() 调用，由 hal_mock
+ *     路由到 sim_signal_event（遵守 ADR-018 + ADR-023 边界）
+ *   - day-1 直接调用 sim_*: 跳过 HAL 是 day-1 stub 简化，符合 B.4.3 字面描述
  *
  * Thread safety (per ADR-060):
  *   - kfd_events_signal() 对 events_wq_ 的访问受 workqueue 内部 mutex 保护
@@ -16,10 +22,12 @@
  *   1. 删除此文件，替换为 drivers/gpu/drm/amd/amdkfd/kfd_events.c
  *   2. 将 new kernel_workqueue() 替换为 alloc_workqueue("kfd_events", ...)
  *   3. 将 events_wq_->enqueue() 替换为 queue_work()
+ *   4. 将 sim_signal_event() 替换为 amdgpu_kfd_event_page_set()
  */
 #include "kfd_events.h"  /* first — own header */
 #include "kfd_types.h"   /* u32, u64 */
 #include "kernel/thread/kernel_workqueue.h"
+#include "../sim/sim_event.h"  /* B.4.3: sim_signal_event() day-1 stub */
 #include <errno.h>
 
 /* ── static state ──────────────────────────────────────────────────────── */
@@ -70,19 +78,13 @@ int kfd_events_signal(u32 pasid, u32 event_id, u64 events) {
     return -EINVAL;
 
   /* enqueue async work.
-   * day-1: lambda captures by value, fires into workqueue, returns immediately.
-   * TODO B.4.6: 在工作线程中调用 hal_event_signal(hal, pasid, event_id, events)
+   * B.4.3: lambda 直接调用 sim_signal_event()（day-1 stub）。
+   * B.4.6 重构路径: 通过 hal_event_signal() 调用，由 hal_mock 路由到 sim_signal_event。
    */
   events_wq_->enqueue([pasid, event_id, events]() {
-    /* B.4.6 (Phase C/E, Agent B):
-     *   1. 获取全局 HAL ops（hal_ops_，由 plugin_init 设置）
-     *   2. 调用 hal_event_signal(hal_ops_, pasid, event_id, events)
-     *   3. hal_mock 实现将写入事件页面（sim_signal_event）
-     * day-1: 入队后仅记录（无操作）
-     */
-    (void)pasid;
-    (void)event_id;
-    (void)events;
+    /* B.4.3 day-1: 直接调用 sim_signal_event().
+     * Future B.4.6: 改为 hal_event_signal(hal_ops_, pasid, event_id, events). */
+    sim_signal_event(pasid, event_id, events);
   });
 
   return 0;

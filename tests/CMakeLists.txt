@@ -511,6 +511,7 @@ add_executable(test_kfd_events_standalone
     test_kfd_events_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c  # B.4.3: kfd_events.c lambda calls sim_signal_event()
 )
 # kfd_events.c uses kernel_workqueue (C++ class) → compile as C++
 set_source_files_properties(
@@ -524,6 +525,7 @@ target_include_directories(test_kfd_events_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim  # B.4.3: sim_signal_event() location
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_compile_options(test_kfd_events_standalone PRIVATE -Wno-implicit-function-declaration)
