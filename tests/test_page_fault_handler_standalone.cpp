@@ -33,11 +33,18 @@ unsigned long sim_pfh_get_last_fault_addr(struct sim_page_fault_handler *pfh);
 #define SIM_FAULT_CAUSE_READ  0
 #define SIM_FAULT_CAUSE_WRITE 1
 
+#define INVALID_PFN (~0UL)
+
 void sim_pfh_inject_fault_with_cause(struct sim_page_fault_handler *pfh,
-                                      unsigned long addr,
-                                      unsigned long *pfn_out,
-                                      int cause);
+                                       unsigned long addr,
+                                       unsigned long *pfn_out,
+                                       int cause);
 int  sim_pfh_get_last_fault_cause(struct sim_page_fault_handler *pfh);
+
+typedef int (*sim_pfh_event_cb)(unsigned long pasid, unsigned long addr, int cause);
+void sim_pfh_set_event_callback(struct sim_page_fault_handler *pfh,
+                                 sim_pfh_event_cb cb,
+                                 unsigned long pasid);
 }
 
 TEST_CASE("sim_page_fault_handler — create/destroy lifecycle",
@@ -122,7 +129,7 @@ TEST_CASE("sim_page_fault_handler — inject_fault_with_cause records READ cause
   unsigned long pfn = 0;
   sim_pfh_inject_fault_with_cause(pfh, 0x1000, &pfn, SIM_FAULT_CAUSE_READ);
   CHECK(sim_pfh_get_last_fault_cause(pfh) == SIM_FAULT_CAUSE_READ);
-  CHECK(pfn == 1);
+  CHECK(pfn == INVALID_PFN);
 
   sim_pfh_destroy(pfh);
 }
@@ -171,4 +178,143 @@ TEST_CASE("sim_page_fault_handler — get_last_fault_cause on null returns READ"
           "[uvm][sim][page_fault][cause][null_guard]")
 {
   CHECK(sim_pfh_get_last_fault_cause(nullptr) == SIM_FAULT_CAUSE_READ);
+}
+
+// --- Event callback tests (ADR-063 D1) ---
+
+// File-scope state for callback verification (C function pointer — no user context)
+static int     g_cb_called = 0;
+static int     g_cb_return = 0;
+static unsigned long g_cb_pasid = 0;
+static unsigned long g_cb_addr = 0;
+
+static int test_cb_wrapper(unsigned long pasid, unsigned long addr, int cause) {
+  (void)cause;
+  g_cb_called = 1;
+  g_cb_pasid = pasid;
+  g_cb_addr = addr;
+  return g_cb_return;
+}
+
+TEST_CASE("sim_pfh callback fires on WRITE fault",
+          "[uvm][sim][page_fault][callback]")
+{
+  g_cb_called = 0;
+  g_cb_return = 0;
+
+  struct mm_struct mm = { .id = 9000 };
+  struct sim_page_fault_handler *pfh = sim_pfh_create(&mm);
+  REQUIRE(pfh != nullptr);
+
+  sim_pfh_set_event_callback(pfh, test_cb_wrapper, 42);
+
+  unsigned long pfn = 0;
+  sim_pfh_inject_fault_with_cause(pfh, 0xBEEF000, &pfn, SIM_FAULT_CAUSE_WRITE);
+  CHECK(sim_pfh_get_fault_count(pfh) == 1);
+  CHECK(g_cb_called == 1);
+  CHECK(g_cb_pasid == 42);
+  CHECK(g_cb_addr == 0xBEEF000);
+
+  sim_pfh_destroy(pfh);
+}
+
+TEST_CASE("sim_pfh callback does NOT fire on READ fault",
+          "[uvm][sim][page_fault][callback]")
+{
+  g_cb_called = 0;
+  g_cb_return = 0;
+
+  struct mm_struct mm = { .id = 9001 };
+  struct sim_page_fault_handler *pfh = sim_pfh_create(&mm);
+  REQUIRE(pfh != nullptr);
+
+  sim_pfh_set_event_callback(pfh, test_cb_wrapper, 99);
+
+  unsigned long pfn = 0;
+  sim_pfh_inject_fault_with_cause(pfh, 0xCAFE000, &pfn, SIM_FAULT_CAUSE_READ);
+  CHECK(sim_pfh_get_fault_count(pfh) == 1);
+  CHECK(g_cb_called == 0);
+
+  sim_pfh_destroy(pfh);
+}
+
+TEST_CASE("sim_pfh callback failure still increments fault_count",
+          "[uvm][sim][page_fault][callback]")
+{
+  g_cb_called = 0;
+  g_cb_return = -1;
+
+  struct mm_struct mm = { .id = 9002 };
+  struct sim_page_fault_handler *pfh = sim_pfh_create(&mm);
+  REQUIRE(pfh != nullptr);
+
+  sim_pfh_set_event_callback(pfh, test_cb_wrapper, 7);
+
+  unsigned long pfn = 0;
+  sim_pfh_inject_fault_with_cause(pfh, 0xDEAD000, &pfn, SIM_FAULT_CAUSE_WRITE);
+  CHECK(sim_pfh_get_fault_count(pfh) == 1);
+  CHECK(g_cb_called == 1);
+
+  sim_pfh_destroy(pfh);
+}
+
+/* multiple registrations — last wins */
+TEST_CASE("sim_pfh multiple callback registrations last wins",
+          "[uvm][sim][page_fault][callback][boundary]")
+{
+  g_cb_called = 0;
+  g_cb_return = 0;
+
+  struct mm_struct mm = { .id = 9100 };
+  struct sim_page_fault_handler *pfh = sim_pfh_create(&mm);
+  REQUIRE(pfh != nullptr);
+
+  /* First registration: pasid 0xAA */
+  sim_pfh_set_event_callback(pfh, test_cb_wrapper, 0xAAUL);
+
+  /* Second registration: pasid 0xBB — must replace first */
+  sim_pfh_set_event_callback(pfh, test_cb_wrapper, 0xBBUL);
+
+  unsigned long pfn = 0;
+  sim_pfh_inject_fault_with_cause(pfh, 0x4000, &pfn, SIM_FAULT_CAUSE_WRITE);
+  CHECK(g_cb_called == 1);
+  CHECK(g_cb_pasid == 0xBBUL);  /* second registration wins */
+
+  sim_pfh_destroy(pfh);
+}
+
+/* WRITE fault without callback does not crash + counter still increments */
+TEST_CASE("sim_pfh write fault without registered callback does not crash",
+          "[uvm][sim][page_fault][callback][boundary]")
+{
+  struct mm_struct mm = { .id = 9101 };
+  struct sim_page_fault_handler *pfh = sim_pfh_create(&mm);
+  REQUIRE(pfh != nullptr);
+
+  /* No set_event_callback() call. */
+  unsigned long pfn = 0xdead;
+  sim_pfh_inject_fault_with_cause(pfh, 0x5000, &pfn, SIM_FAULT_CAUSE_WRITE);
+  /* counter still incremented; pfn still set to INVALID_PFN; no callback tried */
+  CHECK(sim_pfh_get_fault_count(pfh) == 1);
+  CHECK(sim_pfh_get_last_fault_addr(pfh) == 0x5000UL);
+  CHECK(sim_pfh_get_last_fault_cause(pfh) == SIM_FAULT_CAUSE_WRITE);
+  CHECK(pfn == INVALID_PFN);
+
+  sim_pfh_destroy(pfh);
+}
+
+/* null pfh in inject_fault_with_cause is a no-op */
+TEST_CASE("sim_pfh null pfh inject is noop", "[uvm][sim][page_fault][null_guard]")
+{
+  /* None of these should crash. We can't verify "no global state changed"
+   * easily without a reference pfh, but at minimum no crash + return gracefully. */
+  unsigned long pfn = 0;
+  sim_pfh_inject_fault_with_cause(nullptr, 0x6000, &pfn, SIM_FAULT_CAUSE_WRITE);
+  CHECK(pfn == 0);  /* unchanged */
+  sim_pfh_inject_fault_with_cause(nullptr, 0x6000, &pfn, SIM_FAULT_CAUSE_READ);
+  CHECK(pfn == 0);
+  sim_pfh_inject_fault_with_cause(nullptr, 0x6000, nullptr, SIM_FAULT_CAUSE_WRITE);
+  sim_pfh_set_event_callback(nullptr, nullptr, 0);
+  /* If we reach here, no crash. */
+  CHECK(true);
 }

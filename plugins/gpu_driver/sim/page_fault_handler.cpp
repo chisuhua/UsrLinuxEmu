@@ -10,6 +10,8 @@
 
 #include <linux_compat/mmu_notifier.h>
 
+#include "page_fault_handler.h"
+
 #include <atomic>
 
 namespace {
@@ -17,11 +19,15 @@ namespace {
 constexpr int SIM_FAULT_CAUSE_READ_DEFAULT  = 0;
 constexpr int SIM_FAULT_CAUSE_WRITE_DEFAULT = 1;
 
+#define INVALID_PFN (~0UL)
+
 struct SimPageFaultHandler {
   struct mm_struct *mm;
   int fault_count = 0;
   unsigned long last_fault_addr = 0;
   int last_fault_cause = SIM_FAULT_CAUSE_READ_DEFAULT;
+  sim_pfh_event_cb event_cb = nullptr;
+  unsigned long event_cb_pasid = 0;
 };
 
 } // anonymous namespace
@@ -60,7 +66,12 @@ void sim_pfh_inject_fault_with_cause(struct sim_page_fault_handler *pfh,
   p->last_fault_cause = cause;
 
   if (pfn_out)
-    *pfn_out = addr / 4096;
+    *pfn_out = INVALID_PFN;
+
+  if (cause == SIM_FAULT_CAUSE_WRITE_DEFAULT && p->event_cb) {
+    int cb_rc = p->event_cb(p->event_cb_pasid, addr, cause);
+    (void)cb_rc;
+  }
 }
 
 void sim_pfh_inject_fault(struct sim_page_fault_handler *pfh,
@@ -79,6 +90,15 @@ int sim_pfh_get_last_fault_cause(struct sim_page_fault_handler *pfh) {
   if (!pfh)
     return SIM_FAULT_CAUSE_READ_DEFAULT;
   return reinterpret_cast<SimPageFaultHandler *>(pfh)->last_fault_cause;
+}
+
+void sim_pfh_set_event_callback(struct sim_page_fault_handler *pfh,
+                                 sim_pfh_event_cb cb,
+                                 unsigned long pasid) {
+  if (!pfh) return;
+  auto *p = reinterpret_cast<SimPageFaultHandler *>(pfh);
+  p->event_cb = cb;
+  p->event_cb_pasid = pasid;
 }
 
 } // extern "C"

@@ -28,6 +28,10 @@ struct sim_page_fault_handler;
 #define SIM_FAULT_CAUSE_READ  0
 #define SIM_FAULT_CAUSE_WRITE 1
 
+/* Event callback — injected by ② driver layer. Returns 0 on success, <0 on failure.
+ * On failure, sim_pfh still increments fault_count and updates last_fault_cause. */
+typedef int (*sim_pfh_event_cb)(unsigned long pasid, unsigned long addr, int cause);
+
 struct sim_page_fault_handler *sim_pfh_create(struct mm_struct *mm);
 void                           sim_pfh_destroy(struct sim_page_fault_handler *pfh);
 int                            sim_pfh_get_fault_count(struct sim_page_fault_handler *pfh);
@@ -40,6 +44,9 @@ void                           sim_pfh_inject_fault_with_cause(struct sim_page_f
                                                                int cause);
 unsigned long                  sim_pfh_get_last_fault_addr(struct sim_page_fault_handler *pfh);
 int                            sim_pfh_get_last_fault_cause(struct sim_page_fault_handler *pfh);
+void                           sim_pfh_set_event_callback(struct sim_page_fault_handler *pfh,
+                                                           sim_pfh_event_cb cb,
+                                                           unsigned long pasid);
 
 #ifdef __cplusplus
 }  // extern "C"
