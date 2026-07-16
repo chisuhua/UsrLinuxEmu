@@ -29,6 +29,9 @@ extern "C" {
 #include "kfd_pasid.h"
 }
 
+/* mm_shim.h has extern "C" guards → safe to include outside the block */
+#include <kernel/uvm/mm_shim.h>
+
 /* --- lifecycle --- */
 
 TEST_CASE("kfd_process init/exit", "[kfd][process]") {
@@ -213,5 +216,45 @@ TEST_CASE("kfd_process exit destroys remaining processes", "[kfd][process]") {
   REQUIRE(kfd_process_init() == 0);
   struct kfd_process *found = NULL;
   REQUIRE(kfd_process_find_by_pid(6000, &found) == -2); /* -ENOENT */
+  kfd_process_exit();
+}
+
+TEST_CASE("kfd_process mm_shim wire-up via create/destroy (Phase C.2.1)",
+          "[kfd][process][mm_shim][phase_c][wire_up]") {
+  /* SPEC §5: "kfd_process wire-up"
+   * "kfd_process_create(pid=0x1001) → process->mm_shim 可查"
+   * Invariant: kfd_process_create() 后 kfd_process->mm_shim != NULL
+   * Invariant: kfd_process_destroy() 后 mm_shim 被释放（destroy 返回 0） */
+
+  REQUIRE(kfd_process_init() == 0);
+
+  struct kfd_process *p = nullptr;
+  REQUIRE(kfd_process_create(&p, 0x1001) == 0);
+  REQUIRE(p != nullptr);
+
+  /* mm_shim is opaque void* in kfd_priv.h — verify it was allocated and initialized.
+   * Cast to us_mm_shim* (definition from <kernel/uvm/mm_shim.h>) and exercise
+   * the public mm_shim API to prove it's a real, initialized us_mm_shim. */
+  struct us_mm_shim *shim = static_cast<struct us_mm_shim *>(p->mm_shim);
+  CHECK(shim != nullptr);
+
+  /* The mm_shim's PID should match what we passed to create() */
+  CHECK(shim->pid == 0x1001UL);
+
+  /* Register a VMA via the shim — verifies it's a valid us_mm_shim */
+  int rc = us_mm_shim_register_vma(shim, 0x10000UL, 0x11000UL, 0);
+  CHECK(rc == 0);
+
+  /* The registered range should be findable */
+  unsigned long out_start = 0, out_end = 0;
+  int find_rc = us_mm_shim_find_vma(shim, 0x10500UL, &out_start, &out_end);
+  CHECK(find_rc == 0);
+  CHECK(out_start == 0x10000UL);
+  CHECK(out_end == 0x11000UL);
+
+  /* Destroying must free mm_shim without crashing.
+   * After destroy, p (and its mm_shim) is freed; do not dereference. */
+  CHECK(kfd_process_destroy(p) == 0);
+
   kfd_process_exit();
 }
