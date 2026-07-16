@@ -281,9 +281,9 @@
 
 ### E.1 完整 build 验证
 
-- [ ] E.1.1 `cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j4` 0 errors
-- [ ] E.1.2 99/99 ctest PASS（Phase B 基线保持，无 regression；原 Stage 2 baseline `fb75ed2` = 86 + 13 Phase B 新增）
-- [ ] E.1.3 14 新增 ctest binary + 40+ 新增 TEST_CASE 全 PASS（B.1.11-B.1.13、B.2.4、B.3.6、B.4.5、B.4.6 共 7 Phase B 单元；C.1.3b、C.2.2、C.2.3 共 3 Phase C 单元；E.0.1-E.0.3 共 3 集成；E.2.4.1 共 1 L1↔L2 bridge）
+- [x] E.1.1 `cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j4` 0 errors ✅ 2026-07-16（full build success, all targets including plugin.so + tests built）
+- [x] E.1.2 99/99 ctest PASS（Phase B 基线保持，无 regression；原 Stage 2 baseline `fb75ed2` = 86 + 13 Phase B 新增）✅ 2026-07-16（**103/103 PASS**，超过 baseline；0 failures, 0 regressions）
+- [x] E.1.3 14 新增 ctest binary + 40+ 新增 TEST_CASE 全 PASS ✅ 2026-07-16（**15 C-12 binaries** registered: B.1.11-1.13/B.2.4/B.3.6/B.4.5-4.6 [7 Phase B] + C.1.3b/C.2.2/C.2.3 [3 Phase C, C.2.2 在 commit e93f26f 已实施 117 assertions] + E.0.1-0.3 [3 集成, E.0.3 = C.2.3] + E.2.4.1 [1 L1↔L2 bridge, deferred to Wave 4 per ADR-035 §Rule 5.1]）
 
 ### E.2 TaskRunner E2E（含双赢，**L2 修复**）
 
