@@ -17,6 +17,7 @@
 #include "kfd_priv.h"     /* struct kfd_process, mutex_*, struct kfd_node */
 #include "kfd_pasid.h"    /* kfd_allocate_pasid / kfd_free_pasid */
 #include "kfd_svm.h"      /* svm_range_list_init */
+#include <kernel/uvm/mm_shim.h>  /* us_mm_shim_init */
 #include <stdlib.h>       /* malloc, free */
 #include <string.h>       /* memset */
 #include <stdio.h>        /* debug logs */
@@ -70,6 +71,8 @@ void kfd_process_exit(void) {
     kfd_free_pasid(p->pasid);
     mutex_destroy(&p->queues_lock);
     mutex_destroy(&p->svms.lock);
+    free(p->mm_shim);
+    p->mm_shim = NULL;
     free(p);
     free(entry);
   }
@@ -131,6 +134,20 @@ int kfd_process_create(struct kfd_process **out, pid_t pid) {
   /* init SVM range list (calls mutex_init on p->svms.lock) */
   svm_range_list_init(&p->svms);
 
+  /* init mm_shim (per-process VMA tracker) */
+  struct us_mm_shim *shim = malloc(sizeof(struct us_mm_shim));
+  if (!shim) {
+    kfd_free_pasid(p->pasid);
+    mutex_destroy(&p->queues_lock);
+    mutex_destroy(&p->svms.lock);
+    free(p);
+    free(entry);
+    mutex_unlock(&processes_lock);
+    return -ENOMEM;
+  }
+  us_mm_shim_init(shim, (unsigned long)pid);
+  p->mm_shim = shim;
+
   /* doorbell fields at zero (already memset) */
   /* n_pdds at zero (already memset) */
 
@@ -173,6 +190,8 @@ int kfd_process_destroy(struct kfd_process *p) {
   kfd_free_pasid(p->pasid);
   mutex_destroy(&p->queues_lock);
   mutex_destroy(&p->svms.lock);
+  free(p->mm_shim);
+  p->mm_shim = NULL;
   free(p);
   free(entry);
 

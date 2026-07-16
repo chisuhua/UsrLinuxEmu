@@ -139,6 +139,7 @@ struct kfd_process {
   u32 n_pdds;
   struct kfd_process_device *pdds[8];  /* MAX_KFD_DEVICES=8 */
   struct svm_range_list svms;     /* existing (B.1.9 will extend svm_range_list type) */
+  void *mm_shim;                  /* opaque us_mm_shim* (per-process VMA tracker) */
 };
 
 struct kfd_process_device {
