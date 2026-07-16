@@ -2,10 +2,18 @@
 enable_testing()
 set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Stage 3.2 — perf benchmark framework (C-10, see openspec/changes/2026-07-22-*)
+# Stage 3.2 - perf benchmark framework (C-10, see openspec/changes/2026-07-22-*)
 # OFF by default；opt-in build via:
 #   cmake -DUSR_LINUX_EMU_PERF_TESTS=ON -B build
 option(USR_LINUX_EMU_PERF_TESTS "Build performance benchmarks (Stage 3.2 baseline)" OFF)
+
+# ADR-063 D4: kernel (SHARED) intentionally references sim_pm_invalidate
+# from gpu_sim (STATIC, in plugins/).  Tests that don't link gpu_sim must
+# ignore undefined symbols in shared libs; the runtime guard
+# (if flushed_entries && state->sim_pm) prevents calling the unresolved
+# symbol when no sim_pm is attached.  Tests that DO link gpu_sim (via
+# add_catch_sim_test / add_sim_test) get the real implementation.
+add_link_options("-Wl,--unresolved-symbols=ignore-in-shared-libs")
 
 
 # 遍历每个测试源文件，创建可执行文件和链接 kernel 库
@@ -146,9 +154,8 @@ set(CATCH2_TESTS
     test_config_space_standalone.cpp
     test_msi_x_inject_standalone.cpp
     # Stage 1.1 — IOMMU + ATS (see openspec/changes/stage-1-1-iommu-ats/)
-    test_iommu_emu_standalone.cpp
-    test_dma_remap_standalone.cpp
-    test_ats_protocol_standalone.cpp
+    # All IOMMU tests moved to CATCH2_SIM_TESTS: ADR-063 D4 ①->③ bridge
+    # (default_flush_iotlb -> sim_pm_invalidate) requires gpu_sim link.
     # Stage 1.2 — VFS path resolution (see openspec/changes/stage-1-2-drm-subset/)
     test_vfs_path_standalone.cpp
     # Stage 1.2 — DRM GEM lifecycle (TDD) — see openspec/changes/stage-1-2-drm-subset/spec.md §"1.2/1.3 边界契约 G1"
@@ -172,6 +179,8 @@ set(CATCH2_TESTS
     test_uvm_headers_standalone.cpp
     # Stage 1.3 — UVM/HMM mmu_notifier (tasks.md §3.1 + §8.1 + §10.1)
     test_mmu_notifier_standalone.cpp
+    # H4 + M5 + M6 — mm_shim init/vma/find/foreach unit tests
+    test_mm_shim_standalone.cpp
     # Stage 1.3 — UVM/HMM hmm_range (tasks.md §3.2 + §10.2)
     test_hmm_range_standalone.cpp
     # Stage 1.3 — UVM/HMM migrate + fault_inject (tasks.md §3.3 + §3.4)
@@ -210,6 +219,12 @@ endforeach()
 
 # Catch2 sim tests (Catch2 + link kernel + gpu_sim + gpu_drv)
 set(CATCH2_SIM_TESTS
+    # Stage 1.1 IOMMU tests moved here from CATCH2_TESTS: ADR-063 D4
+    # default_flush_iotlb -> sim_pm_invalidate 1->3 bridge requires
+    # gpu_sim link for sim_pm_invalidate symbol resolution.
+    test_iommu_emu_standalone.cpp
+    test_dma_remap_standalone.cpp
+    test_ats_protocol_standalone.cpp
     # Stage 1.3 — UVM/HMM sim layer (tasks.md §4)
     test_page_fault_handler_standalone.cpp
     test_page_migration_standalone.cpp
@@ -339,6 +354,25 @@ target_include_directories(test_kfd_process_standalone PRIVATE
 target_compile_options(test_kfd_process_standalone PRIVATE -Wno-implicit-function-declaration)
 add_test(NAME test_kfd_process_standalone COMMAND test_kfd_process_standalone)
 set_tests_properties(test_kfd_process_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# C-12 C.2.3 — kfd_concurrent_processes standalone test (multi-thread PID isolation via mm_shim)
+add_executable(test_kfd_concurrent_processes_standalone
+    test_kfd_concurrent_processes_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_process.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_pasid.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_svm.c
+)
+target_link_libraries(test_kfd_concurrent_processes_standalone PRIVATE kernel ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_kfd_concurrent_processes_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_concurrent_processes_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_kfd_concurrent_processes_standalone COMMAND test_kfd_concurrent_processes_standalone)
+set_tests_properties(test_kfd_concurrent_processes_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # C-12 B.1.3 — PASID allocator standalone test (links kfd_pasid.c directly)
 add_executable(test_kfd_pasid_standalone
