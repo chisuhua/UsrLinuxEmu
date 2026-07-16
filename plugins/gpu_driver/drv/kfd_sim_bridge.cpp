@@ -9,6 +9,7 @@
 
 #include "kfd_sim_bridge.h"
 #include "kfd/kfd_sim_bridge.h"   /* B.3.5: kfd_sim_bridge_set_hal declaration */
+#include <kernel/uvm/mm_shim.h>
 
 #include <cstring>
 #include <map>
@@ -49,6 +50,7 @@ struct KfdSimState {
   bool firmware_cb_registered = false;
   u64 firmware_cb_fn = 0;
   u64 firmware_cb_user_data = 0;
+  void *mm_shim = nullptr;  /* opaque us_mm_shim*; set by kfd_sim_set_mm_shim */
 };
 
 KfdSimState g_state;
@@ -73,6 +75,7 @@ void kfd_sim_reset(void) {
   g_state.firmware_cb_registered = false;
   g_state.firmware_cb_fn = 0;
   g_state.firmware_cb_user_data = 0;
+  /* Note: mm_shim is process-lifetime state owned by kfd_process; not reset */
 }
 
 u64 kfd_sim_lookup_pfn(u64 gpu_va) {
@@ -114,6 +117,21 @@ long kfd_sim_handle_map_memory(struct gpu_map_memory_args *args) {
   g_state.handle_to_gpu_va[args->handle] = gpu_va;
   g_state.page_count++;
 
+  /* Phase C.2.1: register VMA in mm_shim (if bound by plugin).
+   * Failure here is non-fatal — mm_shim tracking is best-effort observability.
+   * Compute size in pages rounded up; Tier-1 PoC uses single-page granularity. */
+  if (g_state.mm_shim) {
+    unsigned long n_pages = (unsigned long)((args->size + PAGE_SIZE - 1) / PAGE_SIZE);
+    if (n_pages == 0) n_pages = 1;
+    for (unsigned long p = 0; p < n_pages; p++) {
+      (void)us_mm_shim_register_vma(
+          static_cast<struct us_mm_shim*>(g_state.mm_shim),
+          (unsigned long)(gpu_va + p * PAGE_SIZE),
+          (unsigned long)(gpu_va + (p + 1) * PAGE_SIZE),
+          0);
+    }
+  }
+
   args->gpu_va = gpu_va;
   args->n_success = args->n_devices;
   return 0;
@@ -131,11 +149,22 @@ long kfd_sim_handle_unmap_memory(struct gpu_unmap_memory_args *args) {
   std::lock_guard<std::mutex> lock(g_mutex);
 
   auto it = g_state.handle_to_gpu_va.find(args->handle);
+  u64 gpu_va = 0;
+  bool found = false;
   if (it != g_state.handle_to_gpu_va.end()) {
-    u64 gpu_va = it->second;
+    gpu_va = it->second;
     g_state.handle_to_gpu_va.erase(it);
     g_state.gpu_va_to_pfn.erase(gpu_va);
     if (g_state.page_count > 0) g_state.page_count--;
+    found = true;
+  }
+
+  /* Phase C.2.1: unregister VMA from mm_shim (best-effort). */
+  if (g_state.mm_shim && found) {
+    (void)us_mm_shim_unregister_vma(
+        static_cast<struct us_mm_shim*>(g_state.mm_shim),
+        (unsigned long)gpu_va,
+        (unsigned long)(gpu_va + PAGE_SIZE));
   }
 
   args->n_success = args->n_devices;
@@ -235,6 +264,18 @@ void kfd_sim_bridge_set_hal(struct gpu_hal_ops *hal) {
 
 struct gpu_hal_ops *kfd_sim_bridge_get_hal(void) {
   return g_bridge_hal_;
+}
+
+/* ── Phase C.2.1: mm_shim binding ─────────────────────────────── */
+
+void kfd_sim_set_mm_shim(void *mm_shim) {
+  std::lock_guard<std::mutex> lock(g_mutex);
+  g_state.mm_shim = mm_shim;
+}
+
+void *kfd_sim_get_mm_shim(void) {
+  std::lock_guard<std::mutex> lock(g_mutex);
+  return g_state.mm_shim;
 }
 
 } // extern "C"

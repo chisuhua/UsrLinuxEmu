@@ -45,6 +45,14 @@ bool kfd_sim_firmware_cb_is_registered(void);
 u64  kfd_sim_get_firmware_cb_fn(void);
 u64  kfd_sim_get_firmware_cb_user_data(void);
 
+/* Phase C.2.1: mm_shim binding — bridge holds an opaque mm_shim that VMA
+ * register/unregister calls target. Single-process singleton (per Tier-1
+ * PoC: KfdSimState is global). Set once via kfd_sim_set_mm_shim; cleared
+ * by kfd_sim_reset. Pass through iommu_domain_attach_mm_shim() if iommu
+ * binding is desired (future). */
+void kfd_sim_set_mm_shim(void *mm_shim);
+void *kfd_sim_get_mm_shim(void);
+
 #ifdef __cplusplus
 }
 #endif
