@@ -123,6 +123,22 @@ int iommu_domain_attach_mm_shim(struct iommu_domain* domain,
 }
 
 /*
+ * ADR-063 D3/D4: attach a sim_page_migration instance to an iommu_domain.
+ * Called by setup code to bind the IOMMU domain to the sim page-migration
+ * tracker so that default_flush_iotlb can propagate evicted IOVAs to
+ * sim_pm_invalidate.  Passing pm=nullptr detaches (disables the bridge).
+ * Returns 0 on success, -EINVAL on null domain or unallocated state.
+ */
+int iommu_domain_attach_sim_pm(struct iommu_domain* domain,
+                                struct sim_page_migration* pm) {
+  if (!domain) return -22;  /* -EINVAL */
+  auto* state = usr_linux_emu::iommu_domain_priv(domain);
+  if (!state) return -22;
+  state->sim_pm = pm;
+  return 0;
+}
+
+/*
  * Issue #21 fix: explicit public helper to associate an mm_struct* with an
  * iommu_domain.  Replaces the old implicit "d->priv == mm_struct*"
  * contract that Stage 2.1.2's mm_shim propagation silently broke (UB

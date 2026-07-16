@@ -19,11 +19,14 @@
 #include <linux_compat/types.h>
 #include <linux_compat/mmu_notifier.h>
 
+#include <kernel/sim_proxy.h>
+
 #include <cstddef>
 #include <vector>
 #include <unordered_map>
 
 struct us_mm_shim;
+struct sim_page_migration;
 
 namespace usr_linux_emu {
 
@@ -52,6 +55,7 @@ struct iommu_domain_state {
 	 */
 	struct mm_struct* mm = nullptr;
 	::us_mm_shim* mm_shim = nullptr;
+	struct sim_page_migration* sim_pm = nullptr;
 };
 
 /*
@@ -87,6 +91,9 @@ iommu_group_state *iommu_group_priv(struct iommu_group *group);
 
 int iommu_domain_attach_mm_shim(struct iommu_domain* domain,
                                 ::us_mm_shim* shim);
+
+int iommu_domain_attach_sim_pm(struct iommu_domain* domain,
+                                struct sim_page_migration* pm);
 
 }  /* namespace usr_linux_emu */
 
