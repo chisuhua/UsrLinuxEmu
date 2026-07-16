@@ -88,7 +88,8 @@ struct iommu_ops {
 
 	void (*flush_iotlb)(struct iommu_domain *domain,
 			    unsigned long iova,
-			    size_t size);
+			    size_t size,
+			    void *flushed_entries);
 
 	int (*register_notifier)(struct iommu_domain *domain,
 				 struct mmu_notifier *mnp);
