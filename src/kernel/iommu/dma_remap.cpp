@@ -14,6 +14,8 @@
 
 #include <cstddef>
 #include <cstdio>
+#include <vector>
+#include <kernel/sim_proxy.h>
 
 extern "C" {
 
@@ -92,11 +94,20 @@ long iommu_unmap(struct iommu_domain *domain,
 	if (it == state->iova_to_phys.end())
 		return (long)IOMMU_ERR_ENOKEY;
 
+	/*
+	 * ADR-063 D3 Plan A: snapshot the evicted [iova, paddr] entries
+	 * BEFORE erasing so default_flush_iotlb can still iterate them
+	 * and notify sim_pm_invalidate.  After erase the map no longer
+	 * holds these entries, so the snapshot is the only source.
+	 */
+	std::vector<std::pair<unsigned long, phys_addr_t>> flushed;
+	flushed.push_back({it->first, it->second});
+
 	state->iova_to_phys.erase(it);
 
 	/* Flush IOTLB through ops (optional; some drivers provide this hook) */
 	if (domain->ops && domain->ops->flush_iotlb)
-		domain->ops->flush_iotlb(domain, iova, size);
+		domain->ops->flush_iotlb(domain, iova, size, &flushed);
 
 	return (long)size;
 }
@@ -150,7 +161,7 @@ static phys_addr_t default_iova_to_phys(struct iommu_domain *d, unsigned long io
  * sim layer.  Real hardware IOTLB flush (vfio, etc.) is Stage 2.
  */
 static void default_flush_iotlb(struct iommu_domain *d, unsigned long iova,
-				size_t sz)
+				size_t sz, void *flushed_entries)
 {
 	if (!d)
 		return;
@@ -190,6 +201,22 @@ static void default_flush_iotlb(struct iommu_domain *d, unsigned long iova,
 		     "[iommu] flush_iotlb domain=%p iova=0x%lx size=0x%zx "
 		     "flushed=%zu (Tier-2: real page-table walk)\n",
 		     (void *)d, iova, sz, flushed);
+
+	/*
+	 * ADR-063 D4: propagate evicted IOVAs to the sim page-migration
+	 * tracker so it can drop page-on-device state.  flushed_entries is
+	 * the snapshot iommu_unmap captured before erasing; without it the
+	 * entries would already be gone from iova_to_phys.  Callers that
+	 * go through non-unmap paths (ats_protocol, iommu_flush_iotlb
+	 * wrapper) pass nullptr and skip this bridge.
+	 */
+	if (flushed_entries && state->sim_pm) {
+		auto *entries = static_cast<std::vector<std::pair<unsigned long, phys_addr_t>>*>(flushed_entries);
+		for (auto& [flushed_iova, paddr] : *entries) {
+			(void)paddr;
+			sim_pm_invalidate(state->sim_pm, flushed_iova);
+		}
+	}
 }
 
 /*
