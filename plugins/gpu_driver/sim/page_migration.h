@@ -39,6 +39,15 @@ int                        sim_pm_is_page_on_device(struct sim_page_migration *p
 unsigned long              sim_pm_lookup_pfn(struct sim_page_migration *pm,
                                               unsigned long offset);
 
+int                        sim_pm_attach_domain(struct sim_page_migration *pm,
+                                               void *domain);
+void                       sim_pm_invalidate(struct sim_page_migration *pm,
+                                             unsigned long offset);
+int                        sim_pm_is_page_dirty(struct sim_page_migration *pm,
+                                                unsigned long offset);
+void                       sim_pm_mark_dirty(struct sim_page_migration *pm,
+                                             unsigned long offset);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
