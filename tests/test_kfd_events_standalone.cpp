@@ -25,6 +25,7 @@
 
 extern "C" {
 #include "kfd_events.h"
+#include "sim_event.h"  /* B.4.3: sim_signal_event_count() for verification */
 }
 
 TEST_CASE("kernel_workqueue repeatedly stops idle worker",
@@ -179,4 +180,33 @@ TEST_CASE("kfd_events signal with PASID 0 (broadcast) is accepted",
   REQUIRE(ret == 0);
 
   kfd_events_exit();
+}
+
+/*
+ * B.4.3 — sim signal path 集成验证。
+ * 验证 kfd_events_signal() 入队后，lambda 在 workqueue 线程中执行，
+ * 并实际调用 sim_signal_event() (per sim_event_count 增量)。
+ *
+ * Drain contract: kfd_events_exit() 在 stop() 时 drain 所有 pending work，
+ * 因此可以在 exit 后安全读取 sim_signal_event_count() 并断言增量。
+ */
+TEST_CASE("kfd_events signal invokes sim_signal_event in worker (B.4.3)",
+          "[kfd][events][sim_signal_path][b43]") {
+  kfd_events_init();
+
+  const int before = sim_signal_event_count();
+
+  /* enqueue several events; each will be processed by workqueue worker */
+  const int kCalls = 5;
+  for (int i = 0; i < kCalls; i++) {
+    int ret = kfd_events_signal((u32)(0x100 + i), (u32)(i % 8),
+                                (u64)(1ULL << (i % 64)));
+    REQUIRE(ret == 0);
+  }
+
+  /* drain: exit() ensures all enqueued lambdas complete before returning */
+  kfd_events_exit();
+
+  const int after = sim_signal_event_count();
+  REQUIRE(after >= before + kCalls);
 }
