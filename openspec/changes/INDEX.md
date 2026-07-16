@@ -3,7 +3,7 @@
 > **更新**: 2026-07-16
 > **Owner**: UsrLinuxEmu Architecture Team
 > **总数**: 1 个活跃 change (13 个已完成/已归档)
-> **Source**: 2026-07-16 C-12 Wave 1 收尾（B.4.3 sim_signal_path 集成 + B.4.6 关父任务 + C.2.3 并发进程测试 PASS） + 2026-07-16 C-12 测试套 101/101 ctest PASS + docs-audit 43/43 PASS + 2026-07-11 C-09 phase4-cu-mempool-alloc-real-va 归档（commit `ba88b5f` + ADR-058 + Oracle 报告） + 2026-07-11 C-12 B.1.10 thread infrastructure PoC（ADR-060 §1.3 落地） + 2026-07-14 ADR-061/062 → Accepted + C-12 Phase A gate cleared（Oracle/Metis review 修复） + 2026-07-15 C-12 Phase A 文档化完成（ADR-059 Accepted + kfd-multi-file.md + kfd-abi-comparison-report.md） + 2026-07-15 Phase B 启动（B.1.1 bridge + B.1.3 pasid + B.1.5 process + B.1.7 mutex + B.1.8/1.9 topology/svm stubs） + 2026-07-16 Phase B 持续推进（B.2.1 dispatch IOCTL + B.3.1 mmu + B.4.1 events + B.4.4 sim_event + B.4.6 TSan hardening） + 2026-07-16 Phase C 真实化（iommu remap/invalidate/迁移 + sim page fault handler）+ Phase D FIXME cleanup（kfd_queue_buffer_put 移除 + `_locked` 变体）
+> **Source**: 2026-07-16 C-12 Wave 2 完成（E.0.1 5 KFD ioctl 端到端 + E.0.2 page fault 链路 + E.0.3 = C.2.3 复用） + 2026-07-16 C-12 测试套 103/103 ctest PASS + docs-audit 43/43 PASS + 2026-07-16 C-12 Wave 1 收尾（B.4.3 sim_signal_path 集成 + B.4.6 关父任务 + C.2.3 并发进程测试 PASS） + 2026-07-11 C-09 phase4-cu-mempool-alloc-real-va 归档（commit `ba88b5f` + ADR-058 + Oracle 报告） + 2026-07-11 C-12 B.1.10 thread infrastructure PoC（ADR-060 §1.3 落地） + 2026-07-14 ADR-061/062 → Accepted + C-12 Phase A gate cleared（Oracle/Metis review 修复） + 2026-07-15 C-12 Phase A 文档化完成（ADR-059 Accepted + kfd-multi-file.md + kfd-abi-comparison-report.md） + 2026-07-15 Phase B 启动（B.1.1 bridge + B.1.3 pasid + B.1.5 process + B.1.7 mutex + B.1.8/1.9 topology/svm stubs） + 2026-07-16 Phase B 持续推进（B.2.1 dispatch IOCTL + B.3.1 mmu + B.4.1 events + B.4.4 sim_event + B.4.6 TSan hardening） + 2026-07-16 Phase C 真实化（iommu remap/invalidate/迁移 + sim page fault handler）+ Phase D FIXME cleanup（kfd_queue_buffer_put 移除 + `_locked` 变体）
 
 ---
 
@@ -33,14 +33,14 @@
 ### `2026-08-15-stage1-4-kfd-multi-file-integration` ⚫ (sub-project)
 **Effort**: 6-8 周
 **Why**: README 后继 + Stage 1.4 Tier-2 deferred §3.2/§3.3。~50K LOC amdgpu port
-**进度（2026-07-16）**: 48/80 原子任务 ≈ **60%**（tasks.md 实际勾选 48/96 = 50%，含验收项）
+**进度（2026-07-16）**: 51/80 原子任务 ≈ **64%**（tasks.md 实际勾选 51/96 = 53%，含验收项）
 - ✅ **Phase A** 文档化（4/4 完成，2026-07-15）— ADR-059/060/061/062 Accepted + kfd-multi-file.md + kfd-abi-comparison-report.md
 - 🟡 **Phase B** 模块切分（27/27 任务全开 + 3 验收延后 Phase E；26 [x]）— B.1 module/pasid/process/topology/svm + B.2 dispatch + B.3 mmu/HAL ops + B.4 events/sim_signal_event/TSan（B.4.3 ✅ day-1 stub 集成 sim_signal_event；B.4.6 ✅ 关父任务）
 - 🟡 **Phase C** Tier-2 deferred 真实化（10/18）— C.1 IOMMU invalidation（5/10）+ C.2 mm_shim wire-up（4 含 C.2.3 ✅ 并发进程测试 PASS，31 assertions/2 cases）
 - ✅ **Phase D** FIXME 清理（3 [x]，7 任务已合并）— `kfd_queue_buffer_put` 移除 + `_locked` 变体
-- 📋 **Phase E** 集成 + E2E（2/24）— E.0 集成测试（E.0.1-0.3 全 [ ]）+ E.1 build 验证（E.1.1-1.3 全 [ ]）+ E.2 TaskRunner E2E（E.2.1-2.4 全 [ ]）+ E.3 docs 更新（E.3.1-3.9 全 [ ]）+ E.4 PR + merge + 归档（E.4.1-4.7 全 [ ]）
-**代码产出**: `plugins/gpu_driver/drv/kfd/` 21 文件（kfd_module/pasid/process/dispatch/mmu/events/topology/svm/queue + sim_bridge + types + priv）+ `plugins/gpu_driver/sim/sim_event.c`
-**测试基线**: 101 ctest binary（Stage 2 86 + C-12 新增 15），**101/101 PASS** + docs-audit 43/43 PASS + 0 warnings
+- 🟡 **Phase E** 集成 + E2E（5/24）— **E.0 集成测试全部 [x]**（E.0.1 ✅ 22 assertions + E.0.2 ✅ 8 assertions + E.0.3 ✅ = C.2.3）+ E.1 build 验证（E.1.1-1.3 全 [ ]）+ E.2 TaskRunner E2E（E.2.1-2.4 全 [ ]）+ E.3 docs 更新（E.3.1-3.9 全 [ ]）+ E.4 PR + merge + 归档（E.4.1-4.7 全 [ ]）
+**代码产出**: `plugins/gpu_driver/drv/kfd/` 21 文件（kfd_module/pasid/process/dispatch/mmu/events/topology/svm/queue + sim_bridge + types + priv）+ `plugins/gpu_driver/sim/sim_event.c` + E.0 集成测试 (test_kfd_end_to_end_standalone + test_kfd_fault_handling_standalone)
+**测试基线**: 103 ctest binary（Stage 2 86 + C-12 新增 17），**103/103 PASS** + docs-audit 43/43 PASS + 0 warnings
 
 ---
 
@@ -58,9 +58,9 @@
 1. **C-09** ~~phase4-cu-mempool-alloc-real-va~~ ✅ archived（commit `ba88b5f`）
 2. **C-10** ~~stage3-2-perf-bench-baseline~~ ✅ archived（commit `d63da5e`）
 3. **C-11** ~~stage3-2-hotpath-optimize~~ ✅ archived（PR #30，acceptance PASS 2/3）
-4. **C-12** kfd-multi-file（6-8 周 sub-project，60% 已完成）
-   - **下一批（Wave 2）**：E.0.1 `test_kfd_end_to_end_standalone`（5 KFD ioctl E2E，最高价值）→ E.0.2 fault_handling → E.0.3（依赖 C.2.3 已 ✅）
-   - **后续（Wave 3-6）**：E.1.1-1.3 build 验证 → E.2.1-2.4 TaskRunner E2E（含 L1↔L2 bridge）→ E.3.1-3.9 docs → E.4.1-4.7 PR + merge + 归档
+4. **C-12** kfd-multi-file（6-8 周 sub-project，64% 已完成）
+   - **下一批（Wave 3）**：E.1.1 build 验证 + E.1.2 99/99 ctest PASS（保持 103 + 新测试）→ E.1.3 新增 ctest binary 验收
+   - **后续（Wave 4-6）**：E.2.1-2.4 TaskRunner E2E（含 L1↔L2 bridge）→ E.3.1-3.9 docs → E.4.1-4.7 PR + merge + 归档
 
 ---
 

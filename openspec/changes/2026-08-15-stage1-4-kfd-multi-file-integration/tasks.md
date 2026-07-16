@@ -275,9 +275,9 @@
 
 ### E.0 集成测试补充（**M2 修复**）
 
-- [ ] E.0.1 `test_kfd_end_to_end_standalone`（5 KFD ioctl 全跑通：GET_PROCESS_APERTURE/CREATE_QUEUE/UPDATE_QUEUE/MAP_MEMORY/UNMAP_MEMORY）
-- [ ] E.0.2 `test_kfd_fault_handling_standalone`（page fault 触发 → sim_pfh_inject_fault → KFD event 通知）
-- [ ] E.0.3 `test_kfd_concurrent_processes_standalone`（multi-thread single-process PID 隔离，依赖 C.2.3；**C.2.3 已降级** per G-C.0.3）
+- [x] E.0.1 `test_kfd_end_to_end_standalone`（5 KFD ioctl 全跑通：GET_PROCESS_APERTURE/CREATE_QUEUE/UPDATE_QUEUE/MAP_MEMORY/UNMAP_MEMORY）✅ 2026-07-16（22 assertions, 3 test cases；per B.2.3 policy: CREATE_QUEUE + DESTROY_QUEUE + SET_MEMORY_POLICY 通过 mock dispatch handlers，GET_PROCESS_APERTURE + UPDATE_QUEUE 通过真实 kfd_sim_bridge handlers，MAP/UNMAP 直接调用 kfd_sim_handle_*）
+- [x] E.0.2 `test_kfd_fault_handling_standalone`（page fault 触发 → sim_pfh_inject_fault → KFD event 通知）✅ 2026-07-16（8 assertions, 2 test cases；端到端：sim_pfh_inject_fault_with_cause(WRITE) → event callback → kfd_events_signal → kernel_workqueue lambda → sim_signal_event_count++）
+- [x] E.0.3 `test_kfd_concurrent_processes_standalone`（multi-thread single-process PID 隔离，依赖 C.2.3；**C.2.3 已降级** per G-C.0.3）✅ 2026-07-16（C.2.3 实现已通过 31 assertions/2 cases；E.0.3 = C.2.3 复用）
 
 ### E.1 完整 build 验证
 
