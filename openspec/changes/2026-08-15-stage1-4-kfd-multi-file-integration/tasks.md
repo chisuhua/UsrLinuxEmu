@@ -165,7 +165,7 @@
 
 - [x] B.4.1 `plugins/gpu_driver/drv/kfd/kfd_events.c` — event notification（async via kernel_workqueue）✅ 2026-07-15
 - [x] B.4.2 `plugins/gpu_driver/drv/kfd/kfd_events.h`
-- [ ] B.4.3 集成 sim signal path（`sim_signal_event` 已创建，day-1 enqueue → no-op lambda；真实写入 Phase C/E）
+- [x] B.4.3 集成 sim signal path（`sim_signal_event` day-1 stub；lambda 在 workqueue worker 中调用 sim_signal_event；Phase C/E 重构为通过 hal_event_signal）✅ 2026-07-16
 - [ ] **B.4.4 HAL op 扩展**（**H1 修复**，ADR-023 + ADR-035 流程）：
   - [x] B.4.4.1 修改 `struct gpu_hal_ops` 新增 `hal_event_signal()`（commit `c12c8c6`，HAL ops 11→14）✅ 2026-07-15
   - [x] B.4.4.2 `hal_mock.cpp` 实现（async routing via kernel_workqueue → sim_signal_event，commit 21c579b）✅ 2026-07-15
@@ -173,7 +173,7 @@
   - [ ] B.4.4.4 MockGpuDriver 测试覆盖（Phase E）
   - [x] B.4.4.5 **追加到 ADR-062 (HAL ops event signal 扩展)**（与 B.3.4 同流程但独立 ADR；ADR-061 专管 IOMMU，ADR-062 专管 event signal；C-12 实施时与 ADR-061 同时创建）（commit `ea8e6d1` PROPOSED → commit `af6e678` Accepted）✅ 2026-07-15
 - [x] B.4.5 单元测试 `test_kfd_events_standalone`（6 TEST_CASE / 17 assertions，init/exit/EAGAIN/invalid-args/concurrent-race/get_workqueue）✅ 2026-07-15
-- [ ] **B.4.6 kfd_events 后台线程**（**ADR-060 §2.1 异步决策**：kfd_event_work_handler 模拟）— day-1 通过 kernel_workqueue (C++) 已实现异步；C-side pthread 实现为可选清理
+- [x] **B.4.6 kfd_events 后台线程**（**ADR-060 §2.1 异步决策**：kfd_event_work_handler 模拟）— day-1 通过 kernel_workqueue (C++) 已实现异步；C-side pthread 实现为可选清理 ✅ 2026-07-16
   - [x] B.4.6.1 `kfd_events_thread_`（基于 kernel_thread_base — 通过 kernel_workqueue 内部）✅ 2026-07-15
   - [x] B.4.6.2 `kfd_events_queue_`（std::deque + std::mutex in kernel_workqueue）✅ 2026-07-15
   - [x] B.4.6.3 `kfd_events_cv_` 唤醒（std::condition_variable in kernel_workqueue）✅ 2026-07-15
@@ -251,11 +251,11 @@
   - [x] C.2.1.6 KFD `UNMAP_MEMORY` handler 后调 `us_mm_shim_unregister_vma`（用 bo_map_ lookup 查 VA，因 `gpu_unmap_memory_args` 无 gpu_va 字段）
   - [x] C.2.1.7 **边界隔离**: `drv/kfd/kfd_process.c` 内 include `<kernel/uvm/mm_shim.h>`（限于 C-side field 操作；struct 定义在 kfd_priv.h 仍用 `void*` opaque per task spec）
 - [⏸] C.2.2 单元测试 `tests/test_mm_shim_standalone`：
-- [ ] C.2.3 集成测试 `test_kfd_concurrent_processes_standalone`：
-  - [ ] C.2.3.1 **降级**: multi-thread single-process（非 multi-process，因 ADR-011 未 Accepted）
-  - [ ] C.2.3.2 创建 2 个独立 `kfd_process` 实例（不同 PID 值 `0x1001`, `0x1002`），各自 attach mm_shim
-  - [ ] C.2.3.3 各自 KFD `MAP_MEMORY` 映射相同 GPU VA range → 断言互相隔离
-  - [ ] C.2.3.4 PID A unmap → PID B 的映射仍有效 → 断言 `us_mm_shim_find_vma(B, addr) == 0`
+- [x] C.2.3 集成测试 `test_kfd_concurrent_processes_standalone`：✅ 2026-07-16（31 assertions, 2 test cases, all PASS）
+  - [x] C.2.3.1 **降级**: multi-thread single-process（非 multi-process，因 ADR-011 未 Accepted）
+  - [x] C.2.3.2 创建 2 个独立 `kfd_process` 实例（不同 PID 值 `0x1001`, `0x1002`），各自 attach mm_shim
+  - [x] C.2.3.3 各自 KFD `MAP_MEMORY` 映射相同 GPU VA range → 断言互相隔离
+  - [x] C.2.3.4 PID A unmap → PID B 的映射仍有效 → 断言 `us_mm_shim_find_vma(B, addr) == 0`
 
 ---
 
