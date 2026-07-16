@@ -297,15 +297,15 @@
 
 ### E.3 docs 更新（**L4 修复**，具体化）
 
-- [ ] E.3.1 `docs/05-advanced/kfd-portability-boundary.md` v1.3 更新（Tier-2 §3.2 §3.3 标注完成）
-- [ ] E.3.2 `docs/02_architecture/post-refactor-architecture.md` §1.10 更新（KFD 多文件实现描述）
-- [ ] E.3.3 `docs/05-advanced/kfd-portability-report.md` v2 更新（C-12 多文件交付报告）
-- [ ] E.3.4 `docs/05-advanced/tier2-runtime-penetration-report.md` 更新（C.1/C.2 实施记录）
-- [ ] E.3.5 `docs/05-advanced/iommu-error-semantics.md` 更新（C.1 实施记录）
-- [ ] E.3.6 `openspec/changes/INDEX.md` 更新（C-12 标记 archived）
-- [ ] E.3.7 `docs/00_adr/README.md` 更新（ADR-059 升级 Accepted 标记）
-- [ ] E.3.8 顶层 `README.md` 更新（KFD 多文件子项目状态）
-- [ ] E.3.9 `tools/docs-audit.sh --strict` 无 warning（保持 43/43 PASS）
+- [x] E.3.1 `docs/05-advanced/kfd-portability-boundary.md` v1.3 更新（Tier-2 §3.2 §3.3 标注完成）✅ 2026-07-16（追加 "v1.3 C-12 Update" section：§3.2 IOMMU + §3.3 mm_shim + §3.4 multi-file 状态更新）
+- [x] E.3.2 `docs/02_architecture/post-refactor-architecture.md` §1.10 更新（KFD 多文件实现描述）✅ 2026-07-16（已在 commit `ea8e6d1` C-12 launch prep 中更新 KFD 6 模块路径 + ioctl 派发描述）
+- [x] E.3.3 `docs/05-advanced/kfd-portability-report.md` v2 更新（C-12 多文件交付报告）✅ 2026-07-16（追加 "v2 C-12 Multi-File Delivery Report" section：21 kfd files + HAL ADR-061/062 extensions + Phase B/C/D/E summary）
+- [x] E.3.4 `docs/05-advanced/tier2-runtime-penetration-report.md` 更新（C.1/C.2 实施记录）✅ 2026-07-16（追加 "v1.1 C-12 Phase C Implementation Records" section：C.1 IOMMU 5/10 + C.2 mm_shim 4/4 + acceptance）
+- [x] E.3.5 `docs/05-advanced/iommu-error-semantics.md` 更新（C.1 实施记录）✅ 2026-07-16（追加 "C-12 Phase C.1 Implementation Records" section：sim_pfh callback + sim_pm real impl + IOTLB flush + verification）
+- [⏸] E.3.6 `openspec/changes/INDEX.md` 更新（C-12 标记 archived）— **deferred to E.4.5**（C-12 archive 触发时执行；当前 C-12 仍 IN_PROGRESS 71%）
+- [x] E.3.7 `docs/00_adr/README.md` 更新（ADR-059 升级 Accepted 标记）✅ 2026-07-16（已在 commit `e10e8ab` 中 ADR-059 标记 Accepted；当前 ADR README 已就绪）
+- [x] E.3.8 顶层 `README.md` 更新（KFD 多文件子项目状态）✅ 2026-07-16（已在 commit `ea8e6d1` C-12 launch prep 中标记 "后续子项目" → IN_PROGRESS + 链接 kfd-multi-file.md）
+- [x] E.3.9 `tools/docs-audit.sh --strict` 无 warning（保持 43/43 PASS）✅ 2026-07-16（**43/43 PASS, 0 failed, 0 warnings**）
 
 ### E.4 PR + merge + 归档
 
