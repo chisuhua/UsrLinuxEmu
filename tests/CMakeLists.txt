@@ -456,6 +456,52 @@ target_compile_options(test_kfd_dispatch_standalone PRIVATE -Wno-implicit-functi
 add_test(NAME test_kfd_dispatch_standalone COMMAND test_kfd_dispatch_standalone)
 set_tests_properties(test_kfd_dispatch_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+# C-12 E.0.1 — KFD end-to-end: 5 ioctls (dispatch + bridge)
+add_executable(test_kfd_end_to_end_standalone
+    test_kfd_end_to_end_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_dispatch.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd_sim_bridge.cpp
+)
+target_link_libraries(test_kfd_end_to_end_standalone PRIVATE kernel gpu_sim)
+target_include_directories(test_kfd_end_to_end_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_end_to_end_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_kfd_end_to_end_standalone COMMAND test_kfd_end_to_end_standalone)
+set_tests_properties(test_kfd_end_to_end_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# C-12 E.0.2 — KFD page fault → event signal → sim chain
+add_executable(test_kfd_fault_handling_standalone
+    test_kfd_fault_handling_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/page_fault_handler.cpp
+)
+target_link_libraries(test_kfd_fault_handling_standalone PRIVATE kernel gpu_sim)
+target_include_directories(test_kfd_fault_handling_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/linux_compat
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_kfd_fault_handling_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_kfd_fault_handling_standalone COMMAND test_kfd_fault_handling_standalone)
+set_tests_properties(test_kfd_fault_handling_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 # C-12 B.1.11 — kfd_module standalone test (lifecycle + idempotency)
 add_executable(test_kfd_module_standalone
     test_kfd_module_standalone.cpp
