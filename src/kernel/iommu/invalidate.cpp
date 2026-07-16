@@ -89,7 +89,7 @@ int iommu_flush_iotlb(struct iommu_domain *domain, unsigned long iova, size_t si
 	if (!domain)
 		return IOMMU_ERR_EINVAL;
 	if (domain->ops && domain->ops->flush_iotlb)
-		domain->ops->flush_iotlb(domain, iova, size);
+		domain->ops->flush_iotlb(domain, iova, size, nullptr);
 	return IOMMU_ERR_OK;
 }
 

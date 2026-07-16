@@ -64,7 +64,7 @@ int ats_handle_invalidation_request(struct iommu_domain *domain,
 		     req->iova, req->size);
 
 	if (domain->ops && domain->ops->flush_iotlb)
-		domain->ops->flush_iotlb(domain, req->iova, req->size);
+		domain->ops->flush_iotlb(domain, req->iova, req->size, nullptr);
 
 	completion->status = ATS_INVALIDATION_SUCCESS;
 	return IOMMU_ERR_OK;

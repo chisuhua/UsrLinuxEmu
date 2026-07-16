@@ -27,6 +27,18 @@ int iommu_flush_iotlb(struct iommu_domain *domain, unsigned long iova, size_t si
 int  us_iommu_vfio_available(void);
 int  us_iommu_vfio_invalidate(unsigned long iova, size_t size);
 void us_iommu_vfio_reset(void);
+
+/* M8 sim_pm bridge forward declarations */
+struct sim_page_migration;
+struct sim_page_migration *sim_pm_create(unsigned long);
+void                       sim_pm_destroy(struct sim_page_migration *);
+int  sim_pm_attach_domain(struct sim_page_migration *, void *);
+int  sim_pm_migrate_to_device(struct sim_page_migration *,
+                               unsigned long, const void *, unsigned long);
+int  sim_pm_is_page_on_device(struct sim_page_migration *,
+                               unsigned long);
+int  iommu_domain_attach_sim_pm(struct iommu_domain *,
+                                 struct sim_page_migration *);
 }
 
 TEST_CASE("iommu_flush_iotlb — null domain returns -EINVAL",
@@ -117,5 +129,46 @@ TEST_CASE("iommu_flush_iotlb — Stage 2.1.1 degrades gracefully without vfio",
   int flush_ret = iommu_flush_iotlb(domain, 0x1000, 4096);
   CHECK(flush_ret == 0);
 
+  iommu_domain_free(domain);
+}
+
+/* M8: iommu_flush_iotlb public wrapper (with sim_pm bridge) doesn't crash and
+ * correctly clears stale state when entries were unmapped. */
+TEST_CASE("iommu_flush_iotlb — sim_pm bridge: public wrapper flush propagates",
+          "[kernel][iommu][flush][tier2][sim_pm][bridge]") {
+  struct iommu_domain *domain = iommu_domain_alloc(IOMMU_DOMAIN_DMA);
+  REQUIRE(domain != nullptr);
+  /* iommu_domain_alloc does not set ops; default_flush_iotlb needs them. */
+  domain->ops = iommu_default_ops_get();
+
+  struct sim_page_migration *pm = sim_pm_create(0x10000);
+  REQUIRE(pm != nullptr);
+  REQUIRE(sim_pm_attach_domain(pm, domain) == 0);
+  REQUIRE(iommu_domain_attach_sim_pm(domain, pm) == 0);
+
+  /* Use dummy src for migrate_to_device.
+   * migrate_to_device calls iommu_map(domain, offset, paddr, size) — that
+   * updates domain->iova_to_phys. */
+  unsigned char src[4096] = {0};
+  REQUIRE(sim_pm_migrate_to_device(pm, 0x2000, src, 4096) == 0);
+  CHECK(sim_pm_is_page_on_device(pm, 0x2000) == 1);
+
+  /* Direct call to public wrapper (used by invalidate.cpp + ats_protocol.cpp
+   * with nullptr as flushed_entries). Should NOT crash even when
+   * flushed_entries is NULL. */
+  int flush_ret = iommu_flush_iotlb(domain, 0x2000, 4096);
+  CHECK(flush_ret == 0);
+  /* sim_pm is still bound, but no entries to invalidate via flushed_entries
+   * path — page remains on device. */
+  CHECK(sim_pm_is_page_on_device(pm, 0x2000) == 1);
+
+  /* Now unmap → triggers default_flush_iotlb WITH flushed_entries
+   * (since iommu_unmap snapshots before erase). */
+  long unmap_ret = iommu_unmap(domain, 0x2000, 4096);
+  REQUIRE(unmap_ret == 4096);
+  /* sim_pm_invalidate called from default_flush_iotlb — page should be EVICTED. */
+  CHECK(sim_pm_is_page_on_device(pm, 0x2000) == 0);
+
+  sim_pm_destroy(pm);
   iommu_domain_free(domain);
 }
