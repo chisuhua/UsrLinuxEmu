@@ -44,6 +44,9 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   static constexpr off_t DOORBELL_MMAP_OFFSET = 0x20000;
 
   struct gpu_hal_ops* hal_;
+  void* mm_shim_ = nullptr;        /* opaque us_mm_shim* from kfd_process */
+
+  void set_mm_shim(void* shim) { mm_shim_ = shim; }
 
   /** DRM device context (per Decision 1 / task 3.3).
    *

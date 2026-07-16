@@ -22,6 +22,7 @@
 #include "shared/gpu_ioctl.h"
 #include "linux_compat/drm/drm_ioctl.h"
 #include "drv/kfd_sim_bridge.h"
+#include "kernel/uvm/mm_shim.h"
 #include "sim/fence_id.h"
 #include "sim/stream_capture.h"
 #include "sim/graph.h"
@@ -437,7 +438,7 @@ static long gpu_ioctl_update_queue(struct drm_device* dev, void* data, struct dr
   return ret;
 }
 
-static long gpu_ioctl_map_memory(struct drm_device* dev, void* data, struct drm_file*) {
+static long gpu_ioctl_map_memory(struct drm_device* dev, void* data, struct drm_file* file) {
   auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_map_memory_args*>(data);
   if (!args)
@@ -450,6 +451,10 @@ static long gpu_ioctl_map_memory(struct drm_device* dev, void* data, struct drm_
     return -EINVAL;
   long ret = kfd_sim_handle_map_memory(args);
   if (ret == 0) {
+    if (self->mm_shim_) {
+      us_mm_shim_register_vma(static_cast<struct us_mm_shim*>(self->mm_shim_),
+                              args->gpu_va, args->gpu_va + args->size, 0);
+    }
     std::cout << "[GpgpuDevice] MAP_MEMORY: handle=" << args->handle
               << " n_devices=" << args->n_devices
               << " gpu_va=0x" << std::hex << args->gpu_va << std::dec
@@ -469,6 +474,14 @@ static long gpu_ioctl_unmap_memory(struct drm_device* dev, void* data, struct dr
     return -EINVAL;
   long ret = kfd_sim_handle_unmap_memory(args);
   if (ret == 0) {
+    if (self->mm_shim_) {
+      auto it = self->bo_map_.find(args->handle);
+      if (it != self->bo_map_.end()) {
+        us_mm_shim_unregister_vma(static_cast<struct us_mm_shim*>(self->mm_shim_),
+                                  it->second.gpu_va,
+                                  it->second.gpu_va + it->second.size);
+      }
+    }
     std::cout << "[GpgpuDevice] UNMAP_MEMORY: handle=" << args->handle
               << " n_devices=" << args->n_devices
               << " (sim page table cleared)\n";
