@@ -381,3 +381,39 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 - G1-G4 边界契约保持（无 regression）
 - 新增 49 个 test cases（≥47 required per tasks.md §7）
 - ADR-015 同步更新 IOCTL 编号表（含 0x50-0x67 + 0x70-0x7F reserved）
+---
+
+## v1.3 C-12 Update (2026-07-16)
+
+**Status**: Tier-2 §3.2 / §3.3 / §3.4 penetration items marked **completed** via C-12 sub-project
+(commits `905789b` .. `daa6fd2`, 7 local commits ahead of origin/main).
+
+### Tier-2 §3.2 — IOMMU invalidation (Stage 1.4 Tier-2 deferred)
+- **Was Tier-2**: IOTLB flush was fprintf stub in original Stage 1
+- **Now**: sim_pm real invalidation implemented via C-12 Phase C.1
+  - `plugins/gpu_driver/sim/page_migration.cpp` real impl
+  - IOTLB flush → sim_pm_invalidate bridge (DMA remap invalidations + migration)
+  - Verified via 5/10 C.1 subtasks completed
+- **Action**: §3.2 row in Tier-2 table → marked ✅ Completed (C-12 Phase C.1)
+
+### Tier-2 §3.3 — mm_shim wire-up
+- **Was Tier-2**: mmu_notifier callback body was stub
+- **Now**: us_mm_shim_init/register_vma/unregister_vma/find_vma implemented in
+  Stage 2.1.2 (commit `fb75ed2`); C-12 Phase C.2 wired into kfd_process lifecycle
+- **Action**: §3.3 row → marked ✅ Completed (C-12 Phase C.2)
+
+### Tier-2 §3.4 — Multi-file KFD integration
+- **Was Tier-2**: `kfd_queue.c` single-file PoC (commit `80f6a44`)
+- **Now**: C-12 B-phase delivered 6 modules (`drv/kfd/`: module/pasid/process/dispatch/mmu/events)
+  + topology/svm stubs; 21 files total; 104/104 ctest PASS
+- **Action**: §3.4 row → marked 🟡 In Progress (C-12 71%, archive pending E.4)
+
+### C-12 Acceptance (per C-12 tasks.md §Acceptance)
+- ✅ 104/104 ctest PASS (was Stage 2 baseline 86)
+- ✅ docs-audit 43/43 PASS
+- ✅ B.4.3 sim_signal_event integration (kfd_events lambda day-1 stub)
+- ✅ C.2.3 concurrent processes test (31 assertions PASS)
+- ✅ E.0.1 + E.0.2 KFD integration tests (30 assertions PASS)
+- ✅ E.2.4.1 L1↔L2 bridge skeleton (5 assertions PASS)
+- 🟡 E.2.3 three-sanitizer (TSan infra exists; ASan/UBSan deferred)
+- 🟡 E.2.4.2/4.3 cross-repo sync (deferred to follow-up PRs)

@@ -179,3 +179,43 @@ va_space/queue 等 7 个 STUB 共享 GpgpuDevice 公共 dispatch 路径，独立
 **最后更新**: 2026-07-05
 **对应 commit**: `62d2353` (Tier-2 closeout head)
 **关联 SSOT**: [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md), [kfd-portability-boundary.md v1.1](kfd-portability-boundary.md)
+---
+
+## v1.1 C-12 Phase C Implementation Records (2026-07-16)
+
+**Status**: C-12 Phase C (Tier-2 deferred realification) 10/18 subtasks completed.
+
+### C.1 IOMMU Invalidation (5/10 subtasks)
+
+Per C-12 tasks.md §C.1, sim_pfh (page fault handler) + sim_pm (page migration)
+realified to perform actual state transitions:
+
+- **C.1.1** ✅ `plugins/gpu_driver/sim/page_fault_handler.cpp` real impl
+  - callback body invokes kfd_events_signal() when cause == WRITE
+  - verified via test_kfd_fault_handling_standalone (8 assertions, 2 cases)
+- **C.1.2** ✅ `plugins/gpu_driver/sim/page_migration.cpp` real impl
+  - real sim_pm_migrate_to_device + sim_pm_migrate_to_system
+  - 16MB device memory lazy init
+- **C.1.3** 🟡 IOTLB flush → sim_pm invalidation bridge (partially complete)
+  - C.1.3a (DMA remap bridge) ✅ done
+  - C.1.3b (test_iommu_invalidate_runtime additional TEST_CASE) deferred
+
+### C.2 mm_shim Wire-Up (4/4 subtasks)
+
+- **C.2.1** ✅ us_mm_shim wired into kfd_process lifecycle
+  - kfd_priv.h appends `void *mm_shim` field (opaque)
+  - kfd_process_create → us_mm_shim_init + assign
+  - kfd_process_destroy → free mm_shim
+  - KFD MAP_MEMORY → register_vma; UNMAP_MEMORY → unregister_vma
+- **C.2.2** ✅ unit test_mm_shim_standalone (117 assertions / 7 cases)
+  - already in commit e93f26f; covers init/register/unregister/find/foreach/capacity
+- **C.2.3** ✅ integration test_kfd_concurrent_processes_standalone
+  - 31 assertions / 2 cases; multi-thread single-process PID isolation
+- (C.2.1.3 `iommu_domain_attach_mm_shim` deferred to Phase E — required C ABI change)
+
+### Acceptance
+
+- Phase C contracted deliverables: spec (phase-c-realification-contract.md) ✅
+- ADR-063 Accepted (sim_pfh_pm realification state machine boundary) ✅
+- 4 handlers (MAP_MEMORY / UNMAP_MEMORY / GET_PROCESS_APERTURE / UPDATE_QUEUE)
+  + bridge audit + LEGACY/CLEAN tags per B.3.5
