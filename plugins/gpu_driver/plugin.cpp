@@ -13,6 +13,9 @@
 #include "sim/scheduler/global_scheduler.h"
 #include "drv/kfd/kfd_module.h"
 
+#include <kernel/uvm/mm_shim.h>
+#include "drv/kfd_sim_bridge.h"
+
 namespace {
 struct HalHolder {
   struct gpu_hal_ops hal;
@@ -22,7 +25,15 @@ struct HalHolder {
   std::shared_ptr<HardwarePullerEmu> puller;
 };
 static HalHolder* g_hal = nullptr;
-}
+
+/* Phase C.2.1: single-process mm_shim fallback. Real C-12 uses
+ * kfd_process_create()->mm_shim, but Tier-1 plugin init runs before any
+ * process is created. The bridge holds the singleton mm_shim and
+ * initializes it to a process-lifetime instance so MAP/UNMAP handlers
+ * have something to register VMAs against. */
+static struct us_mm_shim g_plugin_mm_shim;
+static bool g_mm_shim_inited = false;
+} // anonymous namespace
 
 using namespace usr_linux_emu;
 
@@ -74,8 +85,17 @@ static int plugin_init_internal() {
 
   hal_holder.puller->start();
 
+  /* Phase C.2.1: bind mm_shim to bridge + GpgpuDevice before VFS registration.
+   * PID 0 = "kernel/driver-internal" host process (no real client yet). */
+  if (!g_mm_shim_inited) {
+    us_mm_shim_init(&g_plugin_mm_shim, 0);
+    g_mm_shim_inited = true;
+  }
+  kfd_sim_set_mm_shim(&g_plugin_mm_shim);
+
   auto device = std::make_shared<GpgpuDevice>(&hal_holder.hal);
   device->setPuller(hal_holder.puller);
+  device->set_mm_shim(&g_plugin_mm_shim);
 
   VFS& vfs = VFS::instance();
   auto dev = std::make_shared<Device>(device->name, 0, device, nullptr);
