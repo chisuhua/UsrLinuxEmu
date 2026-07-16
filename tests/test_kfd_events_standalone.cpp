@@ -17,14 +17,26 @@
  */
 #include <catch_amalgamated.hpp>
 
+#include <chrono>
 #include <thread>
 #include <vector>
+
+#include "kernel/thread/kernel_workqueue.h"
 
 extern "C" {
 #include "kfd_events.h"
 }
 
-/* ── test cases ─────────────────────────────────────────────────────── */
+TEST_CASE("kernel_workqueue repeatedly stops idle worker",
+          "[kfd][events][workqueue][regression]") {
+  for (int iteration = 0; iteration < 256; ++iteration) {
+    usr_linux_emu::kernel_workqueue workqueue;
+    workqueue.start();
+
+    REQUIRE(workqueue.flush(std::chrono::milliseconds(100)));
+    workqueue.stop();
+  }
+}
 
 TEST_CASE("kfd_events init/exit lifecycle", "[kfd][events][lifecycle]") {
   /* init */
