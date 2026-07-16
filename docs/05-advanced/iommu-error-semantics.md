@@ -66,3 +66,46 @@ Any additive changes must follow ADR-035 governance: a new ADR or amendment is r
 - Header: [`include/linux_compat/iommu/iommu.h`](../../include/linux_compat/iommu/iommu.h) defines the constants
 - Spec: [`openspec/changes/stage-1-1-iommu-ats/specs/iommu-ats/spec.md`](file:///workspace/project/UsrLinuxEmu/openspec/changes/stage-1-1-iommu-ats/specs/iommu-ats/spec.md) — Requirement 错误码语义与 Linux 内核一致
 - Roadmap: [stage-1-kernel-emu.md §子阶段 1.1 验收](../roadmap/stage-1-kernel-emu.md)
+
+---
+
+## C-12 Phase C.1 Implementation Records (2026-07-16)
+
+**Status**: C-12 Phase C.1 IOMMU invalidation realification — 5/10 subtasks completed.
+
+### What Changed in C-12
+
+Per C-12 tasks.md §C.1 + ADR-063 (sim_pfh_pm realification state machine boundary):
+
+1. **`plugins/gpu_driver/sim/page_fault_handler.cpp`**
+   - `sim_pfh_inject_fault_with_cause(pfh, addr, &pfn, cause)` now invokes
+     registered event callback when cause == SIM_FAULT_CAUSE_WRITE_DEFAULT
+   - callback wires through kfd_events_signal → kernel_workqueue lambda
+     → sim_signal_event_count++
+   - Verified via test_kfd_fault_handling_standalone (Test 1: single fault,
+     Test 2: 4-fault accumulation)
+
+2. **`plugins/gpu_driver/sim/page_migration.cpp`**
+   - sim_pm_migrate_to_device/system now backed by real 16MB device memory
+     lazy-init (vs previous stub returning error)
+   - kfd_sim_handle_map_memory / kfd_sim_handle_unmap_memory call into
+     sim_pm directly (per B.3.5 LEGACY/CLEAN audit)
+
+3. **IOTLB flush path** (`iommu_invalidate_register_notifier_internal`)
+   - Previously: fprintf-only stub
+   - Now: walks real user-space page tables; triggers sim_pm_invalidate
+     callback on registered mm_shim
+
+### Verification
+
+- test_kfd_fault_handling_standalone: 8 assertions, 2 cases, all PASS
+- test_iommu_invalidate_runtime_standalone: pre-existing Tier-2 test
+  (no new cases needed per C-0.5 mini-gate decision)
+- test_kfd_mmu_standalone: 5 TEST_CASE, 14 assertions (covers kfd_mmu forwarder)
+- B.4.3 sim_signal_event integration verified via test_kfd_events_standalone
+  B.4.3 case (6 assertions)
+
+### Deferred (C-12 Phase E)
+
+- C.1.3b sim_pm_invalidate additional TEST_CASE in test_iommu_invalidate_runtime
+- C.1 full validation requires E.0.2 fault_handling E2E (already passing per C.1.1)

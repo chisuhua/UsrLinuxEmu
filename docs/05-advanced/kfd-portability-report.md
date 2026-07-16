@@ -214,3 +214,58 @@
 **Maintainer**: UsrLinuxEmu Architecture Team
 **Honesty first**: no exaggeration, no shrinking of Tier-1 vs Tier-2 boundary.
 **Evidence first**: every Tier-1 delivery has commit hash + file path + test coverage triple evidence.
+---
+
+## v2 C-12 Multi-File Delivery Report (2026-07-16)
+
+**Status**: C-12 sub-project ~71% complete (54/80 原子任务). Tier-1 boundary from v1
+remains preserved; C-12 extends with multi-file KFD module split per ADR-059.
+
+### C-12 Scope Summary
+
+| C-12 Module | Files | Status | Test Coverage |
+|-------------|-------|--------|---------------|
+| `kfd_module.c` (init/exit bridge) | 1 | ✅ B.1.1 | test_kfd_module_standalone (idempotency) |
+| `kfd_pasid.c` (bitmap allocator) | 2 | ✅ B.1.3 | test_kfd_pasid_standalone (9 TEST_CASE / 77584 assertions) |
+| `kfd_process.c` (process aperture) | 2 | ✅ B.1.5 | test_kfd_process_standalone (11 TEST_CASE / 63 assertions) |
+| `kfd_queue.c` (queue + FIXME cleanup) | 1 | ✅ B.1.x + D.1-3 | test_kfd_queue_standalone (4 TEST_CASE) |
+| `kfd_dispatch.c` (IOCTL routing) | 2 | ✅ B.2.1 | test_kfd_dispatch_standalone (10 TEST_CASE / 144 assertions) |
+| `kfd_mmu.c` (KFD-side MMU) | 2 | ✅ B.3.1 | test_kfd_mmu_standalone (5 TEST_CASE / 14 assertions) |
+| `kfd_events.c` (async event signal) | 2 | ✅ B.4.1 + B.4.3 | test_kfd_events_standalone (14 TEST_CASE / 277 assertions) |
+| `kfd_topology.c/svm.c` (stubs) | 4 | ✅ B.1.8-1.9 | (no standalone; verified via dispatch) |
+| `kfd_sim_bridge.cpp` (Tier-1 sim glue) | 1 | ✅ B.3.5 | test_kfd_sim_bridge_audit_standalone |
+| `kfd_priv.h` (internal types) | 1 | ✅ B.1.7 | (header; via includes) |
+| `kfd_types.h` (common types) | 1 | ✅ | (header; via includes) |
+| `sim_event.c` (sim-layer KFD event) | 2 | ✅ B.4.3 | verified via test_kfd_events B.4.3 case |
+
+**Total**: 21 files in `plugins/gpu_driver/drv/kfd/` + 2 in `plugins/gpu_driver/sim/sim_event.{c,h}`
+
+### C-12 HAL Extensions (ADR-061/062)
+- ✅ ADR-061: `hal_iommu_map/unmap` ops (B.3.4)
+  - struct gpu_hal_ops: 11→13 ops
+  - hal_mock: routes to sim_pm_migrate_to_device/system (real sim_pm_ integration)
+  - hal_user: stub for real hardware path
+- ✅ ADR-062: `hal_event_signal` op (B.4.4)
+  - struct gpu_hal_ops: 13→14 ops
+  - hal_mock: async routing via kernel_workqueue → sim_signal_event
+  - hal_user: stub for real hardware path
+
+### C-12 Phase B/C/D Summary
+- **Phase B** (模块切分): 26/27 [x] — kfd_* modules + dispatch + mmu + events
+- **Phase C** (Tier-2 deferred realification): 10/18 [x] — IOMMU invalidation + mm_shim wire-up
+- **Phase D** (FIXME cleanup): 3/3 [x] — kfd_queue_buffer_put removed, _locked variant
+
+### C-12 Phase E Progress (8/24 [x])
+- ✅ E.0 integration tests (E.0.1-0.3): 30 assertions, all PASS
+- ✅ E.1 build verification: 104/104 ctest PASS
+- ✅ E.2.1 + E.2.2: TaskRunner 10/10 ctest PASS (185 test cases)
+- ✅ E.2.4.1: L1↔L2 bridge skeleton (5 assertions)
+- 🟡 E.2.3 + E.2.4.2/4.3: deferred follow-up
+- ⏳ E.3 + E.4: this wave + next wave
+
+### Migration Path (Real Kernel)
+Per kfd_portability_boundary.md §3.4:
+1. Delete `plugins/gpu_driver/drv/kfd/` files
+2. Replace with `drivers/gpu/drm/amd/amdkfd/` from Linux 6.12 LTS
+3. Replace `sim_pm_*` calls with `amdgpu_vm_*` real ops
+4. Function signatures preserved → callers compile unchanged
