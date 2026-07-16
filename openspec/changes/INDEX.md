@@ -1,9 +1,12 @@
 # Active Changes Index
 
-> **更新**: 2026-07-16
+> **更新**: 2026-07-17
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: 0 个活跃 change (14 个已完成/已归档 — 含 C-12 stage1-4-kfd-multi-file-integration)
-> **Source**: 2026-07-16 **C-12 已归档**（openspec archive → `2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration/`，81% 原子任务 + E.4.5 archive step） + 2026-07-16 C-12 Wave 5 完成（E.3.1 boundary v1.3 + E.3.3 portability-report v2 + E.3.4 tier2-runtime + E.3.5 iommu-error-semantics） + 2026-07-16 C-12 Wave 4 partial（E.2.1 + E.2.2 + E.2.4.1 done；E.2.3 + E.2.4.2/4.3 deferred to follow-up per ADR-035 §Rule 5.1） + 2026-07-16 C-12 测试套 104/104 ctest PASS + docs-audit 43/43 PASS + 2026-07-16 C-12 Wave 3 完成 + Wave 2 完成 + Wave 1 收尾 + 2026-07-11 C-09 归档 + 2026-07-11 C-12 B.1.10 thread infrastructure PoC + 2026-07-14 ADR-061/062 → Accepted + C-12 Phase A gate cleared + 2026-07-15 C-12 Phase A 文档化完成 + Phase B 启动 + Phase B 持续推进 + Phase C 真实化 + Phase D FIXME cleanup
+> **总数**: **2 个活跃 change** + 14 个已完成/已归档（含 C-12 stage1-4-kfd-multi-file-integration）
+> **Source**: 2026-07-17 **C-12 Follow-up Wave 7 启动** — 创建 2 个新 openspec change 承接 C-12 deferred E.2.3 + E.2.4：
+>   - `2026-07-16-three-sanitizer-infra` (E.2.3 — 32 tasks, 5 phases) — ASan/UBSan CMake infra + 修复暴露真 bug + 文档同步
+>   - `2026-07-16-kfd-l1-l2-bridge-e2e` (E.2.4 — 41 tasks, 5 phases) — UsrLinuxEmu 端 E2E test + TaskRunner 端 change + ADR-035 §Rule 5.1 4-step 跨仓同步
+> + 2026-07-16 C-12 已归档（openspec archive → `2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration/`，81% 原子任务完成） + 104/104 ctest PASS + docs-audit 43/43 PASS + TaskRunner 10/10 ctest ≈185 cases PASS
 
 ---
 
@@ -31,14 +34,34 @@
 
 ### 本季度 (P3)
 
-> **C-12 已归档**（2026-07-16）— 详见 [archive/2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration/](archive/2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration/)
+### `2026-07-16-three-sanitizer-infra` 🟡 (P3)
+**Effort**: 3-5 天
+**Why**: C-12 E.2.3 deferred — 补齐 ASan/UBSan CMake infra（TSan 已有）
+**进度（2026-07-17）**: 0/32 tasks
+- Phase A: CMake Infra (7 tasks)
+- Phase B: ASan Run + Bug Fixes (8 tasks)
+- Phase C: UBSan Run + Bug Fixes (7 tasks)
+- Phase D: 文档 + CI 集成 (4 tasks)
+- Phase E: 验证 + 归档 (6 tasks)
+
+### `2026-07-16-kfd-l1-l2-bridge-e2e` 🟡 (P3)
+**Effort**: 1-2 周
+**Why**: C-12 E.2.4 deferred — 跨仓 L1↔L2 bridge 端到端验证（ADR-035 §Rule 5.1 4-step）
+**进度（2026-07-17）**: 0/41 tasks
+- Phase A: UsrLinuxEmu 端 E2E (11 tasks) — skeleton 已在 commit `ed9ce1e`
+- Phase B: TaskRunner 端 Change (9 tasks) — 跨仓 PR
+- Phase C: 跨仓 Submodule Bump (7 tasks) — ADR-035 §Rule 5.1 Step 3
+- Phase D: 文档 + 归档 (6 tasks)
+- Phase E: 验收 (5 tasks)
 
 ---
+
+> **C-12 已归档**（2026-07-16）— 详见 [archive/2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration/](archive/2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration/)
 
 ## 依赖图
 
 ```
-[C-12/kfd-multi-file] ✅ ARCHIVED 2026-07-16 ──> (Phase 4 mainline stable prerequisite)
+[C-12/kfd-multi-file] ✅ ARCHIVED 2026-07-16 ──> (Wave 7 follow-ups: three-sanitizer-infra + kfd-l1-l2-bridge-e2e)
 ```
 
 ---
@@ -49,7 +72,11 @@
 1. **C-09** ~~phase4-cu-mempool-alloc-real-va~~ ✅ archived（commit `ba88b5f`）
 2. **C-10** ~~stage3-2-perf-bench-baseline~~ ✅ archived（commit `d63da5e`）
 3. **C-11** ~~stage3-2-hotpath-optimize~~ ✅ archived（PR #30，acceptance PASS 2/3）
-4. **C-12** ~~stage1-4-kfd-multi-file-integration~~ ✅ archived（2026-07-16；81% 原子任务完成；剩余 E.2.3 + E.2.4.2/4.3 cross-repo sync deferred to follow-up PRs per ADR-035 §Rule 5.1）
+4. **C-12** ~~stage1-4-kfd-multi-file-integration~~ ✅ archived（2026-07-16；81% 原子任务完成）
+5. **Wave 7 — three-sanitizer-infra** 🟡 active（0/32 tasks, 3-5 天）
+6. **Wave 7 — kfd-l1-l2-bridge-e2e** 🟡 active（0/41 tasks, 1-2 周，跨仓）
+
+**执行路径建议**：先推进 three-sanitizer-infra（低风险单仓工作），完成后启动 kfd-l1-l2-bridge-e2e（跨仓 PR 工作流）。
 
 ---
 
