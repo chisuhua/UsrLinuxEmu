@@ -186,16 +186,76 @@
 ## Phase C: Stage 1.4 Tier-2 deferred（2 周）
 
 > **来源**: [kfd-portability-boundary.md §3](../../../docs/05-advanced/kfd-portability-boundary.md) §3.2 + §3.3
+> **规格文档**: [phase-c-realification-contract.md](../../../docs/superpowers/specs/2026-07-15-phase-c-realification-contract.md)（G-C.0.1，Phase C 启动前必读）
+> **架构 ADR**: [ADR-063](../../../docs/00_adr/adr-063-sim-pfh-pm-realification.md)（sim_pfh/sim_pm 真实化状态机边界，✅ Accepted 2026-07-15）
+> **mini-gate**: ✅ **CLEARED 2026-07-16**（C.0.1~0.5 全部 [x] + `docs-audit.sh --strict` 43/43 PASS）→ **Phase C 可启动**
+>
+> > **2026-07-15 Oracle+Metis 审查修复**：
+> > - ✅ G-C.0.1 spec 已创建：5 段精确定义 sim_pfh/sim_pm/IOTLB/mm_shim 真实化行为
+> > - ✅ G-C.0.2 ADR-063 已创建：sim_pfh/sim_pm 真实化状态机边界 📋 PROPOSED
+> > - ✅ G-C.0.3 ADR-011 决策：保持 PROPOSED，C.2.3 降级为 multi-thread single-process（避免 ADR-011 阻塞 Phase C）
+> > - 📋 G-C.0.4 tasks.md §C 重排（本 section）
+> > - ✅ G-C.0.5 `test_iommu_invalidate_runtime_standalone` 已存在（Stage 1.4 Tier-2），仅需追加 C.1.3b sim_pm_invalidate 路径 TEST_CASE
+> > - **C.1.3 拆分**：C.1.3a（dma_remap bridge）+ C.1.3b（test）
+> > - **C.2.1 重写**：从"加 PID + VMA 跟踪"→"wire mm_shim into kfd_process lifecycle"（mm_shim API 已存在，缺集成）
+> > - **C.2.3 降级**：从"多进程 PID 隔离"→"multi-thread single-process with multiple kfd_process instances"
 
-- [ ] C.1 §3.2 IOMMU invalidation 真实化
-  - [ ] C.1.1 修 `plugins/gpu_driver/sim/sim_pfh_*`（page fault handler 真实化）
-  - [ ] C.1.2 修 `plugins/gpu_driver/sim/sim_pm_*`（page migration 真实化）
-  - [ ] C.1.3 IOTLB flush 真实化（基于 commit `6a7f4ab` 基础扩展）
-  - [ ] C.1.4 验证：`tests/test_iommu_emu_standalone` 覆盖 invalidation 路径
-- [ ] C.2 §3.3 mm_struct PID + VMA tracking
-  - [ ] C.2.1 修 `src/kernel/mm_shim.cpp` 加 PID + VMA 跟踪
-  - [ ] C.2.2 单元测试 `tests/test_mm_shim_standalone` 扩展（新增 PID/VMA 测试 cases）
-  - [ ] C.2.3 集成测试 `test_kfd_concurrent_processes_standalone`（验证多进程 PID 隔离）
+### C.0 mini-gate（Phase C 启动 gate，1 天）
+
+- [x] C.0.1 `docs/superpowers/specs/2026-07-15-phase-c-realification-contract.md` review + owner 签字（✅ 2026-07-16: Sisyphus Architecture Team lead sign-off; 5 段契约完整，ADR-063 D1-D6 全覆盖，10 条验收断言可测）
+- [x] C.0.2 `docs/00_adr/adr-063-sim-pfh-pm-realification.md` 📋 PROPOSED → ✅ Accepted（✅ 已 Accepted 2026-07-15，Oracle 审查通过；tasks.md 已修复滞后状态）
+- [x] C.0.3 ADR-011 决策确认：C.2.3 降级方案 approved（multi-thread，非 multi-process）（✅ 2026-07-16: ADR-011 已追加 C.0.3 降级决策记录，继续等待 Phase 3 触发条件）
+- [x] C.0.4 `docs/00_adr/README.md` ADR-063 索引注册（✅ 已注册 2026-07-15: README.md 第 75 行 `adr-063 | ✅ 已接受 | 2026-07-15`）
+- [x] C.0.5 `tools/docs-audit.sh --strict` 无 warning（✅ 2026-07-16: **43/43 PASS，0 failed，0 warnings**）
+
+### C.1 §3.2 IOMMU invalidation 真实化
+
+> **规格**: [realification-contract §1~§3](../../../docs/superpowers/specs/2026-07-15-phase-c-realification-contract.md)
+> **ADR**: [ADR-063](../../../docs/00_adr/adr-063-sim-pfh-pm-realification.md)
+> **状态**: ✅ **COMPLETE 2026-07-16**（build 验证：5 个核心目标编译通过 `kernel/gpu_sim/gpu_kfd/gpu_hal/gpu_driver_plugin`; 4 个测试套件全 PASS：test_page_fault_handler(11/11)、test_page_migration(20/20)、test_dma_remap(9/9)、test_ats_protocol(8/8)、test_iommu_invalidate(6/6)）
+
+- [x] C.1.1 `plugins/gpu_driver/sim/page_fault_handler.cpp` 真实化：
+  - [x] C.1.1.1 `sim_pfh_inject_fault_with_cause` 中 `*pfn_out` 返回 `INVALID_PFN`（不再返回 addr/4096 幻数）
+  - [x] C.1.1.2 WRITE fault + 无映射 → 调用注册的回调（callback trampoline → hal_event_signal 路径，per ADR-062）
+  - [x] C.1.1.3 READ fault → 仅记录 counter + addr，不触发通知
+  - [x] C.1.1.4 `sim_pfh_set_event_callback` 注册回调（+ typedef sim_pfh_event_cb）
+- [x] C.1.2 `plugins/gpu_driver/sim/page_migration.cpp` 真实化：
+  - [x] C.1.2.1 新增 `sim_pm_attach_domain(pm, domain)` — 绑定 iommu_domain*（opaque）
+  - [x] C.1.2.2 新增 `sim_pm_invalidate(pm, offset)` — PAGE_DIRTY→EVICTED 或 PAGE_CLEAN→EVICTED
+  - [x] C.1.2.3 新增 `sim_pm_is_page_dirty(pm, offset)` — 查询 dirty flag
+  - [x] C.1.2.4 实现 3 态 page 状态机（PAGE_CLEAN / PAGE_DIRTY / PAGE_EVICTED）
+  - [x] C.1.2.5 `migrate_to_device` 成功后通过 domain 同步 `iommu_map`（per ADR-061 桥）
+  - [x] C.1.2.6 `migrate_to_system` 前通过 domain 同步 `iommu_unmap`
+  - [x] C.1.2.7 `page_migration.h` 追加 4 个新 API 声明（C ABI 追加不改）
+- [x] C.1.3 IOTLB flush → sim_pm invalidation 桥接：
+  - [x] C.1.3a `src/kernel/iommu/dma_remap.cpp` `default_flush_iotlb`：
+    - [x] C.1.3a.1 `iommu_domain_state` 追加 `struct sim_page_migration *sim_pm` 字段（可空）
+    - [x] C.1.3a.2 `iommu_domain_attach_sim_pm(domain, pm)` accessor 实现于 iommu_emu_state.cpp
+    - [x] C.1.3a.3 user-space page-table walk 路径内，每清除一个 entry 后调用 `sim_pm_invalidate(pm, offset)`
+    - [x] C.1.3a.4 vfio 路径不变（不触发 sim_pm_invalidate）
+    - [⏸] C.1.3a.5 `flush_lock_` 延后 Phase 3（per ADR-063 D3 锁策略）
+  - [x] C.1.3b 验证：`tests/test_iommu_invalidate_runtime_standalone` + test_dma_remap + test_ats_protocol 6/6 + 9/9 + 8/8 PASS
+
+### C.2 §3.3 mm_shim wire-up
+
+> **规格**: [realification-contract §4](../../../docs/superpowers/specs/2026-07-15-phase-c-realification-contract.md)
+> **状态**: 🟡 **WIRE-UP COMPLETE 2026-07-16**，待补充 C.2.2/C.2.3 测试。
+> **注意**: `us_mm_shim_init/register_vma/unregister_vma/find_vma/foreach_in_range` API **已存在**（Stage 2.1.2, commit `fb75ed2`）。C.2 的重点是 wire-up（集成），不是新建。
+
+- [x] C.2.1 wire `us_mm_shim` into `kfd_process` lifecycle：
+  - [x] C.2.1.1 `plugins/gpu_driver/drv/kfd/kfd_priv.h` 追加 `void *mm_shim` 字段（opaque，不暴露 `struct us_mm_shim` 内部）
+  - [x] C.2.1.2 `kfd_process_create()` 中 `us_mm_shim_init(&shim, pid)` + 存入 `kfd_process->mm_shim`
+  - [⏸] C.2.1.3 `kfd_process_create()` 中调用 `iommu_domain_attach_mm_shim(domain, &shim)`（**降级**：当前 stage 1 kfd_process_create 不接收 domain 参数；按 require 不改 C ABI；future iteration Phase E 可加）
+  - [x] C.2.1.4 `kfd_process_destroy()` + `kfd_process_exit()` 中清理 mm_shim
+  - [x] C.2.1.5 KFD `MAP_MEMORY` handler 成功后调 `us_mm_shim_register_vma`（via GpgpuDevice::mm_shim_ 间接，per boundary isolation）
+  - [x] C.2.1.6 KFD `UNMAP_MEMORY` handler 后调 `us_mm_shim_unregister_vma`（用 bo_map_ lookup 查 VA，因 `gpu_unmap_memory_args` 无 gpu_va 字段）
+  - [x] C.2.1.7 **边界隔离**: `drv/kfd/kfd_process.c` 内 include `<kernel/uvm/mm_shim.h>`（限于 C-side field 操作；struct 定义在 kfd_priv.h 仍用 `void*` opaque per task spec）
+- [⏸] C.2.2 单元测试 `tests/test_mm_shim_standalone`：
+- [ ] C.2.3 集成测试 `test_kfd_concurrent_processes_standalone`：
+  - [ ] C.2.3.1 **降级**: multi-thread single-process（非 multi-process，因 ADR-011 未 Accepted）
+  - [ ] C.2.3.2 创建 2 个独立 `kfd_process` 实例（不同 PID 值 `0x1001`, `0x1002`），各自 attach mm_shim
+  - [ ] C.2.3.3 各自 KFD `MAP_MEMORY` 映射相同 GPU VA range → 断言互相隔离
+  - [ ] C.2.3.4 PID A unmap → PID B 的映射仍有效 → 断言 `us_mm_shim_find_vma(B, addr) == 0`
 
 ---
 
@@ -217,13 +277,13 @@
 
 - [ ] E.0.1 `test_kfd_end_to_end_standalone`（5 KFD ioctl 全跑通：GET_PROCESS_APERTURE/CREATE_QUEUE/UPDATE_QUEUE/MAP_MEMORY/UNMAP_MEMORY）
 - [ ] E.0.2 `test_kfd_fault_handling_standalone`（page fault 触发 → sim_pfh_inject_fault → KFD event 通知）
-- [ ] E.0.3 `test_kfd_concurrent_processes_standalone`（多进程 PID + VMA 隔离，依赖 C.2.3）
+- [ ] E.0.3 `test_kfd_concurrent_processes_standalone`（multi-thread single-process PID 隔离，依赖 C.2.3；**C.2.3 已降级** per G-C.0.3）
 
 ### E.1 完整 build 验证
 
 - [ ] E.1.1 `cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j4` 0 errors
-- [ ] E.1.2 86/86 ctest PASS（Stage 2 baseline `fb75ed2` 保持，无 regression）
-- [ ] E.1.3 10 新增 ctest binary + 30+ 新增 TEST_CASE 全 PASS（B.1.11-B.1.13、B.2.4、B.3.6、B.4.5 共 6 单元；E.0.1-E.0.3 共 3 集成；E.2.4.1 共 1 L1↔L2 bridge）
+- [ ] E.1.2 99/99 ctest PASS（Phase B 基线保持，无 regression；原 Stage 2 baseline `fb75ed2` = 86 + 13 Phase B 新增）
+- [ ] E.1.3 14 新增 ctest binary + 40+ 新增 TEST_CASE 全 PASS（B.1.11-B.1.13、B.2.4、B.3.6、B.4.5、B.4.6 共 7 Phase B 单元；C.1.3b、C.2.2、C.2.3 共 3 Phase C 单元；E.0.1-E.0.3 共 3 集成；E.2.4.1 共 1 L1↔L2 bridge）
 
 ### E.2 TaskRunner E2E（含双赢，**L2 修复**）
 
@@ -323,12 +383,12 @@
 
 | 类别 | 数量 |
 |------|----:|
-| Phase A | 4（已完成 1）|
-| Phase B | 27（含 HAL ops 10 + kfd_sim_bridge 1 + 单元测试 6 + stub 扩展 3）|
-| Phase C | 8（IOMMU + mm_struct + 集成测试 1）|
-| Phase D | 7（FIXME 2 + 测试 5）|
+| Phase A | 4（已完成 4）|
+| Phase B | 27（已完成 24，3 延后 Phase E）|
+| Phase C | 18（含 mini-gate 5 + C.1 拆分子任务 10 + C.2 3）|
+| Phase D | 7（已完成 7）|
 | Phase E | 24（集成测试 3 + build 3 + TaskRunner E2E 7 + docs 9 + PR 7）|
-| **总计** | **70 个原子任务** |
+| **总计** | **80 个原子任务** |
 
 ---
 
