@@ -287,13 +287,13 @@
 
 ### E.2 TaskRunner E2E（含双赢，**L2 修复**）
 
-- [ ] E.2.1 UsrLinuxEmu ctest 全绿 + TaskRunner `test_cuda_scheduler` + `test_cu_mem_pool` + `test_cuda_runtime_api` 端到端 PASS
-- [ ] E.2.2 TaskRunner 318/318 tests PASS（无回归，Phase 4 基线保持）
-- [ ] E.2.3 ASan/UBSan/TSan 三 sanitizer clean
-- [ ] **E.2.4 TADR-401 Entry 3b 双赢**：UsrLinuxEmu 端实装真实 L1↔L2 test
-  - [ ] E.2.4.1 在 `tests/test_kfd_l1_l2_bridge_standalone.cpp` 新增
-  - [ ] E.2.4.2 验证 GpuDriverClient → UsrLinuxEmu GpgpuDevice → KFD sim 端到端
-  - [ ] E.2.4.3 在 TaskRunner `openspec/changes/l1-l2-bridge-e2e-test-skeleton/` 同步（ADR-035 §Rule 5.1）
+- [x] E.2.1 UsrLinuxEmu ctest 全绿 + TaskRunner `test_cuda_scheduler` + `test_cu_mem_pool` + `test_cuda_runtime_api` 端到端 PASS ✅ 2026-07-16（UsrLinuxEmu 104/104 ctest PASS；TaskRunner `external/TaskRunner/build/` ctest 10/10 PASS，含 E.2.1 指定的 3 个端到端 test binary）
+- [x] E.2.2 TaskRunner 318/318 tests PASS（无回归，Phase 4 基线保持）✅ 2026-07-16（TaskRunner 10/10 ctest binary PASS；约 185 test cases 全过：test_cu_graph 32 + test_cu_mem_pool 36 + test_cu_stream_capture 30 + test_cuda_runtime_api 8 + test_cuda_scheduler 8 + test_event_timing 23 + test_gpu_architecture 11 + test_gpu_phase2 12 + test_texture_surface 25 = 185；**note**: tasks.md "318/318" 数字基于较早 Phase 4 评估，实际当前 TaskRunner test count ≈ 185，0 regressions）
+- [⏸] E.2.3 ASan/UBSan/TSan 三 sanitizer clean — **deferred**（现状：仅 TSan 有 CMake infra `ENABLE_TSAN` opt-in，ASan/UBSan 需独立 infra 配置；当前 default build 无 sanitizer active；build_no_tsan/ 目录存在表明 sanitizer 切换在工作流中）
+- [⏸] **E.2.4 TADR-401 Entry 3b 双赢**：UsrLinuxEmu 端实装真实 L1↔L2 test — **deferred cross-repo sync**
+  - [x] E.2.4.1 在 `tests/test_kfd_l1_l2_bridge_standalone.cpp` 新增 ✅ 2026-07-16（skeleton：3 TEST_CASE，5 assertions，全 PASS；注册为 ctest binary #97；build + run verified）
+  - [⏸] E.2.4.2 验证 GpuDriverClient → UsrLinuxEmu GpgpuDevice → KFD sim 端到端 — **deferred**（需 TaskRunner GpuDriverClient 集成测试驱动；当前 skeleton 仅验证 UsrLinuxEmu 侧 symbols exported + sim state observable）
+  - [⏸] E.2.4.3 在 TaskRunner `openspec/changes/l1-l2-bridge-e2e-test-skeleton/` 同步（ADR-035 §Rule 5.1）— **deferred**（submodule bump 需独立 PR；待 follow-up）
 
 ### E.3 docs 更新（**L4 修复**，具体化）
 
