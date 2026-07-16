@@ -26,10 +26,16 @@ void kernel_workqueue::start() {
 
 void kernel_workqueue::stop() {
   bool expected = true;
-  if (!started_.compare_exchange_strong(expected, false,
-                                          std::memory_order_acq_rel,
-                                          std::memory_order_acquire)) {
-    return;  // not started (or already stopped)
+  {
+    // Update the wait predicate while holding the same mutex used by
+    // worker_loop(). This prevents stop notification from racing with the
+    // worker's transition into cv_.wait().
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!started_.compare_exchange_strong(expected, false,
+                                            std::memory_order_acq_rel,
+                                            std::memory_order_acquire)) {
+      return;  // not started (or already stopped)
+    }
   }
   cv_.notify_all();  // wake worker to observe started_ = false
   if (worker_) {
