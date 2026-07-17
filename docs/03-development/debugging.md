@@ -223,40 +223,55 @@ gdb ./bin/test_program core
 
 ### AddressSanitizer (ASan)
 
-AddressSanitizer 是 GCC/Clang 内置的内存错误检测工具。
+项目提供根 `CMakeLists.txt` option `ENABLE_ASAN`，自动向所有 target 传播 `-fsanitize=address -fno-omit-frame-pointer -g`。
 
 ```bash
-# 编译时启用 ASan
-mkdir build-asan && cd build-asan
-cmake -DCMAKE_BUILD_TYPE=Debug \
-      -DCMAKE_C_FLAGS="-fsanitize=address -g" \
-      -DCMAKE_CXX_FLAGS="-fsanitize=address -g" \
-      ..
-make -j$(nproc)
+# 配置并构建 ASan build
+cmake -DENABLE_ASAN=ON -DCMAKE_BUILD_TYPE=Debug -B build-asan -S .
+cmake --build build-asan -j$(nproc)
+
+# 运行测试（需先 staging plugin）
+scripts/stage-plugin.sh build-asan
+ASAN_OPTIONS=detect_leaks=0:halt_on_error=1:abort_on_error=1:print_stacktrace=1 \
+  ctest --test-dir build-asan --output-on-failure
+# 或直接运行单个二进制
+./build-asan/bin/test_gpu_ioctl_standalone
+```
+
+### ASan 默认选项
+
+| 选项 | 值 | 说明 |
+|------|---|------|
+| `detect_leaks` | 0 | LSan 启用 out-of-scope |
+| `halt_on_error` | 1 | 首个错误即停止 |
+| `abort_on_error` | 1 | abort 以获取 core dump |
+| `print_stacktrace` | 1 | 输出调用栈 |
+
+ASan 会报告：堆/栈/全局溢出、use-after-free、double-free 等。
+
+### UndefinedBehaviorSanitizer (UBSan)
+
+```bash
+cmake -DENABLE_UBSAN=ON -DCMAKE_BUILD_TYPE=Debug -B build-ubsan -S .
+cmake --build build-ubsan -j$(nproc)
 
 # 运行测试
-./bin/test_program
-
-# ASan 会报告：
-# - 堆溢出
-# - 栈溢出
-# - 全局变量溢出
-# - use-after-free
-# - double-free
+scripts/stage-plugin.sh build-ubsan
+UBSAN_OPTIONS=print_stacktrace=1 \
+  ctest --test-dir build-ubsan --output-on-failure
 ```
 
-### ASan 选项
+UBSan 编译期使用 `-fno-sanitize-recover=all`（遇到第一个 UB 立即 abort）。检测：有符号整型溢出、空指针解引用、类型混淆、对齐违规等。
 
-```bash
-# 设置 ASan 选项
-export ASAN_OPTIONS=detect_leaks=1:log_path=asan.log:halt_on_error=0
+### Sanitizer 互斥表
 
-# 运行程序
-./bin/test_program
-
-# 查看详细日志
-cat asan.log.*
-```
+| 组合 | 支持 | 说明 |
+|------|------|------|
+| ASan only | ✅ | GCC/Clang |
+| UBSan only | ✅ | GCC/Clang |
+| TSan only | ✅ | 仅 Clang |
+| ASan + UBSan | ✅ | 可组合 |
+| TSan + ASan/UBSan | ❌ | CMake FATAL_ERROR |
 
 ### LeakSanitizer (LSan)
 
@@ -264,9 +279,10 @@ cat asan.log.*
 
 ```bash
 # 编译（与 ASan 相同）
-cmake -DCMAKE_CXX_FLAGS="-fsanitize=address -g" ..
+cmake -DENABLE_ASAN=ON ..
 
-# 运行
+# 手动启用 LSan
+ASAN_OPTIONS=detect_leaks=1 ./bin/test_program
 export ASAN_OPTIONS=detect_leaks=1
 ./bin/test_program
 
@@ -362,18 +378,18 @@ std::string str(user_input);
 ### ThreadSanitizer (TSan)
 
 ```bash
-# 编译启用 TSan
-cmake -DCMAKE_CXX_FLAGS="-fsanitize=thread -g" ..
-make
+# 需要 Clang 编译器（TSan 仅 Clang 支持）
+CC=clang CXX=clang++ \
+  cmake -DENABLE_TSAN=ON -DCMAKE_BUILD_TYPE=Debug -B build-tsan -S .
+cmake --build build-tsan -j$(nproc)
 
 # 运行测试
-./bin/test_program
-
-# TSan 会报告数据竞争：
-# WARNING: ThreadSanitizer: data race
-#   Read of size 4 at 0x7b0c00000000 by thread T2
-#   Previous write of size 4 by thread T1
+scripts/stage-plugin.sh build-tsan
+TSAN_OPTIONS=report_signal_unsafe=0 \
+  ctest --test-dir build-tsan --output-on-failure
 ```
+
+`test_hal_thread_safety_standalone` 的 `hal_mock` 预期 data race 已从 zero-race gate 中排除。
 
 ### 调试死锁
 

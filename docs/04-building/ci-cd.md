@@ -201,15 +201,26 @@ cmake -DCMAKE_CXX_CLANG_TIDY=clang-tidy \
       -DCMAKE_BUILD_TYPE=Debug \
       ..
 
-# 启用 AddressSanitizer
-cmake -DCMAKE_CXX_FLAGS="-fsanitize=address -g" \
-      -DCMAKE_BUILD_TYPE=Debug \
-      ..
+# 启用 AddressSanitizer（根 CMakeLists.txt option）
+cmake -DENABLE_ASAN=ON -DCMAKE_BUILD_TYPE=Debug -B build-asan -S .
+cmake --build build-asan -j4
 
-# 启用 ThreadSanitizer
-cmake -DCMAKE_CXX_FLAGS="-fsanitize=thread -g" \
-      -DCMAKE_BUILD_TYPE=Debug \
-      ..
+# 启用 UndefinedBehaviorSanitizer（fatal mode）
+cmake -DENABLE_UBSAN=ON -DCMAKE_BUILD_TYPE=Debug -B build-ubsan -S .
+cmake --build build-ubsan -j4
+
+# 启用 ThreadSanitizer（Clang only；与 ASan/UBSan 互斥）
+CC=clang CXX=clang++ cmake -DENABLE_TSAN=ON -DCMAKE_BUILD_TYPE=Debug -B build-tsan -S .
+cmake --build build-tsan -j4
+
+# ASan + UBSan 组合
+cmake -DENABLE_ASAN=ON -DENABLE_UBSAN=ON -DCMAKE_BUILD_TYPE=Debug -B build-asan-ubsan -S .
+cmake --build build-asan-ubsan -j4
+
+# 运行测试（需先 staging plugin）
+scripts/stage-plugin.sh build-asan
+ASAN_OPTIONS=detect_leaks=0:halt_on_error=1:abort_on_error=1:print_stacktrace=1 \
+  ctest --test-dir build-asan --output-on-failure
 ```
 
 ---
@@ -379,47 +390,29 @@ jobs:
           --target clang-tidy
 ```
 
-### 示例：内存安全检查
+### 示例：Sanitizer 内存安全检查
 
-创建 `.github/workflows/memory-check.yml`：
+**三 sanitizer 已集成进主 CI**（`.github/workflows/cmake-multi-platform.yml`）：
 
-```yaml
-name: Memory Check (ASan)
+| Job | 编译器 | Build Type | 说明 |
+|-----|--------|-----------|------|
+| `sanitizer-asan` | GCC | Debug | `ENABLE_ASAN=ON`，全量 ctest |
+| `sanitizer-ubsan` | GCC | Debug | `ENABLE_UBSAN=ON`，全量 ctest |
+| `sanitizer-tsan` | Clang | Debug | `ENABLE_TSAN=ON`，全量 ctest（排除 hal_thread_safety） |
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+**互斥规则**: TSan 不可与 ASan/UBSan 共存。CMake 配置会 `FATAL_ERROR` 拒绝。
 
-jobs:
-  asan:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y g++
-    
-    - name: Configure CMake (ASan)
-      run: |
-        cmake -B build-asan \
-          -DCMAKE_CXX_FLAGS="-fsanitize=address -g" \
-          -DCMAKE_C_FLAGS="-fsanitize=address -g" \
-          -DCMAKE_BUILD_TYPE=Debug
-    
-    - name: Build
-      run: cmake --build build-asan -j$(nproc)
-    
-    - name: Run tests
-      run: |
-        cd build-asan
-        ctest --output-on-failure \
-          --exclude-regex "performance"
-```
+**Runtime options**:
+
+| Sanitizer | 环境变量 | 默认值 |
+|-----------|---------|--------|
+| ASan | `ASAN_OPTIONS` | `detect_leaks=0:halt_on_error=1:abort_on_error=1:print_stacktrace=1` |
+| UBSan | `UBSAN_OPTIONS` | `print_stacktrace=1`（编译期 `-fno-sanitize-recover=all` fatal） |
+| TSan | `TSAN_OPTIONS` | `report_signal_unsafe=0` |
+
+**Plugin 隔离**: 使用不同 build 目录的 ctest 前必须通过 `scripts/stage-plugin.sh <build-dir>` staging 对应 plugin。禁止并发运行不同 sanitizer 构建目录的 ctest（共享 `plugins/plugin_gpu_driver.so` 路径）。
+
+**CI 状态检查**: `sanitizer-asan`、`sanitizer-ubsan`、`sanitizer-tsan` 三个 job 均配置为 required status checks。
 
 ---
 
