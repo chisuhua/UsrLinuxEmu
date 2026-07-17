@@ -3,7 +3,8 @@
 > **目的**：固化 Stage 1.4 PoC 的诚实发现，明确 Stage 1 真正达成的边界（Tier-1）与实际超界的边界（Tier-2），作为 1.4 集成策略与未来 Stage 2+ 规划的架构 SSOT。
 >
 > **创建日期**：2026-07-04
-> **状态**：✅ 架构边界 SSOT（v1.3）— Stage 1+2 全部达成 + ADR-059/060 Accepted unblock C-12 sub-project（Tier-2 §3.2/§3.3/§3.4 进入 C-12 实施路径）
+> **状态**：✅ 架构边界 SSOT（v1.4）— Stage 1+2 全部达成 + ADR-059/060 Accepted unblock C-12 sub-project（Tier-2 §3.2/§3.3/§3.4 进入 C-12 实施路径）
+> **v1.4** (2026-07-17): ASan/UBSan infra added (change three-sanitizer-infra); TSan coverage 扩展至 kernel/plugins/drivers 全目标；本 change 不引入 KFD 边界契约变更。
 > **基础证据**：[5341c3f](https://github.com/chisuhua/UsrLinuxEmu/commit/5341c3f) "stage-1.4 PoC integration attempt" + 1.0-1.3 全部 commit 历史 + 63/63 ctest 全绿基线 + Stage 1.4 Tier-2 10 commits 穿透 + Stage 2 multi-device 14 commits
 > **关联 SSOT**：
 > - 路线图: [stage-1-kernel-emu.md](../roadmap/stage-1-kernel-emu.md) + [stage-2-multi-device.md](../roadmap/stage-2-multi-device.md)
