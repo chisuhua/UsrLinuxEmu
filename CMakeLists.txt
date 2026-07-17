@@ -73,6 +73,12 @@ if(ENABLE_TSAN)
     message(STATUS "[TSan] ThreadSanitizer enabled globally (ENABLE_TSAN=ON)")
 endif()
 
+# ===== Device VA base address (configurable; see plugins/gpu_driver/sim/sim_device_va_allocator.h) =====
+# Override with -DSIM_DEVICE_VA_BASE=0x<value> when the default 86 TiB base
+# collides with a sanitizer build or other user-process mmap region. See the
+# header comment for probing methodology (ASan/TSan regions on Linux x86-64).
+set(SIM_DEVICE_VA_BASE 0x560000000000ULL CACHE STRING "Device VA base address (bytes, hex)")
+
 # 添加子模块
 add_subdirectory(src)
 add_subdirectory(drivers)

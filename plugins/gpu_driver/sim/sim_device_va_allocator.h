@@ -21,12 +21,31 @@
 extern "C" {
 #endif
 
-/* Device VA range (high address space, safe from user process mmap collisions):
- *   base = 86 TiB (verified common application-memory window for GCC ASan and
- *          Clang TSan on Linux x86-64; tested Jul 2026)
+/* Device VA range (high address space, safe from user process mmap collisions).
+ *
+ * Selection methodology (Linux x86-64, 47-bit user VMA; probed Jul 2026):
+ *   - GCC ASan shadow region : starts ~0x8fff7000, spans ~2 TiB to
+ *                              ~0x2008fff7000 (shadow of low canonical half)
+ *   - Clang TSan mapping     : starts ~0x1aaaaab96000, spans ~32 TiB to
+ *                              ~0x2fffef050000 (TSan maps + app shadow)
+ *   - The original 4 GiB base (0x100000000) collided with both sanitizer
+ *     regions, causing silent mmap(MAP_FIXED_NOREPLACE) EEXIST failures.
+ *
+ *   base = 86 TiB (0x560000000000) — verified safe window above TSan's upper
+ *          bound on Linux x86-64 47-bit VMA. Succeeds under default, GCC ASan,
+ *          and Clang TSan builds.
  *   size = 16 GiB (mirrors AMD KFD gpuvm aperture sizing)
+ *
+ * Probe method: 16 GiB MAP_FIXED_NOREPLACE + write probe + munmap, repeated
+ * under default / GCC -fsanitize=address / Clang -fsanitize=thread builds.
+ *
+ * Override: pass -DSIM_DEVICE_VA_BASE=0x<value> via CMake (see root
+ * CMakeLists.txt SIM_DEVICE_VA_BASE cache variable) when the default collides
+ * with a non-Linux-x86_64 layout or a future sanitizer version.
  */
-#define SIM_DEVICE_VA_BASE 0x560000000000ULL   /* 86 TiB */
+#ifndef SIM_DEVICE_VA_BASE
+#define SIM_DEVICE_VA_BASE 0x560000000000ULL  /* 86 TiB default; override via CMake */
+#endif
 #define SIM_DEVICE_VA_SIZE 0x400000000ULL      /* 16 GiB */
 
 /* Allocate a VA sub-range of `size` bytes from the device-wide pool.

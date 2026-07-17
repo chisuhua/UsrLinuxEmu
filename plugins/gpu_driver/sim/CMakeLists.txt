@@ -45,3 +45,7 @@ target_include_directories(gpu_sim PUBLIC
 target_link_libraries(gpu_sim PUBLIC
     gpu_core
 )
+
+# Propagate CMake-configurable VA base to the header's #ifndef guard.
+# Consumers (incl. test binaries linking gpu_sim) see the same value.
+target_compile_definitions(gpu_sim PUBLIC SIM_DEVICE_VA_BASE=${SIM_DEVICE_VA_BASE})

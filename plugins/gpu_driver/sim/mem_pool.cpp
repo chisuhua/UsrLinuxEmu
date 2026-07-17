@@ -90,6 +90,12 @@ int sim_mem_pool_create(sim_mem_pool_props_t *props,
                        PROT_READ | PROT_WRITE,
                        MAP_ANONYMOUS | MAP_PRIVATE | MAP_FIXED_NOREPLACE, -1, 0);
   if (backing == MAP_FAILED) {
+    if (errno == EEXIST) {
+      fprintf(stderr,
+              "sim_mem_pool: VA base 0x%llx conflicts with existing mapping. "
+              "Consider overriding SIM_DEVICE_VA_BASE via CMake.\n",
+              (unsigned long long)SIM_DEVICE_VA_BASE);
+    }
     sim_device_va_free(va_base);
     return SIM_POOL_ERR_NOSPC;
   }
