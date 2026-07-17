@@ -53,6 +53,17 @@ case "${SANITIZER:-}" in
     ;;
 esac
 
+# Returns: "asan ubsan tsan" space-separated ON/OFF values for the current SANITIZER
+get_sanitizer_wants() {
+    case "${SANITIZER:-}" in
+        asan)       echo "ON OFF OFF" ;;
+        ubsan)      echo "OFF ON OFF" ;;
+        tsan)       echo "OFF OFF ON" ;;
+        asan-ubsan) echo "ON ON OFF" ;;
+        *)          echo "OFF OFF OFF" ;;
+    esac
+}
+
 usage() {
     echo "Usage: $0 [clean|test|<cmake-target>]"
     echo ""
@@ -90,13 +101,7 @@ build() {
         local cache_asan=$(grep '^ENABLE_ASAN:' CMakeCache.txt 2>/dev/null | cut -d= -f2)
         local cache_ubsan=$(grep '^ENABLE_UBSAN:' CMakeCache.txt 2>/dev/null | cut -d= -f2)
         local cache_tsan=$(grep '^ENABLE_TSAN:' CMakeCache.txt 2>/dev/null | cut -d= -f2)
-        local want_asan="OFF"; local want_ubsan="OFF"; local want_tsan="OFF"
-        case "${SANITIZER:-}" in
-            asan) want_asan="ON" ;;
-            ubsan) want_ubsan="ON" ;;
-            tsan) want_tsan="ON" ;;
-            asan-ubsan) want_asan="ON"; want_ubsan="ON" ;;
-        esac
+        read want_asan want_ubsan want_tsan <<< "$(get_sanitizer_wants)"
         if [ "$cache_asan" != "$want_asan" ] || [ "$cache_ubsan" != "$want_ubsan" ] || [ "$cache_tsan" != "$want_tsan" ]; then
             echo "=== Sanitizer config changed, reconfiguring ==="
             cmake $SANITIZER_FLAGS ..
