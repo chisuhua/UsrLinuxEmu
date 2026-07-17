@@ -322,19 +322,12 @@ if(USR_LINUX_EMU_PERF_TESTS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/perf)
 endif()
 
-# C-12 B.1.10.7 — Apply TSan to kernel threading test when ENABLE_TSAN=ON
-# 仅作用于 test_kfd_threading_standalone（其他测试不需要 TSan 监控线程）
-if(ENABLE_TSAN)
-    # Apply TSan globally to all test targets (simple, single-point control)
-    add_compile_options(-fsanitize=thread -fno-omit-frame-pointer -g -O1)
-    add_link_options(-fsanitize=thread)
-    message(STATUS "[TSan] ThreadSanitizer enabled globally (ENABLE_TSAN=ON)")
-
-    # C-12 B.1.10.7 — kernel threading test (originally per-test, now covered by global flags)
-    message(STATUS "[C-12 B.1.10.7] TSan active for test_kfd_threading_standalone")
-    # R-3 — HAL thread-safety smoke test (originally per-test, now covered by global flags)
-    message(STATUS "[R-3] TSan active for test_hal_thread_safety_standalone")
-endif()
+# C-12 B.1.10.7 — TSan is now configured at the root CMakeLists.txt (Phase A,
+# change 2026-07-16-three-sanitizer-infra). The old tests-directory global
+# add_compile_options/add_link_options block has been removed; the root
+# directory-level flags propagate to all downstream targets automatically.
+# The per-target TSan link fallback for test_kfd_queue_standalone below is
+# retained because its C sources need an explicit TSan runtime link.
 
 # C-12 B.1.5 — kfd_process standalone test (pure C impl, isolated)
 add_executable(test_kfd_process_standalone
