@@ -19,6 +19,60 @@ include_directories(${PROJECT_SOURCE_DIR}/external/json)
 # Note: simulator/ is empty (legacy; simulation moved to plugins/gpu_driver/sim/ in Phase 1.5)
 # The audit script (tools/docs-audit.sh §5.3) enforces this invariant.
 
+# ===== Sanitizer options (must be before add_subdirectory for global flag propagation) =====
+# Phase A (change 2026-07-16-three-sanitizer-infra) — root-level sanitizer infra.
+option(ENABLE_ASAN  "Enable AddressSanitizer" OFF)
+option(ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
+option(ENABLE_TSAN  "Enable ThreadSanitizer for kernel threading tests (C-12 B.1.10, Clang only)" OFF)
+
+# --- Sanitizer validation ---
+# TSan is mutually exclusive with ASan and UBSan (linker/runtime conflict).
+if(ENABLE_TSAN AND (ENABLE_ASAN OR ENABLE_UBSAN))
+    message(FATAL_ERROR "TSan is mutually exclusive with ASan and UBSan "
+        "(ENABLE_TSAN=${ENABLE_TSAN}, ENABLE_ASAN=${ENABLE_ASAN}, "
+        "ENABLE_UBSAN=${ENABLE_UBSAN})")
+endif()
+
+# ASan: GCC or Clang family.
+if(ENABLE_ASAN)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang" OR
+       NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        message(FATAL_ERROR "ASan requires GCC or Clang (AppleClang included) "
+            "(C compiler: ${CMAKE_C_COMPILER_ID}, "
+            "C++ compiler: ${CMAKE_CXX_COMPILER_ID})")
+    endif()
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g)
+    add_link_options(-fsanitize=address)
+    message(STATUS "[ASan] AddressSanitizer enabled globally (ENABLE_ASAN=ON)")
+endif()
+
+# UBSan: GCC or Clang family; -fno-sanitize-recover=all aborts on first UB.
+if(ENABLE_UBSAN)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang" OR
+       NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        message(FATAL_ERROR "UBSan requires GCC or Clang (AppleClang included) "
+            "(C compiler: ${CMAKE_C_COMPILER_ID}, "
+            "C++ compiler: ${CMAKE_CXX_COMPILER_ID})")
+    endif()
+    add_compile_options(-fsanitize=undefined -fno-sanitize-recover=all
+        -fno-omit-frame-pointer -g)
+    add_link_options(-fsanitize=undefined)
+    message(STATUS "[UBSan] UndefinedBehaviorSanitizer enabled globally, fatal mode (ENABLE_UBSAN=ON)")
+endif()
+
+# TSan: Clang only (per C-12 B.1.10.7); preserve -O1 baseline.
+if(ENABLE_TSAN)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang" OR
+       NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "TSan requires Clang "
+            "(C compiler: ${CMAKE_C_COMPILER_ID}, "
+            "C++ compiler: ${CMAKE_CXX_COMPILER_ID})")
+    endif()
+    add_compile_options(-fsanitize=thread -fno-omit-frame-pointer -g -O1)
+    add_link_options(-fsanitize=thread)
+    message(STATUS "[TSan] ThreadSanitizer enabled globally (ENABLE_TSAN=ON)")
+endif()
+
 # 添加子模块
 add_subdirectory(src)
 add_subdirectory(drivers)
@@ -28,9 +82,4 @@ add_subdirectory(tools/cli)
 add_subdirectory(libgpu_core)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# C-12 B.1.10.7 — ThreadSanitizer opt-in (Clang only)
-# 启用方法：cmake -DENABLE_TSAN=ON
-# 默认 OFF；GCC 构建不受影响
-option(ENABLE_TSAN "Enable ThreadSanitizer for kernel threading tests (C-12 B.1.10, Clang only)" OFF)
 

@@ -4,6 +4,8 @@ add_library(gpu_hal STATIC
     hal_user.cpp
 )
 
+set_target_properties(gpu_hal PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 target_include_directories(gpu_hal PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}  # 让 hal/*.h 可通过 "gpu_hal.h" 引用
     ${PROJECT_SOURCE_DIR}/include
@@ -20,6 +22,8 @@ target_link_libraries(gpu_hal PUBLIC
 add_library(gpu_hal_mock STATIC
     hal_mock.cpp
 )
+
+set_target_properties(gpu_hal_mock PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(gpu_hal_mock PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
