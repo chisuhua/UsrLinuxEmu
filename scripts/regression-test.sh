@@ -15,8 +15,7 @@
 # 退出码:
 #   0 - 全部配置 PASS
 #   1 - 用法错误
-#   2 - 构建失败
-#   3 - 一个或多个测试配置失败
+#   3 - 一个或多个配置失败（含构建失败、staging 失败、测试失败）
 
 set -euo pipefail
 
@@ -82,7 +81,8 @@ run_config() {
     local sanitizer="$2"
     local build_dir="$3"
     shift 3
-    local -a ctest_args=("$@")
+    local -a ctest_args=()
+    if [ $# -gt 0 ]; then ctest_args=("$@"); fi
 
     echo ""
     color_print "$BLUE$BOLD" "═══════════════════════════════════════════════════════════"
