@@ -40,6 +40,16 @@ static int failures = 0;
   } \
 } while(0)
 
+// 分配零初始化的 Ring Buffer 共享内存（64 字节对齐）
+// entry_count: GPFIFO entry 个数; 返回 nullptr 表示分配失败
+static void* alloc_ring_shm(size_t entry_count) {
+    size_t shm_size = sizeof(gpu_ring_header) + entry_count * sizeof(gpu_gpfifo_entry);
+    size_t aligned_size = (shm_size + 63) & ~63ULL;
+    void* p = std::aligned_alloc(64, aligned_size);
+    if (p) memset(p, 0, shm_size);
+    return p;
+}
+
 // ========== 测试用例 ==========
 
 /** 基本 enqueue/dequeue 循环 */
@@ -48,10 +58,8 @@ int test_basic_enqueue_dequeue() {
 
   // 分配共享内存
   size_t shm_size = sizeof(gpu_ring_header) + 16 * sizeof(gpu_gpfifo_entry);
-  size_t aligned_size = (shm_size + 63) & ~63ULL;
-  void* shm = std::aligned_alloc(64, aligned_size);
+  void* shm = alloc_ring_shm(16);
   if (!shm) { std::cerr << "FAIL: aligned_alloc failed\n"; return 1; }
-  memset(shm, 0, shm_size);
 
   int ret = queue.attachSharedMemory(shm, shm_size);
   EXPECT_EQ(ret, 0);
@@ -96,10 +104,8 @@ int test_multiple_entries() {
   GpuQueueEmu queue(0, GPU_QUEUE_COMPUTE, 50, 64);
 
   size_t shm_size = sizeof(gpu_ring_header) + 64 * sizeof(gpu_gpfifo_entry);
-  size_t aligned_size = (shm_size + 63) & ~63ULL;
-  void* shm = std::aligned_alloc(64, aligned_size);
+  void* shm = alloc_ring_shm(64);
   if (!shm) { std::cerr << "FAIL: aligned_alloc failed\n"; return 1; }
-  memset(shm, 0, shm_size);
 
   queue.attachSharedMemory(shm, shm_size);
   auto* header = queue.ringHeader();
@@ -138,10 +144,8 @@ int test_empty_queue() {
   GpuQueueEmu queue(0, GPU_QUEUE_COPY, 0, 16);
 
   size_t shm_size = sizeof(gpu_ring_header) + 16 * sizeof(gpu_gpfifo_entry);
-  size_t aligned_size = (shm_size + 63) & ~63ULL;
-  void* shm = std::aligned_alloc(64, aligned_size);
+  void* shm = alloc_ring_shm(16);
   if (!shm) { std::cerr << "FAIL: aligned_alloc failed\n"; return 1; }
-  memset(shm, 0, shm_size);
 
   queue.attachSharedMemory(shm, shm_size);
 
@@ -161,10 +165,8 @@ int test_wrap_around() {
   GpuQueueEmu queue(0, GPU_QUEUE_COMPUTE, 50, 4);  // 小容量
 
   size_t shm_size = sizeof(gpu_ring_header) + 4 * sizeof(gpu_gpfifo_entry);
-  size_t aligned_size = (shm_size + 63) & ~63ULL;
-  void* shm = std::aligned_alloc(64, aligned_size);
+  void* shm = alloc_ring_shm(4);
   if (!shm) { std::cerr << "FAIL: aligned_alloc failed\n"; return 1; }
-  memset(shm, 0, shm_size);
 
   queue.attachSharedMemory(shm, shm_size);
   auto* header = queue.ringHeader();
