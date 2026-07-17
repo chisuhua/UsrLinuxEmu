@@ -49,6 +49,16 @@ static int failures = 0;
   } \
 } while(0)
 
+// 分配零初始化的 Ring Buffer 共享内存（64 字节对齐）
+// entry_count: GPFIFO entry 个数; 返回 nullptr 表示分配失败
+static void* alloc_ring_shm(size_t entry_count) {
+    size_t shm_size = sizeof(gpu_ring_header) + entry_count * sizeof(gpu_gpfifo_entry);
+    size_t aligned_size = (shm_size + 63) & ~63ULL;
+    void* p = std::aligned_alloc(64, aligned_size);
+    if (p) memset(p, 0, shm_size);
+    return p;
+}
+
 template<typename Func>
 bool wait_for_state(Func&& pred, int timeout_ms = 200, int poll_interval_ms = 1) {
   auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms);
@@ -117,10 +127,8 @@ int test_queue_register_and_doorbell() {
 
   // 分配共享内存
   size_t shm_size = sizeof(gpu_ring_header) + 16 * sizeof(gpu_gpfifo_entry);
-  size_t aligned_size = (shm_size + 63) & ~63ULL;
-  void* shm = std::aligned_alloc(64, aligned_size);
+  void* shm = alloc_ring_shm(16);
   EXPECT_TRUE(shm != nullptr);
-  memset(shm, 0, shm_size);
   queue->attachSharedMemory(shm, shm_size);
 
   // 注册 Queue 到 Puller
@@ -168,10 +176,8 @@ int test_queue_read_idx_advance() {
 
   auto queue = std::make_shared<GpuQueueEmu>(2, GPU_QUEUE_COMPUTE, 50, 16);
   size_t shm_size = sizeof(gpu_ring_header) + 16 * sizeof(gpu_gpfifo_entry);
-  size_t aligned_size = (shm_size + 63) & ~63ULL;
-  void* shm = std::aligned_alloc(64, aligned_size);
+  void* shm = alloc_ring_shm(16);
   EXPECT_TRUE(shm != nullptr);
-  memset(shm, 0, shm_size);
   queue->attachSharedMemory(shm, shm_size);
   puller.registerQueue(queue.get());
 
@@ -218,10 +224,8 @@ int test_multi_queue_concurrent() {
 
   auto setup_queue = [&](auto& q) -> void* {
     size_t shm_size = sizeof(gpu_ring_header) + 16 * sizeof(gpu_gpfifo_entry);
-    size_t aligned_size = (shm_size + 63) & ~63ULL;
-    void* shm = std::aligned_alloc(64, aligned_size);
+    void* shm = alloc_ring_shm(16);
     EXPECT_TRUE(shm != nullptr);
-    memset(shm, 0, shm_size);
     q->attachSharedMemory(shm, shm_size);
     puller.registerQueue(q.get());
     return shm;
@@ -278,10 +282,8 @@ int test_unregister_stops_consumption() {
 
   auto queue = std::make_shared<GpuQueueEmu>(99, GPU_QUEUE_COMPUTE, 50, 16);
   size_t shm_size = sizeof(gpu_ring_header) + 16 * sizeof(gpu_gpfifo_entry);
-  size_t aligned_size = (shm_size + 63) & ~63ULL;
-  void* shm = std::aligned_alloc(64, aligned_size);
+  void* shm = alloc_ring_shm(16);
   EXPECT_TRUE(shm != nullptr);
-  memset(shm, 0, shm_size);
   queue->attachSharedMemory(shm, shm_size);
 
   auto* header = queue->ringHeader();
