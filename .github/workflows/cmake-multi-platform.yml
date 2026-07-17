@@ -111,131 +111,78 @@ jobs:
   # ===== Sanitizer jobs (change: 2026-07-16-three-sanitizer-infra) =====
   # Required: ASan + UBSan + TSan must all pass; configure as required
   # status checks in GitHub repository settings.
-
-  sanitizer-asan:
-    name: Sanitizer — ASan (Debug, GCC)
+  sanitizer:
+    name: Sanitizer — ${{ matrix.name }}
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Configure ASan
-        run: cmake -B build-asan -DENABLE_ASAN=ON -DCMAKE_BUILD_TYPE=Debug -S ${{ github.workspace }}
-
-      - name: Build ASan
-        run: cmake --build build-asan -j2
-
-      - name: Test ASan
-        working-directory: ${{ github.workspace }}
-        env:
-          ASAN_OPTIONS: detect_leaks=0:halt_on_error=1:abort_on_error=1:print_stacktrace=1
-        run: |
-          scripts/stage-plugin.sh build-asan
-          ctest --test-dir build-asan --output-on-failure --exclude-regex "perf" 2>&1 | tee build-asan/asan-ctest.log
-
-      - name: Check ASan report
-        if: success()
-        run: |
-          if grep -qiE 'ERROR: AddressSanitizer|runtime error:' build-asan/asan-ctest.log; then
-            echo "::error::ASan errors detected in ctest log"
-            exit 1
-          fi
-
-      - name: Upload ASan artifacts (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: asan-artifacts
-          path: |
-            build-asan/asan-ctest.log
-            plugins/plugin_gpu_driver.so
-
-  sanitizer-ubsan:
-    name: Sanitizer — UBSan (Debug, GCC)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Configure UBSan
-        run: cmake -B build-ubsan -DENABLE_UBSAN=ON -DCMAKE_BUILD_TYPE=Debug -S ${{ github.workspace }}
-
-      - name: Build UBSan
-        run: cmake --build build-ubsan -j2
-
-      - name: Test UBSan
-        working-directory: ${{ github.workspace }}
-        env:
-          UBSAN_OPTIONS: print_stacktrace=1
-        run: |
-          scripts/stage-plugin.sh build-ubsan
-          ctest --test-dir build-ubsan --output-on-failure --exclude-regex "perf" 2>&1 | tee build-ubsan/ubsan-ctest.log
-
-      - name: Check UBSan report
-        if: success()
-        run: |
-          if grep -qiE 'runtime error:' build-ubsan/ubsan-ctest.log; then
-            echo "::error::UBSan runtime errors detected in ctest log"
-            exit 1
-          fi
-
-      - name: Upload UBSan artifacts (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ubsan-artifacts
-          path: |
-            build-ubsan/ubsan-ctest.log
-            plugins/plugin_gpu_driver.so
-
-  sanitizer-tsan:
-    name: Sanitizer — TSan (Debug, Clang)
-    runs-on: ubuntu-latest
+    env:
+      CC: ${{ matrix.compiler == 'clang' && 'clang' || 'gcc' }}
+      CXX: ${{ matrix.compiler == 'clang' && 'clang++' || 'g++' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "ASan (Debug, GCC)"
+            sanitizer: asan
+            cmake_flag: "ENABLE_ASAN=ON"
+            compiler: gcc
+            env_var: "ASAN_OPTIONS"
+            env_value: "detect_leaks=0:halt_on_error=1:abort_on_error=1:print_stacktrace=1"
+            grep_pattern: "ERROR: AddressSanitizer"
+            ctest_exclude: "perf"
+          - name: "UBSan (Debug, GCC)"
+            sanitizer: ubsan
+            cmake_flag: "ENABLE_UBSAN=ON"
+            compiler: gcc
+            env_var: "UBSAN_OPTIONS"
+            env_value: "print_stacktrace=1"
+            grep_pattern: "^[^:]+:[0-9]+:[0-9]+: runtime error:"
+            ctest_exclude: "perf"
+          - name: "TSan (Debug, Clang)"
+            sanitizer: tsan
+            cmake_flag: "ENABLE_TSAN=ON"
+            compiler: clang
+            env_var: "TSAN_OPTIONS"
+            env_value: "report_signal_unsafe=0"
+            grep_pattern: "WARNING: ThreadSanitizer: data race"
+            ctest_exclude: "perf|test_hal_thread_safety_standalone"
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
 
       - name: Install Clang toolchain
+        if: matrix.compiler == 'clang'
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq clang lld
 
-      - name: Configure TSan
-        env:
-          CC: clang
-          CXX: clang++
-        run: cmake -B build-tsan -DENABLE_TSAN=ON -DCMAKE_BUILD_TYPE=Debug -S ${{ github.workspace }}
+      - name: Configure sanitizer
+        run: cmake -B build-${{ matrix.sanitizer }} -D${{ matrix.cmake_flag }} -DCMAKE_BUILD_TYPE=Debug -S ${{ github.workspace }}
 
-      - name: Build TSan
-        env:
-          CC: clang
-          CXX: clang++
-        run: cmake --build build-tsan -j2
+      - name: Build sanitizer
+        run: cmake --build build-${{ matrix.sanitizer }} -j2
 
-      - name: Test TSan
+      - name: Test sanitizer
         working-directory: ${{ github.workspace }}
         env:
-          TSAN_OPTIONS: report_signal_unsafe=0
+          ${{ matrix.env_var }}: ${{ matrix.env_value }}
         run: |
-          scripts/stage-plugin.sh build-tsan
-          ctest --test-dir build-tsan --output-on-failure --exclude-regex "perf" -E test_hal_thread_safety_standalone 2>&1 | tee build-tsan/tsan-ctest.log
+          scripts/stage-plugin.sh build-${{ matrix.sanitizer }}
+          ctest --test-dir build-${{ matrix.sanitizer }} --output-on-failure --exclude-regex "${{ matrix.ctest_exclude }}" 2>&1 | tee build-${{ matrix.sanitizer }}/${{ matrix.sanitizer }}-ctest.log
 
-      - name: Check TSan report
+      - name: Check sanitizer report
         if: success()
         run: |
-          if grep -qiE 'WARNING: ThreadSanitizer: data race' build-tsan/tsan-ctest.log; then
-            echo "::error::TSan data race detected in ctest log"
+          if grep -qiE '${{ matrix.grep_pattern }}' build-${{ matrix.sanitizer }}/${{ matrix.sanitizer }}-ctest.log; then
+            echo "::error::${{ matrix.sanitizer }} errors detected in ctest log"
             exit 1
           fi
 
-      - name: Upload TSan artifacts (on failure)
+      - name: Upload artifacts (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: tsan-artifacts
+          name: ${{ matrix.sanitizer }}-artifacts
           path: |
-            build-tsan/tsan-ctest.log
+            build-${{ matrix.sanitizer }}/${{ matrix.sanitizer }}-ctest.log
             plugins/plugin_gpu_driver.so
