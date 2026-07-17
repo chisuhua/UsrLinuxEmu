@@ -22,11 +22,12 @@ extern "C" {
 #endif
 
 /* Device VA range (high address space, safe from user process mmap collisions):
- *   base = 4 GiB (above typical x86-64 mmap default region)
+ *   base = 86 TiB (verified common application-memory window for GCC ASan and
+ *          Clang TSan on Linux x86-64; tested Jul 2026)
  *   size = 16 GiB (mirrors AMD KFD gpuvm aperture sizing)
  */
-#define SIM_DEVICE_VA_BASE 0x100000000ULL    /* 4 GiB  */
-#define SIM_DEVICE_VA_SIZE 0x400000000ULL    /* 16 GiB */
+#define SIM_DEVICE_VA_BASE 0x560000000000ULL   /* 86 TiB */
+#define SIM_DEVICE_VA_SIZE 0x400000000ULL      /* 16 GiB */
 
 /* Allocate a VA sub-range of `size` bytes from the device-wide pool.
  * On success, *base_out receives the base address (multiple of 4KB).
