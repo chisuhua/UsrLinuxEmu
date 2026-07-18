@@ -1,7 +1,7 @@
 # TaskRunner 协同工作文档索引
 
-**版本**: 1.1
-**日期**: 2026-05-06
+**版本**: 1.2
+**日期**: 2026-07-18
 **维护者**: UsrLinuxEmu Architecture Team + TaskRunner Team
 
 ---
@@ -65,6 +65,20 @@ TaskRunner (消费者)                    UsrLinuxEmu (驱动实现者)
 | **S3** | Phase 1 | UsrLinuxEmu | PUSHBUFFER_SUBMIT_BATCH entries 格式、fence 返回位置 |
 | **S4** | Phase 1 末 | 双方 | 端到端集成测试 |
 | **S5** | Phase 2 | UsrLinuxEmu | TaskRunner 是否需要 VA Space/Queue 抽象 |
+| **S6** | C-12 E.2.4 | 双方 | KFD L1↔L2 bridge E2E (5 KFD ioctls 跨仓验证) |
+
+### 2.2a KFD L1↔L2 Bridge (C-12 E.2.4, 2026-07-18)
+
+KFD ioctl 端到端桥接测试，验证 GpuDriverClient → UsrLinuxEmu GpgpuDevice → KFD sim 完整链路。
+
+| 仓 | Change | 内容 | 状态 |
+|----|--------|------|------|
+| UsrLinuxEmu | `openspec/changes/archive/2026-07-18-2026-07-16-kfd-l1-l2-bridge-e2e/` | Phase A: GpgpuDevice IoctlEntry 扩展 (32→36) + 3 E2E tests | ✅ Archived |
+| TaskRunner | `openspec/changes/archive/2026-07-18-l1-l2-bridge-e2e-test-skeleton/` | Phase B: GpuDriverClient +4 KFD methods + 3 E2E tests | ✅ Archived |
+
+**5 个 KFD ioctl**: `CREATE_QUEUE`, `GET_PROCESS_APERTURE`, `UPDATE_QUEUE`, `MAP_MEMORY`, `UNMAP_MEMORY`
+
+**跨仓协议**: ADR-035 §Rule 5.1 4 步全完成（TaskRunner commit → UsrLinuxEmu submodule bump → push → archive）
 
 ### 2.3 架构文档 (Architecture)
 
