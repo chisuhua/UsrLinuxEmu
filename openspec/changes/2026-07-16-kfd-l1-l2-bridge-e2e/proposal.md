@@ -34,24 +34,34 @@ C-12 KFD multi-file integration 在 2026-07-16 归档时留下了 E.2.4 跨仓 L
 
 将 `tests/test_kfd_l1_l2_bridge_standalone.cpp` 的 3 个 skeleton TEST_CASE 替换为真实 E2E：
 
-**Test 1**: TaskRunner GpuDriverClient → ioctl(fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, args)
-- 调用 GpuDriverClient stub（嵌入测试 fixture）
-- 验证 ioctl 返回值符合 System C 协议
-- 验证 KFD sim state mutation via `kfd_sim_lookup_pfn`
+**Test 1**: GpuDriverClient stub → ioctl(fd, `GPU_IOCTL_MAP_MEMORY`, args) → kfd_sim_bridge → sim state
+- 调用 GpuDriverClient stub（嵌入测试 fixture，VFS+Plugin 完整环境）
+- 需先调用 `GPU_IOCTL_ALLOC_BO` 获取有效 handle（`gpu_ioctl_map_memory` 检查 `handles_.valid(handle)`）
+- 验证 ioctl 返回 0 且 `args.gpu_va` 填充（System C 协议）
+- 验证 KFD sim state mutation：`kfd_sim_lookup_pfn(gpu_va)` 返回非零 PFN，`kfd_sim_get_page_count()` == 1
 
-**Test 2**: GpuDriverClient → 5 个 KFD ioctls 端到端
-- CREATE_QUEUE → kfd_sim_bridge → KFD sim 状态
-- GET_PROCESS_APERTURE → kfd_sim_handle_get_process_aperture → 返回 apertures[]
-- UPDATE_QUEUE → kfd_sim_handle_update_queue → sim 状态更新
-- MAP_MEMORY → kfd_sim_handle_map_memory → page table 变更
-- UNMAP_MEMORY → kfd_sim_handle_unmap_memory → page table 清理
+> **注意**: Test 1 选用 `GPU_IOCTL_MAP_MEMORY` 而非 `GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH`，因为 pushbuffer 路径（`GpgpuDevice::handlePushbufferSubmitBatch`）处理 GPFIFO entries（LAUNCH_KERNEL/MEMCPY/MEMSET/FENCE），**不经过 kfd_sim_bridge**。MAP_MEMORY 经过扩展后的 GpgpuDevice IoctlEntry 表 → `kfd_sim_handle_map_memory` → sim 状态变更，是 L1→L2 bridge 的正确验证入口。
 
-**Test 3**: 并发 GpuDriverClient 多进程提交
-- 多个 GpuDriverClient stub 实例
-- 并发调用 ioctl
-- 验证 KFD PID 隔离（per `test_kfd_concurrent_processes_standalone` 已验证）
+**Test 2**: GpuDriverClient stub → 5 个 KFD ioctls 端到端（走两条派发路径）
+- CREATE_QUEUE → `GpgpuDevice::handleCreateQueue()` → VA Space + GpuQueueEmu 注册（GpgpuDevice IoctlEntry 表原生 handler）
+- GET_PROCESS_APERTURE → 需先扩展 GpgpuDevice IoctlEntry 表新增 KFD 条目 → `kfd_sim_handle_get_process_aperture` → 通过 `apertures_ptr` 指向的 `gpu_aperture_info[]` 数组返回 apertures
+- UPDATE_QUEUE → 同需扩展 GpgpuDevice IoctlEntry 表 → `kfd_sim_handle_update_queue` → sim 状态验证
+- MAP_MEMORY → 同需扩展 GpgpuDevice IoctlEntry 表 → `kfd_sim_handle_map_memory` → page table 变更（gpu_va→pfn 映射）
+- UNMAP_MEMORY → 同需扩展 GpgpuDevice IoctlEntry 表 → `kfd_sim_handle_unmap_memory` → page table 清理（page_count 减 1）
+
+> **注意**: 当前 `GpgpuDevice::ioctl`（`gpgpu_device.cpp:128-136`）对未命中 IoctlEntry 表的 ioctl 直接返回 `-EINVAL`，**无 DRM fallthrough**。4 个 KFD ioctl（GET_PROCESS_APERTURE/UPDATE_QUEUE/MAP_MEMORY/UNMAP_MEMORY）需要先添加到 GpgpuDevice IoctlEntry 表（每个 handler 委托到对应的 `kfd_sim_handle_*` 函数），E2E 测试才能走通 `dev->fops->ioctl` 路径。这是本 change 的一部分——扩展 GpgpuDevice 的 ioctl 派发表以包含全部 5 个 KFD ioctl 条目。MAP_MEMORY/UNMAP_MEMORY 需先通过 `GPU_IOCTL_ALLOC_BO` 获取有效 handle。
+
+**Test 3**: 并发 kfd_sim_bridge 多线程访问
+- 多个线程同时调用 `kfd_sim_handle_map_memory` / `kfd_sim_handle_unmap_memory`
+- 验证 kfd_sim_bridge 全局状态（`KfdSimState` + mutex）的线程安全性
+- 验证并发场景下 page_count 最终一致（insertions == deletions）
+- 验证 mm_shim VMA 注册不重复/不丢失
+
+> **注意**: kfd_sim_bridge 的 `KfdSimState` 是全局单例（`kfd_sim_bridge.cpp:56`），无 PID 概念。PID 隔离在 `kfd_process` + `us_mm_shim` 层（`test_kfd_concurrent_processes_standalone` 已验证）。Test 3 聚焦 bridge 自身的并发安全性，而非 PID 隔离（后者是 kfd_process 层职责）。
 
 ### 2. TaskRunner 端：创建对应 change
+
+> **注意**: TaskRunner 仓已有归档 change `openspec/changes/archive/2026-07-12-l1-l2-bridge-e2e-test-skeleton/`（聚焦 cuGraphLaunch + cuStreamSynchronize E2E）。本次 change 是**新创建**的独立 change（聚焦 KFD 5 ioctls E2E），与归档 change 互补，不是扩展或替代。
 
 在 `external/TaskRunner/openspec/changes/l1-l2-bridge-e2e-test-skeleton/` 创建：
 
@@ -69,21 +79,22 @@ proposal.md 描述：
 
 ### 3. 跨仓 PR 工作流
 
-按 **ADR-035 §Rule 5.1 4-step 同步协议**：
-- **Step 1**: UsrLinuxEmu 仓本 change → PR → merge → archive（按 Wave 6 流程）
-- **Step 2**: TaskRunner 仓 `l1-l2-bridge-e2e-test-skeleton` → PR → merge → archive
-- **Step 3**: 双向 submodule bump：
-  - UsrLinuxEmu: bump `external/TaskRunner` → 指向 TaskRunner merge commit
-  - TaskRunner: bump `external/UsrLinuxEmu` (or equivalent) → 指向 UsrLinuxEmu merge commit
+按 **ADR-035 §Rule 5.1 固定 4 步顺序**（**严禁**颠倒）：
+
+- **Step 1** (TaskRunner 先): TaskRunner 仓 `l1-l2-bridge-e2e-test-skeleton` → commit + push（submodule-internal changes）
+- **Step 2** (UsrLinuxEmu 后): UsrLinuxEmu 仓本 change → commit（submodule pointer + cross-repo changes）
+- **Step 3**: UsrLinuxEmu push
 - **Step 4**: 双向 archive confirmation + ctest 双绿
+
+> ⚠️ **ADR-035 §R5.2**: 严禁跨仓顺序颠倒（先 UsrLinuxEmu commit 后 TaskRunner commit 会导致 submodule 指针引用未来 commit）。Phase B（TaskRunner 端）必须在 Phase A（UsrLinuxEmu 端）之前完成 commit。
 
 ## Acceptance
 
 ### UsrLinuxEmu 端
 - [ ] `test_kfd_l1_l2_bridge_standalone` skeleton 替换为 3 个真实 E2E TEST_CASE
 - [ ] GpuDriverClient stub fixture 实现（嵌入 test，不需真实 TaskRunner build）
-- [ ] 5 个 KFD ioctls 端到端 PASS（CREATE_QUEUE + GET_PROCESS_APERTURE + UPDATE_QUEUE + MAP_MEMORY + UNMAP_MEMORY）
-- [ ] 并发多 GpuDriverClient 提交 PASS（PID 隔离）
+- [ ] 5 个 KFD ioctls 端到端 PASS（全部经扩展后的 GpgpuDevice IoctlEntry 表派发）
+- [ ] 并发 kfd_sim_bridge 多线程访问 PASS（page_count 最终一致）
 - [ ] 104/104 ctest PASS（含新增 assertions）
 - [ ] docs-audit 43/43 PASS
 

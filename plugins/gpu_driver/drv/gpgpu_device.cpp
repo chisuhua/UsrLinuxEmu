@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include "drv/gpgpu_device.h"
 #include "kernel/logger.h"
+#include "drv/kfd_sim_bridge.h"
 #include "kernel/vfs.h"
 #include "sim/graph.h"
 #include "sim/hardware/hardware_puller_emu.h"
@@ -121,6 +122,10 @@ const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
       {GPU_IOCTL_MEM_POOL_GET_ATTR, "MEM_POOL_GET_ATTR", &GpgpuDevice::handleMemPoolGetAttr},
       {GPU_IOCTL_MEM_POOL_TRIM, "MEM_POOL_TRIM", &GpgpuDevice::handleMemPoolTrim},
       {GPU_IOCTL_MEM_POOL_EXPORT, "MEM_POOL_EXPORT", &GpgpuDevice::handleMemPoolExport},
+      {GPU_IOCTL_GET_PROCESS_APERTURE, "GET_PROCESS_APERTURE", &GpgpuDevice::handleGetProcessAperture},
+      {GPU_IOCTL_UPDATE_QUEUE, "UPDATE_QUEUE", &GpgpuDevice::handleUpdateQueue},
+      {GPU_IOCTL_MAP_MEMORY, "MAP_MEMORY", &GpgpuDevice::handleMapMemory},
+      {GPU_IOCTL_UNMAP_MEMORY, "UNMAP_MEMORY", &GpgpuDevice::handleUnmapMemory},
   };
   return kTable;
 }
@@ -1003,5 +1008,31 @@ long GpgpuDevice::handleMemPoolExport(void* argp) {
       args->pool_handle, args->handle_type, args->flags, &args->fd_out);
   if (sim_ret != 0) return sim_ret;
   return 0;
+}
+
+long GpgpuDevice::handleMapMemory(void* argp) {
+  auto* args = static_cast<struct gpu_map_memory_args*>(argp);
+  if (!args) return -EFAULT;
+  if (!handles_.valid(args->handle)) return -EINVAL;
+  return kfd_sim_handle_map_memory(args);
+}
+
+long GpgpuDevice::handleUnmapMemory(void* argp) {
+  auto* args = static_cast<struct gpu_unmap_memory_args*>(argp);
+  if (!args) return -EFAULT;
+  if (!handles_.valid(args->handle)) return -EINVAL;
+  return kfd_sim_handle_unmap_memory(args);
+}
+
+long GpgpuDevice::handleGetProcessAperture(void* argp) {
+  auto* args = static_cast<struct gpu_get_process_aperture_args*>(argp);
+  if (!args) return -EFAULT;
+  return kfd_sim_handle_get_process_aperture(args);
+}
+
+long GpgpuDevice::handleUpdateQueue(void* argp) {
+  auto* args = static_cast<struct gpu_update_queue_args*>(argp);
+  if (!args) return -EFAULT;
+  return kfd_sim_handle_update_queue(args);
 }
 

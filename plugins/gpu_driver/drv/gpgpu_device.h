@@ -22,7 +22,8 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   // Pre-Phase 3 baseline: 13 (after LAUNCH_CB removal in b78edc9).
   // Phase 3 (PR #20+#26) adds 18 IOCTLs (stream+graph+mempool).
   // Phase 4 (PR #27) adds MEM_POOL_EXPORT.
-  static constexpr size_t kNumIoctls = 32;
+  // C-12 E.2.4 (L1↔L2 bridge): +4 KFD ioctls (MAP/UNMAP_MEMORY, GET_PROCESS_APERTURE, UPDATE_QUEUE).
+  static constexpr size_t kNumIoctls = 36;
 
   explicit GpgpuDevice(struct gpu_hal_ops* hal);
   ~GpgpuDevice();
@@ -148,6 +149,10 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   long handleMemPoolGetAttr(void* argp);
   long handleMemPoolTrim(void* argp);
   long handleMemPoolExport(void* argp);
+  long handleMapMemory(void* argp);
+  long handleUnmapMemory(void* argp);
+  long handleGetProcessAperture(void* argp);
+  long handleUpdateQueue(void* argp);
 
   struct IoctlEntry {
     unsigned long request;

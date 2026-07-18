@@ -93,6 +93,8 @@ static int plugin_init_internal() {
   }
   kfd_sim_set_mm_shim(&g_plugin_mm_shim);
 
+  // E.2.4 L1↔L2 bridge: initialize sim bridge state (sim_pm_create + internal maps)
+  kfd_sim_reset();
   auto device = std::make_shared<GpgpuDevice>(&hal_holder.hal);
   device->setPuller(hal_holder.puller);
   device->set_mm_shim(&g_plugin_mm_shim);
