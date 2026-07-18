@@ -415,6 +415,6 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 - ✅ B.4.3 sim_signal_event integration (kfd_events lambda day-1 stub)
 - ✅ C.2.3 concurrent processes test (31 assertions PASS)
 - ✅ E.0.1 + E.0.2 KFD integration tests (30 assertions PASS)
-- ✅ E.2.4.1 L1↔L2 bridge skeleton (5 assertions PASS)
+- ✅ E.2.4.1 L1↔L2 bridge skeleton → full E2E (57 assertions PASS, 3 TEST_CASEs)
 - 🟡 E.2.3 three-sanitizer (TSan infra exists; ASan/UBSan deferred)
-- 🟡 E.2.4.2/4.3 cross-repo sync (deferred to follow-up PRs)
+- ✅ E.2.4.2/4.3 cross-repo sync (TaskRunner KFD E2E test + submodule bump, ADR-035 §R5.1 completed)
