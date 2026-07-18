@@ -406,7 +406,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 
 - **Stage 2** ✅ 已达成 (2026-07-05, commit `fb75ed2`)：多设备插件化（网络 + 存储）已交付，**详见** [stage-2-multi-device.md](docs/roadmap/stage-2-multi-device.md)
 - **Stage 3**：v1.0 稳定（CI 全平台、文档完善、性能优化）
-- **后续子项目** 🔄 IN_PROGRESS (C-12, 2026-07-15)：完整 KFD 多文件集成（独立子项目，~50K 行 amdgpu driver 移植）。**Phase A ✅ 完成 2026-07-15**（ADR-059/060/061/062 Accepted + kfd-multi-file.md + kfd-abi-comparison-report.md）；**Phase B 可启动**。详见 [openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/](openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/tasks.md)
+- **后续子项目** ✅ COMPLETE (C-12, 2026-07-18)：完整 KFD 多文件集成（独立子项目，~50K 行 amdgpu driver 移植）。**Phase A ✅**（ADR-059/060/061/062 Accepted）；**Phase B ✅**（6 模块：kfd_module/process/pasid/dispatch/mmu/events 全部实施）；**Phase C ✅**（sim_pfh/sim_pm 真实化 + IOTLB + mm_shim wire-up）；**Phase D ✅**（FIXME 清理）；**Phase E ✅**（集成测试 + E2E + L1↔L2 bridge 跨仓）。详见 [openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/](openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/tasks.md)
 - 详见 [docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md) 与 [docs/roadmap/](docs/roadmap/README.md)
 
 ## 文档
