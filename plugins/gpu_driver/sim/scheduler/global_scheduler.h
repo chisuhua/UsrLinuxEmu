@@ -47,6 +47,10 @@ class GlobalScheduler {
 
   EngineType selectEngine(const gpu_gpfifo_entry& entry);
 
+  void translateLaunch(const gpu_gpfifo_entry& entry) {
+    translator_.translate(entry);
+  }
+
  private:
   ::usr_linux_emu::GpfifoToLaunchParamsTranslator translator_;
   EngineDispatchFn dispatch_fn_;
