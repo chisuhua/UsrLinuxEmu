@@ -199,6 +199,12 @@ void HardwarePullerEmu::runLoop() {
           transitionTo(State::COMPLETE);
           break;
         }
+        // Phase D.2.1: LAUNCH_KERNEL — 显式调用 translator 触发 callback
+        if (current_entry_.method == GPU_OP_LAUNCH_KERNEL && scheduler_) {
+          scheduler_->translateLaunch(current_entry_);
+          transitionTo(State::COMPLETE);
+          break;
+        }
         if (scheduler_) {
           EngineType engine = scheduler_->selectEngine(current_entry_);
           scheduler_->enqueue(current_entry_, engine);
