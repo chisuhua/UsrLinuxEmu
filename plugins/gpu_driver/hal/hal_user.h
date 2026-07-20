@@ -16,7 +16,8 @@
 #include "gpu_hal.h"
 
 #define HAL_REGS_COUNT 256
-#define HAL_HEAP_SIZE (256ULL * 1024 * 1024)
+#define HAL_HEAP_BASE  (0x100000000ULL)  /* GPU device memory base address */
+#define HAL_HEAP_SIZE  (256ULL * 1024 * 1024)
 #define HAL_MAX_FENCES 128
 
 struct hal_user_context {

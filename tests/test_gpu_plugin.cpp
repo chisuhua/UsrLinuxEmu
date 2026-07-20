@@ -161,7 +161,12 @@ TEST_CASE_METHOD(GpuPluginTestFixture, "GPU_IOCTL_MAP_BO", "[gpu][ioctl][map]") 
   map_args.flags = 0;
   result = ioctl(GPU_IOCTL_MAP_BO, &map_args);
   REQUIRE(result == 0);
-  REQUIRE(map_args.gpu_va == alloc_args.gpu_va);
+  // v1.2: MAP_BO now returns host_ptr (not gpu_va dev_addr)
+  REQUIRE(map_args.gpu_va != 0);
+  // Verify the mapped pointer is readable/writable
+  const char test_data[] = "hello";
+  memcpy(reinterpret_cast<void*>(map_args.gpu_va), test_data, sizeof(test_data));
+  REQUIRE(std::memcmp(reinterpret_cast<void*>(map_args.gpu_va), test_data, sizeof(test_data)) == 0);
 
   ioctl(GPU_IOCTL_FREE_BO, &alloc_args.handle);
 }

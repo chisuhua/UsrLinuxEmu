@@ -221,7 +221,13 @@ long GpgpuDevice::handleAllocBo(void* argp) {
     return -ENOMEM;
   }
 
-  bo_map_[handle] = {gpu_va, args->size, args->domain, args->flags};
+  auto hc = static_cast<struct hal_user_context*>(hal_ctx_);
+  if (!hc) {
+    std::cerr << "[GpgpuDevice] ALLOC_BO: hal_ctx_ not set, BO will have no host_ptr\n";
+  }
+  BoInfo info{gpu_va, args->size, args->domain, args->flags,
+              hc ? reinterpret_cast<void*>(hc->heap + (gpu_va - HAL_HEAP_BASE)) : nullptr};
+  bo_map_[handle] = info;
 
   args->handle = handle;
   args->gpu_va = gpu_va;
@@ -275,10 +281,10 @@ long GpgpuDevice::handleMapBo(void* argp) {
     return -EINVAL;
   }
 
-  args->gpu_va = it->second.gpu_va;
+  args->gpu_va = reinterpret_cast<u64>(it->second.host_ptr);
 #ifndef NDEBUG
-  std::cout << "[GpgpuDevice] MAP_BO: handle=" << args->handle << " va=0x" << std::hex
-            << args->gpu_va << "\n";
+  std::cout << "[GpgpuDevice] MAP_BO: handle=" << args->handle << " host_ptr=" << std::hex
+            << it->second.host_ptr << " gpu_va=0x" << it->second.gpu_va << "\n";
 #endif
   return 0;
 }
@@ -688,10 +694,24 @@ long GpgpuDevice::detachQueueFromVASpace(gpu_va_space_handle_t va_space_handle,
 
 void* GpgpuDevice::mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset) {
   (void)addr;
-  (void)length;
   (void)prot;
   (void)flags;
   (void)fd;
+
+  // BO 映射: offset 即为 handle。安全：max_handles_=65535 < QUEUE_RING_MMAP_BASE=0x10000
+  auto bo_it = bo_map_.find(static_cast<u32>(offset));
+  if (bo_it != bo_map_.end()) {
+    if (length > bo_it->second.size) {
+      std::cerr << "[GpgpuDevice] mmap BO: length " << length
+                << " exceeds bo size " << bo_it->second.size << "\n";
+      return MAP_FAILED;
+    }
+    if (!bo_it->second.host_ptr) {
+      std::cerr << "[GpgpuDevice] mmap BO: no host_ptr (hal_ctx_ not set?)\n";
+      return MAP_FAILED;
+    }
+    return bo_it->second.host_ptr;
+  }
 
   if (offset == DOORBELL_MMAP_OFFSET) {
     // Doorbell 区域: 返回一个可写页

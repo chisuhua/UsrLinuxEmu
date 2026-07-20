@@ -98,6 +98,7 @@ static int plugin_init_internal() {
   auto device = std::make_shared<GpgpuDevice>(&hal_holder.hal);
   device->setPuller(hal_holder.puller);
   device->set_mm_shim(&g_plugin_mm_shim);
+  device->setHalContext(&hal_holder.ctx);
 
   VFS& vfs = VFS::instance();
   auto dev = std::make_shared<Device>(device->name, 0, device, nullptr);
