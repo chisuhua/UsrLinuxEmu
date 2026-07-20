@@ -56,6 +56,7 @@
 - 模拟网络设备（NIC packet buffer、interrupt on arrival）
 - 模拟块设备（基于 host 文件的 disk emulator）
 - 性能可参考真实硬件（在合理误差范围内）
+- **Stage 4: BO 内存路径通过 ioremap/BAR 模拟**（独立 VRAM backing store + `readl`/`writel` MMIO + `dma_alloc_coherent`；见 [ADR-064](../00_adr/adr-064-memory-model-staging.md) Decision 3）
 
 **验收**:
 - 模拟设备能运行真实工作负载（非 trivial benchmark）

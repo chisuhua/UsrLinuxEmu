@@ -301,3 +301,40 @@ void* mmap_doorbell_region(DoorbellEmu* doorbell) {
 **维护者**: UsrLinuxEmu Architecture Team
 
 **最后更新**: 2026-05-12 (ADR-024 修订)
+
+---
+
+## ADR-064 修订: HAL 边界强制执行规则
+
+**修订日期**: 2026-07-20
+**修订依据**: [ADR-064](adr-064-memory-model-staging.md) (内存模型保真度分阶段策略)
+
+### 修订内容
+
+新增 **Decision 5: HAL 边界禁止规则**：
+
+> **② 驱动代码 (`plugins/gpu_driver/drv/`) 禁止**：
+> 
+> 1. `#include` 任何 HAL 实现内部头文件（`hal_user.h`, `hal_mock.h` 等）
+> 2. 对 HAL 上下文指针进行 `reinterpret_cast` 或访问其内部字段（如 `hal_user_context::heap`）
+> 3. 直接使用 HAL 实现层的宏常量和类型（如 `HAL_HEAP_BASE`, `HAL_HEAP_SIZE`, `hal_user_context`）
+> 
+> **② 驱动代码只能通过** `struct gpu_hal_ops *hal_` 的公开函数指针访问硬件。
+> 
+> **例外**: `plugin.cpp`（不属于 `drv/`，是顶层初始化组件）可以 `#include` HAL 实现头文件并构造 HAL 上下文。
+
+### 审计手段
+
+可通过 `tools/docs-audit.sh` 新增检查规则：
+
+```bash
+# 禁止 drv/ 中 #include hal_user.h / hal_mock.h
+grep -rn '#include.*hal_user.h\|#include.*hal_mock.h' plugins/gpu_driver/drv/ \
+  && echo "FAIL: drv/ leaks HAL implementation" || echo "PASS"
+```
+
+### 已知违规（修复中）
+
+| 文件 | 行号 | 违规 | 修复计划 |
+|------|------|------|---------|
+| `plugins/gpu_driver/drv/gpgpu_device.cpp` | 224 | `static_cast<struct hal_user_context*>(hal_ctx_)` + 访问 `hc->heap` | ADR-064 §实施计划 step 2: 替换为 `hal_mem_map_bo()` |
