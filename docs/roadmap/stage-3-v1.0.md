@@ -133,18 +133,26 @@
 
 ---
 
-## 当前进展（2026-07-07）
+## 当前进展（2026-07-20）
 
-**Stage 3 已启动**（issue 跟踪见 GitHub）：
+**Stage 3 进行中**：
 
 | 子任务 | 状态 | 说明 |
 |--------|------|------|
-| **3.1 CI/CD 全平台验证** | ✅ 部分完成 (2026-07-08) | `ubuntu-22.04` LTS 已加入 CI matrix（change `stage3-1-ci-matrix-multi-platform`），6 jobs × parallel fan-out；本地 build 85/85 ctest PASS、0 warnings；macOS / aarch64 deferred（需要 cross-ABI 隔离，独立 change 跟踪） |
-| **3.2 性能优化** | 📋 规划中 | 需要先建立性能基准 |
-| **3.3 错误处理完善** | ✅ 部分完成 | PR #20 review follow-up #3 已修复 `sim_graph_launch` / `sim_mem_pool_*_async` 的 `-1` → `-ENOMEM`（commit `fc6f854`）|
+| **3.1 CI/CD 全平台验证** | ✅ 部分完成 (2026-07-08) | ubuntu-22.04 已入 CI matrix；ASan/UBSan/TSan 三 sanitizer 已落地（`ba48c79`）；macOS/aarch64 deferred |
+| **3.2 性能优化** | 📋 规划中 | hotpath 优化 C-11 已归档（BO 2.1×, ioctl 11.6×, pushbuffer 1296×）；perf baseline 文档已建立 |
+| **3.3 错误处理完善** | ✅ 部分完成 | `sim_graph_launch`/`sim_mem_pool_*_async` 的 `-1` → `-ENOMEM` 已修复（`fc6f854`）；全路径审计待做 |
+| **3.4 文档完善** | ✅ 部分完成 | ADR-064 内存模型分阶段策略已归档；`gpu-real-memory-path.md` 已创建；Doxygen API 参考待生成 |
+| **CUDA E2E real-path** | ✅ COMPLETED | Phase A-F 全部交付：BO 真实内存 + Puller MEMCPY HAL + fence 异步 + E2E 测试；104/104 + 14/14 ctest PASS |
 
-**已落地的稳定性 commit**（Phase 3.1/3.2 期间）:
+**已落地的稳定性 commit**（Stage 3 期间）:
 - `f180737` docs(openspec): archive sim-stream-primitive-support
 - `3b2eeef` docs(openspec): add F.6 follow-up — sim_graph_launch real async impl
 - `13477ff` refactor(gpu): use SIM_FENCE_ID_BASE macro (no magic number)
 - `fc6f854` fix(sim): return -ENOMEM instead of -1 in graph/mem_pool async paths
+- `ba48c79` feat(build): add ASan/UBSan/TSan sanitizer infrastructure
+- `651c53b` feat(gpu): Phase A+B — real BO memory + Puller MEMCPY HAL path
+- `e16e754` feat(puller): Phase D — explicit LAUNCH_KERNEL translator call
+- `660eb2c` docs(openspec): mark cuda-e2e-real-path as COMPLETED (all 6 Phases)
+- `9181384` docs(adr): ADR-064 memory model staging + ADR-023 HAL boundary rules
+- `edb454d` docs(memory): GPU real memory path architecture document
