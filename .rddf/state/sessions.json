@@ -8,17 +8,16 @@
       "owner_opencode_session_id": "ses_20260720_181155",
       "created_at": "2026-07-20T10:11:36Z",
       "last_heartbeat": "2026-07-21T00:00:00Z",
-      "summary": "Stage 3 v1.0 推进：CUDA E2E ✅、sanitizer infra ✅、L1↔L2 bridge ✅，待推进 stage3-2 性能优化 / stage3-3 错误处理 / stage3-4 文档",
+      "summary": "Stage 3 v1.0 推进：CUDA E2E ✅、sanitizer ✅、bridge ✅、hotpath ✅ (PR #30, PASS 2/3)，待推进 stage3-3 错误处理 / stage3-4 文档",
       "attached_changes": [
-        "stage3-2-hotpath-optimization",
         "stage3-3-errno-coverage-audit"
       ],
       "next_steps": [
-        "1. guide-plan → stage3-2-hotpath-optimization（43 tasks, callgrind data done）",
-        "2. guide-ship → 执行 stage3-2 (cout removal + HandleManager + BO optimization)",
-        "3. guide-plan → stage3-3-errno-coverage-audit（18 tasks, 20 handler audit）",
-        "4. guide-ship → 执行 stage3-3",
-        "5. guide-plan → stage3-4 文档完善 + v1.0 发布清单"
+        "1. guide-plan → stage3-3-errno-coverage-audit（18 tasks, 0/18）",
+        "2. guide-ship → 执行 stage3-3 (20 handler errno audit + tests)",
+        "3. guide-plan → stage3-4 文档完善 (Doxygen + docs-audit)",
+        "4. guide-ship → 执行 stage3-4",
+        "5. v1.0 发布清单 (Release notes + Migration guide + Binary release)"
       ]
     }
   ],
