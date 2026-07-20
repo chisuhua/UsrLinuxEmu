@@ -1,12 +1,9 @@
 {
-  "roadmap_path": "docs/roadmap/README.md",
+  "roadmap_path": "roadmap.md",
   "stage": "stage-3",
   "committed_at": "2026-07-20",
-  "summary": "Stage 1+2 已达成，Stage 3 进行中：CUDA E2E real-path ✅，待推进 three-sanitizer-infra + kfd-l1-l2-bridge-e2e",
-  "active_changes": [
-    "three-sanitizer-infra",
-    "kfd-l1-l2-bridge-e2e"
-  ],
+  "summary": "Stage 1+2 已达成，Stage 3 进行中：CUDA E2E real-path ✅、three-sanitizer-infra ✅（已归档 2026-07-17）、kfd-l1-l2-bridge-e2e ✅（已归档 2026-07-18，双仓），下一步：Stage 3.2 性能优化 / 3.3 错误处理审计 / 3.4 文档完善",
+  "active_changes": [],
   "adr_count": 41,
   "adrs": {
     "foundational": [
