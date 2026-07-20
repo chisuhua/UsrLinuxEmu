@@ -10,8 +10,6 @@
 #include <cstring>
 #include <thread>
 
-#define HAL_HEAP_BASE 0x100000000ULL
-
 /* ── 内部回调实现 ────────────────────────────────── */
 
 static int user_reg_read(void *ctx, uint64_t offset, uint64_t *out_val) {

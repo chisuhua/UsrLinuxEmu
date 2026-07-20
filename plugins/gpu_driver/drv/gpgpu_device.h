@@ -46,8 +46,13 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
 
   struct gpu_hal_ops* hal_;
   void* mm_shim_ = nullptr;        /* opaque us_mm_shim* from kfd_process */
+  void* hal_ctx_ = nullptr;        /* opaque hal_user_context* for heap access */
 
   void set_mm_shim(void* shim) { mm_shim_ = shim; }
+
+  /** HAL user context pointer (for heap access in mmap/BO management).
+   *  Stored as void* to avoid including hal_user.h in the header. */
+  void setHalContext(void* ctx) { hal_ctx_ = ctx; }
 
   /** DRM device context (per Decision 1 / task 3.3).
    *
@@ -75,6 +80,7 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
     u64 size;
     u32 domain;
     u32 flags;
+    void* host_ptr = nullptr;  /* user-space simulation only: hc->heap + (gpu_va - HAL_HEAP_BASE) */
   };
   std::map<u32, BoInfo> bo_map_;
   std::map<std::string, u32> registered_kernels_;

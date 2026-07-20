@@ -6,6 +6,7 @@
 #include "gpu_queue_emu.h"
 #include "scheduler/global_scheduler.h"
 #include "scheduler/translator/gpfifo_translator.h"
+#include "hal_user.h"
 
 HardwarePullerEmu::HardwarePullerEmu(struct gpu_hal_ops* hal,
                                      DoorbellEmu* doorbell,
@@ -175,6 +176,29 @@ void HardwarePullerEmu::runLoop() {
         transitionTo(State::DISPATCH);
         break;
       case State::DISPATCH: {
+        // v1.2: MEMCPY 分支 - 通过 HAL 执行真实内存拷贝
+        if (current_entry_.method == GPU_OP_MEMCPY) {
+          u64 src = current_entry_.payload[0];
+          u64 dst = current_entry_.payload[1];
+          u64 size = current_entry_.payload[2];
+
+          int ret = -1;
+          if (size > 0 && size <= HAL_HEAP_SIZE) {
+            bool src_is_device = (src >= HAL_HEAP_BASE &&
+                                  src < HAL_HEAP_BASE + HAL_HEAP_SIZE);
+            ret = src_is_device
+              ? hal_mem_read(hal_, src, reinterpret_cast<void*>(dst), size)
+              : hal_mem_write(hal_, dst, reinterpret_cast<const void*>(src), size);
+          }
+          if (ret != 0) {
+            std::cerr << "[Puller] MEMCPY HAL failed ret=" << ret
+                      << " src=0x" << std::hex << src << " dst=0x" << dst
+                      << " size=" << std::dec << size << "\n";
+            pending_fence_id_ = 0;  // 跳过 handleComplete signal
+          }
+          transitionTo(State::COMPLETE);
+          break;
+        }
         if (scheduler_) {
           EngineType engine = scheduler_->selectEngine(current_entry_);
           scheduler_->enqueue(current_entry_, engine);
