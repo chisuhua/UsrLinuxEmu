@@ -1,0 +1,24 @@
+{
+  "roadmap_path": "docs/roadmap/README.md",
+  "stage": "stage-3",
+  "committed_at": "2026-07-20",
+  "summary": "Stage 1+2 已达成，Stage 3 进行中：CUDA E2E real-path ✅，待推进 three-sanitizer-infra + kfd-l1-l2-bridge-e2e",
+  "active_changes": [
+    "three-sanitizer-infra",
+    "kfd-l1-l2-bridge-e2e"
+  ],
+  "adr_count": 41,
+  "adrs": {
+    "foundational": [
+      "ADR-036",
+      "ADR-023",
+      "ADR-018",
+      "ADR-035"
+    ],
+    "staging": [
+      "ADR-064"
+    ],
+    "total_accepted": 41,
+    "last_adr": "ADR-064"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "sessions": [
+    {
+      "session_id": "rds_stage3_001",
+      "kind": "stage",
+      "stage": "stage-3",
+      "state": "active",
+      "owner_opencode_session_id": "ses_20260720_181155",
+      "created_at": "2026-07-20T10:11:36Z",
+      "last_heartbeat": "2026-07-20T10:11:55Z",
+      "summary": "Stage 3 v1.0 推进：CUDA E2E ✅ 完成，待推进 three-sanitizer-infra + kfd-l1-l2-bridge-e2e",
+      "attached_changes": [
+        "three-sanitizer-infra",
+        "kfd-l1-l2-bridge-e2e"
+      ],
+      "next_steps": [
+        "1. guide-plan → three-sanitizer-infra（3-5 天，单仓低风险）",
+        "2. guide-ship → 执行 three-sanitizer-infra",
+        "3. guide-plan → kfd-l1-l2-bridge-e2e（1-2 周，跨仓）",
+        "4. guide-ship → 执行 kfd-l1-l2-bridge-e2e",
+        "5. 性能优化 + 错误处理审计 + v1.0 发布"
+      ]
+    }
+  ],
+  "updated_at": "2026-07-20T10:11:55Z"
+}
