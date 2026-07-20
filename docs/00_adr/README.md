@@ -73,6 +73,7 @@
 | [adr-061](adr-061-hal-iommu-extension.md) | **HAL IOMMU ops 扩展**（C-12, B.3.4, hal_iommu_map/unmap）| ✅ 已接受 | 2026-07-15 |
 | [adr-062](adr-062-hal-event-signal-extension.md) | **HAL Event Signal ops 扩展**（C-12, B.4.4, hal_event_signal）| ✅ 已接受 | 2026-07-15 |
 | [adr-063](adr-063-sim-pfh-pm-realification.md) | **sim_pfh / sim_pm 真实化状态机边界**（C-12 Phase C.1, sim 层 3 态 + sim_proxy.h + IOTLB 桥接 + mm_shim wire-up）| ✅ 已接受 | 2026-07-15 |
+| [adr-064](adr-064-memory-model-staging.md) | **GPU 内存模型保真度分阶段策略**（BO 简化堆 → Stage 4 真实 BAR + ioremap；HAL 边界强制执行规则）| ✅ 已接受 | 2026-07-20 |
 
 > **2026-07-14 变更（C-12 命名修复 + HAL ops ADR 创建）**：ADR-061 + ADR-062 创建 — 原 tasks.md B.3.4.5 误用 `adr-060` 编号，与 `Linux 内核消息通知线程架构` 冲突。已修正：
 > - **ADR-061**（HAL IOMMU ops 扩展，237 行）：覆盖 C-12 tasks B.3.4 — `hal_iommu_map()` / `hal_iommu_unmap()` 2 个新 fn-ptr，遵循 ADR-023 Decision 4 spec-driven "追加不改" 原则
@@ -86,10 +87,10 @@
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 40 | 001-010, 015-024, 027, 031-037, 039-041, 043, 059-063 |
+| ✅ 已接受 | 41 | 001-010, 015-024, 027, 031-037, 039-041, 043, 059-064 |
 | 📋 PROPOSED | 15 | 011-014, 038, 042, 044-052, 054, 056-058 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
-| **总计** | **62** | ADR-001 ~ ADR-063 |
+| **总计** | **63** | ADR-001 ~ ADR-064 |
 
 > **2026-07-11 变更**：ADR-058 新增 — sim_mem_pool Real VA Allocation（Phase 4 cu-mempool-alloc-real-va change 架构基础）。镜像 Nvidia UVM `uvm_range_allocator` per-pool + per-device gpu_buddy + mmap backing at pool create 模式。
 >
@@ -254,6 +255,13 @@ adr-001 (用户态模拟)
                     └── 关联: adr-023 (HAL Decision 4 spec-driven 扩展), adr-018, adr-059 (D3)
                     └── 硬依赖: adr-060 (events 异步路径必须用 kernel_workqueue)
                     └── 建议与 adr-061 同一 commit 追加 fn-ptr 到 struct gpu_hal_ops
+
+    └── 内存模型保真度 (2026-07-20, ✅ Accepted)
+            │
+            └── adr-064 (GPU 内存模型分阶段策略)
+                    └── 关联: adr-023 (HAL 边界规则修订 §Decision 5), adr-036 (3 区分)
+                    └── 关联: adr-020 (libgpu_core), blueprint.md (Stage 4 BAR/ioremap)
+                    └── 触发: Oracle 评审 ses_081492340ffeMYwkS4y0D6eyMt
 ```
 
 ## 维护指南
