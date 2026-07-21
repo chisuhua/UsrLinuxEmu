@@ -298,7 +298,7 @@ UsrLinuxEmu 的核心目标（见 [ADR-001](../00_adr/adr-001-user-mode-emulatio
 | 前置能力 | 来源 | 状态 |
 |----------|------|------|
 | `drv/hal/sim/shared` 物理目录分离 | [ADR-018](../00_adr/adr-018-driver-sim-separation.md) | ✅ |
-| HAL 接口契约（14 个函数指针）| [ADR-023](../00_adr/adr-023-hal-interface.md) + [ADR-061](../00_adr/adr-061-hal-iommu-extension.md) + [ADR-062](../00_adr/adr-062-hal-event-signal-extension.md) | ✅ |
+| HAL 接口契约（15 个函数指针）| [ADR-023](../00_adr/adr-023-hal-interface.md) + [ADR-061](../00_adr/adr-061-hal-iommu-extension.md) + [ADR-062](../00_adr/adr-062-hal-event-signal-extension.md) + `mem_map_bo` per [ADR-064](../00_adr/adr-064-memory-model-staging.md) | ✅ |
 | `libgpu_core/` 纯 C buddy allocator | [ADR-020](../00_adr/adr-020-libgpu-core-extraction.md) | ✅ |
 | Hardware Puller FSM | [ADR-021](../00_adr/adr-021-hardware-puller.md) | ✅ |
 | UMQ 用户态提交路径 | [ADR-024](../00_adr/adr-024-user-mode-queue-submission.md) | ✅ |

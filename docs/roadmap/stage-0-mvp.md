@@ -35,7 +35,7 @@
 - ⚠️ **限制**：仅模拟 pushbuffer 执行流，无 shader 执行、无显示输出
 
 ### HAL 桥接层
-- ✅ `struct gpu_hal_ops` 14 个函数指针（[ADR-023](../00_adr/adr-023-hal-interface.md) + [ADR-061](../00_adr/adr-061-hal-iommu-extension.md) + [ADR-062](../00_adr/adr-062-hal-event-signal-extension.md)）
+- ✅ `struct gpu_hal_ops` 15 个函数指针（[ADR-023](../00_adr/adr-023-hal-interface.md) + [ADR-061](../00_adr/adr-061-hal-iommu-extension.md) + [ADR-062](../00_adr/adr-062-hal-event-signal-extension.md) + `mem_map_bo` per [ADR-064](../00_adr/adr-064-memory-model-staging.md) Decision 2）
 - ✅ `hal_mock.cpp`（注入 sim）+ `hal_user.cpp`（真机部署）
 - ✅ 构造注入模式（避免单例）
 
