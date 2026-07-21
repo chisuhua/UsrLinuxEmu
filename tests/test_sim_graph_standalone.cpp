@@ -45,7 +45,7 @@ TEST_CASE("graph — destroy valid handle returns 0",
 
 TEST_CASE("graph — destroy unknown handle returns -EINVAL",
           "[sim][graph][error]")
-
+{
   sim_graph_reset_for_test();
   REQUIRE(sim_graph_destroy(99999) == -EINVAL);
 }
