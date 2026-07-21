@@ -1,6 +1,6 @@
 # 阶段 3: v1.0 稳定
 
-> **状态**: 📋 规划中
+> **状态**: 🔄 进行中
 > **目标**: v1.0 stable release — production-ready quality
 > **前置依赖**: 阶段 1 + 阶段 2 完成
 
@@ -133,16 +133,16 @@
 
 ---
 
-## 当前进展（2026-07-20）
+## 当前进展（2026-07-21）
 
 **Stage 3 进行中**：
 
 | 子任务 | 状态 | 说明 |
 |--------|------|------|
-| **3.1 CI/CD 全平台验证** | ✅ 部分完成 (2026-07-08) | ubuntu-22.04 已入 CI matrix；ASan/UBSan/TSan 三 sanitizer 已落地（`ba48c79`）；macOS/aarch64 deferred |
-| **3.2 性能优化** | 📋 规划中 | hotpath 优化 C-11 已归档（BO 2.1×, ioctl 11.6×, pushbuffer 1296×）；perf baseline 文档已建立 |
-| **3.3 错误处理完善** | ✅ 部分完成 | `sim_graph_launch`/`sim_mem_pool_*_async` 的 `-1` → `-ENOMEM` 已修复（`fc6f854`）；全路径审计待做 |
-| **3.4 文档完善** | ✅ 部分完成 | ADR-064 内存模型分阶段策略已归档；`gpu-real-memory-path.md` 已创建；Doxygen API 参考待生成 |
+| **3.1 CI/CD 全平台验证** | 🔄 进行中 | ubuntu-22.04 已入 CI matrix；ASan/UBSan/TSan 三 sanitizer 已落地（`ba48c79`）；macOS/aarch64 deferred |
+| **3.2 性能优化** | ✅ 已完成 (2026-07-11) | hotpath 优化 C-11 已归档（BO 2.1×, ioctl 11.6×, pushbuffer 1296×, PR #30）；perf baseline 文档已建立 |
+| **3.3 错误处理完善** | ✅ 已完成 (2026-07-21) | 12 处 `-1` → Linux errno 修复 + 5 测试文件 + 105 ctest PASS（commit `1b22249`）；全路径 Linux 错误码审计完成并归档 |
+| **3.4 文档完善** | 🔄 进行中 | ADR-064 内存模型分阶段策略已归档；`gpu-real-memory-path.md` 已创建；Doxygen API 参考待生成；docs-audit 43/43 PASS |
 | **CUDA E2E real-path** | ✅ COMPLETED | Phase A-F 全部交付：BO 真实内存 + Puller MEMCPY HAL + fence 异步 + E2E 测试；104/104 + 14/14 ctest PASS |
 
 **已落地的稳定性 commit**（Stage 3 期间）:
@@ -156,3 +156,4 @@
 - `660eb2c` docs(openspec): mark cuda-e2e-real-path as COMPLETED (all 6 Phases)
 - `9181384` docs(adr): ADR-064 memory model staging + ADR-023 HAL boundary rules
 - `edb454d` docs(memory): GPU real memory path architecture document
+- `1b22249` chore(openspec): archive stage3-3-errno-coverage-audit (12 fixes + 5 test files + 105 ctest PASS)

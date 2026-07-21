@@ -41,7 +41,7 @@
 **能力清单**:
 - 驱动代码用 `struct drm_device`, `struct file`, `drm_ioctl_desc[]` 等真实 Linux 内核 API 写
 - 所有硬件访问通过 HAL（`hal_*` 函数指针），不直接调 sim
-- HAL 覆盖率 ≥ 11 个 ops（已有的）+ KFD 所需的额外 ops
+- HAL 覆盖率 ≥ 14 个 ops（已有的）+ 蓝图所需的额外 ops
 - 多设备驱动示例（GPU + 网络 + 存储）
 
 **验收**:
@@ -57,6 +57,7 @@
 - 模拟块设备（基于 host 文件的 disk emulator）
 - 性能可参考真实硬件（在合理误差范围内）
 - **Stage 4: BO 内存路径通过 ioremap/BAR 模拟**（独立 VRAM backing store + `readl`/`writel` MMIO + `dma_alloc_coherent`；见 [ADR-064](../00_adr/adr-064-memory-model-staging.md) Decision 3）
+- **GPU 命令处理器完整实现**（Phase 4-7 per [ADR-040~057](../00_adr/README.md)）：图启动真实化、方法编解码、HyperQueue 调度、抢占/上下文切换、跨引擎同步、AQL/PM4、Green Context/PDL（详见 [stage-4-bar-ioremap.md](stage-4-bar-ioremap.md) §4.2-4.6）
 
 **验收**:
 - 模拟设备能运行真实工作负载（非 trivial benchmark）
