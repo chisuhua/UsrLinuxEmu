@@ -41,7 +41,7 @@
 **能力清单**:
 - 驱动代码用 `struct drm_device`, `struct file`, `drm_ioctl_desc[]` 等真实 Linux 内核 API 写
 - 所有硬件访问通过 HAL（`hal_*` 函数指针），不直接调 sim
-- HAL 覆盖率 ≥ 14 个 ops（已有的）+ 蓝图所需的额外 ops
+- HAL 覆盖率 ≥ 15 个 ops（已有的）+ 蓝图所需的额外 ops
 - 多设备驱动示例（GPU + 网络 + 存储）
 
 **验收**:
@@ -57,7 +57,7 @@
 - 模拟块设备（基于 host 文件的 disk emulator）
 - 性能可参考真实硬件（在合理误差范围内）
 - **Stage 4: BO 内存路径通过 ioremap/BAR 模拟**（独立 VRAM backing store + `readl`/`writel` MMIO + `dma_alloc_coherent`；见 [ADR-064](../00_adr/adr-064-memory-model-staging.md) Decision 3）
-- **GPU 命令处理器完整实现**（Phase 4-7 per [ADR-040~057](../00_adr/README.md)）：图启动真实化、方法编解码、HyperQueue 调度、抢占/上下文切换、跨引擎同步、AQL/PM4、Green Context/PDL（详见 [stage-4-bar-ioremap.md](stage-4-bar-ioremap.md) §4.2-4.6）
+- **GPU 命令处理器实现**（Phase 4-7 per [ADR-040~057](../00_adr/README.md)；不含 Deferred Never 的 ADR-053/055）：图启动真实化、方法编解码、HyperQueue 调度、抢占/上下文切换、跨引擎同步、AQL/PM4、Green Context/PDL（详见 [stage-4-bar-ioremap.md](stage-4-bar-ioremap.md) §4.2-4.6）
 
 **验收**:
 - 模拟设备能运行真实工作负载（非 trivial benchmark）
@@ -90,16 +90,20 @@
 
 ---
 
-## 蓝图验收（阶段 3 完成时）
+## 蓝图验收（分阶段达成）
 
-- [ ] 借鉴 KFD 风格、`drv/kfd/` 子目录下用 Linux kernel idioms 编写的 .c 文件零修改可编译进真实内核模块（per ADR-036）
-      **限定**：字段白名单范围见 [kfd-abi-comparison-report.md §2](../../05-advanced/kfd-abi-comparison-report.md)。超出白名单的字段需走扩展流程（per ADR-059 D4 scope boundary）。
-- [ ] KFD 5 个核心 ioctl 在 UsrLinuxEmu 内跑通
-- [ ] 多设备插件（GPU + 网络 + 存储）全部能加载
-- [ ] CI 全平台绿（Linux x86_64 + aarch64）
-- [ ] docs-audit 36/36 PASS
-- [ ] v1.0 release 完成
-- [ ] 用户 quickstart ≤ 15 分钟
+> 蓝图各项验收分属不同阶段：Stage 1-2 已完成项 + Stage 3 v1.0 稳定项 + Stage 4 成熟态项。
+
+| # | 验收项 | 所属阶段 | 状态 |
+|---|--------|---------|------|
+| 1 | KFD 风格 .c 文件零修改可编译进真实内核模块（per ADR-036，字段白名单限 [kfd-abi-comparison-report.md §2](../05-advanced/kfd-abi-comparison-report.md)）| Stage 1 + Stage 4 | 🔄 Stage 1 基础落成，Stage 4 BAR/ioremap 完善 |
+| 2 | KFD 5 个核心 ioctl 在 UsrLinuxEmu 内跑通 | Stage 1.4 | ✅ C-12 集成 |
+| 3 | 多设备插件（GPU + 网络 + 存储）全部能加载 | Stage 2 | ✅ 已达成 |
+| 4 | CI 全平台绿（Linux x86_64 + aarch64）| Stage 3 | 🔄 ubuntu-22.04 ✅，aarch64 deferred |
+| 5 | docs-audit 持续 PASS | Stage 3 | ✅ 43/43 PASS |
+| 6 | v1.0 release 完成 | Stage 3 | 🔄 3.1/3.4 进行中 |
+| 7 | 用户 quickstart ≤ 15 分钟 | Stage 3 | 🔄 3.4 文档完善进行中 |
+| 8 | GPU CP Phase 4-7 递进交付（不含 ADR-053/055 Deferred Never）| Stage 4 | 📋 规划中 |
 
 ---
 
@@ -127,4 +131,4 @@
 ---
 
 **蓝图状态**: 📋 愿景描述
-**预计达成**: 阶段 3 完成时（时间待定）
+**预计达成**: Stage 4 完成时（时间待定）

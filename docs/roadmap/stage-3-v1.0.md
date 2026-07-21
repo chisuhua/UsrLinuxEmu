@@ -108,12 +108,14 @@
 
 ## 验收标准
 
-- ✅ CI 全平台绿
-- ✅ 性能基准达标
-- ✅ docs-audit 36/36 PASS
-- ✅ 错误注入测试通过
-- ✅ 用户 quickstart ≤ 15 分钟
-- ✅ SSOT + ROADMAP + ADR 全部最新
+> **Stage 3 完成 = 以下全部满足 + v1.0 发布清单全部勾选**
+
+- [ ] CI 全平台绿（当前 ubuntu-22.04 ✅，macOS/aarch64 deferred）
+- [x] 性能基准达标（3.2 hotpath PR #30 已归档：BO 2.1×, ioctl 11.6×, pushbuffer 1296×）
+- [x] docs-audit 43/43 PASS（持续通过）
+- [x] 错误注入测试通过（3.3 errno audit 12 处修复 + 105 ctest PASS）
+- [ ] 用户 quickstart ≤ 15 分钟（3.4 文档完善待完成）
+- [x] SSOT + ROADMAP + ADR 全部最新
 
 ---
 
