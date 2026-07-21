@@ -1,5 +1,23 @@
 # AGENTS.md - UsrLinuxEmu 开发指南
 
+## ⚠️ Session 边界防护（2026-07-21）
+
+> **本项目根目录: `/workspace/project/UsrLinuxEmu`**
+> **禁止路径前缀**: `/work/crmeb_pro`、`/workspace/PTX-EMU`、`/workspace/AgentForge` 等任何非本项目路径
+
+每次 session 启动时，AI 助手必须立即执行：
+```bash
+pwd                              # 确认在 /workspace/project/UsrLinuxEmu
+test -f AGENTS.md && echo OK     # 确认本文件存在
+ls plugins/ tests/ docs/ openspec/ 2>/dev/null | wc -l   # 期望 ≥ 4
+```
+
+任何 Write/Edit/Bash 命令的目标路径**必须**在项目边界内：
+- ✅ `src/`、`plugins/`、`tests/`、`docs/`、`openspec/`、`.rddf/`、`CMakeLists.txt`、`build.sh`、`AGENTS.md`
+- ❌ 任何 `/work/crmeb_pro/*`、`/workspace/<其他项目>/*`、`绝对路径在项目外`
+
+**违反此规则的工作必须立即停止并报告用户。**
+
 ## 项目概述
 
 UsrLinuxEmu 是用户态 Linux 内核模拟环境，用于设备驱动开发（特别是 GPGPU 驱动）。无需 root 权限或内核编译即可开发和测试驱动。
