@@ -46,11 +46,11 @@ int sim_stream_capture_begin(uint32_t stream_id, uint32_t mode) {
     case SIM_STREAM_CAPTURE_ACTIVE:
       /* double begin → transition to INVALID (Oracle P3-L1) */
       entry.state = SIM_STREAM_CAPTURE_INVALID;
-      return -1;
+      return -EINVAL;
     case SIM_STREAM_CAPTURE_INVALID:
-      return -1;
+      return -EINVAL;
   }
-  return -1;  /* unreachable */
+  return -ENOSYS;  /* unreachable */
 }
 
 int sim_stream_capture_end(uint32_t stream_id, uint64_t *graph_handle_out) {
@@ -60,7 +60,7 @@ int sim_stream_capture_end(uint32_t stream_id, uint64_t *graph_handle_out) {
   auto it = stream_capture_table_.find(stream_id);
   if (it == stream_capture_table_.end() ||
       it->second.state != SIM_STREAM_CAPTURE_ACTIVE) {
-    return -1;
+    return -EINVAL;
   }
 
   *graph_handle_out = next_graph_handle_++;

@@ -26,13 +26,13 @@ GpuQueueEmu::~GpuQueueEmu() {
 }
 
 int GpuQueueEmu::attachSharedMemory(void* shm_addr, size_t size) {
-  if (!shm_addr) return -1;
+  if (!shm_addr) return -EFAULT;
 
   size_t needed = sizeof(gpu_ring_header) + ring_size_ * sizeof(gpu_gpfifo_entry);
   if (size < needed) {
     std::cerr << "[GpuQueue] attachSharedMemory: size " << size
               << " < needed " << needed << "\n";
-    return -1;
+    return -EINVAL;
   }
 
   ring_header_ = static_cast<struct gpu_ring_header*>(shm_addr);
