@@ -145,7 +145,7 @@ TEST_CASE("fence_id — sim_fence_id_check rejects out-of-range id",
 {
   bool signaled = false;
   /* 远低于 BASE → 返回 -1 */
-  REQUIRE(sim_fence_id_check(0, &signaled) == -1);
+  REQUIRE(sim_fence_id_check(0, &signaled) == -EINVAL);
   /* 远高于 MAX → 返回 -1 */
-  REQUIRE(sim_fence_id_check(UINT64_MAX, &signaled) == -1);
+  REQUIRE(sim_fence_id_check(UINT64_MAX, &signaled) == -EINVAL);
 }

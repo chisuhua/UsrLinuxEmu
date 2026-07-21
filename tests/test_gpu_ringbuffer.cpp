@@ -217,13 +217,13 @@ int test_wrap_around() {
 int test_attach_errors() {
   GpuQueueEmu queue(0, GPU_QUEUE_COMPUTE, 0, 16);
 
-  // null ptr
-  EXPECT_EQ(queue.attachSharedMemory(nullptr, 1024), -1);
+  // null ptr → -EFAULT
+  EXPECT_EQ(queue.attachSharedMemory(nullptr, 1024), -EFAULT);
 
-  // 太小
+  // too small → -EINVAL
   void* shm = std::aligned_alloc(64, 64);
   if (!shm) { std::cerr << "FAIL: aligned_alloc failed\n"; return 1; }
-  EXPECT_EQ(queue.attachSharedMemory(shm, 8), -1);
+  EXPECT_EQ(queue.attachSharedMemory(shm, 8), -EINVAL);
   free(shm);
 
   std::cout << "PASS: test_attach_errors\n";

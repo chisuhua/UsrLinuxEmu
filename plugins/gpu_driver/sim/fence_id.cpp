@@ -51,7 +51,7 @@ int sim_fence_id_check(uint64_t fence_id, bool *signaled) {
 
   /* 范围校验（防御越界调用） */
   if (fence_id < SIM_FENCE_ID_BASE || fence_id > static_cast<uint64_t>(SIM_FENCE_ID_MAX))
-    return -1;
+    return -EINVAL;
 
   std::lock_guard<std::mutex> lock(sim_fence_table_mutex_);
   auto it = sim_fence_table_.find(fence_id);
