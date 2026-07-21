@@ -1,6 +1,6 @@
 # ADR-038: 网络栈 3 区分架构边界
 
-**状态**: 🔄 Proposed (Stage 2 前置 ADR)
+**状态**: ✅ 已接受 (Stage 2 已交付，前置条件全部满足)
 **日期**: 2026-07-05
 **提案人**: UsrLinuxEmu Architecture Team
 **关联 ADR**: ADR-036 (3-way separation), ADR-018 (driver-sim separation), ADR-023 (HAL interface), ADR-027 (linux compat strategy), ADR-035 (governance)
