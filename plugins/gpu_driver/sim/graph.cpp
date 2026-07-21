@@ -181,7 +181,7 @@ int sim_graph_create(uint64_t *graph_handle_out) {
 int sim_graph_destroy(uint64_t graph_handle) {
   auto git = graph_table_.find(graph_handle);
   if (git == graph_table_.end())
-    return -1;
+    return -EINVAL;
   graph_table_.erase(git);
   for (auto eit = exec_table_.begin(); eit != exec_table_.end(); ) {
     if (eit->second.source_graph == graph_handle)
@@ -199,7 +199,7 @@ int sim_graph_add_kernel_node(uint64_t graph_handle,
                               uint64_t *kernargs_bo_handle) {
   auto it = graph_table_.find(graph_handle);
   if (it == graph_table_.end())
-    return -1;
+    return -EINVAL;
 
   NodeMetadata n;
   n.type = SIM_GRAPH_NODE_KERNEL;
@@ -220,7 +220,7 @@ int sim_graph_add_memcpy_node(uint64_t graph_handle,
                               int is_h2d) {
   auto it = graph_table_.find(graph_handle);
   if (it == graph_table_.end())
-    return -1;
+    return -EINVAL;
 
   NodeMetadata n;
   n.type = SIM_GRAPH_NODE_MEMCPY;
@@ -237,7 +237,7 @@ int sim_graph_instantiate(uint64_t graph_handle, uint64_t *exec_handle_out) {
     return -EINVAL;
   auto it = graph_table_.find(graph_handle);
   if (it == graph_table_.end())
-    return -1;
+    return -EINVAL;
 
   if (!validate_kernargs(it->second))
     return -EINVAL;
@@ -289,7 +289,7 @@ int sim_graph_launch(uint64_t exec_handle, uint32_t stream_id,
 int sim_graph_destroy_exec(uint64_t exec_handle) {
   auto it = exec_table_.find(exec_handle);
   if (it == exec_table_.end())
-    return -1;
+    return -EINVAL;
   exec_table_.erase(it);
   return 0;
 }

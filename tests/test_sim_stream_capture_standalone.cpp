@@ -67,8 +67,8 @@ TEST_CASE("stream_capture — double begin transitions to INVALID",
 {
   sim_stream_capture_reset_for_test();
   REQUIRE(sim_stream_capture_begin(2, SIM_CAPTURE_MODE_GLOBAL) == 0);
-  /* 第二次 begin 应该 INVALID + 返回 -1 */
-  REQUIRE(sim_stream_capture_begin(2, SIM_CAPTURE_MODE_GLOBAL) == -1);
+  /* 第二次 begin 应该 INVALID + 返回 -EINVAL (Stage 3.3 errno 审计) */
+  REQUIRE(sim_stream_capture_begin(2, SIM_CAPTURE_MODE_GLOBAL) == -EINVAL);
 
   sim_stream_capture_status_t s = SIM_STREAM_CAPTURE_NONE;
   REQUIRE(sim_stream_capture_status(2, &s) == 0);
