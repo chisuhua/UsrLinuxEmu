@@ -261,6 +261,8 @@ set(CATCH2_SIM_TESTS
     test_error_inject_standalone.cpp
     # R-3 — HAL thread-safety smoke test via TSan
     test_hal_thread_safety_standalone.cpp
+    # Stage 3.3 — errno coverage audit (12 sites replaced -1 → Linux errno)
+    test_sim_errno_standalone.cpp
 )
 
 # Stage 2.2.4 — net driver plugin test (per ADR-038 D1)
