@@ -40,14 +40,14 @@ TEST_CASE("graph — destroy valid handle returns 0",
   uint64_t h = 0;
   REQUIRE(sim_graph_create(&h) == 0);
   REQUIRE(sim_graph_destroy(h) == 0);
-  REQUIRE(sim_graph_destroy(h) == -1);
+  REQUIRE(sim_graph_destroy(h) == -EINVAL);
 }
 
-TEST_CASE("graph — destroy unknown handle returns -1",
+TEST_CASE("graph — destroy unknown handle returns -EINVAL",
           "[sim][graph][error]")
-{
+
   sim_graph_reset_for_test();
-  REQUIRE(sim_graph_destroy(99999) == -1);
+  REQUIRE(sim_graph_destroy(99999) == -EINVAL);
 }
 
 TEST_CASE("graph — add_kernel_node to valid graph",
@@ -128,7 +128,7 @@ TEST_CASE("graph — instantiate on unknown graph returns -1",
 {
   sim_graph_reset_for_test();
   uint64_t exec = 0;
-  REQUIRE(sim_graph_instantiate(/*invalid=*/99999, &exec) == -1);
+  REQUIRE(sim_graph_instantiate(/*invalid=*/99999, &exec) == -EINVAL);
 }
 
 TEST_CASE("graph — launch is a read-only lookup (ADR-043 D4): no fence signal",
@@ -204,7 +204,7 @@ TEST_CASE("graph — destroy_exec removes executable",
   REQUIRE(sim_graph_instantiate(g, &exec) == 0);
 
   REQUIRE(sim_graph_destroy_exec(exec) == 0);
-  REQUIRE(sim_graph_destroy_exec(exec) == -1);
+  REQUIRE(sim_graph_destroy_exec(exec) == -EINVAL);
   /* launch on destroyed exec returns -EINVAL */
   uint64_t gpfifo_addr = 0;
   uint32_t entry_count = 0;
