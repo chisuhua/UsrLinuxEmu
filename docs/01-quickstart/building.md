@@ -8,10 +8,10 @@
 
 ```bash
 # 在项目根目录执行
-./build.sh
+./build.sh              # 构建所有目标
+./build.sh test         # 构建 + 运行所有测试
+./build.sh clean        # 清理构建产物
 ```
-
-这会创建一个 `build/` 目录并编译项目。
 
 ## 手动构建
 
@@ -19,171 +19,134 @@
 
 ```bash
 # 1. 进入项目根目录
-cd /path/to/UsrLinuxEmu
+cd /workspace/project/UsrLinuxEmu
 
-# 2. 创建构建目录
+# 2. 创建构建目录并配置 CMake
 mkdir -p build && cd build
+cmake -DCMAKE_BUILD_TYPE=Debug ..
 
-# 3. 配置 CMake
-cmake ..
-
-# 4. 编译项目
+# 3. 编译项目
 make -j$(nproc)
 ```
 
-`-j$(nproc)` 参数会使用所有可用的 CPU 核心进行并行编译，加快构建速度。
+`-j$(nproc)` 会使用所有可用 CPU 核心并行编译。
 
 ### 构建选项
 
-CMake 支持多种配置选项：
-
 ```bash
-# Debug 构建（包含调试符号，无优化）
+# Debug 构建（包含调试符号，默认推荐）
 cmake .. -DCMAKE_BUILD_TYPE=Debug
 
 # Release 构建（优化，无调试符号）
 cmake .. -DCMAKE_BUILD_TYPE=Release
 
-# 启用测试
-cmake .. -DBUILD_TESTS=ON
+# 启用 AddressSanitizer（内存错误检测）
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON
 
-# 启用代码覆盖率
-cmake .. -DCOVERAGE=ON -DBUILD_TESTS=ON
+# 启用 UndefinedBehaviorSanitizer
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_UBSAN=ON
 
-# 自定义安装路径
-cmake .. -DCMAKE_INSTALL_PREFIX=/opt/UsrLinuxEmu
+# 启用 ThreadSanitizer（需 Clang）
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_TSAN=ON
 ```
 
-### 常用构建配置组合
+Sanitizer 构建也可以通过环境变量简化：
 
 ```bash
-# 开发配置（Debug + 测试）
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
-
-# 生产配置（Release，无测试）
-cmake .. -DCMAKE_BUILD_TYPE=Release
-
-# 完整配置（Debug + 测试 + 覆盖率）
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DCOVERAGE=ON
+SANITIZER=asan  ./build.sh test    # ASan 构建 + 运行测试
+SANITIZER=ubsan ./build.sh test    # UBSan 构建 + 运行测试
+SANITIZER=tsan  ./build.sh test    # TSan 构建 + 运行测试
 ```
 
 ## 编译输出
 
-编译完成后，输出文件位于 `build/bin/` 目录：
+编译完成后，输出文件位于：
 
-```
-build/bin/
-├── cli_tool              # CLI 工具
-├── test_gpu_submit       # 测试程序
-├── test_gpu_memory       # 测试程序
-└── ...                   # 其他测试和工具
-```
+| 路径 | 说明 |
+|------|------|
+| `build/bin/cli` | CLI 交互工具 |
+| `build/bin/test_gpu_ioctl_standalone` | GPU IOCTL 测试 |
+| `build/bin/test_va_space_standalone` | VA Space 测试 |
+| `build/bin/test_*_standalone` | 其他 Catch2 测试（30+） |
+| `build/lib/libkernel.so` | 内核框架 SHARED 库 |
+| `build/plugins/gpu_driver/gpu_driver_plugin.so` | GPU 驱动插件 |
+| `docs/api/index.html` | Doxygen API 文档（`make doxygen`） |
 
 ## 运行程序
 
 ```bash
 # 运行 CLI 工具
-./build/bin/cli_tool
+./build/bin/cli
 
-# 或使用提供的脚本
-./run_cli.sh
+# 运行所有测试（从项目根目录，插件使用相对路径）
+cd /workspace/project/UsrLinuxEmu
+cd build && ctest --output-on-failure && cd ..
 
-# 运行测试
-cd build
-make test
-
-# 或运行特定测试
-./bin/test_gpu_submit
+# 运行特定测试
+./build/bin/test_gpu_ioctl_standalone
+./build/bin/test_va_space_standalone
 ```
 
 ## 清理构建
 
 ```bash
-# 清理编译产物（保留 CMake 配置）
-make clean
+# 使用构建脚本（推荐）
+./build.sh clean
 
-# 完全清理（删除 build 目录）
-cd .. && rm -rf build
-
-# 重新构建
-./build.sh
+# 或手动删除
+rm -rf build
 ```
 
-## 构建插件
-
-如果项目包含插件：
+## 生成 API 文档
 
 ```bash
-# 进入插件目录
-cd plugins
+# CMake 方式（需要 Doxygen 已安装）
+cmake .. && make doxygen  # 输出到 docs/api/
 
-# 编译插件
-make
-
-# 或使用 CMake
-cd .. && mkdir build-plugins && cd build-plugins
-cmake ../plugins
-make -j$(nproc)
+# 直接调用（不需要 CMake 配置）
+cd /workspace/project/UsrLinuxEmu
+doxygen docs/Doxyfile
 ```
 
 ## 故障排除
 
 ### 问题：CMake 找不到编译器
 
-**错误信息**:
-```
-CMake Error: CMAKE_CXX_COMPILER not set
-```
+**错误信息**: `CMake Error: CMAKE_CXX_COMPILER not set`
 
 **解决方案**:
 ```bash
-# 安装编译器
 sudo apt install build-essential  # Ubuntu/Debian
-
-# 或指定编译器
-export CXX=g++
-export CC=gcc
-cmake ..
 ```
 
 ### 问题：C++17 不支持
 
-**错误信息**:
-```
-error: 'std::filesystem' is not supported
-```
+**错误信息**: `error: 'std::filesystem' is not supported`
 
-**解决方案**:
+**解决方案**: GCC 7+ / Clang 5+ 必须。升级：
 ```bash
-# 检查编译器版本
-g++ --version  # 需要 GCC 7+ 或 Clang 5+
-
-# 升级编译器
-sudo apt install gcc-9 g++-9
+sudo apt install g++-11
 ```
 
-### 问题：测试链接不到 `catch_amalgamated.cpp`
+### 问题：测试链接失败
 
-**错误信息**:
-```
-undefined reference to `Catch::TestRegistrar::TestRegistrar(...)'
-```
+**错误信息**: `undefined reference to Catch::TestRegistrar`
 
-**解决方案**:
+**解决方案**: Catch2 已 vendored 在 `tests/catch_amalgamated.{hpp,cpp}`。如果新加测试文件，确保在 `tests/CMakeLists.txt` 中正确注册。
 
-`Catch2` 已经 vendored 在 `tests/catch_amalgamated.{hpp,cpp}`，正常情况下无需任何额外配置。如果出现这个错误，说明 `tests/CMakeLists.txt` 中的 `add_catch_test` 函数没有把你新加的测试文件归入 `CATCH2_TESTS` 列表。把它从 `STANDALONE_TESTS` 移到 `CATCH2_TESTS`，或在 `tests/CMakeLists.txt` 末尾追加一行：
+### 问题：`make doxygen` 目标不存在
 
-```cmake
-add_catch_test(<test_name> <test_source>.cpp)
+CMake 会在配置阶段检测 Doxygen。如果已安装但目标不存在，重新 `cmake ..` 即可。如果未安装：
+
+```bash
+sudo apt install doxygen graphviz
 ```
 
 ## 下一步
 
-构建完成后，继续阅读：
-
-- [第一个示例](first-example.md) - 运行你的第一个 GPU 示例
-- [测试指南](../04-building/testing_guide.md) - 了解如何运行和编写测试
+- [第一个示例](first-example.md) — 运行 GPU 端到端示例
+- [测试指南](../04-building/testing_guide.md) — 通过 Catch2 运行和编写测试
 
 ---
 
-**最后更新**: 2026-06-16
+**最后更新**: 2026-07-22
