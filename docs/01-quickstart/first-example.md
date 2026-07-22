@@ -1,8 +1,9 @@
 # 第一个 GPU 示例
 
-> **最后验证**: 2026-06-16 (commit `374d463`)
+> **最后验证**: 2026-07-22 (commit `ca561fc`)
 >
-> **状态**: ✅ 对齐 System C (Phase 2) 架构
+> **状态**: ✅ 对齐 System C (Phase 2) 架构；编译运行实测通过
+> **实测耗时**（不含 `git clone`，4 核 VM）：CMake 配置 ~2s，首次编译 ~6 min，运行示例 ~2s（预期 < 15 min）
 >
 > **SSOT**: [`docs/02_architecture/post-refactor-architecture.md`](../02_architecture/post-refactor-architecture.md) §1.3 / §1.4 / 附录 A
 
@@ -193,13 +194,16 @@ int main() {
 cd /workspace/project/UsrLinuxEmu
 
 # 2. 编译（直接 g++ 链接 kernel SHARED 与 VFS/ModuleLoader 头路径）
+#    注：libkernel.so 位于 build/src/，--allow-shlib-undefined 允许运行时 dlopen 解析插件符号
 g++ -std=c++17 -O0 -g \
     -I include \
     -I include/kernel \
+    -I include/kernel/device \
     -I include/linux_compat \
     -I plugins \
-    -L build \
-    -Wl,-rpath,$(pwd)/build \
+    -L build/src \
+    -Wl,-rpath,$(pwd)/build/src \
+    -Wl,--allow-shlib-undefined \
     /tmp/first_gpu_run.cpp -o /tmp/first_gpu_run -lkernel
 
 # 3. 运行（必须从项目根目录，插件路径是相对的）
@@ -299,5 +303,5 @@ ctest --output-on-failure
 - [`include/kernel/vfs.h`](../../include/kernel/vfs.h) 与 [`include/kernel/module_loader.h`](../../include/kernel/module_loader.h)，框架入口
 - [`tests/test_gpu_ioctl.cpp`](../../tests/test_gpu_ioctl.cpp) 与 [`tests/test_va_space.cpp`](../../tests/test_va_space.cpp)，实际跑的测试，可直接对照
 
-**最后更新**: 2026-06-16
-**对应代码 commit**: `374d463`
+**最后更新**: 2026-07-22
+**对应代码 commit**: `ca561fc`

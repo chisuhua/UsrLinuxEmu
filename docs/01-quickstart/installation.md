@@ -6,7 +6,7 @@
 
 ### 最低要求
 
-- **操作系统**: Linux (推荐 Ubuntu 18.04+)
+- **操作系统**: Linux (推荐 Ubuntu 20.04 LTS+)
 - **编译器**: GCC 7+ 或 Clang 5+ (支持 C++17)
 - **构建工具**: CMake ≥ 3.14
 - **内存**: 至少 2GB 可用内存
@@ -39,10 +39,14 @@ sudo apt install -y \
     gdb \
     valgrind \
     clang-tidy \
-    clang-format
+    clang-format \
+    doxygen \
+    graphviz
 ```
 
 > **关于测试框架**：项目使用 **Catch2**（vendored 单文件 `tests/catch_amalgamated.{hpp,cpp}`），系统包管理器不需要安装任何外部测试框架。详见 [测试指南](../04-building/testing_guide.md)。
+
+> **关于 API 文档**：项目使用 **Doxygen** 生成 API 参考文档（`make doxygen` → `docs/api/`）。Doxygen 是可选依赖——缺失时构建照常进行，仅跳过文档生成。
 
 ### CentOS/RHEL 系统
 
@@ -112,4 +116,4 @@ git --version
 | CMake 版本过低 | 从 https://cmake.org/download/ 下载最新版本 |
 | 编译器不支持 C++17 | 升级 GCC 到 7+ 或 Clang 到 5+ |
 
-**最后更新**: 2026-06-16
+**最后更新**: 2026-07-22
