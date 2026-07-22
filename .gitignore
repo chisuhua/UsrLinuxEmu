@@ -63,6 +63,9 @@ build_shadow/
 .mcp.json
 .opencode.json
 
+# Generated API docs (Doxygen)
+docs/api/
+
 Testing/
 .omo/
 .rddf/wt/
