@@ -4,7 +4,7 @@
       "session_id": "rds_stage3_001",
       "kind": "stage",
       "stage": "stage-3",
-      "state": "active",
+      "state": "orphaned",
       "owner_opencode_session_id": "ses_20260720_181155",
       "created_at": "2026-07-20T10:11:36Z",
       "last_heartbeat": "2026-07-21T00:00:00Z",
@@ -18,8 +18,10 @@
         "3. guide-plan → stage3-4 文档完善 (Doxygen + docs-audit)",
         "4. guide-ship → 执行 stage3-4",
         "5. v1.0 发布清单 (Release notes + Migration guide + Binary release)"
-      ]
+      ],
+      "ended_at": "2026-07-21T11:34:33.100670+00:00",
+      "end_reason": "heartbeat-timeout"
     }
   ],
-  "updated_at": "2026-07-21T00:00:00Z"
+  "updated_at": "2026-07-21T11:34:33.100687+00:00"
 }
