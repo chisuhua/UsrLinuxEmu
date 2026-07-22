@@ -1,0 +1,38 @@
+# Tag format validation workflow
+# Validates that release tags follow strict semver (v<major>.<minor>.<patch>)
+# and that milestone tags are explicitly excluded from release processing.
+#
+# Per ADR-065: this workflow is SEPARATE from cmake-multi-platform.yml to
+# avoid double CI runs on tag push (branch push + tag push triggers).
+name: Tag Validation
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+
+jobs:
+  validate-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate tag format (strict semver)
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Tag '$TAG' does not match strict semver pattern v<major>.<minor>.<patch>"
+            exit 1
+          fi
+          echo "✅ Tag '$TAG' matches strict semver pattern"
+
+      - name: Exclude milestone tags
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [[ "$TAG" == milestone-* ]]; then
+            echo "❌ Tag '$TAG' is a milestone tag — should not trigger release workflow"
+            exit 1
+          fi
+          echo "✅ Tag '$TAG' is not a milestone tag"
