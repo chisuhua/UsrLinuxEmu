@@ -75,13 +75,13 @@ TEST_CASE("stream_capture — double begin transitions to INVALID",
   REQUIRE(s == SIM_STREAM_CAPTURE_INVALID);
 }
 
-TEST_CASE("stream_capture — end while not ACTIVE returns -1",
+TEST_CASE("stream_capture — end while not ACTIVE returns -EINVAL",
           "[sim][stream_capture][error]")
 {
   sim_stream_capture_reset_for_test();
   uint64_t g = 0;
   /* 未 begin 就 end */
-  REQUIRE(sim_stream_capture_end(5, &g) == -1);
+  REQUIRE(sim_stream_capture_end(5, &g) == -EINVAL);
   /* graph_handle_out 不应被修改 */
 }
 
