@@ -1,6 +1,9 @@
 {
   "stage": "stage-3",
-  "committed_at": "2026-07-21",
-  "active_changes": ["stage3-3-errno-coverage-audit"],
-  "summary": "Stage 3.3 错误处理审计 — 12 处 sim/ return -1 → Linux errno + test coverage"
+  "committed_at": "2026-07-22",
+  "active_changes": [
+    "stage3-4-doxygen-docs",
+    "v1-0-release-prep"
+  ],
+  "summary": "Stage 3.3 已归档。活跃: Stage 3.4 文档完善 (P1) + v1.0 发布准备 (P2)"
 }
