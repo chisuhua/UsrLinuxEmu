@@ -90,7 +90,7 @@
 - 架构文档（SSOT + ROADMAP + ADR 全套）
 
 **验收**:
-- docs-audit 36/36 PASS
+- docs-audit 43/43 PASS
 - 用户从 quickstart 到第一个示例 ≤ 15 分钟
 
 ---
