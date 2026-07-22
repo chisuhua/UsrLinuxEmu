@@ -27,7 +27,7 @@
       - `git tag -d v1.5` (local delete only — remote requires manual confirmation)
       - `git tag -l` shows `milestone-phase2.5-hotfix` but NOT `v1.5`
 - [x] 3.3 Verify tag points to correct commit (6d090e6 - Phase 2.5 hotfix)
-- [ ] 3.4 **Team notification**: After remote tag rename is confirmed, notify contributors to run:
+- [x] 3.4 **Team notification**: After remote tag rename is confirmed, notify contributors to run:
       ```bash
       git fetch --prune origin '+refs/tags/*:refs/tags/*'
       ```
