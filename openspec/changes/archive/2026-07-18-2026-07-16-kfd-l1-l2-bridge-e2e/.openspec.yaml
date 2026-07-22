@@ -1,0 +1,7 @@
+name: kfd-l1-l2-bridge-e2e
+description: C-12 E.2.4 跨仓 L1↔L2 bridge 端到端验证
+status: ARCHIVED
+created: 2026-07-16
+archived: 2026-07-22
+source: C-12 E.2.4 deferred
+tags: ["kfd", "bridge", "e2e", "cross-repo"]
