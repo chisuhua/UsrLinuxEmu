@@ -51,7 +51,7 @@ typedef enum {
  * @param mode       SIM_CAPTURE_MODE_* (input, GLOBAL only supported in 3.1)
  * @return 0 on success
  *         -EINVAL  invalid args / unsupported mode
- *         -1       already ACTIVE or INVALID (transition rules)
+ *         -EINVAL  already ACTIVE or INVALID (transition rules)
  */
 int sim_stream_capture_begin(uint32_t stream_id, uint32_t mode);
 
@@ -62,7 +62,7 @@ int sim_stream_capture_begin(uint32_t stream_id, uint32_t mode);
  * @param graph_handle_out   Output graph handle (≥ 1 on success, monotonic)
  * @return 0 on success
  *         -EINVAL  invalid args
- *         -1       stream not ACTIVE
+ *         -EINVAL  stream not ACTIVE
  */
 int sim_stream_capture_end(uint32_t stream_id, uint64_t *graph_handle_out);
 

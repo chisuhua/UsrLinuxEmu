@@ -63,14 +63,14 @@ TEST_CASE("graph — add_kernel_node to valid graph",
                                     &kernargs_bo) == 0);
 }
 
-TEST_CASE("graph — add_kernel_node to unknown graph returns -1",
-          "[sim][graph][error]")
+TEST_CASE("graph — add_kernel_node to unknown graph returns -EINVAL",
+           "[sim][graph][error]")
 {
   sim_graph_reset_for_test();
   uint64_t kernargs_bo = 42;
   REQUIRE(sim_graph_add_kernel_node(/*invalid=*/55555, 7,
                                     1, 1, 1, 32, 1, 1,
-                                    &kernargs_bo) == -1);
+                                    &kernargs_bo) == -EINVAL);
 }
 
 TEST_CASE("graph — add_memcpy_node records metadata",
@@ -123,8 +123,8 @@ TEST_CASE("graph — instantiate fails if any kernargs_bo_handle is 0",
   REQUIRE(sim_graph_instantiate(g, &exec) == -EINVAL);
 }
 
-TEST_CASE("graph — instantiate on unknown graph returns -1",
-          "[sim][graph][error]")
+TEST_CASE("graph — instantiate on unknown graph returns -EINVAL",
+           "[sim][graph][error]")
 {
   sim_graph_reset_for_test();
   uint64_t exec = 0;

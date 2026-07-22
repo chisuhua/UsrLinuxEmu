@@ -50,7 +50,7 @@ int sim_graph_create(uint64_t *graph_handle_out);
 /**
  * Destroy a graph (also destroys any executables derived from it).
  * @param graph_handle  Input graph handle
- * @return 0 on success; -1 if handle not found.
+ * @return 0 on success; -EINVAL if handle not found.
  */
 int sim_graph_destroy(uint64_t graph_handle);
 
@@ -62,7 +62,7 @@ int sim_graph_destroy(uint64_t graph_handle);
  * @param grid_x/y/z          Grid dimensions (input)
  * @param block_x/y/z         Block dimensions (input)
  * @param kernargs_bo_handle  BO handle for kernel args (input; non-zero ⇒ valid)
- * @return 0 on success; -1 if graph not found.
+ * @return 0 on success; -EINVAL if graph not found.
  */
 int sim_graph_add_kernel_node(uint64_t graph_handle,
                               uint32_t kernel_index,
@@ -87,7 +87,7 @@ int sim_graph_add_memcpy_node(uint64_t graph_handle,
  *
  * @param graph_handle      Input graph
  * @param exec_handle_out   Output executable handle (≥ 1 on success)
- * @return 0 on success; -EINVAL if validation fails; -1 if graph not found.
+ * @return 0 on success; -EINVAL if validation fails or graph not found.
  */
 int sim_graph_instantiate(uint64_t graph_handle, uint64_t *exec_handle_out);
 
