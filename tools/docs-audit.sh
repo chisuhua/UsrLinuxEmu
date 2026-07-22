@@ -21,6 +21,7 @@
 #   sync       Cross-repo doc consistency (taskrunner-index ↔ sync-plan, openspec archive status)
 #   stage2     Stage 2 multi-device plugin path existence (net_driver + storage_driver)
 #   doxygen    Doxygen API doc generation (docs/Doxyfile → docs/api/, exit code check)
+#   version-ssot Version SSOT consistency (CMake VERSION vs README badge/footer)
 #
 # Exit codes:
 #   0 - All checks passed (or only warnings in non-strict mode)
@@ -63,6 +64,7 @@ RUN_BUILD=0
 RUN_SYNC=0
 RUN_STAGE2=0
 RUN_DOXYGEN=0
+RUN_VERSION_SSOT=0
 
 # ---------------------------------------------------------------------------
 # Output helpers
@@ -164,7 +166,7 @@ parse_args() {
 
     case "${RUN_SECTION}" in
         all)
-            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1; RUN_SYNC=1; RUN_STAGE2=1; RUN_DOXYGEN=1
+            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1; RUN_SYNC=1; RUN_STAGE2=1; RUN_DOXYGEN=1; RUN_VERSION_SSOT=1
             ;;
         arch)       RUN_ARCH=1 ;;
         ioctl)      RUN_IOCTL=1 ;;
@@ -173,9 +175,10 @@ parse_args() {
         build)      RUN_BUILD=1 ;;
         sync)       RUN_SYNC=1 ;;
         doxygen)    RUN_DOXYGEN=1 ;;
+        version-ssot) RUN_VERSION_SSOT=1 ;;
         *)
             echo "ERROR: unknown section: ${RUN_SECTION}" >&2
-            echo "Valid sections: all, arch, ioctl, adr, doc-health, build, sync, stage2, doxygen" >&2
+            echo "Valid sections: all, arch, ioctl, adr, doc-health, build, sync, stage2, doxygen, version-ssot" >&2
             exit 2
             ;;
     esac
@@ -299,6 +302,30 @@ section_arch() {
         check_pass "archive/stale_builds/ does not exist (orphan zone removed)"
     else
         check_fail "archive/stale_builds/ exists; remove it (was 0 tracked files, always empty)"
+    fi
+
+    # 1.11 CHANGELOG.md must exist at project root
+    subsection "1.11 CHANGELOG.md exists"
+    if [ -f "${REPO_ROOT}/CHANGELOG.md" ]; then
+        check_pass "CHANGELOG.md exists"
+    else
+        check_fail "CHANGELOG.md missing (v1.0 release prep requirement)"
+    fi
+
+    # 1.12 RELEASE_NOTES.md must exist at project root
+    subsection "1.12 RELEASE_NOTES.md exists"
+    if [ -f "${REPO_ROOT}/RELEASE_NOTES.md" ]; then
+        check_pass "RELEASE_NOTES.md exists"
+    else
+        check_fail "RELEASE_NOTES.md missing (v1.0 release prep requirement)"
+    fi
+
+    # 1.13 docs/10-migration/v0-to-v1.md must exist
+    subsection "1.13 Migration guide exists"
+    if [ -f "${REPO_ROOT}/docs/10-migration/v0-to-v1.md" ]; then
+        check_pass "docs/10-migration/v0-to-v1.md exists"
+    else
+        check_fail "docs/10-migration/v0-to-v1.md missing (v1.0 release prep requirement)"
     fi
 }
 
@@ -687,6 +714,51 @@ section_sync() {
     fi
 }
 
+# Section 9: Version SSOT consistency
+section_version_ssot() {
+  section "9. Version SSOT Consistency"
+
+  local cmake_version=""
+  local badge_version=""
+  local footer_version=""
+
+  # 9.1 CMakeLists.txt project() VERSION exists
+  subsection "9.1 CMakeLists.txt project() VERSION present"
+  cmake_version=$(grep -oP 'project\(user_kernel_emu VERSION \K[0-9]+\.[0-9]+\.[0-9]+' "${REPO_ROOT}/CMakeLists.txt" 2>/dev/null || true)
+  if [ -n "${cmake_version}" ]; then
+    check_pass "CMake project() VERSION = ${cmake_version}"
+  else
+    check_fail "CMake project() VERSION not found in CMakeLists.txt (project() must include VERSION)"
+    return  # No point checking consistency if CMake has no version
+  fi
+
+  # 9.2 README badge version matches CMake VERSION
+  subsection "9.2 README badge version matches CMake VERSION"
+  badge_version=$(grep -oP 'version-v\K[0-9]+\.[0-9]+' "${REPO_ROOT}/README.md" 2>/dev/null | head -1 || true)
+  if [ -n "${badge_version}" ]; then
+    if [ "${badge_version}" = "${cmake_version%.*}" ] || [ "${badge_version}.0" = "${cmake_version}" ] || [ "${badge_version}" = "${cmake_version}" ]; then
+      check_pass "README badge version '${badge_version}' matches CMake VERSION '${cmake_version}'"
+    else
+      check_fail "README badge version '${badge_version}' != CMake VERSION '${cmake_version}'"
+    fi
+  else
+    check_fail "README badge version not found"
+  fi
+
+  # 9.3 README footer "当前版本" matches CMake VERSION
+  subsection "9.3 README footer '当前版本' matches CMake VERSION"
+  footer_version=$(grep -oP '\*\*当前版本\*\*:\s*v\K[0-9]+\.[0-9]+' "${REPO_ROOT}/README.md" 2>/dev/null | head -1 || true)
+  if [ -n "${footer_version}" ]; then
+    if [ "${footer_version}" = "${cmake_version%.*}" ] || [ "${footer_version}.0" = "${cmake_version}" ] || [ "${footer_version}" = "${cmake_version}" ]; then
+      check_pass "README footer version '${footer_version}' matches CMake VERSION '${cmake_version}'"
+    else
+      check_fail "README footer version '${footer_version}' != CMake VERSION '${cmake_version}'"
+    fi
+  else
+    check_warn "README footer version not found — expected format: '**当前版本**: vX.Y'"
+  fi
+}
+
 print_summary() {
     echo ""
     echo "============================================"
@@ -731,6 +803,7 @@ main() {
     [ "${RUN_SYNC}"  -eq 1 ] && section_sync
     [ "${RUN_STAGE2}" -eq 1 ] && section_stage2
     [ "${RUN_DOXYGEN}" -eq 1 ] && section_doxygen
+    [ "${RUN_VERSION_SSOT}" -eq 1 ] && section_version_ssot
 
     print_summary
     exit "${EXIT_CODE}"

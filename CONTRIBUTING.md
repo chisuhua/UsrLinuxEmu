@@ -374,6 +374,30 @@ git commit -m "docs(api): update device API documentation"
 git commit -m "refactor(allocator): simplify buddy allocator logic"
 ```
 
+## 版本与 Tag 策略
+
+UsrLinuxEmu 遵循 [ADR-065](docs/00_adr/adr-065-version-policy.md) 定义的版本号与 tag 命名规范：
+
+### 版本号 SSOT
+
+- `CMakeLists.txt` 中 `project(user_kernel_emu VERSION X.Y.Z)` 是版本号唯一权威来源
+- 所有文档中的版本引用（README badge/footer、文档页脚）必须与 CMake VERSION 保持一致
+
+### Release Tag 规范
+
+- 所有 release tag 必须匹配严格 semver 格式：`v<major>.<minor>.<patch>`（例如 `v1.0.0`、`v1.0.1`、`v2.0.0`）
+- 不符合此格式的 tag（如 `v1.5`、`v1.0.0-beta`）不会被 release workflow 触发
+- 非 release 的里程碑 tag 使用 `milestone-<description>` 前缀
+
+### 创建 Release
+
+1. 更新 `CMakeLists.txt` 中的 `VERSION` 字段
+2. 更新 `CHANGELOG.md` 和 `RELEASE_NOTES.md`
+3. 更新 `README.md` badge 和 footer 版本号
+4. 运行 `tools/docs-audit.sh --strict` 验证一致性
+5. 创建 annotated tag: `git tag -a vX.Y.Z -m "vX.Y.Z"`
+6. 推送 tag: `git push origin vX.Y.Z`
+
 ## Pull Request 流程
 
 ### 提交前检查

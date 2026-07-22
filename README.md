@@ -2,15 +2,15 @@
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
-[![Version](https://img.shields.io/badge/version-v0.5%2B-blueviolet)]()
-[![Phase](https://img.shields.io/badge/phase-2%20complete-success)]()
+[![Version](https://img.shields.io/badge/version-v1.0-blueviolet)]()
+[![Phase](https://img.shields.io/badge/phase-Stage%203%20%2F%20v1.0-success)]()
 [![Stage 1.4 Tier-1](https://img.shields.io/badge/Stage%201.4%20Tier--1-delivered-success)]()
 [![Stage 1.4 Tier-2](https://img.shields.io/badge/Stage%201.4%20Tier--2-delivered-success)]()
 [![Stage 2](https://img.shields.io/badge/Stage%202-delivered-success)]()
 [![IOCTL](https://img.shields.io/badge/ioctl-System%20C-blue)]()
 [![Tests](https://img.shields.io/badge/tests-Catch2-orange)]()
 
-> **最后验证**: 2026-07-05 (commit `fb75ed2`)
+> **最后验证**: 2026-07-22 (commit `HEAD` of version-policy-adr)
 >
 > **权威架构文档**: [AGENTS.md](AGENTS.md) + [docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md)
 >
@@ -494,7 +494,7 @@ A: `VFS::instance()` 等单例使用 Meyers 单例（函数内 `static` 局部�
 
 ---
 
-**当前版本**: v0.6+（Stage 2 多设备插件化完成）  
-**最后验证**: 2026-07-05  
+**当前版本**: v1.0（Stage 3 文档完善与版本策略确立）
+**最后验证**: 2026-07-22
 **对应 commit**: `fb75ed2`（Stage 2 multi-device merge to main）  
 **维护者**: UsrLinuxEmu Team

@@ -214,7 +214,7 @@ g++ -std=c++17 -O0 -g \
 
 ```
 [ OK ] GET_DEVICE_INFO
-       VRAM=256 MB, CUs=8, marketing_name=UsrLinuxEmu GPGPU v0.5
+       VRAM=256 MB, CUs=8, marketing_name=UsrLinuxEmu GPGPU v1.0
 [ OK ] CREATE_VA_SPACE
 [ OK ] CREATE_QUEUE
        queue=1 doorbell_pgoff=0x10000
