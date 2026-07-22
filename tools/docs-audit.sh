@@ -19,6 +19,8 @@
 #   doc-health Broken links, kebab-case/snake_case, 02-core/ vs 02_architecture/
 #   build      Build/structural (orphan tests, CMake subdirs, hidden include_directories)
 #   sync       Cross-repo doc consistency (taskrunner-index ↔ sync-plan, openspec archive status)
+#   stage2     Stage 2 multi-device plugin path existence (net_driver + storage_driver)
+#   doxygen    Doxygen API doc generation (docs/Doxyfile → docs/api/, exit code check)
 #
 # Exit codes:
 #   0 - All checks passed (or only warnings in non-strict mode)
@@ -60,6 +62,7 @@ RUN_DOC=0
 RUN_BUILD=0
 RUN_SYNC=0
 RUN_STAGE2=0
+RUN_DOXYGEN=0
 
 # ---------------------------------------------------------------------------
 # Output helpers
@@ -161,7 +164,7 @@ parse_args() {
 
     case "${RUN_SECTION}" in
         all)
-            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1; RUN_SYNC=1
+            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1; RUN_SYNC=1; RUN_STAGE2=1; RUN_DOXYGEN=1
             ;;
         arch)       RUN_ARCH=1 ;;
         ioctl)      RUN_IOCTL=1 ;;
@@ -169,9 +172,10 @@ parse_args() {
         doc-health) RUN_DOC=1 ;;
         build)      RUN_BUILD=1 ;;
         sync)       RUN_SYNC=1 ;;
+        doxygen)    RUN_DOXYGEN=1 ;;
         *)
             echo "ERROR: unknown section: ${RUN_SECTION}" >&2
-            echo "Valid sections: all, arch, ioctl, adr, doc-health, build, sync" >&2
+            echo "Valid sections: all, arch, ioctl, adr, doc-health, build, sync, stage2, doxygen" >&2
             exit 2
             ;;
     esac
@@ -726,7 +730,7 @@ main() {
     [ "${RUN_BUILD}" -eq 1 ] && section_build
     [ "${RUN_SYNC}"  -eq 1 ] && section_sync
     [ "${RUN_STAGE2}" -eq 1 ] && section_stage2
-    [ "${RUN_STAGE2}" -eq 1 ] && section_stage2
+    [ "${RUN_DOXYGEN}" -eq 1 ] && section_doxygen
 
     print_summary
     exit "${EXIT_CODE}"
@@ -754,6 +758,33 @@ section_stage2() {
     check_pass "src/kernel/{net,block}/ compat layers present"
   else
     check_fail "src/kernel/{net,block}/ compat layers missing"
+  fi
+}
+
+# Section 8: Doxygen API doc generation (Stage 3.4)
+section_doxygen() {
+  section "8. Doxygen API Documentation"
+
+  subsection "8.1 docs/Doxyfile exists"
+  if [ -f "${REPO_ROOT}/docs/Doxyfile" ]; then
+    check_pass "docs/Doxyfile exists"
+  else
+    check_fail "docs/Doxyfile missing"
+  fi
+
+  subsection "8.2 Doxygen generates without errors"
+  if command -v doxygen >/dev/null 2>&1; then
+    local out
+    out=$(cd "${REPO_ROOT}" && doxygen docs/Doxyfile 2>&1)
+    local rc=$?
+    if [ "${rc}" -eq 0 ]; then
+      check_pass "Doxygen exit code 0 (${out##*warning } warnings if any)"
+    else
+      check_fail "Doxygen exit code ${rc}"
+    fi
+  else
+    # Doxygen not installed — not a failure in non-strict; warn in strict
+    check_warn "Doxygen not installed (install: apt install doxygen)"
   fi
 }
 
