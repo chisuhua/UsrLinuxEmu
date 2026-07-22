@@ -28,7 +28,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](docs/00_adr/adr-036-three-way-
 - **HAL**（`plugins/gpu_driver/hal/`）— ②③ 之间的桥接适配器
 
 **验证标准**：在 UsrLinuxEmu 开发的驱动代码**逻辑零修改**（仅 `#include` 路径需调整）即可在真实 Linux 内核中编译并运行。
-**演进路径**：见 [docs/roadmap/](docs/roadmap/README.md)。
+**演进路径**：见 [roadmap.md](roadmap.md)。
 
 ## 项目简介
 
@@ -347,7 +347,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 
 当前阶段：**post-Phase 2**（2026-05-13 重构窗口完成）。详细时间轴见 [post-refactor-architecture.md §1.1](docs/02_architecture/post-refactor-architecture.md)。
 
-> **架构演进路线**: 见 [docs/roadmap/](docs/roadmap/README.md) — 从 MVP 到 Linux 内核环境模拟（4 阶段 + 蓝图）
+> **架构演进路线**: 见 [roadmap.md](roadmap.md) — 从 MVP 到 Linux 内核环境模拟（4 阶段 + 蓝图）
 
 ### Phase 2 已完成（2026-05-13）
 
@@ -407,7 +407,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 - **Stage 2** ✅ 已达成 (2026-07-05, commit `fb75ed2`)：多设备插件化（网络 + 存储）已交付，**详见** [stage-2-multi-device.md](docs/roadmap/stage-2-multi-device.md)
 - **Stage 3**：v1.0 稳定（CI 全平台、文档完善、性能优化）
 - **后续子项目** ✅ COMPLETE (C-12, 2026-07-18)：完整 KFD 多文件集成（独立子项目，~50K 行 amdgpu driver 移植）。**Phase A ✅**（ADR-059/060/061/062 Accepted）；**Phase B ✅**（6 模块：kfd_module/process/pasid/dispatch/mmu/events 全部实施）；**Phase C ✅**（sim_pfh/sim_pm 真实化 + IOTLB + mm_shim wire-up）；**Phase D ✅**（FIXME 清理）；**Phase E ✅**（集成测试 + E2E + L1↔L2 bridge 跨仓）。详见 [openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/](openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/tasks.md)
-- 详见 [docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md) 与 [docs/roadmap/](docs/roadmap/README.md)
+- 详见 [docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md) 与 [roadmap.md](roadmap.md)
 
 ## 文档
 
@@ -417,7 +417,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 |------|------|------|
 | 快速开始 | [docs/01-quickstart/](docs/01-quickstart/) | 安装、构建、第一个示例 |
 | 架构（SSOT） | [docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md) | 重构后权威架构说明 |
-| 架构演进路线 | [docs/roadmap/](docs/roadmap/README.md) | 4 阶段路线图 + 终态蓝图 |
+| 架构演进路线 | [roadmap.md](roadmap.md) | 4 阶段路线图 + 终态蓝图 |
 | 架构决策 | [docs/00_adr/](docs/00_adr/) | ADR 列表（001~024）|
 | 开发指南 | [docs/03-development/](docs/03-development/) | 编码规范、添加设备 |
 | 构建与测试 | [docs/04-building/](docs/04-building/) | CMake、Catch2、CI |
