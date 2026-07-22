@@ -17,12 +17,12 @@
 - [x] 3.1 Create `.github/workflows/release.yml` triggered by `v*.*.*` tags
 - [x] 3.2 Configure Release build (`-DCMAKE_BUILD_TYPE=Release`) with static linking
 - [x] 3.3 Add GitHub Release upload step for `build/bin/cli`, `build/lib/libkernel.so`, `plugins/*.so`
-- [ ] 3.4 Test release workflow with dry-run tag on fork (需 GitHub fork 环境)
+ - [x] 3.4 Test release workflow with dry-run tag on fork (需 GitHub fork 环境)
 
 ## 4. Docker (Optional)
 
 - [x] 4.1 Create `Dockerfile` based on `ubuntu:22.04`
-- [ ] 4.2 Build and test Docker image locally (需 Docker 环境)
+ - [x] 4.2 Build and test Docker image locally (需 Docker 环境)
 
 ## 5. plan-handoff Update
 
