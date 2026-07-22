@@ -2,10 +2,8 @@
 
 > **更新**: 2026-07-22
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: **2 个活跃 change** + 16 个已完成/已归档
-> **Source**: 2026-07-22 所有 Stage 3 前置 changes 归档完毕，启动 Stage 3.4 + v1.0 发布准备：
->   - `stage3-4-doxygen-docs` (P1) — Doxygen API 文档 + CMake 集成 + docs-audit 扩展
->   - `v1-0-release-prep` (P2) — CHANGELOG + Migration Guide + Binary Release + Docker
+> **总数**: **1 个活跃 change** + 17 个已完成/已归档
+> **Source**: 2026-07-22 Stage 3.4 Doxygen 文档完成并归档，仅剩 v1.0 发布准备
 
 ---
 
@@ -26,7 +24,7 @@
 | **C-11** | **stage3-2-hotpath-optimization** | ✅ 已归档 | PR #30 `perf/stage3-2-hotpath` branch（6 commits: tasks.md + P1 cout 移除 handleGetDeviceInfo `893715b` + P2 BO path cout 移除 `41f3704` + P3 HandleManager bitset no-op `a7bae7e` + P4 pushbuffer max-throughput bench `98ee8a1` + perf-baseline §C-11 Results `b064aa5`）；acceptance 2/3 hit（ioctl 11.6× / pushbuffer 1296× / BO 2.1× speedup） |
 | **C-09** | **phase4-cu-mempool-alloc-real-va** | ✅ 已归档 | `ba88b5f feat(sim): real VA allocation in sim_mem_pool via gpu_buddy + mmap backing`（ADR-058 + Oracle report AMD KFD v6.10 + Nvidia UVM `uvm_range_allocator` 调研；新增 `sim_device_va_allocator.{h,cpp}` per-device gpu_buddy + std::mutex；`mem_pool.cpp` 重写 + mmap(MAP_ANONYMOUS\|MAP_PRIVATE\|MAP_FIXED_NOREPLACE) backing；18/18 tests, 86/86 ctest PASS, docs-audit clean, libgpu_core zero-modify per ADR-020） |
 | **C-12** | **stage1-4-kfd-multi-file-integration** | ✅ 已归档（2026-07-16） | `openspec archive 2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration`（81% 原子任务完成，Phase A/B/C/D 全 [x]，Phase E 8/9 [x] + L1↔L2 skeleton + docs updates；104/104 ctest + docs-audit 43/43 PASS；E.2.3 sanitizer + E.2.4.2/4.3 cross-repo deferred to follow-up PRs per ADR-035 §Rule 5.1） |
-| **W7** | **three-sanitizer-infra** | ✅ 已归档 | `5fc0006` — 34/34 tasks, ASan/UBSan/TSan CMake infra + CI require jobs + bug 修复 |
+| **stage3-4** | **stage3-4-doxygen-docs** | ✅ 已归档 (2026-07-22) | Doxygen API 参考 + quickstart 完善 + docs-audit 48→48 PASS |
 | **W7** | **kfd-l1-l2-bridge-e2e** | ✅ 已归档 | `177231a` — 44/44 tasks, IoctlEntry 扩展 + 3 E2E tests + TaskRunner PR + 跨仓 sync |
 
 ---
@@ -57,16 +55,6 @@
 - Phase E: 验收 (5 tasks) — 104/104 + TaskRunner 13/13 ctest PASS
 **证据**: commit `177231a` + TaskRunner `d94719c` + submodule bump `aac4be5`
 
-### `stage3-4-doxygen-docs` 🔴 (P1)
-**Effort**: 2-3 天
-**Why**: Stage 3.4 文档完善核心交付 — Doxygen API 参考自动生成 + quickstart 验证
-**进度（2026-07-22）**: 0/29 tasks
-- Phase 1: Doxygen Configuration (4 tasks) — Doxyfile + HTML output
-- Phase 2: CMake Integration (4 tasks) — find_package + custom target
-- Phase 3: docs-audit Integration (2 tasks) — invoke Doxygen in audit script
-- Phase 4: Quickstart Guide Polish (4 tasks) — verify installation/building/first-example
-- Phase 5: plan-handoff Update (1 task)
-
 ### `v1-0-release-prep` 🟡 (P2)
 **Effort**: 2-3 天 (不含 Docker 可选)
 **Why**: v1.0 发布必备 — CHANGELOG + Migration Guide + Binary Release + Docker
@@ -80,13 +68,14 @@
 ---
 
 > **C-12 已归档**（2026-07-16）— 详见 [archive/2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration/](archive/2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration/)
+> **Stage 3.4 已归档**（2026-07-22）— 详见 [archive/2026-07-22-stage3-4-doxygen-docs/](archive/2026-07-22-stage3-4-doxygen-docs/)
 
 ## 依赖图
 
 ```
-[stage3-4-doxygen-docs] ──> [v1-0-release-prep]
-                          (Stage 3.4 文档完成后，v1.0 发布可启动)
+[v1-0-release-prep] ← 唯一活跃 change，无阻塞依赖
 [C-12/kfd-multi-file] ✅ ARCHIVED 2026-07-16
+[stage3-4-doxygen-docs] ✅ ARCHIVED 2026-07-22
 ```
 
 ---
@@ -94,8 +83,8 @@
 ## 推荐执行顺序
 
 ### 本季度
-1. **stage3-4-doxygen-docs** 🔴 P1（0/29 tasks） — Doxygen API 参考 + quickstart 验证
-2. **v1-0-release-prep** 🟡 P2（0/29 tasks） — CHANGELOG + Migration Guide + Binary Release
+1. **v1-0-release-prep** 🟡 P2（0/29 tasks） — CHANGELOG + Migration Guide + Binary Release
+2. ~~stage3-4-doxygen-docs~~ ✅ archived（2026-07-22；15/15 tasks）
 3. ~~C-09~~ phase4-cu-mempool-alloc-real-va ✅ archived
 4. ~~C-10~~ stage3-2-perf-bench-baseline ✅ archived
 5. ~~C-11~~ stage3-2-hotpath-optimize ✅ archived
