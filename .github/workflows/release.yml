@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Configure CMake (Release)
+      run: >
+        cmake -B build
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_CXX_COMPILER=g++
+        -DCMAKE_C_COMPILER=gcc
+        -S ${{ github.workspace }}
+
+    - name: Build
+      run: cmake --build build --config Release -j$(nproc)
+
+    - name: Run Tests
+      working-directory: build
+      run: ctest --output-on-failure
+
+    - name: Stage Release Artifacts
+      run: |
+        mkdir -p release-artifacts
+        cp build/bin/cli release-artifacts/
+        cp build/lib/libkernel.so release-artifacts/
+        find plugins/ -name "*.so" -exec cp {} release-artifacts/ \;
+        echo "Release artifacts staged:"
+        ls -la release-artifacts/
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: UsrLinuxEmu ${{ github.ref_name }}
+        body_path: RELEASE_NOTES.md
+        files: release-artifacts/*
+        generate_release_notes: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
