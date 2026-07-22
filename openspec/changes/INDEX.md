@@ -1,16 +1,15 @@
 # Active Changes Index
 
-> **更新**: 2026-07-17
+> **更新**: 2026-07-22
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: **2 个活跃 change** + 14 个已完成/已归档（含 C-12 stage1-4-kfd-multi-file-integration）
-> **Source**: 2026-07-17 **C-12 Follow-up Wave 7 启动** — 创建 2 个新 openspec change 承接 C-12 deferred E.2.3 + E.2.4：
->   - `2026-07-16-three-sanitizer-infra` (E.2.3 — 32 tasks, 5 phases) — ASan/UBSan CMake infra + 修复暴露真 bug + 文档同步
->   - `2026-07-16-kfd-l1-l2-bridge-e2e` (E.2.4 — 41 tasks, 5 phases) — UsrLinuxEmu 端 E2E test + TaskRunner 端 change + ADR-035 §Rule 5.1 4-step 跨仓同步
-> + 2026-07-16 C-12 已归档（openspec archive → `2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration/`，81% 原子任务完成） + 104/104 ctest PASS + docs-audit 43/43 PASS + TaskRunner 10/10 ctest ≈185 cases PASS
+> **总数**: **2 个活跃 change** + 16 个已完成/已归档
+> **Source**: 2026-07-22 所有 Stage 3 前置 changes 归档完毕，启动 Stage 3.4 + v1.0 发布准备：
+>   - `stage3-4-doxygen-docs` (P1) — Doxygen API 文档 + CMake 集成 + docs-audit 扩展
+>   - `v1-0-release-prep` (P2) — CHANGELOG + Migration Guide + Binary Release + Docker
 
 ---
 
-## ✅ 已完成 (14 归档)
+## ✅ 已完成 (16 归档)
 
 | 原 ID | Change | 状态 | 证据 |
 |-------|--------|------|------|
@@ -27,6 +26,8 @@
 | **C-11** | **stage3-2-hotpath-optimization** | ✅ 已归档 | PR #30 `perf/stage3-2-hotpath` branch（6 commits: tasks.md + P1 cout 移除 handleGetDeviceInfo `893715b` + P2 BO path cout 移除 `41f3704` + P3 HandleManager bitset no-op `a7bae7e` + P4 pushbuffer max-throughput bench `98ee8a1` + perf-baseline §C-11 Results `b064aa5`）；acceptance 2/3 hit（ioctl 11.6× / pushbuffer 1296× / BO 2.1× speedup） |
 | **C-09** | **phase4-cu-mempool-alloc-real-va** | ✅ 已归档 | `ba88b5f feat(sim): real VA allocation in sim_mem_pool via gpu_buddy + mmap backing`（ADR-058 + Oracle report AMD KFD v6.10 + Nvidia UVM `uvm_range_allocator` 调研；新增 `sim_device_va_allocator.{h,cpp}` per-device gpu_buddy + std::mutex；`mem_pool.cpp` 重写 + mmap(MAP_ANONYMOUS\|MAP_PRIVATE\|MAP_FIXED_NOREPLACE) backing；18/18 tests, 86/86 ctest PASS, docs-audit clean, libgpu_core zero-modify per ADR-020） |
 | **C-12** | **stage1-4-kfd-multi-file-integration** | ✅ 已归档（2026-07-16） | `openspec archive 2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration`（81% 原子任务完成，Phase A/B/C/D 全 [x]，Phase E 8/9 [x] + L1↔L2 skeleton + docs updates；104/104 ctest + docs-audit 43/43 PASS；E.2.3 sanitizer + E.2.4.2/4.3 cross-repo deferred to follow-up PRs per ADR-035 §Rule 5.1） |
+| **W7** | **three-sanitizer-infra** | ✅ 已归档 | `5fc0006` — 34/34 tasks, ASan/UBSan/TSan CMake infra + CI require jobs + bug 修复 |
+| **W7** | **kfd-l1-l2-bridge-e2e** | ✅ 已归档 | `177231a` — 44/44 tasks, IoctlEntry 扩展 + 3 E2E tests + TaskRunner PR + 跨仓 sync |
 
 ---
 
@@ -34,25 +35,47 @@
 
 ### 本季度 (P3)
 
-### `2026-07-16-three-sanitizer-infra` 🟡 (P3)
+### `2026-07-16-three-sanitizer-infra` ✅ (P3)
 **Effort**: 3-5 天
 **Why**: C-12 E.2.3 deferred — 补齐 ASan/UBSan CMake infra（TSan 已有）
-**进度（2026-07-17）**: 0/32 tasks
-- Phase A: CMake Infra (7 tasks)
-- Phase B: ASan Run + Bug Fixes (8 tasks)
-- Phase C: UBSan Run + Bug Fixes (7 tasks)
-- Phase D: 文档 + CI 集成 (4 tasks)
-- Phase E: 验证 + 归档 (6 tasks)
+**进度（2026-07-22）**: 34/34 tasks ✅ **已归档**
+- Phase A: CMake Infra (8 tasks) — root CMakeLists.txt + tests/CMakeLists.txt
+- Phase B: Plugin Artifact Isolation (5 tasks) — `scripts/stage-plugin.sh`
+- Phase C: ASan Run + Bug Fixes (8 tasks) — fix: move device VA base to sanitizer-safe window
+- Phase D: UBSan Run + Bug Fixes (7 tasks) — 0 runtime error
+- Phase E: CI Integration (6 tasks) — sanitizer-asan/ubsan/tsan matrix jobs
+**证据**: commit `5fc0006` — ASan/UBSan/TSan CMake infra + CI require jobs + bug 修复
 
-### `2026-07-16-kfd-l1-l2-bridge-e2e` 🟡 (P3)
+### `2026-07-16-kfd-l1-l2-bridge-e2e` ✅ (P3)
 **Effort**: 1-2 周
 **Why**: C-12 E.2.4 deferred — 跨仓 L1↔L2 bridge 端到端验证（ADR-035 §Rule 5.1 4-step）
-**进度（2026-07-17）**: 0/41 tasks
-- Phase A: UsrLinuxEmu 端 E2E (11 tasks) — skeleton 已在 commit `ed9ce1e`
-- Phase B: TaskRunner 端 Change (9 tasks) — 跨仓 PR
-- Phase C: 跨仓 Submodule Bump (7 tasks) — ADR-035 §Rule 5.1 Step 3
-- Phase D: 文档 + 归档 (6 tasks)
-- Phase E: 验收 (5 tasks)
+**进度（2026-07-22）**: 44/44 tasks ✅ **已归档**
+- Phase A: UsrLinuxEmu 端 E2E (17 tasks) — GpgpuDevice IoctlEntry 扩展 (32→36) + 3 个真实 E2E 测试
+- Phase B: TaskRunner 端 Change (9 tasks) — GpuDriverClient +4 KFD methods + 跨仓 PR
+- Phase C: 跨仓 Submodule Bump (7 tasks) — 双仓 submodule sync
+- Phase D: 文档 + 归档 (6 tasks) — taskrunner-index + kfd-portability-boundary 更新
+- Phase E: 验收 (5 tasks) — 104/104 + TaskRunner 13/13 ctest PASS
+**证据**: commit `177231a` + TaskRunner `d94719c` + submodule bump `aac4be5`
+
+### `stage3-4-doxygen-docs` 🔴 (P1)
+**Effort**: 2-3 天
+**Why**: Stage 3.4 文档完善核心交付 — Doxygen API 参考自动生成 + quickstart 验证
+**进度（2026-07-22）**: 0/29 tasks
+- Phase 1: Doxygen Configuration (4 tasks) — Doxyfile + HTML output
+- Phase 2: CMake Integration (4 tasks) — find_package + custom target
+- Phase 3: docs-audit Integration (2 tasks) — invoke Doxygen in audit script
+- Phase 4: Quickstart Guide Polish (4 tasks) — verify installation/building/first-example
+- Phase 5: plan-handoff Update (1 task)
+
+### `v1-0-release-prep` 🟡 (P2)
+**Effort**: 2-3 天 (不含 Docker 可选)
+**Why**: v1.0 发布必备 — CHANGELOG + Migration Guide + Binary Release + Docker
+**进度（2026-07-22）**: 0/29 tasks
+- Phase 1: CHANGELOG & Release Notes (3 tasks)
+- Phase 2: Migration Guide (5 tasks) — System B→C ioctl mapping + kernel SHARED + directory restructure
+- Phase 3: Binary Release Workflow (4 tasks) — GitHub Actions release.yml + static linking
+- Phase 4: Docker (2 tasks, optional)
+- Phase 5: plan-handoff Update (1 task)
 
 ---
 
@@ -61,7 +84,9 @@
 ## 依赖图
 
 ```
-[C-12/kfd-multi-file] ✅ ARCHIVED 2026-07-16 ──> (Wave 7 follow-ups: three-sanitizer-infra + kfd-l1-l2-bridge-e2e)
+[stage3-4-doxygen-docs] ──> [v1-0-release-prep]
+                          (Stage 3.4 文档完成后，v1.0 发布可启动)
+[C-12/kfd-multi-file] ✅ ARCHIVED 2026-07-16
 ```
 
 ---
@@ -69,14 +94,16 @@
 ## 推荐执行顺序
 
 ### 本季度
-1. **C-09** ~~phase4-cu-mempool-alloc-real-va~~ ✅ archived（commit `ba88b5f`）
-2. **C-10** ~~stage3-2-perf-bench-baseline~~ ✅ archived（commit `d63da5e`）
-3. **C-11** ~~stage3-2-hotpath-optimize~~ ✅ archived（PR #30，acceptance PASS 2/3）
-4. **C-12** ~~stage1-4-kfd-multi-file-integration~~ ✅ archived（2026-07-16；81% 原子任务完成）
-5. **Wave 7 — three-sanitizer-infra** 🟡 active（0/32 tasks, 3-5 天）
-6. **Wave 7 — kfd-l1-l2-bridge-e2e** 🟡 active（0/41 tasks, 1-2 周，跨仓）
+1. **stage3-4-doxygen-docs** 🔴 P1（0/29 tasks） — Doxygen API 参考 + quickstart 验证
+2. **v1-0-release-prep** 🟡 P2（0/29 tasks） — CHANGELOG + Migration Guide + Binary Release
+3. ~~C-09~~ phase4-cu-mempool-alloc-real-va ✅ archived
+4. ~~C-10~~ stage3-2-perf-bench-baseline ✅ archived
+5. ~~C-11~~ stage3-2-hotpath-optimize ✅ archived
+6. ~~C-12~~ stage1-4-kfd-multi-file-integration ✅ archived
+7. ~~Wave 7 — three-sanitizer-infra~~ ✅ archived
+8. ~~Wave 7 — kfd-l1-l2-bridge-e2e~~ ✅ archived
 
-**执行路径建议**：先推进 three-sanitizer-infra（低风险单仓工作），完成后启动 kfd-l1-l2-bridge-e2e（跨仓 PR 工作流）。
+**当前状态**: Stage 3.4 文档完善 (P1) + v1.0 发布准备 (P2)。无其他待执行 change。
 
 ---
 
