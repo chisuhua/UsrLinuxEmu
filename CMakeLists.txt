@@ -89,3 +89,16 @@ add_subdirectory(libgpu_core)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ===== Doxygen (optional; Stage 3.4) =====
+find_package(Doxygen QUIET)
+if(Doxygen_FOUND)
+    add_custom_target(doxygen
+        COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_SOURCE_DIR}/docs/Doxyfile
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMENT "Generating API documentation with Doxygen → docs/api/"
+    )
+    message(STATUS "Doxygen found — 'make doxygen' target available")
+else()
+    message(STATUS "Doxygen not found — 'make doxygen' target unavailable (install: apt install doxygen)")
+endif()
+
