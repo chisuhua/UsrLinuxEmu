@@ -73,3 +73,4 @@ build-asan/
 build-default/
 build-ubsan/
 build_test/
+docs/api/html/
