@@ -117,16 +117,40 @@ static void user_time_wait(void *ctx, uint64_t us) {
   std::this_thread::sleep_for(std::chrono::microseconds(us));
 }
 
-/* ── ADR-061 stub: KFD page migration（真机 KFD 路径，C-12 阶段不实施）── */
+/* ── ADR-061: IOMMU page mapping（hal-iommu-full 实现）── */
 
 static int user_iommu_map(void *ctx, uint64_t va, uint64_t size, uint32_t domain_id) {
-  (void)ctx; (void)va; (void)size; (void)domain_id;
-  return -ENOSYS;
+  (void)domain_id;
+  auto *hc = static_cast<struct hal_user_context *>(ctx);
+
+  if (size == 0)
+    return -EINVAL;
+
+  std::lock_guard<std::mutex> lock(hc->iommu_lock);
+
+  /* Check double-map: VA already mapped? */
+  if (hc->iommu_mappings.count(va) > 0)
+    return -EEXIST;
+
+  hc->iommu_mappings[va] = size;
+  return 0;
 }
 
 static int user_iommu_unmap(void *ctx, uint64_t va, uint64_t size) {
-  (void)ctx; (void)va; (void)size;
-  return -ENOSYS;
+  auto *hc = static_cast<struct hal_user_context *>(ctx);
+
+  std::lock_guard<std::mutex> lock(hc->iommu_lock);
+
+  auto it = hc->iommu_mappings.find(va);
+  if (it == hc->iommu_mappings.end())
+    return -ENOENT;
+
+  /* Size check: must match mapped size */
+  if (size != 0 && it->second != size)
+    return -EINVAL;
+
+  hc->iommu_mappings.erase(it);
+  return 0;
 }
 
 /* ── ADR-062 stub: KFD event signal（真机 KFD 路径，C-12 阶段不实施）── */

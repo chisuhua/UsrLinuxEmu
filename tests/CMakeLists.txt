@@ -263,6 +263,8 @@ set(CATCH2_SIM_TESTS
     test_hal_thread_safety_standalone.cpp
     # Stage 3.3 — errno coverage audit (12 sites replaced -1 → Linux errno)
     test_sim_errno_standalone.cpp
+    # hal-iommu-full — IOMMU map/unmap functional tests
+    test_hal_iommu_standalone.cpp
 )
 
 # Stage 2.2.4 — net driver plugin test (per ADR-038 D1)
@@ -310,6 +312,10 @@ target_link_libraries(test_error_inject_standalone PRIVATE gpu_hal_mock)
 target_link_libraries(test_hal_thread_safety_standalone PRIVATE gpu_hal gpu_hal_mock)
 find_package(Threads REQUIRED)
 target_link_libraries(test_hal_thread_safety_standalone PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+
+# hal-iommu-full — IOMMU functional tests (links gpu_hal for hal_user.cpp)
+target_link_libraries(test_hal_iommu_standalone PRIVATE gpu_hal)
+target_include_directories(test_hal_iommu_standalone PRIVATE ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal)
 
 # 为每个 sim 测试源文件创建测试
 foreach(src ${SIM_TESTS})
