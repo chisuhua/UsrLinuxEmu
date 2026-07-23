@@ -63,7 +63,7 @@
     "name": "iommu-invalidate-hal",
     "priority": "P1",
     "source": "hal-iommu-full 延后项: gpu_hal_ops 缺 iommu_invalidate fn-ptr",
-    "status": "待创建",
+    "status": "已完成",
     "phase": "phase-1",
     "category": "core-impl",
     "effort": "2-3天",
