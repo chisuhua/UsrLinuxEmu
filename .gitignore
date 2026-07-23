@@ -69,3 +69,7 @@ docs/api/
 Testing/
 .omo/
 .rddf/wt/
+build-asan/
+build-default/
+build-ubsan/
+build_test/
