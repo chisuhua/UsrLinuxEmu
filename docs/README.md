@@ -71,6 +71,7 @@
 | 文档 | 说明 |
 |------|------|
 | [API 参考](06-reference/api-reference.md) | 完整 API 接口文档 |
+| [Doxygen API](06-reference/doxygen-api-index.md) | 自动生成的 Doxygen API 参考（HTML） |
 | [IOCTL 命令](06-reference/ioctl-commands.md) | System C IOCTL 命令参考 |
 | [术语表](06-reference/glossary.md) | 技术术语解释 |
 | [架构决策记录](00_adr/README.md) | 所有 ADR（001–031，含 022、025–031 占位/Deferred）|

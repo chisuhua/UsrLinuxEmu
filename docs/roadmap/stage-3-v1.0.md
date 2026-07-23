@@ -114,7 +114,7 @@
 - [x] 性能基准达标（3.2 hotpath PR #30 已归档：BO 2.1×, ioctl 11.6×, pushbuffer 1296×）
 - [x] docs-audit 43/43 PASS（持续通过）
 - [x] 错误注入测试通过（3.3 errno audit 12 处修复 + 105 ctest PASS）
-- [ ] 用户 quickstart ≤ 15 分钟（3.4 文档完善待完成）
+- [x] 用户 quickstart ≤ 15 分钟（3.4 文档完善已完成 2026-07-23）
 - [x] SSOT + ROADMAP + ADR 全部最新
 
 ---
@@ -144,7 +144,7 @@
 | **3.1 CI/CD 全平台验证** | 🔄 进行中 | ubuntu-22.04 已入 CI matrix；ASan/UBSan/TSan 三 sanitizer 已落地（`ba48c79`）；macOS/aarch64 deferred |
 | **3.2 性能优化** | ✅ 已完成 (2026-07-11) | hotpath 优化 C-11 已归档（BO 2.1×, ioctl 11.6×, pushbuffer 1296×, PR #30）；perf baseline 文档已建立 |
 | **3.3 错误处理完善** | ✅ 已完成 (2026-07-21) | 12 处 `-1` → Linux errno 修复 + 5 测试文件 + 105 ctest PASS（commit `1b22249`）；全路径 Linux 错误码审计完成并归档 |
-| **3.4 文档完善** | 🔄 进行中 | ADR-064 内存模型分阶段策略已归档；`gpu-real-memory-path.md` 已创建；Doxygen API 参考待生成；docs-audit 43/43 PASS |
+| **3.4 文档完善** | ✅ 已完成 (2026-07-23) | Doxygen API 参考已生成（204 HTML pages）；quickstart 验证 ~12s（≤15min ✅）；docs-audit 54/54 PASS；API reference index 已创建
 | **CUDA E2E real-path** | ✅ COMPLETED | Phase A-F 全部交付：BO 真实内存 + Puller MEMCPY HAL + fence 异步 + E2E 测试；104/104 + 14/14 ctest PASS |
 
 **已落地的稳定性 commit**（Stage 3 期间）:
@@ -159,3 +159,6 @@
 - `9181384` docs(adr): ADR-064 memory model staging + ADR-023 HAL boundary rules
 - `edb454d` docs(memory): GPU real memory path architecture document
 - `1b22249` chore(openspec): archive stage3-3-errno-coverage-audit (12 fixes + 5 test files + 105 ctest PASS)
+- `e0a4be3` docs: add Doxygen API reference index page linking to generated HTML
+- `bc81928` docs: add quickstart end-to-end verification report (~12s Release, ✅ ≤15min)
+- `f2e3138` docs: fix Doxygen config — output to docs/api/html/ + gitignore
