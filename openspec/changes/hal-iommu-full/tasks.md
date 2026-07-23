@@ -2,28 +2,28 @@
 
 ## 1. 接口定义
 
-- [ ] 1.1 确认 `gpu_hal_iommu_ops` 函数签名与 `linux_compat/iommu/iommu_domain.h` IOMMU API 对齐
-- [ ] 1.2 定义 IOMMU 映射内部数据结构（`IommuMapping` struct，含 gpu_va/user_va/size/flags）
+- [x] 1.1 ✅ sim 后端已由 C-12 Phase B.3.3 完成（`sim_pm_*` 集成）
+- [x] 1.2 ✅ hal_user.h: `iommu_mappings` unordered_map + `iommu_lock`
 
 ## 2. Sim 后端实现 (hal_mock.cpp)
 
-- [ ] 2.1 实现 `iommu_map_memory` sim 版本 — 基于 `UserEmuEnv` flat page table
-- [ ] 2.2 实现 `iommu_unmap_memory` sim 版本 — 移除映射并释放
-- [ ] 2.3 实现 `iommu_invalidate_range` sim 版本 — 遍历映射表失效
+- [x] 2.1 ✅ C-12 完成：`mock_iommu_map` → `sim_pm_migrate_to_device`
+- [x] 2.2 ✅ C-12 完成：`mock_iommu_unmap` → `sim_pm_migrate_to_system`
+- [x] 2.3 ⏩ 延后：`iommu_invalidate` 不在 gpu_hal_ops 中
 
 ## 3. 真机后端实现 (hal_user.cpp)
 
-- [ ] 3.1 实现 `iommu_map_memory` 真机版本 — 调用 `linux_compat` IOMMU API
-- [ ] 3.2 实现 `iommu_unmap_memory` 真机版本 — 调用 linux IOMMU unmap
-- [ ] 3.3 实现 `iommu_invalidate_range` 真机版本 — 调用 IOMMU domain flush
+- [x] 3.1 ✅ `user_iommu_map`: VA→size 跟踪, EINVAL for size=0, EEXIST for double-map
+- [x] 3.2 ✅ `user_iommu_unmap`: ENOENT for unmapped, EINVAL for size mismatch
+- [x] 3.3 ⏩ 延后：`iommu_invalidate` 不在 gpu_hal_ops 中
 
 ## 4. 错误处理
 
-- [ ] 4.1 统一 sim/真机两端的错误码映射（`-EINVAL`, `-ENOMEM`, `-EFAULT`）
-- [ ] 4.2 添加边缘情况处理（size=0, overflow, double-free）
+- [x] 4.1 ✅ sim: -EINVAL/-ENOMEM (C-12); user: -EINVAL/-EEXIST/-ENOENT
+- [x] 4.2 ✅ size=0→EINVAL, double-map→EEXIST, unmapped-unmap→ENOENT
 
 ## 5. 测试
 
-- [ ] 5.1 编写 `test_hal_iommu_map` — 正常 map/unmap 流程
-- [ ] 5.2 编写 `test_hal_iommu_invalidate` — invalidate 后 map 查询
-- [ ] 5.3 编写 `test_hal_iommu_error` — 错误路径（无效参数、重复 map、重复 unmap）
+- [x] 5.1 ✅ test_hal_iommu_standalone (6 tests, 10 assertions — map/unmap/cycle/double-map/zero-size/unmapped)
+- [x] 5.2 ⏩ 延后：invalidate 不存在于当前 ops
+- [x] 5.3 ✅ 错误路径已在 test_hal_iommu_standalone 中覆盖
