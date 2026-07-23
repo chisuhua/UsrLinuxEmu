@@ -4,24 +4,22 @@
       "session_id": "rds_stage3_001",
       "kind": "stage",
       "stage": "stage-3",
-      "state": "orphaned",
-      "owner_opencode_session_id": "ses_20260720_181155",
+      "state": "active",
+      "owner_opencode_session_id": "ses_20260723_guide_ship",
       "created_at": "2026-07-20T10:11:36Z",
-      "last_heartbeat": "2026-07-21T00:00:00Z",
-      "summary": "Stage 3 v1.0 推进：CUDA E2E ✅、sanitizer ✅、bridge ✅、hotpath ✅ (PR #30, PASS 2/3)，待推进 stage3-3 错误处理 / stage3-4 文档",
+      "last_heartbeat": "2026-07-23T00:00:00Z",
+      "summary": "Stage 3 v1.0 推进：CUDA E2E ✅、sanitizer ✅、bridge ✅、hotpath ✅、errno 审计 ✅（2026-07-21 已归档），聚焦 stage3-4 文档完善",
       "attached_changes": [
-        "stage3-3-errno-coverage-audit"
+        "stage3-3-errno-coverage-audit (✅ COMPLETED & ARCHIVED)",
+        "stage3-4-doc-completion (待推进)"
       ],
       "next_steps": [
-        "1. guide-plan → stage3-3-errno-coverage-audit（18 tasks, 0/18）",
-        "2. guide-ship → 执行 stage3-3 (20 handler errno audit + tests)",
-        "3. guide-plan → stage3-4 文档完善 (Doxygen + docs-audit)",
-        "4. guide-ship → 执行 stage3-4",
-        "5. v1.0 发布清单 (Release notes + Migration guide + Binary release)"
+        "1. guide-plan → stage3-4 文档完善 (Doxygen + docs-audit)",
+        "2. guide-ship → 执行 stage3-4",
+        "3. v1.0 发布清单 (Release notes + Migration guide + Binary release)"
       ],
-      "ended_at": "2026-07-21T11:34:33.100670+00:00",
-      "end_reason": "heartbeat-timeout"
+      "resumed_at": "2026-07-23T00:00:00Z"
     }
   ],
-  "updated_at": "2026-07-21T11:34:33.100687+00:00"
+  "updated_at": "2026-07-23T00:00:00Z"
 }
