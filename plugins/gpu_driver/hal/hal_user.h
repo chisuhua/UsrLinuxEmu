@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <atomic>
 #include <mutex>
+#include <unordered_map>
 #include "gpu_buddy.h"
 #include "gpu_hal.h"
 
@@ -40,6 +41,10 @@ struct hal_user_context {
   /* Doorbell 回调（由仿真层设置，HAL 在 doorbell_ring 时调用） */
   void (*doorbell_ring_cb)(void* cb_ctx, uint32_t queue_id);
   void* doorbell_ring_cb_ctx;
+
+  /* IOMMU 映射跟踪（ADR-061: hal-iommu-full） */
+  std::unordered_map<uint64_t, uint64_t> iommu_mappings;  /* VA → size */
+  std::mutex iommu_lock;
 };
 
 void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx);
