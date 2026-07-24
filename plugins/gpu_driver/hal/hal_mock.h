@@ -26,10 +26,17 @@ struct hal_mock_state {
   int iommu_map_count;
   int iommu_unmap_count;
   int event_signal_count;
+  int event_wait_count;
+  int event_notify_count;
 
   int iommu_map_result;
   int iommu_unmap_result;
   int event_signal_result;
+  int event_wait_result;
+  int event_notify_result;
+
+  uint32_t last_event_id;
+  uint64_t last_event_events;
 
   /* 控制返回值 */
   int register_read_result;

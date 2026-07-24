@@ -159,7 +159,7 @@ static int mock_iommu_unmap(void *ctx, uint64_t va, uint64_t size) {
 static int mock_event_signal(void *ctx, uint32_t pasid, uint32_t event_id, uint64_t events) {
   (void)ctx;
   /* Per ADR-060 §2.1 + ADR-062 §D3: async via kernel_workqueue.
-   * Route through kfd_events_thread_ → sim_signal_event. */
+   * Route through kfd_events_thread_ -> sim_signal_event. */
   usr_linux_emu::kernel_workqueue *wq =
       static_cast<usr_linux_emu::kernel_workqueue *>(kfd_events_get_workqueue());
   if (!wq) return -11;  /* -EAGAIN: kfd_events_thread_ not started */
@@ -168,6 +168,21 @@ static int mock_event_signal(void *ctx, uint32_t pasid, uint32_t event_id, uint6
     sim_signal_event(pasid, event_id, events);
   });
   return 0;
+}
+
+static int mock_event_wait(void *ctx, uint32_t event_id, uint64_t timeout_us) {
+  auto *state = static_cast<struct hal_mock_state *>(ctx);
+  state->event_wait_count++;
+  (void)event_id;
+  (void)timeout_us;
+  return state->event_wait_result;
+}
+
+static int mock_event_notify(void *ctx, uint32_t event_id) {
+  auto *state = static_cast<struct hal_mock_state *>(ctx);
+  state->event_notify_count++;
+  state->last_event_id = event_id;
+  return state->event_notify_result;
 }
 
 /* ── 公开初始化函数 ────────────────────────────────── */
@@ -202,4 +217,9 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
   hal->iommu_map = mock_iommu_map;
   hal->iommu_unmap = mock_iommu_unmap;
   hal->event_signal = mock_event_signal;
+
+  state->event_wait_result = -ENOSYS;
+  state->event_notify_result = -ENOSYS;
+  hal->event_wait = mock_event_wait;
+  hal->event_notify = mock_event_notify;
 }
