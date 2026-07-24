@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <thread>
+#include <chrono>
 
 /* ── 内部回调实现 ────────────────────────────────── */
 
@@ -132,8 +133,62 @@ static int user_iommu_unmap(void *ctx, uint64_t va, uint64_t size) {
 /* ── ADR-062 stub: KFD event signal（真机 KFD 路径，C-12 阶段不实施）── */
 
 static int user_event_signal(void *ctx, uint32_t pasid, uint32_t event_id, uint64_t events) {
-  (void)ctx; (void)pasid; (void)event_id; (void)events;
-  return -ENOSYS;
+  auto *hc = static_cast<struct hal_user_context *>(ctx);
+  (void)pasid;
+
+  if (event_id >= 256) return -EINVAL;
+  if (events == 0) return -EINVAL;
+
+  {
+    std::lock_guard<std::mutex> lock(hc->event_lock);
+    hc->event_signaled[event_id] = true;
+  }
+  hc->event_cv.notify_one();
+  return 0;
+}
+
+static int user_event_wait(void *ctx, uint32_t event_id, uint64_t timeout_us) {
+  auto *hc = static_cast<struct hal_user_context *>(ctx);
+
+  if (event_id >= 256) return -EINVAL;
+
+  std::unique_lock<std::mutex> lock(hc->event_lock);
+
+  if (timeout_us == 0) {
+    if (hc->event_signaled[event_id]) {
+      return 0;
+    }
+    return -110;
+  }
+
+  if (timeout_us == UINT64_MAX) {
+    hc->event_cv.wait(lock, [&]() {
+      return hc->event_signaled[event_id];
+    });
+    return 0;
+  }
+
+  bool signaled = hc->event_cv.wait_for(lock,
+      std::chrono::microseconds(timeout_us), [&]() {
+        return hc->event_signaled[event_id];
+      });
+  if (signaled) {
+    return 0;
+  }
+  return -110;
+}
+
+static int user_event_notify(void *ctx, uint32_t event_id) {
+  auto *hc = static_cast<struct hal_user_context *>(ctx);
+
+  if (event_id >= 256) return -EINVAL;
+
+  {
+    std::lock_guard<std::mutex> lock(hc->event_lock);
+    hc->event_signaled[event_id] = true;
+  }
+  hc->event_cv.notify_all();
+  return 0;
 }
 
 /* ── 公开初始化函数 ────────────────────────────────── */
@@ -143,6 +198,7 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   memset(ctx->regs, 0, sizeof(ctx->regs));
   memset(&ctx->buddy, 0, sizeof(ctx->buddy));
   memset(ctx->fence_signaled, 0, sizeof(ctx->fence_signaled));
+  memset(ctx->event_signaled, 0, sizeof(ctx->event_signaled));
   ctx->heap = nullptr;
   ctx->buddy_initialized = false;
   ctx->fence_counter = 0;
@@ -172,6 +228,8 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   hal->iommu_map = user_iommu_map;
   hal->iommu_unmap = user_iommu_unmap;
   hal->event_signal = user_event_signal;
+  hal->event_wait = user_event_wait;
+  hal->event_notify = user_event_notify;
 }
 
 void hal_user_destroy(struct hal_user_context *ctx) {
