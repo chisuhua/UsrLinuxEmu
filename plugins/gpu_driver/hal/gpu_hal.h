@@ -51,6 +51,17 @@ struct gpu_hal_ops {
   /* ── ADR-062 扩展（KFD event signal） ──────────────────── */
 
   int (*event_signal)(void *ctx, uint32_t pasid, uint32_t event_id, uint64_t events);
+
+  /* event_wait: block until event is signaled or timeout.
+   * @timeout_us: timeout in microseconds (0 = non-blocking poll, UINT64_MAX = infinite)
+   * Returns 0 on signal received, -ETIMEDOUT on timeout, -EINVAL on invalid args.
+   */
+  int (*event_wait)(void *ctx, uint32_t event_id, uint64_t timeout_us);
+
+  /* event_notify: broadcast notification to all waiters on the given event_id.
+   * Returns 0 on success, -EINVAL on invalid args.
+   */
+  int (*event_notify)(void *ctx, uint32_t event_id);
 };
 
 /* ── inline 包装函数：零开销简化调用 ──────────────────────── */
@@ -116,6 +127,15 @@ static inline int hal_iommu_unmap(struct gpu_hal_ops *hal, uint64_t va, uint64_t
 static inline int hal_event_signal(struct gpu_hal_ops *hal, uint32_t pasid,
                                    uint32_t event_id, uint64_t events) {
   return hal->event_signal(hal->ctx, pasid, event_id, events);
+}
+
+static inline int hal_event_wait(struct gpu_hal_ops *hal, uint32_t event_id,
+                                  uint64_t timeout_us) {
+  return hal->event_wait(hal->ctx, event_id, timeout_us);
+}
+
+static inline int hal_event_notify(struct gpu_hal_ops *hal, uint32_t event_id) {
+  return hal->event_notify(hal->ctx, event_id);
 }
 
 #ifdef __cplusplus
