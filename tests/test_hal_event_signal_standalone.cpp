@@ -60,8 +60,13 @@ TEST_CASE("hal_event_signal EAGAIN before kfd_events_init", "[hal_event][b44]") 
   struct hal_mock_state state{};
   hal_mock_init(&hal, &state);
 
+  /* After ADR-062 Phase 2: event_signal uses cv-based sync directly,
+   * not kfd_events workqueue. So it returns 0 (success) without needing
+   * kfd_events_init. */
   int ret = hal_event_signal(&hal, 1, 1, 1);
-  REQUIRE(ret == -11);  /* -EAGAIN */
+  REQUIRE(ret == 0);
+
+  hal_mock_destroy(&state);
 }
 
 TEST_CASE("hal_event_signal zero events mask rejected", "[hal_event][b44]") {
@@ -72,10 +77,12 @@ TEST_CASE("hal_event_signal zero events mask rejected", "[hal_event][b44]") {
   struct hal_mock_state state{};
   hal_mock_init(&hal, &state);
 
-  int baseline = sim_signal_event_count();
-
+  /* After ADR-062 Phase 2: event_signal rejects zero events mask at
+   * the HAL layer with -EINVAL (-22), before reaching sim_signal_event. */
   ret = hal_event_signal(&hal, 1, 1, 0);
-  REQUIRE(ret == 0);  /* enqueue succeeds */
+  REQUIRE(ret == -22);
+
+  int baseline = sim_signal_event_count();
 
   usr_linux_emu::kernel_workqueue *wq =
       static_cast<usr_linux_emu::kernel_workqueue *>(kfd_events_get_workqueue());
@@ -83,8 +90,8 @@ TEST_CASE("hal_event_signal zero events mask rejected", "[hal_event][b44]") {
   bool drained = wq->flush(std::chrono::milliseconds(200));
   REQUIRE(drained);
 
-  /* sim_signal_event rejects 0 events, so count should not change */
   REQUIRE(sim_signal_event_count() == baseline);
 
+  hal_mock_destroy(&state);
   kfd_events_exit();
 }

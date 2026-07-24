@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <atomic>
+#include <condition_variable>
 #include <mutex>
 #include <unordered_map>
 #include "gpu_buddy.h"
@@ -42,9 +43,14 @@ struct hal_user_context {
   void (*doorbell_ring_cb)(void* cb_ctx, uint32_t queue_id);
   void* doorbell_ring_cb_ctx;
 
-  /* IOMMU 映射跟踪（ADR-061: hal-iommu-full） */
+  /* IOMMU 映射跟踪（ADR-061: hal-iommu-full + ADR-062: hal-event-signal） */
   std::unordered_map<uint64_t, uint64_t> iommu_mappings;  /* VA → size */
   std::mutex iommu_lock;
+
+  /* Event signal/wait/notify 状态（ADR-062: hal-event-signal） */
+  std::mutex event_lock;
+  std::condition_variable event_cv;
+  bool event_signaled[256];
 };
 
 void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx);

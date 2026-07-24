@@ -683,3 +683,39 @@ if(ENABLE_TSAN)
 endif()
 add_test(NAME test_kfd_queue_standalone COMMAND test_kfd_queue_standalone)
 set_tests_properties(test_kfd_queue_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# hal-event-signal: HAL event signal/wait/notify tests
+add_executable(test_hal_event_standalone
+    test_hal_event_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_mock.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_user.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/page_migration.cpp
+)
+set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
+    PROPERTIES LANGUAGE C
+)
+set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
+    PROPERTIES LANGUAGE CXX
+)
+target_link_libraries(test_hal_event_standalone PRIVATE kernel gpu_hal_mock gpu_hal gpu_core ${CMAKE_THREAD_LIBS_INIT})
+find_package(Threads REQUIRED)
+target_link_libraries(test_hal_event_standalone PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_hal_event_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/kernel
+    ${PROJECT_SOURCE_DIR}/include/kernel/thread
+    ${PROJECT_SOURCE_DIR}/libgpu_core/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(test_hal_event_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_hal_event_standalone COMMAND $<TARGET_FILE:test_hal_event_standalone>)
+set_tests_properties(test_hal_event_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
