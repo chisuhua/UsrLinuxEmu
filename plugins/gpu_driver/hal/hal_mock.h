@@ -7,6 +7,14 @@
 #pragma once
 
 #include "gpu_hal.h"
+#include <mutex>
+#include <condition_variable>
+
+struct hal_mock_event_state {
+  std::mutex mtx;
+  std::condition_variable cv;
+  bool signaled[256];
+};
 
 struct hal_mock_state {
   /* 调用计数 */
@@ -60,6 +68,9 @@ struct hal_mock_state {
   uint32_t last_doorbell_queue;
   uint32_t last_interrupt_vector;
   uint64_t last_time_wait_us;
+
+  struct hal_mock_event_state *event_state;
 };
 
 void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state);
+void hal_mock_destroy(struct hal_mock_state *state);
