@@ -2,7 +2,7 @@
 
 本文档目录包含 UsrLinuxEmu 项目中所有已通过和提议中的架构决策记录。
 
-> **最后更新**: 2026-07-09（GPU CP Blueprint ADRs 040-057 新增，Phase 4 sim-graph-launch-real-impl 架构基础）
+> **最后更新**: 2026-07-25（ADR-069 BAR/ioremap 仿真架构 — Stage 4 前置 ADR）
 > **维护者**: UsrLinuxEmu Architecture Team + TaskRunner owner
 > **治理规则**: 见 [ADR-035](adr-035-governance-policy.md)
 
@@ -75,6 +75,9 @@
 | [adr-063](adr-063-sim-pfh-pm-realification.md) | **sim_pfh / sim_pm 真实化状态机边界**（C-12 Phase C.1, sim 层 3 态 + sim_proxy.h + IOTLB 桥接 + mm_shim wire-up）| ✅ 已接受 | 2026-07-15 |
 | [adr-064](adr-064-memory-model-staging.md) | **GPU 内存模型保真度分阶段策略**（BO 简化堆 → Stage 4 真实 BAR + ioremap；HAL 边界强制执行规则）| ✅ 已接受 | 2026-07-20 |
 | [adr-065](adr-065-version-policy.md) | **项目版本号 SSOT 与 Git Tag 命名规范**（CMake VERSION 唯一权威来源、严格 semver tag、v1.5 tag 解决）| ✅ 已接受 | 2026-07-22 |
+| [adr-069](adr-069-bar-ioremap-emulation.md) | **真实 PCIe BAR + ioremap 仿真架构**（I/O 语义 vs 内存语义共存；Stage 4 前置 ADR）| 📋 PROPOSED | 2026-07-25 |
+| [adr-072](adr-072-portability-validation.md) | **驱动代码可移植性验证框架**（L1 静态分析 + L2 内核编译测试 + L3 docs-audit）| 📋 PROPOSED | 2026-07-25 |
+| [adr-073](adr-073-dma-coherent-emulation.md) | **DMA 一致性内存仿真架构**（独立 DMA 地址空间 + coherent/streaming 语义分离；依赖 ADR-069, ADR-064 条件 2/3）| 📋 PROPOSED | 2026-07-25 |
 
 > **2026-07-14 变更（C-12 命名修复 + HAL ops ADR 创建）**：ADR-061 + ADR-062 创建 — 原 tasks.md B.3.4.5 误用 `adr-060` 编号，与 `Linux 内核消息通知线程架构` 冲突。已修正：
 > - **ADR-061**（HAL IOMMU ops 扩展，237 行）：覆盖 C-12 tasks B.3.4 — `hal_iommu_map()` / `hal_iommu_unmap()` 2 个新 fn-ptr，遵循 ADR-023 Decision 4 spec-driven "追加不改" 原则
@@ -84,14 +87,14 @@
 > 
 > **2026-07-15 变更**：ADR-061（HAL IOMMU ops 扩展）+ ADR-062（HAL Event Signal ops 扩展）状态升 ✅ Accepted。fn-ptrs 已 commit 到 `struct gpu_hal_ops`（11→14），hal_user/hal_mock stub 实现已落地。C-12 Phase A.2 hard gate CLEARED；Phase B 可启动。
 
-## 状态分布总览（截至 2026-07-22）
+## 状态分布总览（截至 2026-07-25）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
 | ✅ 已接受 | 42 | 001-010, 015-024, 027, 031-037, 039-041, 043, 059-065 |
-| 📋 PROPOSED | 15 | 011-014, 038, 042, 044-052, 054, 056-058 |
+| 📋 PROPOSED | 18 | 011-014, 038, 042, 044-052, 054, 056-058, 069, 072-073 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
-| **总计** | **64** | ADR-001 ~ ADR-065 |
+| **总计** | **67** | ADR-001 ~ ADR-073 |
 
 > **2026-07-11 变更**：ADR-058 新增 — sim_mem_pool Real VA Allocation（Phase 4 cu-mempool-alloc-real-va change 架构基础）。镜像 Nvidia UVM `uvm_range_allocator` per-pool + per-device gpu_buddy + mmap backing at pool create 模式。
 >

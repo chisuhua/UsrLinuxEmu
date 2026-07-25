@@ -3,10 +3,10 @@
 > **状态**: 📋 规划中
 > **目标**: 将 GPU 内存模型升级到真实 PCIe BAR 模拟 + 完成 GPU 命令处理器 Phase 4-7 递进交付
 > **前置依赖**: 阶段 3 v1.0 稳定
-> **关联 ADR**: [ADR-064](../00_adr/adr-064-memory-model-staging.md) Decision 3（Stage 4 触发条件） + [ADR-040~057](../00_adr/README.md)（GPU CP Blueprint）
+> **关联 ADR**: [ADR-064](../00_adr/adr-064-memory-model-staging.md) Decision 3（Stage 4 触发条件） + [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md)（BAR/ioremap 仿真架构） + [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md)（DMA 一致性仿真） + [ADR-040~057](../00_adr/README.md)（GPU CP Blueprint）
 > **关联蓝图**: [blueprint.md](blueprint.md) §③ 硬件模拟（成熟态）
 > **维护者**: UsrLinuxEmu Architecture Team
-> **最后更新**: 2026-07-21
+> **最后更新**: 2026-07-25
 
 ---
 
@@ -48,6 +48,8 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 ## 子阶段 4.1 — 真实 BAR + ioremap 模拟
 
 **目标**: 从简化堆模型升级到真实 PCIe BAR 模拟，使驱动代码可以使用 `ioremap`/`readl`/`writel` 习语。
+
+**架构决策**: [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md)（BAR/ioremap 仿真架构 — I/O 语义 vs 内存语义共存）+ [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md)（DMA 一致性仿真 — 独立 DMA 地址空间，依赖 ADR-069 + ADR-064 条件 2/3）
 
 **ADR-064 Decision 3 触发条件**（任一满足即启动；以 ADR-064 为 canonical）：
 
@@ -213,6 +215,9 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | ADR | 角色 | 子阶段 | 状态 |
 |-----|------|--------|------|
 | [ADR-064](../00_adr/adr-064-memory-model-staging.md) | 内存模型分阶段策略（Stage 4 定义）| 4.1 | ✅ Accepted |
+| [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md) | BAR/ioremap 仿真架构决策（I/O 语义 vs 内存语义共存层）| 4.1 | 📋 PROPOSED |
+| [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md) | DMA 一致性内存仿真架构（独立 DMA 地址空间 + coherent/streaming 分离）| 4.1 | 📋 PROPOSED |
+| [ADR-072](../00_adr/adr-072-portability-validation.md) | 驱动代码可移植性验证框架（L1 静态分析 + L2 内核编译测试 + L3 docs-audit）| 整体验收 | 📋 PROPOSED |
 | [ADR-040](../00_adr/adr-040-puller-fence-completion.md) | Puller Fence Completion 回调 | 4.2 | ✅ Accepted |
 | [ADR-041](../00_adr/adr-041-graph-node-to-gpfifo-serialization.md) | Graph→GPFIFO 序列化 | 4.2 | ✅ Accepted |
 | [ADR-043](../00_adr/adr-043-cp-portability-boundary.md) | CP 可移植性边界 | 4.2 | ✅ Accepted |

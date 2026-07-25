@@ -7,7 +7,7 @@
 > **性质**: 架构层叙事，描述从当前 MVP 到终态蓝图的演进路径
 > **不绑定**: 本路线图不引用具体 OpenSpec change 编号。后续 OpenSpec change 根据本路线图派生
 > **同步关系**: 与 `docs/sync-plan.md` 互补（sync-plan 负责跨仓同步点，本路线图负责架构演进阶段）
-> **最后更新**: 2026-07-21
+> **最后更新**: 2026-07-25
 > **维护者**: UsrLinuxEmu Architecture Team
 
 ---
@@ -111,7 +111,8 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | 07-20 | 回归: docs-audit 43/43 + 104/104 + 14/14 ctest PASS |
 | **07-21** | **three-sanitizer-infra ✅** — 34/34 tasks 归档确认；**kfd-l1-l2-bridge-e2e ✅** — 双仓归档确认 |
 | 07-21 | Arch-handoff + roadmap 数据同步：确认 stage3-2 ✅ (PR #30, 2026-07-11) |
-| **07-21** | **stage3-3-errno-coverage-audit ✅** — 12 处 Linux errno 修复 + 5 测试文件 + 105 ctest PASS |
+| **07-21** | **stage3-3-errno-coverage-audit ✅** — 12 处 Linux errno 修复 + 5 测试文件 + 105 ctest PASS
+| **07-25** | **ADR-069 BAR/ioremap + ADR-072 可移植性验证 + ADR-073 DMA 一致性提案** — Stage 4 前置架构决策集 |
 
 ### 后续任务建议
 
