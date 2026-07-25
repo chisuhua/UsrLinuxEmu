@@ -1,5 +1,8 @@
 # AGENTS.md - UsrLinuxEmu 开发指南
 
+**Generated:** 2026-07-25 | **Commit:** `HEAD` | **Branch:** `main`
+**Graph:** 4172 nodes, 24185 edges, 11 communities | **Tests:** 92+ Catch2 binaries
+
 ## ⚠️ Session 边界防护（2026-07-21）
 
 > **本项目根目录: `/workspace/project/UsrLinuxEmu`**
@@ -50,6 +53,24 @@ make test
 ```
 
 **注意**: 测试必须从项目根目录运行（不是 build/bin/），因为插件路径是相对路径。
+
+### Sanitizer 构建
+
+```bash
+# AddressSanitizer
+SANITIZER=asan ./build.sh test
+
+# UndefinedBehaviorSanitizer
+SANITIZER=ubsan ./build.sh test
+
+# ThreadSanitizer（仅 Clang）
+SANITIZER=tsan ./build.sh test
+
+# 同时启用 ASan + UBSan
+SANITIZER=asan-ubsan ./build.sh test
+```
+
+**注意**: TSan 与 ASan/UBSan 互斥，构建目录独立（`build-asan/` / `build-ubsan/` / `build-tsan/`）。
 
 ## 测试框架
 
@@ -115,6 +136,23 @@ TaskRunner 应使用 System C 接口。
 | Device 类 | `include/kernel/device/device.h` |
 | 集成文档 | `docs/07-integration/` |
 
+## CODE MAP
+
+**架构**: ① 内核模拟 (`src/kernel/` + `include/`) → ② 可移植驱动 (`plugins/gpu_driver/drv/`) → HAL 桥 → ③ 硬件模拟 (`plugins/gpu_driver/sim/`)
+
+| Symbol | Type | Location | Role |
+|--------|------|----------|------|
+| `VFS::instance()` | 单例 | `include/kernel/vfs.h` | 设备注册/打开/查找 — Meyers singleton |
+| `ModuleLoader` | 静态类 | `include/kernel/module_loader.h` | `dlopen` + `dlsym("mod")` 插件发现 |
+| `GpgpuDevice` | 类 | `plugins/gpu_driver/drv/gpgpu_device.cpp` | 中心枢纽 — 37 ioctl handler 表驱动派发 |
+| `gpu_hal_ops` | 结构体 | `plugins/gpu_driver/hal/gpu_hal.h` | HAL 接口契约 — 14 函数指针 |
+| `HardwarePullerEmu` | 类 | `plugins/gpu_driver/sim/hardware/` | FSM 状态机 — IDLE→FETCH→DECODE→DISPATCH→... |
+| `ServiceRegistry` | 单例 | `include/kernel/service_registry.h` | 跨模块服务注册/查找 |
+| `gpu_ioctl.h` | 头文件 | `plugins/gpu_driver/shared/` | System C 39 个 IOCTL 契约（TaskRunner 共享） |
+| `main()` | 入口 | `tools/cli/main.cpp` | 交互式 CLI（非测试入口） |
+
+**调用链核心路径**: `ioctl()` → `VFS::open()` → `GpgpuDevice::ioctl()` → 表分发 → `gpu_hal_ops` → `HardwarePullerEmu` FSM → `GlobalScheduler`
+
 ## GPU 插件使用
 
 ```cpp
@@ -140,6 +178,25 @@ dev->fops->ioctl(fd, GPU_IOCTL_ALLOC_BO, &args);
 - **函数/变量**: snake_case (`allocate_memory`)
 - **成员变量**: snake_case_ 后缀 (`buffer_size_`)
 - **宏**: SCREAMING_SNAKE_CASE (`MAX_BUFFER_SIZE`)
+- **命名空间**: `usr_linux_emu`（C++ 代码）；C 兼容代码用 `extern "C"` + `us_` 前缀
+- **Include guard**: `#pragma once` 为主；需要 C/C++ 双模式的用 `#ifndef USR_LINUX_EMU_*_H`
+- **列宽**: 100 字符 | **大括号**: Attach | **指针**: 左对齐 (`int* ptr`)
+- **注释**: 公共 API 用 Doxygen (`/** @brief ... @param ... */`)，内联用 `//`
+- **错误处理**: Linux 风格负 errno (`-EINVAL`, `-ENOMEM`)，成功返回 `0`
+- **资源管理**: RAII、`std::unique_ptr`、`std::shared_ptr`
+
+## ⛔ 反模式（本项目的禁止事项）
+
+1. **禁止 GTest** — 只用 Catch2（`TEST_CASE`/`REQUIRE`/`SECTION`）
+2. **禁止改 kernel 为 STATIC** — VFS 单例会割裂（Issue #11）
+3. **禁止 System B (`GPGPU_*`)** — 已归档到 `archive/system_b_drivers/`
+4. **禁止跨层耦合** — 驱动代码 (`drv/`) 禁止 `#include "sim/"` 或 `"hal/"`
+5. **禁止 `__attribute__((constructor))`** — 用 `module mod` 符号模式
+6. **禁止直接继承 `Device`** — 它没有可 override 的虚方法，继承 `FileOperations`
+7. **禁止 `plugins.json` 手动维护** — 已废弃，`ModuleLoader` 自动扫描 `plugin_*.so`
+8. **禁止测试中自己写 `main()`** — 用 Catch2 框架的 main
+
+详见各子目录 `AGENTS.md` 及 `docs/00_adr/` 中的 ADR。
 
 ## TaskRunner 集成
 
