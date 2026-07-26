@@ -57,7 +57,7 @@
 | [adr-045](adr-045-priority-scheduling.md) | **优先级调度**（Phase 5.5）| 📋 PROPOSED | 2026-07-09 |
 | [adr-046](adr-046-preemption-context-switch.md) | **抢占与上下文切换**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
 | [adr-047](adr-047-hardware-semaphore-barrier.md) | **Hardware Semaphore & Barrier Model**（Phase 5.5）| 📋 PROPOSED | 2026-07-09 |
-| [adr-048](adr-048-interrupt-event-model.md) | **中断与事件模型**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-048](adr-048-interrupt-event-model.md) | **中断与事件模型**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-049](adr-049-cross-engine-synchronization.md) | **跨引擎同步**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
 | [adr-050](adr-050-indirect-buffer-command-chaining.md) | **Indirect Buffer 命令链**（Phase 5+）| 📋 PROPOSED | 2026-07-09 |
 | [adr-051](adr-051-predication-conditional-execution.md) | **Predication 条件执行**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
@@ -91,10 +91,12 @@
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 44 | 001-010, 015-024, 027, 031-037, 039-044, 059-065 |
-| 📋 PROPOSED | 16 | 011-014, 038, 045-052, 054, 056-058, 069, 072-073 |
+| ✅ 已接受 | 45 | 001-010, 015-024, 027, 031-037, 039-044, 048, 059-065 |
+| 📋 PROPOSED | 15 | 011-014, 038, 045-047, 049-052, 054, 056-058, 069, 072-073 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
 | **总计** | **67** | ADR-001 ~ ADR-073 |
+
+> **2026-07-27 变更**：ADR-048（中断与事件模型）状态升 ✅ 已采纳 (Accepted)。Oracle 评审后修订 7 项：ADR-060 workqueue 集成（异步 dispatch 防死锁）、ADR-062 协调（FENCE_SIGNALED/NOTIFY_INTR 共享 hal_event_signal + workqueue 通道，无独立管线）、唤醒路径补全（interrupt_raise -> workqueue -> handler -> WaitQueue -> WAIT_FENCE 返回）、interrupt_raise 签名按 ADR-023 "追加不改" 追加 interrupt_raise_ex（旧 op deprecated）、交叉引用补全（NOTIFY_INTR->ADR-042, dispatch->ADR-060, events->ADR-062）、ENGINE_HANG 标记 reserved（依赖 ADR-055 Deferred-Never）、Out-of-scope 明确（per-vector masking / MSI-X / coalescing）。
 
 > **2026-07-27 变更**：ADR-044（多通道调度与 HyperQueue 语义）状态升 ✅ 已采纳 (Accepted)。Oracle 评审修订：MAX_QUEUES 修正（实际 1024，非 32）、scanQueues 关系澄清（CHANNEL_SWITCH 吸收 scanQueues 用于 ioctl submitBatch 路径）、线程安全声明（ChannelManager mutex + Issue #21 snapshot 模式）、FSM 图补充 SEMAPHORE 状态、GlobalScheduler 分层关系明确。
 
