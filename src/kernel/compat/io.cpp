@@ -9,7 +9,7 @@
 // they return nullptr (graceful degradation).
 
 #include "linux_compat/io.h"
-#include "sim/bar_sim.h"
+#include "kernel/sim_bar_proxy.h"  // Per ADR-063: proxy, NOT plugins/gpu_driver/sim/bar_sim.h
 
 #include <cstddef>
 

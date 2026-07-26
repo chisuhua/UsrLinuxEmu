@@ -8,7 +8,7 @@
 // not triggered).
 
 #include "linux_compat/dma-mapping.h"
-#include "sim/dma_coherent_pool.h"
+#include "kernel/sim_dma_proxy.h"  // Per ADR-063: proxy, NOT plugins/gpu_driver/sim/dma_coherent_pool.h
 
 #include <cstddef>
 

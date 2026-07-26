@@ -7,6 +7,8 @@
 #include "macros.h"
 #include "memory.h"
 #include "types.h"
+#include "io.h"              // 替代 <linux/io.h> — ioremap/readl/writel
+#include "dma-mapping.h"     // 替代 <linux/dma-mapping.h> — dma_alloc_coherent
 
 // 一些常用的内核头文件别名
 #include "ioctl.h"   // 替代 <linux/ioctl.h>
