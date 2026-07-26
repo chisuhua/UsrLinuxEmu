@@ -265,6 +265,9 @@ set(CATCH2_SIM_TESTS
     test_sim_errno_standalone.cpp
     # hal-iommu-full — IOMMU map/unmap functional tests
     test_hal_iommu_standalone.cpp
+    # Stage 4.1 - VRAM backing store + DMA coherent pool sim (per ADR-069/073)
+    test_vram_store.cpp
+    test_dma_coherent.cpp
 )
 
 # Stage 2.2.4 — net driver plugin test (per ADR-038 D1)

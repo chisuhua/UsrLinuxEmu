@@ -1,0 +1,93 @@
+#include <catch_amalgamated.hpp>
+
+#include <cstring>
+#include <sys/mman.h>
+
+#include "sim/dma_coherent_pool.h"
+
+using namespace usr_linux_emu;
+
+TEST_CASE("dma_coherent - init succeeds", "[sim][dma_coherent]") {
+  DmaCoherentPool pool;
+  REQUIRE(pool.init() == true);
+  REQUIRE(pool.initialized == true);
+  REQUIRE(pool.cpu_pool != nullptr);
+  REQUIRE(pool.cpu_pool != MAP_FAILED);
+}
+
+TEST_CASE("dma_coherent - allocate returns valid cpu_addr and dma_addr", "[sim][dma_coherent]") {
+  DmaCoherentPool pool;
+  pool.init();
+  uint64_t dma_addr = 0;
+  void* cpu_addr = pool.allocate(4096, &dma_addr);
+  REQUIRE(cpu_addr != nullptr);
+  REQUIRE(dma_addr >= DMA_COHERENT_BASE);
+  REQUIRE(dma_addr < DMA_COHERENT_BASE + DMA_COHERENT_SIZE);
+}
+
+TEST_CASE("dma_coherent - multiple allocations get unique dma_addrs", "[sim][dma_coherent]") {
+  DmaCoherentPool pool;
+  pool.init();
+  uint64_t dma1 = 0, dma2 = 0, dma3 = 0;
+  void* p1 = pool.allocate(4096, &dma1);
+  void* p2 = pool.allocate(4096, &dma2);
+  void* p3 = pool.allocate(4096, &dma3);
+  REQUIRE(p1 != nullptr);
+  REQUIRE(p2 != nullptr);
+  REQUIRE(p3 != nullptr);
+  REQUIRE(dma1 != dma2);
+  REQUIRE(dma2 != dma3);
+  REQUIRE(dma1 != dma3);
+}
+
+TEST_CASE("dma_coherent - dma_addr within range [0x1_0000_0000, 0x1_0FFF_FFFF]", "[sim][dma_coherent]") {
+  DmaCoherentPool pool;
+  pool.init();
+  uint64_t dma_addr = 0;
+  pool.allocate(4096, &dma_addr);
+  REQUIRE(dma_addr >= 0x100000000ULL);
+  REQUIRE(dma_addr < 0x100000000ULL + 0x10000000ULL);
+}
+
+TEST_CASE("dma_coherent - cpu_addr is writable and readable", "[sim][dma_coherent]") {
+  DmaCoherentPool pool;
+  pool.init();
+  uint64_t dma_addr = 0;
+  void* cpu_addr = pool.allocate(4096, &dma_addr);
+  uint32_t* ptr = static_cast<uint32_t*>(cpu_addr);
+  ptr[0] = 0xDEADBEEF;
+  ptr[1] = 0xCAFEBABE;
+  REQUIRE(ptr[0] == 0xDEADBEEF);
+  REQUIRE(ptr[1] == 0xCAFEBABE);
+}
+
+TEST_CASE("dma_coherent - free removes allocation", "[sim][dma_coherent]") {
+  DmaCoherentPool pool;
+  pool.init();
+  uint64_t dma_addr = 0;
+  pool.allocate(4096, &dma_addr);
+  REQUIRE(pool.allocations.size() == 1);
+  pool.free(dma_addr);
+  REQUIRE(pool.allocations.empty());
+}
+
+TEST_CASE("dma_coherent - allocate without init returns nullptr", "[sim][dma_coherent]") {
+  DmaCoherentPool pool;
+  uint64_t dma_addr = 0;
+  void* result = pool.allocate(4096, &dma_addr);
+  REQUIRE(result == nullptr);
+}
+
+TEST_CASE("dma_coherent - consecutive allocations are contiguous", "[sim][dma_coherent]") {
+  DmaCoherentPool pool;
+  pool.init();
+  uint64_t dma1 = 0, dma2 = 0;
+  void* p1 = pool.allocate(4096, &dma1);
+  void* p2 = pool.allocate(4096, &dma2);
+  // Bump allocator: dma2 should be dma1 + 4096
+  REQUIRE(dma2 == dma1 + 4096);
+  // cpu pointers should also be contiguous
+  uint8_t* b1 = static_cast<uint8_t*>(p1);
+  uint8_t* b2 = static_cast<uint8_t*>(p2);
+  REQUIRE(b2 == b1 + 4096);
+}

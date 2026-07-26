@@ -20,6 +20,10 @@ add_library(gpu_sim STATIC
     sim_device_va_allocator.cpp
     # C-12 B.4.4 — KFD event signal sim-layer stub (per ADR-062 §D3)
     sim_event.c
+    # Stage 4.1 - VRAM backing store + BAR ioremap sim + DMA coherent pool
+    vram_store.cpp
+    bar_sim.cpp
+    dma_coherent_pool.cpp
 )
 
 set_source_files_properties(
