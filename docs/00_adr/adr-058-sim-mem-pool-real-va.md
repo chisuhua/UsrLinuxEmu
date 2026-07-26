@@ -1,6 +1,6 @@
 # ADR-058: sim_mem_pool Real VA Allocation via gpu_buddy + mmap Backing
 
-**状态**: 📋 PROPOSED（Phase 4）
+**状态**: ✅ 已采纳 (Accepted)
 **日期**: 2026-07-11
 **提案人**: Sisyphus（Phase 4 cu-mempool-alloc-real-va change）
 **关联 ADR**:

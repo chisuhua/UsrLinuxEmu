@@ -67,7 +67,7 @@
 | [adr-055](adr-055-cp-error-handling-engine-recovery.md) | **CP 错误处理与引擎恢复** | ⏸️ Deferred (Never) | 2026-07-09 |
 | [adr-056](adr-056-green-context-pdl.md) | **Green Context / PDL**（Phase 7）| 📋 PROPOSED | 2026-07-09 |
 | [adr-057](adr-057-cp-profiling-hooks-timestamp.md) | **CP Profiling Hooks / Timestamp**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
-| [adr-058](adr-058-sim-mem-pool-real-va.md) | **sim_mem_pool Real VA Allocation via gpu_buddy + mmap Backing**（Phase 4）| 📋 PROPOSED | 2026-07-11 |
+| [adr-058](adr-058-sim-mem-pool-real-va.md) | **sim_mem_pool Real VA Allocation via gpu_buddy + mmap Backing**（Phase 4）| ✅ Accepted | 2026-07-11 |
 | [adr-059](adr-059-kfd-multi-file-integration.md) | **KFD Multi-File Integration Architecture Boundary**（C-12 sub-project, Stage 1.4 后续子项目）| ✅ Accepted | 2026-07-14 |
 | [adr-060](adr-060-message-notification-threading.md) | **Linux Kernel Message Notification Threading for KFD Simulation**（C-12 前置 gate，kernel_thread_base + kernel_workqueue）| ✅ Accepted | 2026-07-14 |
 | [adr-061](adr-061-hal-iommu-extension.md) | **HAL IOMMU ops 扩展**（C-12, B.3.4, hal_iommu_map/unmap）| ✅ 已接受 | 2026-07-15 |
