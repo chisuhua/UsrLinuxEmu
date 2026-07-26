@@ -117,6 +117,38 @@ function(add_catch_sim_test TEST_NAME TEST_SOURCE)
     set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endfunction()
 
+# Stage 4.1 Phase 2 - ① COMPAT layer test function
+# Compiles io.cpp + dma-mapping.cpp directly into the test binary to resolve
+# sim_bar_ioremap/g_dma_pool symbols at link time (avoids runtime unresolved
+# symbol issue with kernel SHARED + gpu_sim STATIC).
+function(add_catch_compat_test TEST_NAME TEST_SOURCE)
+    add_executable(${TEST_NAME}
+        ${TEST_SOURCE}
+        ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+        ${PROJECT_SOURCE_DIR}/src/kernel/compat/io.cpp
+        ${PROJECT_SOURCE_DIR}/src/kernel/compat/dma-mapping.cpp
+    )
+    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim gpu_drv)
+    target_include_directories(${TEST_NAME} PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/include/kernel
+        ${PROJECT_SOURCE_DIR}/include/linux_compat
+        ${PROJECT_SOURCE_DIR}/drivers
+        ${PROJECT_SOURCE_DIR}/plugins
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+        ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+        ${PROJECT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
+    set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endfunction()
+
 # 定义独立测试的列表（包含自定义main函数的测试）
 set(STANDALONE_TESTS
     test_compat_memory.cpp
@@ -267,8 +299,22 @@ set(CATCH2_SIM_TESTS
     test_hal_iommu_standalone.cpp
     # Stage 4.1 - VRAM backing store + DMA coherent pool sim (per ADR-069/073)
     test_vram_store.cpp
-    test_dma_coherent.cpp
 )
+
+# Stage 4.1 Phase 2 - ① COMPAT layer tests (io.cpp + dma-mapping.cpp compiled in)
+# These need the compat impl files linked directly to resolve sim symbols.
+set(CATCH2_COMPAT_TESTS
+    # Stage 4.1 Phase 1 - sim layer tests (still use add_catch_sim_test)
+    test_dma_coherent.cpp
+    # Stage 4.1 Phase 2 - compat API tests
+    test_bar_ioremap.cpp
+)
+
+# Stage 4.1 Phase 2 - Build compat tests (io.cpp + dma-mapping.cpp compiled in)
+foreach(src ${CATCH2_COMPAT_TESTS})
+    get_filename_component(testname ${src} NAME_WE)
+    add_catch_compat_test(${testname} ${src})
+endforeach()
 
 # Stage 2.2.4 — net driver plugin test (per ADR-038 D1)
 set(CATCH2_NET_TESTS

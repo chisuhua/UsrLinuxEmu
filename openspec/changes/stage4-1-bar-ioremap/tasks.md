@@ -15,14 +15,14 @@
 
 ### Phase 2: ① 内核环境模拟层 (compat API)
 
-- [ ] 2.1 Create `include/linux_compat/io.h` — ioremap/iounmap/readl/writel/ioread32/iowrite32 (inline volatile, no HAL)
-- [ ] 2.2 Implement `ioremap` → sim_proxy → sim_bar_ioremap → mmap BAR backing
-- [ ] 2.3 Implement `iounmap` → munmap BAR mapping
-- [ ] 2.4 Create `include/linux_compat/dma-mapping.h` — dma_alloc_coherent/dma_free_coherent/dma_map_single stubs
-- [ ] 2.5 Implement `dma_alloc_coherent` → mmap(MAP_ANONYMOUS|MAP_SHARED) → DmaCoherentPool allocation → return cpu_addr + dma_addr
-- [ ] 2.6 Implement `dma_free_coherent` → munmap + DmaCoherentPool release
-- [ ] 2.7 Implement `dma_map_single` stub (streaming deferred per ADR-073 D6, condition 2/3 not triggered)
-- [ ] 2.8 Verify API signatures match Linux 6.12 LTS (include/linux/io.h + include/linux/dma-mapping.h)
+- [x] 2.1 Create `include/linux_compat/io.h` — ioremap/iounmap/readl/writel/ioread32/iowrite32 (inline volatile, no HAL)
+- [x] 2.2 Implement `ioremap` → sim_proxy → sim_bar_ioremap → mmap BAR backing
+- [x] 2.3 Implement `iounmap` → munmap BAR mapping
+- [x] 2.4 Create `include/linux_compat/dma-mapping.h` — dma_alloc_coherent/dma_free_coherent/dma_map_single stubs
+- [x] 2.5 Implement `dma_alloc_coherent` → mmap(MAP_ANONYMOUS|MAP_SHARED) → DmaCoherentPool allocation → return cpu_addr + dma_addr
+- [x] 2.6 Implement `dma_free_coherent` → munmap + DmaCoherentPool release
+- [x] 2.7 Implement `dma_map_single` stub (streaming deferred per ADR-073 D6, condition 2/3 not triggered)
+- [x] 2.8 Verify API signatures match Linux 6.12 LTS (include/linux/io.h + include/linux/dma-mapping.h)
 
 ### Phase 3: ② 可移植驱动代码 (HAL + driver)
 
