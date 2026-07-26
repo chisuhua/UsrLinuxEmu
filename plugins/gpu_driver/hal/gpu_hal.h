@@ -10,10 +10,15 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Forward declaration: driver device type (opaque in HAL interface).
+ * In C++ this maps to class GpgpuDevice via reinterpret_cast at call sites. */
+struct gpgpu_device;
 
 struct gpu_hal_ops {
   /* HAL 实现上下文（用户态 → sim state，内核态 → hw regs base） */
@@ -62,6 +67,17 @@ struct gpu_hal_ops {
    * Returns 0 on success, -EINVAL on invalid args.
    */
   int (*event_notify)(void *ctx, uint32_t event_id);
+
+  /* ── Stage 4.1: BAR2 VRAM mmap path (ADR-064 D2, ADR-069 D4) ── */
+
+  /* mem_map_bo: map a BO offset within BAR2 VRAM to userspace.
+   * @dev:       driver device (opaque, cast from GpgpuDevice*)
+   * @bo_offset: offset within the VRAM backing store
+   * @size:      requested mapping size in bytes
+   * @user_map:  [out] pointer to the mapped userspace address
+   * Returns 0 on success, negative errno on failure. */
+  int (*mem_map_bo)(struct gpgpu_device *dev, uint64_t bo_offset,
+                    size_t size, void **user_map);
 };
 
 /* ── inline 包装函数：零开销简化调用 ──────────────────────── */

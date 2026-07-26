@@ -707,7 +707,29 @@ void* GpgpuDevice::mmap(void* addr, size_t length, int prot, int flags, int fd, 
   (void)flags;
   (void)fd;
 
-  // BO 映射: offset 即为 handle。安全：max_handles_=65535 < QUEUE_RING_MMAP_BASE=0x10000
+  /* Stage 4.1: BAR2 VRAM path (ADR-069 D4) */
+  uint64_t bar2_offset = static_cast<uint64_t>(offset);
+  if (bar2_offset >= BAR2_OFFSET_BASE &&
+      bar2_offset < BAR2_OFFSET_BASE + BAR2_OFFSET_SIZE) {
+    uint64_t bo_offset = bar2_offset - BAR2_OFFSET_BASE;
+    if (bo_offset + length > BAR2_OFFSET_SIZE) {
+      std::cerr << "[GpgpuDevice] mmap BAR2: out of range (bo_offset=0x"
+                << std::hex << bo_offset << " length=" << length << ")\n";
+      return MAP_FAILED;
+    }
+    void* mapping = nullptr;
+    int ret = hal_->mem_map_bo(
+        reinterpret_cast<struct gpgpu_device*>(this),
+        bo_offset, length, &mapping);
+    if (ret < 0 || !mapping) {
+      std::cerr << "[GpgpuDevice] mmap BAR2: mem_map_bo failed (ret=" << ret
+                << ")\n";
+      return MAP_FAILED;
+    }
+    return mapping;
+  }
+
+  /* BO 映射: offset 即为 handle。安全：max_handles_=65535 < QUEUE_RING_MMAP_BASE=0x10000 */
   auto bo_it = bo_map_.find(static_cast<u32>(offset));
   if (bo_it != bo_map_.end()) {
     if (length > bo_it->second.size) {

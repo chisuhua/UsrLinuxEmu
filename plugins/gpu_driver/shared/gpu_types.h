@@ -66,3 +66,7 @@ struct gpu_gpfifo_entry {
 /* Handle types for VA Space and Queue abstractions */
 typedef u64 gpu_va_space_handle_t; /* VA Space handle */
 typedef u64 gpu_queue_handle_t;    /* Queue handle */
+
+/* Stage 4.1: BAR2 VRAM offset range (ADR-064 D2, ADR-069 D4) */
+#define BAR2_OFFSET_BASE  0x200000000ULL  /* 8GB offset (VRAM BAR2 typical base) */
+#define BAR2_OFFSET_SIZE  0x10000000ULL   /* 256MB */

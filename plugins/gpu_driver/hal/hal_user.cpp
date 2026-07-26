@@ -215,6 +215,12 @@ static int user_event_notify(void *ctx, uint32_t event_id) {
   return 0;
 }
 
+static int user_mem_map_bo(struct gpgpu_device* dev, uint64_t bo_offset,
+                           size_t size, void** user_map) {
+  (void)dev; (void)bo_offset; (void)size; (void)user_map;
+  return -ENOSYS;
+}
+
 /* ── 公开初始化函数 ────────────────────────────────── */
 
 void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
@@ -254,6 +260,7 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   hal->event_signal = user_event_signal;
   hal->event_wait = user_event_wait;
   hal->event_notify = user_event_notify;
+  hal->mem_map_bo = user_mem_map_bo;
 }
 
 void hal_user_destroy(struct hal_user_context *ctx) {

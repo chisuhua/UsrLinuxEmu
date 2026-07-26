@@ -26,13 +26,13 @@
 
 ### Phase 3: ② 可移植驱动代码 (HAL + driver)
 
-- [ ] 3.1 Extend `plugins/gpu_driver/hal/gpu_hal.h` — add `mem_map_bo` as 15th fn-ptr: `int (*mem_map_bo)(struct gpgpu_device*, uint64_t bo_offset, size_t size, void **user_map)`
-- [ ] 3.2 Implement `hal_mock.cpp::mem_map_bo` — BAR2 offset → VRAM backing store mmap
-- [ ] 3.3 Add `hal_user.cpp::mem_map_bo` stub (real hardware, deferred)
-- [ ] 3.4 Add `plugins/gpu_driver/shared/gpu_types.h` BAR2_OFFSET_BASE + BAR2_OFFSET_SIZE macros
-- [ ] 3.5 Implement `GpgpuDevice::mmap` BAR2 path: `HAL.mem_map_bo(this, bo_offset, size, &mapping)` per ADR-069 D4
-- [ ] 3.6 Migrate drv/ heap offset dereferences to ioremap/readl/writel pattern (BAR0 register access only; BAR2 stays mmap)
-- [ ] 3.7 Verify `drv/` directory: `grep -r '#include.*sim/\|hal_user'` output empty (HAL boundary, ADR-023 D5)
+- [x] 3.1 Extend `plugins/gpu_driver/hal/gpu_hal.h` — add `mem_map_bo` as 15th fn-ptr: `int (*mem_map_bo)(struct gpgpu_device*, uint64_t bo_offset, size_t size, void **user_map)`
+- [x] 3.2 Implement `hal_mock.cpp::mem_map_bo` — BAR2 offset → VRAM backing store mmap
+- [x] 3.3 Add `hal_user.cpp::mem_map_bo` stub (real hardware, deferred)
+- [x] 3.4 Add `plugins/gpu_driver/shared/gpu_types.h` BAR2_OFFSET_BASE + BAR2_OFFSET_SIZE macros
+- [x] 3.5 Implement `GpgpuDevice::mmap` BAR2 path: `HAL.mem_map_bo(this, bo_offset, size, &mapping)` per ADR-069 D4
+- [x] 3.6 Migrate drv/ heap offset dereferences to ioremap/readl/writel pattern (BAR0 register access only; BAR2 stays mmap)
+- [x] 3.7 Verify `drv/` directory: `grep -r '#include.*sim/\|hal_user'` output empty (HAL boundary, ADR-023 D5)
 
 ### Phase 4: 测试
 
