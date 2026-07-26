@@ -1,10 +1,10 @@
 {
   "roadmap_path": "roadmap.md",
-  "stage": "stage-3",
-  "committed_at": "2026-07-20",
-  "summary": "Stage 1+2 已达成，Stage 3 进行中：CUDA E2E ✅、sanitizer infra ✅、L1↔L2 bridge ✅、stage3-2 hotpath ✅（PR #30, PASS 2/3），下一步：stage3-3 错误处理审计 / stage3-4 文档完善",
+  "stage": "stage-4",
+  "committed_at": "2026-07-26",
+  "summary": "Stage 3 v1.0 stable ✅; Stage 4 启动: ADR-069/072/073 Accepted + stage4-1-bar-ioremap approved",
   "active_changes": [],
-  "adr_count": 41,
+  "adr_count": 68,
   "adrs": {
     "foundational": [
       "ADR-036",
@@ -13,9 +13,12 @@
       "ADR-035"
     ],
     "staging": [
-      "ADR-064"
+      "ADR-069",
+      "ADR-072",
+      "ADR-073"
     ],
-    "total_accepted": 41,
-    "last_adr": "ADR-064"
-  }
+    "total_accepted": 68,
+    "last_adr": "ADR-073-dma-coherent-emulation"
+  },
+  "approved_proposals": 1
 }

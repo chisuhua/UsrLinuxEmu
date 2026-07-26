@@ -1,14 +1,8 @@
 {
-  "active_changes": 7,
+  "active_changes": 1,
   "changes": [
-    "hal-event-signal",
-    "hal-iommu-full",
-    "iommu-invalidate-hal",
-    "iommu-mmu-notifier",
-    "kernel-tests",
-    "kfd-multi-file-complete",
-    "linux-compat-tests"
+    "stage4-1-bar-ioremap"
   ],
   "phase": "plan-done",
-  "timestamp": "2026-07-23T20:21:16+08:00"
+  "timestamp": "2026-07-26T13:21:17+08:00"
 }
