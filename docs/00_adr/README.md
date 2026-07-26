@@ -63,7 +63,7 @@
 | [adr-051](adr-051-predication-conditional-execution.md) | **Predication 条件执行**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
 | [adr-052](adr-052-aql-pm4-native-support.md) | **AQL/PM4 Native 支持**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
 | [adr-053](adr-053-doorbell-aggregation-oversubscription.md) | **Doorbell 聚合与过订阅** | ⏸️ Deferred (Never) | 2026-07-09 |
-| [adr-054](adr-054-mqd-hqd-state-management.md) | **MQD/HQD 状态管理**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-054](adr-054-mqd-hqd-state-management.md) | **MQD/HQD 状态管理**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-055](adr-055-cp-error-handling-engine-recovery.md) | **CP 错误处理与引擎恢复** | ⏸️ Deferred (Never) | 2026-07-09 |
 | [adr-056](adr-056-green-context-pdl.md) | **Green Context / PDL**（Phase 7）| 📋 PROPOSED | 2026-07-09 |
 | [adr-057](adr-057-cp-profiling-hooks-timestamp.md) | **CP Profiling Hooks / Timestamp**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
@@ -91,14 +91,16 @@
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 45 | 001-010, 015-024, 027, 031-037, 039-044, 048, 059-065 |
-| 📋 PROPOSED | 15 | 011-014, 038, 045-047, 049-052, 054, 056-058, 069, 072-073 |
+| ✅ 已接受 | 46 | 001-010, 015-024, 027, 031-037, 039-044, 048, 054, 059-065 |
+| 📋 PROPOSED | 14 | 011-014, 038, 045-047, 049-052, 056-058, 069, 072-073 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
 | **总计** | **67** | ADR-001 ~ ADR-073 |
 
 > **2026-07-27 变更**：ADR-048（中断与事件模型）状态升 ✅ 已采纳 (Accepted)。Oracle 评审后修订 7 项：ADR-060 workqueue 集成（异步 dispatch 防死锁）、ADR-062 协调（FENCE_SIGNALED/NOTIFY_INTR 共享 hal_event_signal + workqueue 通道，无独立管线）、唤醒路径补全（interrupt_raise -> workqueue -> handler -> WaitQueue -> WAIT_FENCE 返回）、interrupt_raise 签名按 ADR-023 "追加不改" 追加 interrupt_raise_ex（旧 op deprecated）、交叉引用补全（NOTIFY_INTR->ADR-042, dispatch->ADR-060, events->ADR-062）、ENGINE_HANG 标记 reserved（依赖 ADR-055 Deferred-Never）、Out-of-scope 明确（per-vector masking / MSI-X / coalescing）。
 
 > **2026-07-27 变更**：ADR-044（多通道调度与 HyperQueue 语义）状态升 ✅ 已采纳 (Accepted)。Oracle 评审修订：MAX_QUEUES 修正（实际 1024，非 32）、scanQueues 关系澄清（CHANNEL_SWITCH 吸收 scanQueues 用于 ioctl submitBatch 路径）、线程安全声明（ChannelManager mutex + Issue #21 snapshot 模式）、FSM 图补充 SEMAPHORE 状态、GlobalScheduler 分层关系明确。
+
+> **2026-07-27 变更**：ADR-054（MQD/HQD 状态管理）状态升 ✅ 已采纳 (Accepted)。Oracle 评审后修订 6 项：D0 Memory Placement 新增（MQD 在 BAR2/DMA coherent pool，HQD 控制位为 BAR0 MMIO 寄存器，引用 ADR-069/073）、mqd.h 从 sim/hardware/ 迁移到 shared/（②③ 共享契约，② 已有 mqd 指针）、D3 HQD 语义修订（BAR0 writel/readl 访问，移除"指针就是 HQD"）、D4 状态转移表新增（IDLE/ACTIVE/PREEMPTED × activate/deactivate/preempt/destroy）、D5 wptr/rptr 所有权新增（② 写 wptr、③ 写 rptr，对齐 ADR-024 ring buffer 语义）、交叉引用补全（ADR-069 BAR、ADR-073 DMA coherent、ADR-044 ChannelManager 关系）。
 
 > **2026-07-11 变更**：ADR-058 新增 — sim_mem_pool Real VA Allocation（Phase 4 cu-mempool-alloc-real-va change 架构基础）。镜像 Nvidia UVM `uvm_range_allocator` per-pool + per-device gpu_buddy + mmap backing at pool create 模式。
 >
