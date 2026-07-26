@@ -36,13 +36,13 @@
 
 ### Phase 4: 测试
 
-- [ ] 4.1 Create `tests/test_bar_ioremap.cpp` (Catch2) — TEST_CASE "ioremap/writel/readl roundtrip": verify writel(0xDEADBEEF) → readl returns 0xDEADBEEF
-- [ ] 4.2 Create `tests/test_dma_coherent.cpp` (Catch2) — TEST_CASE "dma_alloc_coherent allocates and returns unique dma_addr": verify cpu_addr != NULL, dma_addr ∈ [0x1_0000_0000, 0x1_0FFF_FFFF]
-- [ ] 4.3 Add `test_bar_ioremap_standalone` + `test_dma_coherent_standalone` to `tests/CMakeLists.txt`
-- [ ] 4.4 Run full ctest: `cd build && ctest --output-on-failure` — expect all existing + 2 new tests PASS
-- [ ] 4.5 Run docs-audit: `tools/docs-audit.sh --strict` — expect PASS
-- [ ] 4.6 Verify portability: compile ② driver code with only #include path adjustments as Linux 6.12 LTS kernel module (ADR-072 L2)
-- [ ] 4.7 Performance benchmark: `readl`/`writel` roundtrip latency ≤ Stage 3 heap offset × 120%
+- [x] 4.1 Create `tests/test_bar_ioremap.cpp` (Catch2) — TEST_CASE "ioremap/writel/readl roundtrip": verify writel(0xDEADBEEF) → readl returns 0xDEADBEEF
+- [x] 4.2 Create `tests/test_dma_coherent.cpp` (Catch2) — TEST_CASE "dma_alloc_coherent allocates and returns unique dma_addr": verify cpu_addr != NULL, dma_addr ∈ [0x1_0000_0000, 0x1_0FFF_FFFF]
+- [x] 4.3 Add `test_bar_ioremap_standalone` + `test_dma_coherent_standalone` to `tests/CMakeLists.txt`
+- [x] 4.4 Run full ctest: `cd build && ctest --output-on-failure` — expect all existing + 2 new tests PASS
+- [x] 4.5 Run docs-audit: `tools/docs-audit.sh --strict` — expect PASS
+- [x] 4.6 Verify portability: compile ② driver code with only #include path adjustments as Linux 6.12 LTS kernel module (ADR-072 L2)
+- [x] 4.7 Performance benchmark: `readl`/`writel` roundtrip latency ≤ Stage 3 heap offset × 120%
 
 ## 依赖关系
 
