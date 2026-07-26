@@ -66,7 +66,7 @@
 | [adr-054](adr-054-mqd-hqd-state-management.md) | **MQD/HQD 状态管理**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-055](adr-055-cp-error-handling-engine-recovery.md) | **CP 错误处理与引擎恢复** | ⏸️ Deferred (Never) | 2026-07-09 |
 | [adr-056](adr-056-green-context-pdl.md) | **Green Context / PDL**（Phase 7）| 📋 PROPOSED | 2026-07-09 |
-| [adr-057](adr-057-cp-profiling-hooks-timestamp.md) | **CP Profiling Hooks / Timestamp**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-057](adr-057-cp-profiling-hooks-timestamp.md) | **CP Profiling Hooks / Timestamp**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-058](adr-058-sim-mem-pool-real-va.md) | **sim_mem_pool Real VA Allocation via gpu_buddy + mmap Backing**（Phase 4）| ✅ Accepted | 2026-07-11 |
 | [adr-059](adr-059-kfd-multi-file-integration.md) | **KFD Multi-File Integration Architecture Boundary**（C-12 sub-project, Stage 1.4 后续子项目）| ✅ Accepted | 2026-07-14 |
 | [adr-060](adr-060-message-notification-threading.md) | **Linux Kernel Message Notification Threading for KFD Simulation**（C-12 前置 gate，kernel_thread_base + kernel_workqueue）| ✅ Accepted | 2026-07-14 |
@@ -91,10 +91,12 @@
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 46 | 001-010, 015-024, 027, 031-037, 039-044, 048, 054, 059-065 |
-| 📋 PROPOSED | 14 | 011-014, 038, 045-047, 049-052, 056-058, 069, 072-073 |
+| ✅ 已接受 | 47 | 001-010, 015-024, 027, 031-037, 039-044, 048, 054, 057, 059-065 |
+| 📋 PROPOSED | 13 | 011-014, 038, 045-047, 049-052, 056, 058, 069, 072-073 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
 | **总计** | **67** | ADR-001 ~ ADR-073 |
+
+> **2026-07-27 变更**：ADR-057（CP Profiling Hooks / Timestamp）状态升 ✅ 已采纳 (Accepted)。Oracle 评审后修订 4 项：D5 暴露路径决策新增（Phase 5 test backdoor via sim C-ABI，Phase 5.5 延后 ioctl 暴露）、D3 ABI 影响分析新增（gpu_gpfifo_entry 76→84 字节，方案 1 复用 _reserved/semaphore_va vs 方案 2 新增字段，选方案 2 理由）、D2 resolve 语义约束新增（单线程同步 sim，resolve 必须在 submit 返回后调用，timeout_ms 死锁逃逸）、D4 条件标注（依赖 ADR-048，同批 Accepted）。
 
 > **2026-07-27 变更**：ADR-048（中断与事件模型）状态升 ✅ 已采纳 (Accepted)。Oracle 评审后修订 7 项：ADR-060 workqueue 集成（异步 dispatch 防死锁）、ADR-062 协调（FENCE_SIGNALED/NOTIFY_INTR 共享 hal_event_signal + workqueue 通道，无独立管线）、唤醒路径补全（interrupt_raise -> workqueue -> handler -> WaitQueue -> WAIT_FENCE 返回）、interrupt_raise 签名按 ADR-023 "追加不改" 追加 interrupt_raise_ex（旧 op deprecated）、交叉引用补全（NOTIFY_INTR->ADR-042, dispatch->ADR-060, events->ADR-062）、ENGINE_HANG 标记 reserved（依赖 ADR-055 Deferred-Never）、Out-of-scope 明确（per-vector masking / MSI-X / coalescing）。
 
