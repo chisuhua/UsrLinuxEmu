@@ -1,10 +1,11 @@
 # ADR-044: 多通道调度与 HyperQueue 语义
 
-**状态**: 📋 PROPOSED（Phase 5+，不阻塞 Phase 4）
-**日期**: 2026-07-09
+**状态**: ✅ 已采纳 (Accepted)（Phase 5+，不阻塞 Phase 4）
+**日期**: 2026-07-27
 **提案人**: Sisyphus（GPU 命令处理器架构完整性审查）
 **关联 ADR**: ADR-021 (Hardware Puller), ADR-024 (User Mode Queue), ADR-036 (3-way separation)
 **关联 Change**: 无（Phase 5 规划）
+**修订**: 2026-07-27 - Oracle 评审后修订 (MAX_QUEUES 修正、scanQueues 关系澄清、线程安全声明、FSM 图补 SEMAPHORE)
 
 ---
 
@@ -18,7 +19,7 @@ runLoop() → 逐条 fetch/decode/dispatch → handleComplete()
 → 下一 batch
 ```
 
-所有 32 个队列（`MAX_QUEUES=32`）共享同一个 Puller 实例，但 Puller 一次只处理一个 batch。没有通道切换、时间片、或调度公平性机制。
+当前 Puller 的 `doorbell_emu.h` 定义 `MAX_QUEUES = 1024`（doorbell 通知槽数），但 `ChannelManager` 的 `MAX_CHANNELS = 32` 是**有意为之的 HyperQueue 对齐**：对应 NVIDIA Kepler+ 的 32 路硬件工作队列复用，而非 doorbell 槽位的当前限制。Phase 5 实现时 ring-buffer 队列本身成为 channel，`MAX_CHANNELS` 约束的是 Puller 可同时调度的活跃通道数，与 doorbell 的 1024 槽不冲突。
 
 真实 GPU 的多队列调度远比这复杂：
 
@@ -56,7 +57,7 @@ struct ChannelState {
 
 class ChannelManager {
 public:
-    static constexpr uint32_t MAX_CHANNELS = 32;  // 对应 MAX_QUEUES
+    static constexpr uint32_t MAX_CHANNELS = 32;  // HyperQueue 对齐（非 MAX_QUEUES 限制，doorbell MAX_QUEUES=1024）
     static constexpr uint32_t TIME_SLICE_ENTRIES = 1024;  // 每时间片最多消费 1024 条 entry
 
     int registerChannel(uint32_t channel_id, GpuQueueEmu* queue);
@@ -97,6 +98,59 @@ HardwarePullerEmu::runLoop():
       ch.state = IDLE
 ```
 
+### D2.1: 与 scanQueues 的关系
+
+`HardwarePullerEmu` 当前（Phase 4 前已存在）有 `scanQueues()` 方法，用于在 ring-buffer 队列路径上轮询已注册 `GpuQueueEmu` 队列，找到有 pending entry 的队列。
+
+Phase 5 引入 `ChannelManager` 后，**`CHANNEL_SWITCH` 状态替代/吸收 scanQueues 用于 ioctl submitBatch 路径**：
+
+- **ring-buffer 队列路径**：现有 `scanQueues()` 继续用于 `GpuQueueEmu` 的 ring buffer 消费。Phase 5 中这些 ring-buffer 队列本身成为 channel（`ChannelState.queue` 指向 `GpuQueueEmu*`），`scanQueues` 的轮询逻辑被 `ChannelManager::nextReadyChannel()` 的 Round-Robin 取代。
+- **ioctl submitBatch 路径**：`submitBatch()` 直接注册 channel，不再走 `scanQueues`。`CHANNEL_SWITCH` 负责通道选择，替代 scanQueues 的"扫描所有队列找 pending"线性查找。
+- **迁移策略**：Phase 5 实现时 `scanQueues()` 可保留为 `CHANNEL_SWITCH` 内部实现细节（scanQueues 找到 queue_id -> 映射到 channel_id），或重构为 `ChannelManager::nextReadyChannel()` 的直接调用。前者向后兼容，后者更清晰。
+
+### D2.2: ChannelManager 线程安全
+
+`ChannelManager` 跨两个线程上下文：
+
+| 线程 | 操作 | ChannelManager 方法 |
+|------|------|---------------------|
+| **ioctl 线程** | 写入：注册通道、提交 batch | `registerChannel()`, `submitBatch()` |
+| **Puller 线程** | 读取：选择就绪通道、yield 通道 | `nextReadyChannel()`, `yieldChannel()` |
+
+**约束**：ioctl 线程的写操作（register/submit）必须与 Puller 线程的读操作（nextReadyChannel/yieldChannel）互斥保护。
+
+**实现模式**：采用 Issue #21 的 snapshot 模式。`HardwarePullerEmu::scanQueues()` 在 Issue #21 修复中已使用 `mutex_` 下的 snapshot 模式（拷贝 `(qid, queue*)` 对），避免在遍历过程中被并发 register/unregister 修改。`ChannelManager` 应遵循同一模式：
+
+```cpp
+// ChannelManager 内部
+std::mutex channel_mutex_;
+
+std::optional<ChannelState*> nextReadyChannel() {
+    std::lock_guard<std::mutex> lock(channel_mutex_);
+    // snapshot：拷贝 channel 列表副本后再遍历选择
+    // 避免遍历期间 registerChannel/submitBatch 修改 channel_states_
+}
+```
+
+参考 Issue #21 regression test（`test_hardware_puller_emu_concurrent_regression_standalone.cpp`）验证 snapshot 模式在并发 register/unregister 下的安全性。
+
+### D2.3: 与 GlobalScheduler 的分层关系
+
+`ChannelManager`（本 ADR 引入）与 `GlobalScheduler`（已存在）是两个不同层次的调度抽象，无背压交互：
+
+| 层次 | 组件 | 职责 | 时机 |
+|------|------|------|------|
+| **Fetch-pre 仲裁** | `ChannelManager` | 多通道 Round-Robin 选择 + 时间片切换 | `CHANNEL_SWITCH` 状态：决定**从哪个通道 fetch 下一条 entry** |
+| **Post-decode 引擎派发** | `GlobalScheduler` | 引擎类型选择（COMPUTE/COPY/GRAPHICS）+ 入队 | `SCHEDULE` 状态：决定 decode 后的 entry **派发到哪个引擎** |
+
+`CHANNEL_SWITCH` 是 **fetch 前的通道仲裁**，`GlobalScheduler` 是 **decode 后的引擎派发**。两者正交：
+
+```
+CHANNEL_SWITCH (选通道) -> FETCH -> DECODE -> SCHEDULE -> GlobalScheduler.enqueue(entry, selectEngine(entry))
+```
+
+`ChannelManager` 不产生 backpressure 给 `GlobalScheduler`，反之亦然。`GlobalScheduler` 的队列溢出不影响 `ChannelManager` 的通道切换决策。
+
 ### D3: 不实现（Phase 5 scope 外）
 
 | 概念 | 理由 |
@@ -109,13 +163,16 @@ HardwarePullerEmu::runLoop():
 
 ### D4: Puller FSM 变更
 
-在现有 7 状态基础上新增 `CHANNEL_SWITCH` 状态：
+在现有 7 状态基础上新增 `CHANNEL_SWITCH` 状态。当前 Puller FSM（per `hardware_puller_emu.h`）包含 7 状态：`IDLE -> FETCH -> DECODE -> SCHEDULE -> DISPATCH -> SEMAPHORE -> COMPLETE`。`SEMAPHORE` 状态在 `DECODE` 之后、`SCHEDULE` 之前触发（当 entry 的 `release` 标志为 true 时），用于等待信号量。Phase 5 新增 `CHANNEL_SWITCH` 作为通道调度入口：
 
 ```
-IDLE → CHANNEL_SWITCH（新）→ FETCH → DECODE → SCHEDULE → DISPATCH → COMPLETE
-                                       ↑                                    │
-                                       └──── 时间片耗尽则回 CHANNEL_SWITCH ──┘
+IDLE -> CHANNEL_SWITCH（新）-> FETCH -> DECODE -> SEMAPHORE（条件）-> SCHEDULE -> DISPATCH -> COMPLETE
+                                        │                     ↑                                     │
+                                        └── 无 release ────────┘                                     │
+                                                               └──── 时间片耗尽则回 CHANNEL_SWITCH ──┘
 ```
+
+`SEMAPHORE` 状态流程：`DECODE` 后检查 `entry.release` 标志 -> 若 true 则进入 `SEMAPHORE` 等待信号量 -> 信号量满足后进入 `SCHEDULE` -> `DISPATCH`。若 `release` 为 false，直接 `DECODE -> SCHEDULE`。
 
 `CHANNEL_SWITCH` 状态职责：
 1. 从 `ChannelManager::nextReadyChannel()` 获取下一就绪通道
