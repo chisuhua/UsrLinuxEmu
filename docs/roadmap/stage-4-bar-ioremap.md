@@ -221,7 +221,7 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | [ADR-040](../00_adr/adr-040-puller-fence-completion.md) | Puller Fence Completion 回调 | 4.2 | ✅ Accepted |
 | [ADR-041](../00_adr/adr-041-graph-node-to-gpfifo-serialization.md) | Graph→GPFIFO 序列化 | 4.2 | ✅ Accepted |
 | [ADR-043](../00_adr/adr-043-cp-portability-boundary.md) | CP 可移植性边界 | 4.2 | ✅ Accepted |
-| [ADR-058](../00_adr/adr-058-sim-mem-pool-real-va.md) | sim_mem_pool Real VA | 4.2 | 📋 PROPOSED |
+| [ADR-058](../00_adr/adr-058-sim-mem-pool-real-va.md) | sim_mem_pool Real VA | 4.2 | ✅ Accepted |
 | [ADR-042](../00_adr/adr-042-pushbuffer-method-encoding.md) | Method 编解码 | 4.3 | 📋 PROPOSED |
 | [ADR-044](../00_adr/adr-044-multi-channel-hyperqueue-scheduling.md) | 多通道 HyperQueue | 4.3 | 📋 PROPOSED |
 | [ADR-048](../00_adr/adr-048-interrupt-event-model.md) | 中断/事件模型 | 4.3 | 📋 PROPOSED |
