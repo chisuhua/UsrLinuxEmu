@@ -13,6 +13,7 @@
 #include <functional>
 #include <pthread.h>
 #include "kernel/thread/kernel_workqueue.h"
+#include "sim/vram_store.h"
 
 /* Forward declarations for C-12 B.3.4 + B.4.4 integration (Agent A's kfd_events + sim layer)
  * These are resolved at link time by kfd_events.c and sim_event.c respectively.
@@ -227,6 +228,19 @@ static int mock_event_notify(void *ctx, uint32_t event_id) {
   return 0;
 }
 
+/* ── Stage 4.1: BAR2 VRAM mmap (ADR-064 D2, ADR-069 D4) ──── */
+
+static int mock_mem_map_bo(struct gpgpu_device* dev, uint64_t bo_offset,
+                           size_t size, void** user_map) {
+    (void)dev;
+    (void)size;
+    auto* store = &usr_linux_emu::g_vram_store;
+    if (!store->initialized) return -ENODEV;
+
+    *user_map = static_cast<uint8_t*>(store->pool_backing) + bo_offset;
+    return 0;
+}
+
 /* ── 公开初始化函数 ────────────────────────────────── */
 
 void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
@@ -263,6 +277,7 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
   hal->event_signal = mock_event_signal;
   hal->event_wait = mock_event_wait;
   hal->event_notify = mock_event_notify;
+  hal->mem_map_bo = mock_mem_map_bo;
 }
 
 void hal_mock_destroy(struct hal_mock_state *state) {

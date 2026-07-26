@@ -97,7 +97,7 @@ endfunction()
 # Define Catch2 sim test function (links kernel + gpu_sim + gpu_drv)
 function(add_catch_sim_test TEST_NAME TEST_SOURCE)
     add_executable(${TEST_NAME} ${TEST_SOURCE} ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp)
-    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim gpu_drv)
+    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim gpu_drv gpu_hal gpu_hal_mock)
     target_include_directories(${TEST_NAME} PRIVATE
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/include/kernel
@@ -112,6 +112,7 @@ function(add_catch_sim_test TEST_NAME TEST_SOURCE)
         ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
         ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
         ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+        ${PROJECT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
     set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
@@ -128,7 +129,7 @@ function(add_catch_compat_test TEST_NAME TEST_SOURCE)
         ${PROJECT_SOURCE_DIR}/src/kernel/compat/io.cpp
         ${PROJECT_SOURCE_DIR}/src/kernel/compat/dma-mapping.cpp
     )
-    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim gpu_drv)
+    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim gpu_drv gpu_hal gpu_hal_mock)
     target_include_directories(${TEST_NAME} PRIVATE
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/include/kernel
@@ -308,6 +309,8 @@ set(CATCH2_COMPAT_TESTS
     test_dma_coherent.cpp
     # Stage 4.1 Phase 2 - compat API tests
     test_bar_ioremap.cpp
+    # Stage 4.1 Phase 3 - HAL mem_map_bo driver layer test
+    test_hal_mem_map_bo.cpp
 )
 
 # Stage 4.1 Phase 2 - Build compat tests (io.cpp + dma-mapping.cpp compiled in)
@@ -483,6 +486,8 @@ target_include_directories(test_hal_event_signal_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_compile_options(test_hal_event_signal_standalone PRIVATE -Wno-implicit-function-declaration)
@@ -693,7 +698,7 @@ set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
     PROPERTIES LANGUAGE CXX
 )
-target_link_libraries(test_kfd_events_tsan_standalone PRIVATE kernel)
+target_link_libraries(test_kfd_events_tsan_standalone PRIVATE kernel gpu_sim)
 target_include_directories(test_kfd_events_tsan_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/kernel
@@ -701,6 +706,8 @@ target_include_directories(test_kfd_events_tsan_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 target_compile_options(test_kfd_events_tsan_standalone PRIVATE -Wno-implicit-function-declaration)
@@ -751,7 +758,7 @@ set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
     PROPERTIES LANGUAGE CXX
 )
-target_link_libraries(test_hal_event_standalone PRIVATE kernel gpu_hal_mock gpu_hal gpu_core ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_hal_event_standalone PRIVATE kernel gpu_hal_mock gpu_hal gpu_core gpu_sim ${CMAKE_THREAD_LIBS_INIT})
 find_package(Threads REQUIRED)
 target_link_libraries(test_hal_event_standalone PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(test_hal_event_standalone PRIVATE

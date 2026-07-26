@@ -28,6 +28,11 @@ set_target_properties(gpu_hal_mock PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(gpu_hal_mock PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/kernel
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
 )
 
 # HAL 接口测试（仅在影子编译启用时）
