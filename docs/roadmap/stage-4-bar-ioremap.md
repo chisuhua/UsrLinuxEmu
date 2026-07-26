@@ -6,7 +6,7 @@
 > **关联 ADR**: [ADR-064](../00_adr/adr-064-memory-model-staging.md) Decision 3（Stage 4 触发条件） + [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md)（BAR/ioremap 仿真架构） + [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md)（DMA 一致性仿真） + [ADR-040~057](../00_adr/README.md)（GPU CP Blueprint）
 > **关联蓝图**: [blueprint.md](blueprint.md) §③ 硬件模拟（成熟态）
 > **维护者**: UsrLinuxEmu Architecture Team
-> **最后更新**: 2026-07-25
+> **最后更新**: 2026-07-27（4.2 closeout: 确认已交付 + roadmap 刷新）
 
 ---
 
@@ -95,7 +95,9 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 
 ---
 
-## 子阶段 4.2 — GPU CP Phase 4: 图启动真实化
+## 子阶段 4.2 — GPU CP Phase 4: 图启动真实化 ✅
+
+**状态**: ✅ 已完成（2026-07-09~11，Stage 3 窗口内交付，2026-07-27 roadmap 刷新确认）
 
 **目标**: 完成 GPU 图启动（Graph Launch）的真实化实现，建立命令处理器可移植性边界。
 
@@ -103,11 +105,19 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 
 ### 关键交付
 
-- [ ] HardwarePullerEmu fence completion 回调机制（ADR-040）
-- [ ] Graph Node → GPFIFO Entry 序列化（ADR-041）
-- [ ] **按 ADR-043 实现 CP 可移植性边界**：`drv/` 与 `sim/` 之间的 CP API 白名单落地（ADR-043 已 ✅ Accepted，此项为实施而非文档）
-- [ ] `sim_mem_pool` Real VA 分配（ADR-058：per-pool + per-device gpu_buddy + mmap backing）
-- [ ] 测试：`tests/test_puller_fence_completion_standalone` + `tests/test_graph_gpfifo_serialize_standalone`
+- [x] HardwarePullerEmu fence completion 回调机制（ADR-040） — `pending_fence_id_` + `sim_fence_id_signal` 在 `handleComplete()` 中
+- [x] Graph Node → GPFIFO Entry 序列化（ADR-041） — `sim/graph.cpp` (9.9KB)
+- [x] **按 ADR-043 实现 CP 可移植性边界**：`drv/` 与 `sim/` 之间的 CP API 白名单落地
+- [x] `sim_mem_pool` Real VA 分配（ADR-058：per-pool + per-device gpu_buddy + mmap backing）
+- [x] 测试：`tests/test_sim_graph_standalone.cpp` + `tests/test_sim_mem_pool_standalone.cpp` + `tests/test_fence_id_lifecycle_standalone.cpp`
+
+### 归档 Change
+
+| Change | Tasks | 归档路径 |
+|--------|-------|----------|
+| Phase4 sim-graph-launch-real-impl | 33/33 ✅ | `openspec/changes/archive/2026-07-09-2026-07-15-phase4-sim-graph-launch-real-impl/` |
+| Phase4 sim-graph-launch-test-gaps | 15/15 ✅ | `openspec/changes/archive/2026-07-09-phase4-sim-graph-launch-test-gaps/` |
+| Phase4 cu-mempool-alloc-real-va | 17/17 ✅ | `openspec/changes/archive/2026-07-11-2026-07-15-phase4-cu-mempool-alloc-real-va/` |
 
 ---
 
