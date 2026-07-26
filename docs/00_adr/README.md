@@ -75,9 +75,9 @@
 | [adr-063](adr-063-sim-pfh-pm-realification.md) | **sim_pfh / sim_pm 真实化状态机边界**（C-12 Phase C.1, sim 层 3 态 + sim_proxy.h + IOTLB 桥接 + mm_shim wire-up）| ✅ 已接受 | 2026-07-15 |
 | [adr-064](adr-064-memory-model-staging.md) | **GPU 内存模型保真度分阶段策略**（BO 简化堆 → Stage 4 真实 BAR + ioremap；HAL 边界强制执行规则）| ✅ 已接受 | 2026-07-20 |
 | [adr-065](adr-065-version-policy.md) | **项目版本号 SSOT 与 Git Tag 命名规范**（CMake VERSION 唯一权威来源、严格 semver tag、v1.5 tag 解决）| ✅ 已接受 | 2026-07-22 |
-| [adr-069](adr-069-bar-ioremap-emulation.md) | **真实 PCIe BAR + ioremap 仿真架构**（I/O 语义 vs 内存语义共存；Stage 4 前置 ADR）| 📋 PROPOSED | 2026-07-25 |
-| [adr-072](adr-072-portability-validation.md) | **驱动代码可移植性验证框架**（L1 静态分析 + L2 内核编译测试 + L3 docs-audit）| 📋 PROPOSED | 2026-07-25 |
-| [adr-073](adr-073-dma-coherent-emulation.md) | **DMA 一致性内存仿真架构**（独立 DMA 地址空间 + coherent/streaming 语义分离；依赖 ADR-069, ADR-064 条件 2/3）| 📋 PROPOSED | 2026-07-25 |
+| [adr-069](adr-069-bar-ioremap-emulation.md) | **真实 PCIe BAR + ioremap 仿真架构**（I/O 语义 vs 内存语义共存；Stage 4 前置 ADR）| ✅ Accepted | 2026-07-25 |
+| [adr-072](adr-072-portability-validation.md) | **驱动代码可移植性验证框架**（L1 静态分析 + L2 内核编译测试 + L3 docs-audit）| ✅ Accepted | 2026-07-25 |
+| [adr-073](adr-073-dma-coherent-emulation.md) | **DMA 一致性内存仿真架构**（独立 DMA 地址空间 + coherent/streaming 语义分离；依赖 ADR-069, ADR-064 条件 2/3）| ✅ Accepted | 2026-07-25 |
 
 > **2026-07-14 变更（C-12 命名修复 + HAL ops ADR 创建）**：ADR-061 + ADR-062 创建 — 原 tasks.md B.3.4.5 误用 `adr-060` 编号，与 `Linux 内核消息通知线程架构` 冲突。已修正：
 > - **ADR-061**（HAL IOMMU ops 扩展，237 行）：覆盖 C-12 tasks B.3.4 — `hal_iommu_map()` / `hal_iommu_unmap()` 2 个新 fn-ptr，遵循 ADR-023 Decision 4 spec-driven "追加不改" 原则

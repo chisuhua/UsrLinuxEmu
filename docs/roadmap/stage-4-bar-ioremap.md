@@ -215,9 +215,9 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | ADR | 角色 | 子阶段 | 状态 |
 |-----|------|--------|------|
 | [ADR-064](../00_adr/adr-064-memory-model-staging.md) | 内存模型分阶段策略（Stage 4 定义）| 4.1 | ✅ Accepted |
-| [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md) | BAR/ioremap 仿真架构决策（I/O 语义 vs 内存语义共存层）| 4.1 | 📋 PROPOSED |
-| [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md) | DMA 一致性内存仿真架构（独立 DMA 地址空间 + coherent/streaming 分离）| 4.1 | 📋 PROPOSED |
-| [ADR-072](../00_adr/adr-072-portability-validation.md) | 驱动代码可移植性验证框架（L1 静态分析 + L2 内核编译测试 + L3 docs-audit）| 整体验收 | 📋 PROPOSED |
+| [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md) | BAR/ioremap 仿真架构决策（I/O 语义 vs 内存语义共存层）| 4.1 | ✅ Accepted |
+| [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md) | DMA 一致性内存仿真架构（独立 DMA 地址空间 + coherent/streaming 分离）| 4.1 | ✅ Accepted |
+| [ADR-072](../00_adr/adr-072-portability-validation.md) | 驱动代码可移植性验证框架（L1 静态分析 + L2 内核编译测试 + L3 docs-audit）| 整体验收 | ✅ Accepted |
 | [ADR-040](../00_adr/adr-040-puller-fence-completion.md) | Puller Fence Completion 回调 | 4.2 | ✅ Accepted |
 | [ADR-041](../00_adr/adr-041-graph-node-to-gpfifo-serialization.md) | Graph→GPFIFO 序列化 | 4.2 | ✅ Accepted |
 | [ADR-043](../00_adr/adr-043-cp-portability-boundary.md) | CP 可移植性边界 | 4.2 | ✅ Accepted |
