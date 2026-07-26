@@ -1,6 +1,6 @@
 # ADR-069: 真实 PCIe BAR + ioremap 仿真架构
 
-**状态**: 📋 提议中 (Proposed)
+**状态**: ✅ 已采纳 (Accepted)
 
 **日期**: 2026-07-25
 
