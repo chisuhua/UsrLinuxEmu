@@ -309,6 +309,7 @@ set(CATCH2_COMPAT_TESTS
     test_dma_coherent.cpp
     # Stage 4.1 Phase 2 - compat API tests
     test_bar_ioremap.cpp
+    test_bar_ioremap_perf.cpp
     # Stage 4.1 Phase 3 - HAL mem_map_bo driver layer test
     test_hal_mem_map_bo.cpp
 )
