@@ -53,7 +53,7 @@
 | [adr-041](adr-041-graph-node-to-gpfifo-serialization.md) | **Graph Node → GPFIFO Entry 序列化**（Phase 4 前置 ADR）| ✅ Accepted | 2026-07-09 |
 | [adr-042](adr-042-pushbuffer-method-encoding.md) | **Pushbuffer Method 编解码格式**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-043](adr-043-cp-portability-boundary.md) | **命令处理器可移植性边界**（Phase 4 前置 ADR）| ✅ Accepted | 2026-07-09 |
-| [adr-044](adr-044-multi-channel-hyperqueue-scheduling.md) | **多通道调度与 HyperQueue 语义**（Phase 5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-044](adr-044-multi-channel-hyperqueue-scheduling.md) | **多通道调度与 HyperQueue 语义**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-045](adr-045-priority-scheduling.md) | **优先级调度**（Phase 5.5）| 📋 PROPOSED | 2026-07-09 |
 | [adr-046](adr-046-preemption-context-switch.md) | **抢占与上下文切换**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
 | [adr-047](adr-047-hardware-semaphore-barrier.md) | **Hardware Semaphore & Barrier Model**（Phase 5.5）| 📋 PROPOSED | 2026-07-09 |
@@ -91,12 +91,12 @@
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 43 | 001-010, 015-024, 027, 031-037, 039-043, 059-065 |
-| 📋 PROPOSED | 17 | 011-014, 038, 044-052, 054, 056-058, 069, 072-073 |
+| ✅ 已接受 | 44 | 001-010, 015-024, 027, 031-037, 039-044, 059-065 |
+| 📋 PROPOSED | 16 | 011-014, 038, 045-052, 054, 056-058, 069, 072-073 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
 | **总计** | **67** | ADR-001 ~ ADR-073 |
 
-> **2026-07-27 变更**：ADR-042（Pushbuffer Method 编解码格式）状态升 ✅ Accepted。Oracle 评审修订：Context 章节对齐实际 `gpu_gpfifo_entry` 结构（gpu_types.h packed bitfield）；D2 Layer 2 去除"新增 subchannel/flags"冗余（subchannel 已存在，NI 标志复用 `_reserved:15`）；明确 `format` 字段归属 ADR-052 §D1；新增跨仓同步协议（ADR-035 §Rule 5.1）。
+> **2026-07-27 变更**：ADR-044（多通道调度与 HyperQueue 语义）状态升 ✅ 已采纳 (Accepted)。Oracle 评审修订：MAX_QUEUES 修正（实际 1024，非 32）、scanQueues 关系澄清（CHANNEL_SWITCH 吸收 scanQueues 用于 ioctl submitBatch 路径）、线程安全声明（ChannelManager mutex + Issue #21 snapshot 模式）、FSM 图补充 SEMAPHORE 状态、GlobalScheduler 分层关系明确。
 
 > **2026-07-11 变更**：ADR-058 新增 — sim_mem_pool Real VA Allocation（Phase 4 cu-mempool-alloc-real-va change 架构基础）。镜像 Nvidia UVM `uvm_range_allocator` per-pool + per-device gpu_buddy + mmap backing at pool create 模式。
 >
