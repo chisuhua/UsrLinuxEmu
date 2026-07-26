@@ -4,14 +4,14 @@
 
 ### Phase 1: ③ 硬件模拟层 (foundation)
 
-- [ ] 1.1 Create `plugins/gpu_driver/sim/vram_store.h` — GpuVramStore class: 256MB mmap backing + BAR array[6]
-- [ ] 1.2 Create `plugins/gpu_driver/sim/vram_store.cpp` — mmap(MAP_ANONYMOUS|MAP_SHARED) implementation + BAR phys→offset mapping
-- [ ] 1.3 Create `plugins/gpu_driver/sim/bar_sim.h` — sim_bar_ioremap/sim_bar_iounmap API (per ADR-063 sim_proxy pattern)
-- [ ] 1.4 Create `plugins/gpu_driver/sim/bar_sim.cpp` — BAR 0-5 phys_base→mmap 映射 + readl/writel backing store access
-- [ ] 1.5 Create `plugins/gpu_driver/sim/dma_coherent_pool.h` — DmaCoherentPool class: independent mmap + bump allocator (DMA_COHERENT_BASE=0x1_0000_0000)
-- [ ] 1.6 Create `plugins/gpu_driver/sim/dma_coherent_pool.cpp` — allocate: mmap(MAP_ANONYMOUS|MAP_SHARED) → dma_addr bump; free: munmap + pool cleanup
-- [ ] 1.7 Wire GpuVramStore + DmaCoherentPool into GpgpuDevice init (device creation time)
-- [ ] 1.8 Update `plugins/gpu_driver/sim/CMakeLists.txt` — add bar_sim, vram_store, dma_coherent_pool sources
+- [x] 1.1 Create `plugins/gpu_driver/sim/vram_store.h` — GpuVramStore class: 256MB mmap backing + BAR array[6]
+- [x] 1.2 Create `plugins/gpu_driver/sim/vram_store.cpp` — mmap(MAP_ANONYMOUS|MAP_SHARED) implementation + BAR phys→offset mapping
+- [x] 1.3 Create `plugins/gpu_driver/sim/bar_sim.h` — sim_bar_ioremap/sim_bar_iounmap API (per ADR-063 sim_proxy pattern)
+- [x] 1.4 Create `plugins/gpu_driver/sim/bar_sim.cpp` — BAR 0-5 phys_base→mmap 映射 + readl/writel backing store access
+- [x] 1.5 Create `plugins/gpu_driver/sim/dma_coherent_pool.h` — DmaCoherentPool class: independent mmap + bump allocator (DMA_COHERENT_BASE=0x1_0000_0000)
+- [x] 1.6 Create `plugins/gpu_driver/sim/dma_coherent_pool.cpp` — allocate: mmap(MAP_ANONYMOUS|MAP_SHARED) → dma_addr bump; free: munmap + pool cleanup
+- [x] 1.7 Wire GpuVramStore + DmaCoherentPool into GpgpuDevice init (device creation time)
+- [x] 1.8 Update `plugins/gpu_driver/sim/CMakeLists.txt` — add bar_sim, vram_store, dma_coherent_pool sources
 
 ### Phase 2: ① 内核环境模拟层 (compat API)
 
