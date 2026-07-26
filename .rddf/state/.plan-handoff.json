@@ -1,8 +1,8 @@
 {
   "committed_at": "2026-07-26",
-  "active_changes": ["stage4-1-bar-ioremap"],
-  "change_count": 1,
-  "summary": "Stage 4 sub-stage 1: PCIe BAR + ioremap + DMA coherent infrastructure",
-  "task_count": 26,
-  "task_groups": 6
+  "active_changes": [],
+  "change_count": 0,
+  "summary": "All changes shipped",
+  "task_count": 0,
+  "task_groups": 0
 }
