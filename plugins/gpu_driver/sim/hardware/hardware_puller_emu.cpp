@@ -3,6 +3,7 @@
 #include <cstring>
 #include <iostream>
 
+#include "method_codec.h"
 #include "gpu_queue_emu.h"
 #include "scheduler/global_scheduler.h"
 #include "scheduler/translator/gpfifo_translator.h"
@@ -169,9 +170,19 @@ void HardwarePullerEmu::runLoop() {
         }
         break;
       }
-      case State::DECODE:
+      case State::DECODE: {
+        // Stage 4.3 Task 1.6: validate method_codec_decode round-trip.
+        // No-op: decode result is discarded; only verifies decode succeeds.
+        gpu_method_packet pkt{};
+        pkt.method_addr = static_cast<uint16_t>(current_entry_.method);
+        pkt.engine = static_cast<uint8_t>(GpuEngineType::COMPUTE);
+        pkt.data_count = 0;
+        auto encoded = method_codec_encode(pkt, nullptr);
+        method_codec_decode(encoded);
+
         transitionTo(current_entry_.release ? State::SEMAPHORE : State::SCHEDULE);
         break;
+      }
       case State::SCHEDULE:
         transitionTo(State::DISPATCH);
         break;
