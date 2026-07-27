@@ -55,7 +55,7 @@
 
 > ADR-054: MQD in shared/mqd.h (128 bytes packed), HQD BAR0 registers at offset 0x4000+channel*64, state transitions IDLE/ACTIVE/PREEMPTED.
 
-- [ ] 3.1 Write failing test: `test_mqd_state_standalone` - MQD state transitions (IDLE->ACTIVE->PREEMPTED->ACTIVE->IDLE) + BAR0 HQD register read/write
+- [x] 3.1 Write failing test: `test_mqd_state_standalone` - MQD state transitions (IDLE->ACTIVE->PREEMPTED->ACTIVE->IDLE) + BAR0 HQD register read/write
 - [ ] 3.2 Verify test fails: confirm RED phase - no `shared/mqd.h`, no `mqd_state.h`
 - [ ] 3.3 Create `shared/mqd.h` - `MQD` struct (ring state, batch state, scheduling, preempt context, perf hooks) + `static_assert(sizeof(MQD)==128)` + `static_assert(sizeof(MQD)%8==0)` + `__attribute__((packed))`
 - [ ] 3.4 Implement `sim/hardware/mqd_state.h` - `MqdState` class API: activate/deactivate/preempt/destroy + getMqd(channel_id) + state query

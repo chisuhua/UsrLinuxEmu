@@ -28,6 +28,8 @@ add_library(gpu_sim STATIC
     hardware/method_codec.cpp
     # Stage 4.3 - Channel Manager (ADR-044): Round-Robin channel arbitration
     hardware/channel_manager.cpp
+    # Stage 4.3 - MQD State Machine (ADR-054): IDLE/ACTIVE/PREEMPTED transitions
+    hardware/mqd_state.cpp
 )
 
 set_source_files_properties(

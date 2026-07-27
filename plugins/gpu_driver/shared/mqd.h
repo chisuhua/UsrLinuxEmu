@@ -59,8 +59,14 @@ typedef struct {
 }  __attribute__((packed)) MQD;
 
 // Compile-time size assertion (must be power-of-2 aligned for BAR mapping)
+// Use static_assert for C++ compatibility (_Static_assert is C11-only)
+#ifdef __cplusplus
+static_assert(sizeof(MQD) == 128, "MQD must be 128 bytes");
+static_assert(sizeof(MQD) % 8 == 0, "MQD must be 8-byte aligned");
+#else
 _Static_assert(sizeof(MQD) == 128, "MQD must be 128 bytes");
 _Static_assert(sizeof(MQD) % 8 == 0, "MQD must be 8-byte aligned");
+#endif
 
 // HQD BAR0 register offsets (per channel, base=0x4000)
 #define HQD_REG_OFFSET(channel_id)  (0x4000 + (channel_id) * 64)
