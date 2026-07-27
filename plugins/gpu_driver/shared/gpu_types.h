@@ -42,6 +42,7 @@ struct gpu_gpfifo_entry {
   u64 payload[7];      /* Method arguments (kernel args / CPU task descriptor) */
   u64 semaphore_va;    /* Completion semaphore virtual address */
   u32 semaphore_value; /* Expected completion value */
+  u64 ts_query;         /* Stage 4.3 (ADR-057): timestamp query handle */
   u32 release : 1;     /* Release semaphore on completion */
   u32 _pad : 31;
 } __attribute__((packed));

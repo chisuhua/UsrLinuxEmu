@@ -19,6 +19,10 @@
 #include "doorbell_emu.h"
 #include "hardware_puller_emu.h"
 #include "fence_id.h"
+#include "timestamp_query.h"
+
+// Stage 4.3 Task 6 (ADR-057): global logical clock - one tick per DISPATCH cycle
+extern std::atomic<uint64_t> g_sim_tick;
 
 static std::atomic<int> g_callback_count(0);
 static std::atomic<int> g_last_queue_id(-1);
@@ -596,6 +600,102 @@ int test_puller_channel_switch_state() {
   return 0;
 }
 
+int test_puller_dispatch_ticks_increment() {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+
+  uint64_t tick_before = g_sim_tick.load();
+
+  puller.start();
+  puller.submitBatch(0x1000, 3);
+  doorbell.write(0);
+
+  wait_for_state([&puller]() {
+    return puller.currentState() != HardwarePullerEmu::State::IDLE;
+  }, 200);
+  wait_for_state([&puller]() {
+    return puller.currentState() == HardwarePullerEmu::State::IDLE;
+  }, 200);
+
+  uint64_t tick_after = g_sim_tick.load();
+
+  if (tick_after <= tick_before) {
+    std::cerr << "FAIL: tick did not increment: before=" << tick_before
+              << " after=" << tick_after << "\n";
+    puller.stop();
+    return 1;
+  }
+
+  puller.stop();
+  std::cout << "PASS: test_puller_dispatch_ticks_increment\n";
+  return 0;
+}
+
+static gpu_gpfifo_entry g_ts_test_entry;
+
+static int ts_hal_mem_read(void* ctx, uint64_t dev_addr, void* host_buf, uint64_t size) {
+  (void)ctx; (void)dev_addr;
+  if (size >= sizeof(gpu_gpfifo_entry)) {
+    std::memcpy(host_buf, &g_ts_test_entry, sizeof(gpu_gpfifo_entry));
+  } else {
+    memset(host_buf, 0, size);
+  }
+  return 0;
+}
+
+int test_puller_dispatch_timestamp_query_record() {
+  g_ts_test_entry = gpu_gpfifo_entry{};
+  g_ts_test_entry.valid = 1;
+  g_ts_test_entry.method = GPU_OP_MEMCPY;
+  g_ts_test_entry.payload[0] = 0;
+  g_ts_test_entry.payload[1] = 0;
+  g_ts_test_entry.payload[2] = 0;
+
+  SimTimestampQuery* tsq = sim_timestamp_query_create();
+  if (tsq == nullptr) {
+    std::cerr << "FAIL: sim_timestamp_query_create returned nullptr\n";
+    return 1;
+  }
+  g_ts_test_entry.ts_query = reinterpret_cast<u64>(tsq);
+
+  int pre_resolve = sim_timestamp_query_resolve(tsq, 0);
+  if (pre_resolve != -EAGAIN) {
+    std::cerr << "FAIL: pre-resolve should return -EAGAIN, got " << pre_resolve << "\n";
+    sim_timestamp_query_destroy(tsq);
+    return 1;
+  }
+
+  struct gpu_hal_ops hal = make_mock_hal();
+  hal.mem_read = ts_hal_mem_read;
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+
+  puller.start();
+  puller.submitBatch(0x1000, 1);
+  doorbell.write(0);
+
+  wait_for_state([&puller]() {
+    return puller.currentState() != HardwarePullerEmu::State::IDLE;
+  }, 200);
+  wait_for_state([&puller]() {
+    return puller.currentState() == HardwarePullerEmu::State::IDLE;
+  }, 200);
+
+  int post_resolve = sim_timestamp_query_resolve(tsq, 0);
+  if (post_resolve < 0) {
+    std::cerr << "FAIL: post-resolve should return >= 0, got " << post_resolve << "\n";
+    sim_timestamp_query_destroy(tsq);
+    puller.stop();
+    return 1;
+  }
+
+  sim_timestamp_query_destroy(tsq);
+  puller.stop();
+  std::cout << "PASS: test_puller_dispatch_timestamp_query_record\n";
+  return 0;
+}
+
 int main() {
   int result = 0;
 
@@ -614,6 +714,8 @@ int main() {
   result |= test_puller_fence_signal_multi_entry();
   result |= test_puller_fence_not_signaled_at_intermediate_entry();
   result |= test_puller_channel_switch_state();
+  result |= test_puller_dispatch_ticks_increment();
+  result |= test_puller_dispatch_timestamp_query_record();
 
   if (result == 0) {
     std::cout << "\n=== ALL TESTS PASSED ===\n";

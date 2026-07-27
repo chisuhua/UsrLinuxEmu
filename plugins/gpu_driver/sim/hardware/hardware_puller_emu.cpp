@@ -9,6 +9,10 @@
 #include "scheduler/translator/gpfifo_translator.h"
 #include "hal_user.h"
 #include "channel_manager.h"  // Stage 4.3 Task 2
+#include "timestamp_query.h"   // Stage 4.3 Task 6 (ADR-057)
+
+// Stage 4.3 (ADR-057): global logical clock - one tick per DISPATCH cycle
+std::atomic<uint64_t> g_sim_tick{0};
 
 HardwarePullerEmu::HardwarePullerEmu(struct gpu_hal_ops* hal,
                                      DoorbellEmu* doorbell,
@@ -203,6 +207,12 @@ void HardwarePullerEmu::runLoop() {
         transitionTo(State::DISPATCH);
         break;
       case State::DISPATCH: {
+        uint64_t current_tick = g_sim_tick.fetch_add(1) + 1;
+        if (current_entry_.ts_query != 0) {
+          auto* tsq = reinterpret_cast<SimTimestampQuery*>(
+              static_cast<uintptr_t>(current_entry_.ts_query));
+          sim_timestamp_query_record(tsq, current_index_, current_tick);
+        }
         // v1.2: MEMCPY 分支 - 通过 HAL 执行真实内存拷贝
         if (current_entry_.method == GPU_OP_MEMCPY) {
           u64 src = current_entry_.payload[0];
