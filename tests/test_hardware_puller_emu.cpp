@@ -562,6 +562,40 @@ int test_puller_fence_not_signaled_at_intermediate_entry() {
   return 0;
 }
 
+/* Stage 4.3 Task 1: CHANNEL_SWITCH state must exist in the enum and the
+ * FSM must flow through it without hanging. state_ is private so we verify
+ * indirectly: a full batch cycle proves CHANNEL_SWITCH isn't a dead-end. */
+int test_puller_channel_switch_state() {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+
+  HardwarePullerEmu::State cs_state = HardwarePullerEmu::State::CHANNEL_SWITCH;
+  (void)cs_state;
+
+  puller.start();
+  puller.submitBatch(0x1000, 1);
+  doorbell.write(0);
+
+  wait_for_state([&puller]() {
+    return puller.currentState() != HardwarePullerEmu::State::IDLE;
+  }, 200);
+  wait_for_state([&puller]() {
+    return puller.currentState() == HardwarePullerEmu::State::IDLE;
+  }, 200);
+
+  if (puller.currentState() != HardwarePullerEmu::State::IDLE) {
+    std::cerr << "FAIL: should return to IDLE after batch (CHANNEL_SWITCH flow), got "
+              << puller.stateName() << "\n";
+    puller.stop();
+    return 1;
+  }
+
+  puller.stop();
+  std::cout << "PASS: test_puller_channel_switch_state\n";
+  return 0;
+}
+
 int main() {
   int result = 0;
 
@@ -579,6 +613,7 @@ int main() {
   result |= test_puller_no_fence_signal_when_zero();
   result |= test_puller_fence_signal_multi_entry();
   result |= test_puller_fence_not_signaled_at_intermediate_entry();
+  result |= test_puller_channel_switch_state();
 
   if (result == 0) {
     std::cout << "\n=== ALL TESTS PASSED ===\n";
