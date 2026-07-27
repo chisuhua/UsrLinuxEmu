@@ -7,6 +7,8 @@
 #include <atomic>
 #include <thread>
 #include <chrono>
+#include <vector>
+#include <mutex>
 
 std::atomic<bool> g_handler_called{false};
 std::atomic<uint64_t> g_received_data{0};
@@ -93,4 +95,48 @@ TEST_CASE("hal_mock_interrupt_raise_ex_no_handler", "[interrupt][hal]") {
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(!g_handler_called.load());
   REQUIRE(state.interrupt_raise_ex_count == 1);
+}
+
+// --- Task 5: kernel_workqueue dispatch tests (ADR-060) ---
+
+TEST_CASE("interrupt_workqueue_dispatch", "[interrupt][workqueue]") {
+  g_handler_called = false;
+  g_received_data = 0;
+
+  int ret = interrupt_register(InterruptVector::FENCE_SIGNALED, test_handler);
+  REQUIRE(ret == 0);
+
+  interrupt_raise_ex(InterruptVector::FENCE_SIGNALED, 123);
+
+  interrupt_flush_all();
+
+  REQUIRE(g_handler_called.load());
+  REQUIRE(g_received_data.load() == 123);
+}
+
+TEST_CASE("interrupt_workqueue_multiple_raises", "[interrupt][workqueue]") {
+  static std::mutex g_vec_mutex;
+  static std::vector<uint64_t> g_received_values;
+  g_received_values.clear();
+
+  auto multi_handler = [](uint64_t data) {
+    std::lock_guard<std::mutex> lock(g_vec_mutex);
+    g_received_values.push_back(data);
+  };
+
+  int ret = interrupt_register(InterruptVector::NOTIFY_INTR, multi_handler);
+  REQUIRE(ret == 0);
+
+  interrupt_raise_ex(InterruptVector::NOTIFY_INTR, 10);
+  interrupt_raise_ex(InterruptVector::NOTIFY_INTR, 20);
+  interrupt_raise_ex(InterruptVector::NOTIFY_INTR, 30);
+
+  interrupt_flush_all();
+
+  REQUIRE(g_received_values.size() == 3);
+  REQUIRE(g_received_values[0] == 10);
+  REQUIRE(g_received_values[1] == 20);
+  REQUIRE(g_received_values[2] == 30);
+
+  interrupt_register(InterruptVector::NOTIFY_INTR, nullptr);
 }
