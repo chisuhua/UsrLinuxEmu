@@ -30,6 +30,8 @@ add_library(gpu_sim STATIC
     hardware/channel_manager.cpp
     # Stage 4.3 - MQD State Machine (ADR-054): IDLE/ACTIVE/PREEMPTED transitions
     hardware/mqd_state.cpp
+    # Stage 4.3 - Interrupt Model (ADR-048): vector + handler table + async dispatch
+    hardware/interrupt.cpp
 )
 
 set_source_files_properties(
