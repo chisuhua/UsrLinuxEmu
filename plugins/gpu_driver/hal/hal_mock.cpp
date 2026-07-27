@@ -11,6 +11,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <functional>
+#include <thread>
 #include <pthread.h>
 #include "kernel/thread/kernel_workqueue.h"
 #include "sim/vram_store.h"
@@ -111,6 +112,29 @@ static void mock_interrupt_raise(void *ctx, uint32_t vector) {
   auto *state = static_cast<struct hal_mock_state *>(ctx);
   state->interrupt_raise_count++;
   state->last_interrupt_vector = vector;
+}
+
+static int mock_interrupt_register(void *ctx, uint32_t vector,
+                                    void (*handler)(uint64_t user_data)) {
+  auto *state = static_cast<struct hal_mock_state *>(ctx);
+  if (vector >= 4) return -1;
+  state->interrupt_handlers[vector] = handler;
+  state->interrupt_register_count++;
+  state->last_register_vector = static_cast<int>(vector);
+  return 0;
+}
+
+static void mock_interrupt_raise_ex(void *ctx, uint32_t vector,
+                                    uint64_t user_data) {
+  auto *state = static_cast<struct hal_mock_state *>(ctx);
+  if (vector >= 4) return;
+  state->interrupt_raise_ex_count++;
+  state->last_raise_ex_vector = static_cast<int>(vector);
+  state->last_raise_ex_data = user_data;
+  auto handler = state->interrupt_handlers[vector];
+  if (handler) {
+    std::thread([handler, user_data]() { handler(user_data); }).detach();
+  }
 }
 
 static void mock_time_wait(void *ctx, uint64_t us) {
@@ -271,6 +295,8 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
   hal->fence_read = mock_fence_read;
   hal->doorbell_ring = mock_doorbell_ring;
   hal->interrupt_raise = mock_interrupt_raise;
+  hal->interrupt_register = mock_interrupt_register;
+  hal->interrupt_raise_ex = mock_interrupt_raise_ex;
   hal->time_wait = mock_time_wait;
   hal->iommu_map = mock_iommu_map;
   hal->iommu_unmap = mock_iommu_unmap;
