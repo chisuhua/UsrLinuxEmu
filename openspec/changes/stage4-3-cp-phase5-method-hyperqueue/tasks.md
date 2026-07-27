@@ -126,7 +126,13 @@
 
 > Full regression + boundary verification + handoff metadata.
 
-- [ ] 6.1 Run full `ctest` regression - verify 105+ baseline PASS (was 105+ before 4.3, +5 new tests = 110+ expected)
+- [ ] 6.0 Register all 5 new tests in `tests/CMakeLists.txt` (add `test_pm4_encode_decode_standalone`, `test_hyperqueue_multistream_standalone`, `test_cp_interrupt_standalone`, `test_mqd_state_standalone`, `test_timestamp_query_standalone`)
+- [ ] 6.1 Run full `ctest` regression - verify 110+ PASS (105 baseline + 5 new)
+- [ ] 6.1a Explicitly verify existing baseline tests survive FSM extension:
+  - `test_hardware_puller_emu_standalone` — Puller FSM (IDLE→FETCH→DECODE→...), must work after adding CHANNEL_SWITCH state
+  - `test_gpu_ringbuffer_standalone` — ring buffer push/pop, must work after ChannelManager integration
+  - `test_fence_id_lifecycle_standalone` — fence create/signal lifecycle, must work after per-channel fence tracking
+  - `test_gpfifo_translator_standalone` — GPFIFO→LaunchParams, must work after method codec interposes DECODE
 - [ ] 6.2 Run `tools/docs-audit.sh --strict` - verify 0 new warnings (pre-existing warnings OK, no new ones introduced)
 - [ ] 6.3 Verify HAL boundary: `drv/` contains no `#include "sim/"` includes (grep check: `grep -r '#include.*sim/' plugins/gpu_driver/drv/` returns empty)
 - [ ] 6.4 Verify 3 区分 boundary: `shared/` headers have no `sim/` or `drv/` includes; `sim/` has no `drv/` includes
@@ -135,6 +141,7 @@
 
 **验收标准**:
 - `ctest` 110+ PASS (105 baseline + 5 new: pm4_encode_decode, hyperqueue_multistream, mqd_state, cp_interrupt, timestamp_query)
+- All 4 baseline tests explicitly verified GREEN (hardware_puller_emu, gpu_ringbuffer, fence_id_lifecycle, gpfifo_translator)
 - 0 new docs-audit warnings
 - HAL boundary clean: `drv/` has zero `sim/` includes
 - 3 区分 boundary clean: `shared/` independent, `sim/` -> `drv/` forbidden
@@ -163,10 +170,10 @@
 
 ### 3. HAL Ops Count Mismatch with Documentation
 
-- **Issue**: AGENTS.md states `gpu_hal_ops` has "11 function pointers", but actual count in `gpu_hal.h` may differ (pre-existing drift).
-- **4.3 Action**: ADR-023 "append-don't-modify" - we add `interrupt_register` + `interrupt_raise_ex` (2 new ops). Count becomes 13 (or whatever baseline+2 is).
+- **Issue**: AGENTS.md states `gpu_hal_ops` has "11 function pointers", but actual count in `gpu_hal.h` was 17 before Stage 4.3 (pre-existing drift from ADR-061, ADR-062, Stage 4.1 additions).
+- **4.3 Impact**: ADR-023 "append-don't-modify" — we add `interrupt_register` + `interrupt_raise_ex` (2 new ops). Count becomes 17→19.
 - **Fix Separately**: Documentation count sync should be done in a dedicated docs PR, not in 4.3.
-- **Risk**: Low - append-only does not break existing HAL consumers.
+- **Risk**: Low — append-only does not break existing HAL consumers.
 
 ---
 
@@ -179,7 +186,7 @@
 | 3. MQD/HQD State | 9 | test_mqd_state_standalone | ADR-054, ADR-073 |
 | 4. Interrupt Model | 10 | test_cp_interrupt_standalone | ADR-048, ADR-060, ADR-023 |
 | 5. Profiling Hooks | 7 | test_timestamp_query_standalone | ADR-057 |
-| 6. Integration | 6 | (regression only) | - |
-| **Total** | **48** | **5 new** | **6 ADRs** |
+| 6. Integration | 9 | (regression only) | - |
+| **Total** | **51** | **5 new** | **6 ADRs** |
 
 **Effort**: 2-3 weeks | **Split**: ① 15% | ② 25% | ③ 60%
