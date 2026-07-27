@@ -10,8 +10,17 @@
 // Sim layer: needed to initialize g_vram_store so ioremap has BAR backing
 #include "sim/vram_store.h"
 #include "sim/bar_sim.h"
+#include "sim/hardware/mqd_state.h"
 
 using namespace usr_linux_emu;
+
+// HQD register constants (must match bar_sim.h / shared/mqd.h)
+#ifndef HQD_BASE
+#define HQD_BASE 0x4000
+#endif
+#ifndef HQD_STRIDE
+#define HQD_STRIDE 64
+#endif
 
 // Helper: set up BAR0 with a known phys_base and return it
 static uint64_t setup_bar0(uint64_t phys_base, uint64_t size) {
@@ -93,4 +102,22 @@ TEST_CASE("ioremap - idempotent mapping returns same pointer", "[compat][io]") {
   REQUIRE(first == second);
 
   iounmap(first);
+}
+
+TEST_CASE("bar0_hqd_activate_and_read_status", "[bar0_hqd]") {
+  setup_bar0(0x00000000ULL, 0x8000);
+
+  void* bar0 = sim_bar_ioremap(0x0000, 0x8000);
+  REQUIRE(bar0 != nullptr);
+
+  uint32_t channel = 0;
+  uint64_t ctl_offset   = HQD_BASE + channel * HQD_STRIDE + 0x00;
+  uint64_t status_offset = HQD_BASE + channel * HQD_STRIDE + 0x04;
+
+  sim_bar0_writel(ctl_offset, 0x00000001);
+
+  uint32_t status = sim_bar0_readl(status_offset);
+  REQUIRE(status == MQD_STATE_ACTIVE);
+
+  sim_bar_iounmap(bar0, 0x8000);
 }
