@@ -16,8 +16,8 @@
 - [ ] 1.2 Verify test fails: build test, confirm RED phase (compile error or assertion failure expected - no `method_codec.h` yet)
 - [ ] 1.3 Implement `sim/hardware/method_codec.h` - `gpu_method_packet` struct (FAM) + `GpuEngineType` enum + `encode()`/`decode()` API declarations
 - [ ] 1.4 Implement `sim/hardware/method_codec.cpp` - UsrNative encode (entry <- packet) + decode (entry -> packet) logic, reserved bits = 0
-- [ ] 1.5 Wire encode into `GpgpuDevice::handlePushbufferSubmitBatch` - convert user entries via method_codec before ChannelManager submission
-- [ ] 1.6 Wire decode into `HardwarePullerEmu` DECODE stage - dispatch via `method_addr` lookup table (OP_LAUNCH_KERNEL=0x100, NOTIFY_INTR=0x200)
+- [x] 1.5 Wire encode into `GpgpuDevice::handlePushbufferSubmitBatch` - convert user entries via method_codec before ChannelManager submission
+- [x] 1.6 Wire decode into `HardwarePullerEmu` DECODE stage - dispatch via `method_addr` lookup table (OP_LAUNCH_KERNEL=0x100, NOTIFY_INTR=0x200)
 - [ ] 1.7 Verify test passes: `test_pm4_encode_decode_standalone` GREEN + existing ctest baseline maintained
 - [ ] 1.8 Commit: `feat(gpu): add UsrNative method codec (ADR-042)`
 
