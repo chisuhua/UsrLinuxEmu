@@ -8,13 +8,13 @@
       "owner_opencode_session_id": "ses_20260723_guide_ship",
       "created_at": "2026-07-20T10:11:36Z",
       "last_heartbeat": "2026-07-23T00:00:00Z",
-      "summary": "Stage 3 v1.0 完成：CUDA E2E ✅、sanitizer ✅、bridge ✅、hotpath ✅、errno 审计 ✅、文档完善 ✅（2026-07-23 已归档）",
+      "summary": "Stage 3 v1.0 \u5b8c\u6210\uff1aCUDA E2E \u2705\u3001sanitizer \u2705\u3001bridge \u2705\u3001hotpath \u2705\u3001errno \u5ba1\u8ba1 \u2705\u3001\u6587\u6863\u5b8c\u5584 \u2705\uff082026-07-23 \u5df2\u5f52\u6863\uff09",
       "attached_changes": [
-        "stage3-3-errno-coverage-audit (✅ COMPLETED & ARCHIVED)",
-        "stage3-4-doc-completion (✅ COMPLETED & ARCHIVED 2026-07-23)"
+        "stage3-3-errno-coverage-audit (\u2705 COMPLETED & ARCHIVED)",
+        "stage3-4-doc-completion (\u2705 COMPLETED & ARCHIVED 2026-07-23)"
       ],
       "next_steps": [
-        "1. v1.0 发布清单 (Release notes + Migration guide + Binary release)"
+        "1. v1.0 \u53d1\u5e03\u6e05\u5355 (Release notes + Migration guide + Binary release)"
       ],
       "resumed_at": "2026-07-23T00:00:00Z",
       "end_reason": "ship-done",
@@ -71,5 +71,6 @@
       "end_reason": "heartbeat-timeout"
     }
   ],
-  "updated_at": "2026-07-24T17:15:15.000497+00:00"
+  "updated_at": "2026-07-24T17:15:15.000497+00:00",
+  "version": 1
 }
