@@ -33,6 +33,7 @@ class HardwarePullerEmu {
  public:
   enum class State {
     IDLE,
+    CHANNEL_SWITCH,  // Stage 4.3
     FETCH,
     DECODE,
     SCHEDULE,

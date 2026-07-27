@@ -144,13 +144,15 @@ void HardwarePullerEmu::runLoop() {
 
     switch (local_state) {
       case State::IDLE: {
-        // 消费 queue 中的 entries (Doorbell + polling)
+        transitionTo(State::CHANNEL_SWITCH);
+        break;
+      }
+      case State::CHANNEL_SWITCH: {
         if (scanQueues(&current_queue_id_, &current_entry_)) {
           transitionTo(State::DECODE);
           break;
         }
 
-        // fallback: GPFIFO 路径 (向后兼容)
         if (doorbell_pending_.exchange(false) || doorbell_->poll(0)) {
           doorbell_->acknowledge(0);
           transitionTo(State::FETCH);
@@ -239,8 +241,7 @@ void HardwarePullerEmu::runLoop() {
         handleComplete();
         current_index_++;
         if (current_index_ >= total_entries_) {
-          // GPFIFO batch 结束, 回到 IDLE
-          transitionTo(State::IDLE);
+          transitionTo(State::CHANNEL_SWITCH);
         } else {
           transitionTo(State::FETCH);
         }
@@ -305,14 +306,15 @@ void HardwarePullerEmu::transitionTo(State next) {
 
 const char* HardwarePullerEmu::stateName() const {
   switch (state_) {
-    case State::IDLE:      return "IDLE";
-    case State::FETCH:     return "FETCH";
-    case State::DECODE:    return "DECODE";
-    case State::SCHEDULE:  return "SCHEDULE";
-    case State::DISPATCH:  return "DISPATCH";
-    case State::SEMAPHORE: return "SEMAPHORE";
-    case State::COMPLETE:  return "COMPLETE";
-    default:              return "UNKNOWN";
+    case State::IDLE:            return "IDLE";
+    case State::CHANNEL_SWITCH:  return "CHANNEL_SWITCH";
+    case State::FETCH:           return "FETCH";
+    case State::DECODE:          return "DECODE";
+    case State::SCHEDULE:        return "SCHEDULE";
+    case State::DISPATCH:        return "DISPATCH";
+    case State::SEMAPHORE:       return "SEMAPHORE";
+    case State::COMPLETE:        return "COMPLETE";
+    default:                    return "UNKNOWN";
   }
 }
 
