@@ -1,8 +1,8 @@
 {
   "committed_at": "2026-07-27",
-  "active_changes": ["stage4-3-cp-phase5-method-hyperqueue"],
-  "change_count": 1,
-  "summary": "Stage 4.3: GPU CP Phase 5 — Method Encoding + HyperQueue + Interrupt + MQD/HQD + Profiling",
-  "task_count": 51,
-  "task_groups": 6
+  "active_changes": [],
+  "change_count": 0,
+  "summary": "Stage 4.3 core modules shipped, remaining integration tasks deferred",
+  "task_count": 0,
+  "task_groups": 0
 }
