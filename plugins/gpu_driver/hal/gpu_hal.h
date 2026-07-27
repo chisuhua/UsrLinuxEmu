@@ -78,6 +78,19 @@ struct gpu_hal_ops {
    * Returns 0 on success, negative errno on failure. */
   int (*mem_map_bo)(struct gpgpu_device *dev, uint64_t bo_offset,
                     size_t size, void **user_map);
+
+  /* ── Stage 4.3: Interrupt Model (ADR-048 D4/D7) ── */
+
+  /* interrupt_register: register a handler for an interrupt vector.
+   * @handler: callback invoked via kernel_workqueue (async, per ADR-060).
+   * Returns 0 on success, -EINVAL on invalid vector. */
+  int (*interrupt_register)(void *ctx, uint32_t vector,
+                            void (*handler)(uint64_t user_data));
+
+  /* interrupt_raise_ex: raise interrupt with user_data payload.
+   * Posts handler to kernel_workqueue for async dispatch (never synchronous).
+   * Replaces deprecated interrupt_raise(void *ctx, uint32_t vector). */
+  void (*interrupt_raise_ex)(void *ctx, uint32_t vector, uint64_t user_data);
 };
 
 /* ── inline 包装函数：零开销简化调用 ──────────────────────── */
