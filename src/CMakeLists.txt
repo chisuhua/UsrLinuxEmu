@@ -33,9 +33,10 @@ add_library(kernel SHARED
     kernel/drm/drm_prime.cpp
     kernel/drm/render_node.cpp
     kernel/drm/errno_to_linux.cpp
-    # Stage 4-1 — BAR/ioremap/DMA compat (see openspec/changes/stage4-1-bar-ioremap/)
-    kernel/compat/io.cpp
-    kernel/compat/dma-mapping.cpp
+    # Stage 4-1 — BAR/ioremap/DMA compat NOT compiled into libkernel.so.
+    # io.cpp/dma-mapping.cpp reference symbols defined in gpu_sim plugin
+    # (g_dma_pool, sim_bar_ioremap, sim_bar_iounmap). They are compiled
+    # directly into test binaries via add_catch_compat_test() instead.
 
 # Stage 1.3 — UVM/HMM (see openspec/changes/stage-1-3-uvm-hmm/)
     kernel/uvm/mmu_notifier.cpp
