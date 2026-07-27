@@ -776,3 +776,84 @@ target_include_directories(test_hal_event_standalone PRIVATE
 target_compile_options(test_hal_event_standalone PRIVATE -Wno-implicit-function-declaration)
 add_test(NAME test_hal_event_standalone COMMAND $<TARGET_FILE:test_hal_event_standalone>)
 set_tests_properties(test_hal_event_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# === Stage 4.3 CP Phase 5 Tests (ADR-042/044/048/054/057) ===
+# These tests will FAIL until the corresponding sim modules are implemented.
+# TDD flow: Write test → verify FAIL → implement → verify PASS.
+
+# Task 1: Method Codec (ADR-042)
+add_executable(test_pm4_encode_decode_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_pm4_encode_decode_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_pm4_encode_decode_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_pm4_encode_decode_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_pm4_encode_decode_standalone COMMAND $<TARGET_FILE:test_pm4_encode_decode_standalone>)
+set_tests_properties(test_pm4_encode_decode_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# Task 2: Channel Manager (ADR-044)
+add_executable(test_hyperqueue_multistream_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_hyperqueue_multistream_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_hyperqueue_multistream_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_hyperqueue_multistream_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_hyperqueue_multistream_standalone COMMAND $<TARGET_FILE:test_hyperqueue_multistream_standalone>)
+set_tests_properties(test_hyperqueue_multistream_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# Task 3: MQD/HQD State (ADR-054) - TDD stubs commented out until implemented
+add_executable(test_mqd_state_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_mqd_state_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_mqd_state_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_mqd_state_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_mqd_state_standalone COMMAND $<TARGET_FILE:test_mqd_state_standalone>)
+set_tests_properties(test_mqd_state_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# Task 4: CP Interrupt (ADR-048) - TDD
+add_executable(test_cp_interrupt_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_cp_interrupt_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_cp_interrupt_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_cp_interrupt_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_cp_interrupt_standalone COMMAND $<TARGET_FILE:test_cp_interrupt_standalone>)
+set_tests_properties(test_cp_interrupt_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# Task 5: Profiling Hooks (ADR-057) - TDD
+add_executable(test_timestamp_query_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_timestamp_query_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_timestamp_query_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_timestamp_query_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_timestamp_query_standalone COMMAND $<TARGET_FILE:test_timestamp_query_standalone>)
+set_tests_properties(test_timestamp_query_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

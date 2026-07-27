@@ -24,6 +24,16 @@ add_library(gpu_sim STATIC
     vram_store.cpp
     bar_sim.cpp
     dma_coherent_pool.cpp
+    # Stage 4.3 - Method Codec (ADR-042): UsrNative encode/decode
+    hardware/method_codec.cpp
+    # Stage 4.3 - Channel Manager (ADR-044): Round-Robin channel arbitration
+    hardware/channel_manager.cpp
+    # Stage 4.3 - MQD State Machine (ADR-054): IDLE/ACTIVE/PREEMPTED transitions
+    hardware/mqd_state.cpp
+    # Stage 4.3 - Interrupt Model (ADR-048): vector + handler table + async dispatch
+    hardware/interrupt.cpp
+    # Stage 4.3 - Profiling Hooks (ADR-057): timestamp query lifecycle
+    hardware/timestamp_query.cpp
 )
 
 set_source_files_properties(

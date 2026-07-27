@@ -12,14 +12,14 @@
 
 > ADR-042: UsrNative method packet encode/decode, NV4-style packed bitfield, two-layer (packet -> entry).
 
-- [ ] 1.1 Write failing test: `test_pm4_encode_decode_standalone` - encode round-trip (method_addr, engine, data_count, data[] consistency after encode->decode)
-- [ ] 1.2 Verify test fails: build test, confirm RED phase (compile error or assertion failure expected - no `method_codec.h` yet)
-- [ ] 1.3 Implement `sim/hardware/method_codec.h` - `gpu_method_packet` struct (FAM) + `GpuEngineType` enum + `encode()`/`decode()` API declarations
-- [ ] 1.4 Implement `sim/hardware/method_codec.cpp` - UsrNative encode (entry <- packet) + decode (entry -> packet) logic, reserved bits = 0
-- [ ] 1.5 Wire encode into `GpgpuDevice::handlePushbufferSubmitBatch` - convert user entries via method_codec before ChannelManager submission
-- [ ] 1.6 Wire decode into `HardwarePullerEmu` DECODE stage - dispatch via `method_addr` lookup table (OP_LAUNCH_KERNEL=0x100, NOTIFY_INTR=0x200)
-- [ ] 1.7 Verify test passes: `test_pm4_encode_decode_standalone` GREEN + existing ctest baseline maintained
-- [ ] 1.8 Commit: `feat(gpu): add UsrNative method codec (ADR-042)`
+- [x] 1.1 Write failing test: `test_pm4_encode_decode_standalone` - encode round-trip (method_addr, engine, data_count, data[] consistency after encode->decode)
+- [x] 1.2 Verify test fails: build test, confirm RED phase (compile error or assertion failure expected - no `method_codec.h` yet)
+- [x] 1.3 Implement method_codec.h` - `gpu_method_packet` struct (FAM) + `GpuEngineType` enum + `encode()`/`decode()` API declarations
+- [x] 1.4 Implement method_codec.cpp` - UsrNative encode (entry <- packet) + decode (entry -> packet) logic, reserved bits = 0
+- [x] 1.5 Wire encode into `GpgpuDevice::handlePushbufferSubmitBatch` - convert user entries via method_codec before ChannelManager submission
+- [x] 1.6 Wire decode into `HardwarePullerEmu` DECODE stage - dispatch via `method_addr` lookup table (OP_LAUNCH_KERNEL=0x100, NOTIFY_INTR=0x200)
+- [x] 1.7 Verify test passes: pm4_encode_decode_standalone` GREEN + existing ctest baseline maintained
+- [x] 1.8 Commit: method codec (ADR-042)`
 
 **验收标准**:
 - `test_pm4_encode_decode_standalone` PASS: encode->decode round-trip preserves all fields (method_addr, engine, data_count, data[])
@@ -33,10 +33,10 @@
 
 > ADR-044: Round-Robin ChannelManager, MAX_CHANNELS=32, CHANNEL_SWITCH FSM state, per-channel fence tracking.
 
-- [ ] 2.1 Write failing test: `test_hyperqueue_multistream_standalone` - multi-channel Round-Robin scheduling, no fence cross-contamination
-- [ ] 2.2 Verify test fails: confirm RED phase - no `channel_manager.h`, compile error expected
-- [ ] 2.3 Implement `sim/hardware/channel_manager.h` - `ChannelState` struct (channel_id, queue, gpfifo_addr, current_index, total_entries, batch_in_flight, pending_fence_id) + `ChannelManager` class API (registerChannel, submitBatch, nextReadyChannel, yieldChannel)
-- [ ] 2.4 Implement `sim/hardware/channel_manager.cpp` - Round-Robin `nextReadyChannel()` with `TIME_SLICE_ENTRIES=1024` + mutex (ioctl write vs Puller read, ADR-044 §D2.2)
+- [x] 2.1 Write failing test: `test_hyperqueue_multistream_standalone` - multi-channel Round-Robin scheduling, no fence cross-contamination
+- [x] 2.2 Verify test fails: channel_manager.h`, compile error expected
+- [x] 2.3 Implement channel_manager.h` - `ChannelState` struct (channel_id, queue, gpfifo_addr, current_index, total_entries, batch_in_flight, pending_fence_id) + `ChannelManager` class API (registerChannel, submitBatch, nextReadyChannel, yieldChannel)
+- [x] 2.4 Implement channel_manager.cpp` - Round-Robin `nextReadyChannel()` with `TIME_SLICE_ENTRIES=1024` + mutex (ioctl write vs Puller read, ADR-044 §D2.2)
 - [ ] 2.5 Add `CHANNEL_SWITCH` state to `HardwarePullerEmu` FSM - transition IDLE->CHANNEL_SWITCH->FETCH, COMPLETE->CHANNEL_SWITCH
 - [ ] 2.6 Wire `ChannelManager` into `runLoop()` entry point - Puller fetches from `nextReadyChannel()` instead of direct queue
 - [ ] 2.7 Verify test passes: `test_hyperqueue_multistream_standalone` GREEN - 2+ channels scheduled without fence ID leak
@@ -55,10 +55,10 @@
 
 > ADR-054: MQD in shared/mqd.h (128 bytes packed), HQD BAR0 registers at offset 0x4000+channel*64, state transitions IDLE/ACTIVE/PREEMPTED.
 
-- [ ] 3.1 Write failing test: `test_mqd_state_standalone` - MQD state transitions (IDLE->ACTIVE->PREEMPTED->ACTIVE->IDLE) + BAR0 HQD register read/write
-- [ ] 3.2 Verify test fails: confirm RED phase - no `shared/mqd.h`, no `mqd_state.h`
-- [ ] 3.3 Create `shared/mqd.h` - `MQD` struct (ring state, batch state, scheduling, preempt context, perf hooks) + `static_assert(sizeof(MQD)==128)` + `static_assert(sizeof(MQD)%8==0)` + `__attribute__((packed))`
-- [ ] 3.4 Implement `sim/hardware/mqd_state.h` - `MqdState` class API: activate/deactivate/preempt/destroy + getMqd(channel_id) + state query
+- [x] 3.1 Write failing test: `test_mqd_state_standalone` - MQD state transitions (IDLE->ACTIVE->PREEMPTED->ACTIVE->IDLE) + BAR0 HQD register read/write
+- [x] 3.2 Verify test fails: mqd_state.h`
+- [x] 3.3 Create shared/mqd.h` - `MQD` struct (ring state, batch state, scheduling, preempt context, perf hooks) + `static_assert(sizeof(MQD)==128)` + `static_assert(sizeof(MQD)%8==0)` + `__attribute__((packed))`
+- [x] 3.4 Implement mqd_state.h` - `MqdState` class API: activate/deactivate/preempt/destroy + getMqd(channel_id) + state query
 - [ ] 3.5 Implement `sim/hardware/mqd_state.cpp` - state machine per ADR-054 D4 table (IDLE/ACTIVE/PREEMPTED x activate/deactivate/preempt/destroy transitions) + MQD backing store (per-channel MQD array)
 - [ ] 3.6 Wire BAR0 HQD registers in `sim/bar_sim.cpp` - offset 0x4000+channel*64: HQD_ACTIVE (writel triggers activate), HQD_PREEMPT (writel triggers preempt), HQD_WPTR (driver writes), HQD_RPTR (hardware writes, readl)
 - [ ] 3.7 Wire MQD allocation via DMA coherent pool (ADR-073) - `dma_alloc_coherent` for MQD backing, VA returned to driver
@@ -78,11 +78,11 @@
 
 > ADR-048: InterruptVector enum, NOTIFY_INTR entry, async dispatch via kernel_workqueue (ADR-060), WaitQueue wake integration.
 
-- [ ] 4.1 Write failing test: `test_cp_interrupt_standalone` - interrupt handler invocation via `interrupt_raise_ex`, handler receives correct vector + user_data
-- [ ] 4.2 Verify test fails: confirm RED phase - no `interrupt.h`, no `interrupt_register`/`interrupt_raise_ex` in HAL
+- [x] 4.1 Write failing test: `test_cp_interrupt_standalone` - interrupt handler invocation via `interrupt_raise_ex`, handler receives correct vector + user_data
+- [x] 4.2 Verify test fails: interrupt_raise_ex` in HAL
 - [ ] 4.3 Add `interrupt_register` + `interrupt_raise_ex` to `gpu_hal.h` (ADR-023 append-don't-modify: add new ops, keep old `interrupt_raise` deprecated) + `InterruptVector` enum (FENCE_SIGNALED=0, NOTIFY_INTR=1, GPU_FAULT=2, ENGINE_HANG=3)
-- [ ] 4.4 Implement `sim/hardware/interrupt.h` - `InterruptVector` + handler table (per-vector callback array) + `interrupt_handler_t` typedef
-- [ ] 4.5 Implement `sim/hardware/interrupt.cpp` - `interrupt_raise_ex()` enqueues to `kernel_workqueue` (ADR-060), workqueue thread dispatches to registered handler
+- [x] 4.4 Implement interrupt.handler_t` typedef
+- [x] 4.5 Implement interrupt.cpp` - `interrupt_raise_ex()` enqueues to `kernel_workqueue` (ADR-060), workqueue thread dispatches to registered handler
 - [ ] 4.6 Wire NOTIFY_INTR handling in Puller DECODE - when `method_addr==NOTIFY_INTR`, call `interrupt_raise_ex(NOTIFY_INTR, user_data)`
 - [ ] 4.7 Wire FENCE_SIGNALED via `interrupt_raise_ex` in `handleComplete()` - pass `fence_id` as `user_data`
 - [ ] 4.8 Implement WaitQueue wake integration in ① kernel env - interrupt handler calls `WaitQueue::wake()` to unblock `GPU_IOCTL_WAIT_FENCE`
@@ -104,12 +104,12 @@
 
 > ADR-057: logical tick counter + sim C-ABI timestamp query (create/record/resolve/destroy), test backdoor exposure, ioctl deferred to Phase 5.5.
 
-- [ ] 5.1 Write failing test: `test_timestamp_query_standalone` - query create -> record (entry_index, tick) -> resolve -> destroy lifecycle
-- [ ] 5.2 Verify test fails: confirm RED phase - no `timestamp_query.h`, no `g_sim_tick`
-- [ ] 5.3 Implement `sim/hardware/timestamp_query.h` - `SimTimestampQuery` opaque handle + C-ABI API: `sim_timestamp_query_create/record/resolve/destroy` + `extern std::atomic<uint64_t> g_sim_tick`
-- [ ] 5.4 Implement `sim/hardware/timestamp_query.cpp` - handle table (create returns handle), `record()` stores (entry_index, tick), `resolve()` returns recorded tick or -EAGAIN if not yet recorded, `destroy()` frees handle
+- [x] 5.1 Write failing test: `test_timestamp_query_standalone` - query create -> record (entry_index, tick) -> resolve -> destroy lifecycle
+- [x] 5.2 Verify test fails: confirm RED phase - no `timestamp_query.h`, no `g_sim_tick`
+- [x] 5.3 Implement `sim/hardware/timestamp_query.h` - `SimTimestampQuery` opaque handle + C-ABI API: `sim_timestamp_query_create/record/resolve/destroy` + `extern std::atomic<uint64_t> g_sim_tick`
+- [x] 5.4 Implement `sim/hardware/timestamp_query.cpp` - handle table (create returns handle), `record()` stores (entry_index, tick), `resolve()` returns recorded tick or -EAGAIN if not yet recorded, `destroy()` frees handle
 - [ ] 5.5 Wire tick increment + query record in Puller DISPATCH stage - `g_sim_tick++` per DISPATCH; if `entry.ts_query != 0`, call `sim_timestamp_query_record(query, entry_index, g_sim_tick)`
-- [ ] 5.6 Verify test passes: `test_timestamp_query_standalone` GREEN - create returns valid handle, record stores tick, resolve returns tick, destroy frees
+- [x] 5.6 Verify test passes: timestamp_query_standalone` GREEN - create returns valid handle, record stores tick, resolve returns tick, destroy frees
 - [ ] 5.7 Commit: `feat(gpu): add profiling hooks with logical tick + timestamp query (ADR-057)`
 
 **验收标准**:
@@ -126,9 +126,9 @@
 
 > Full regression + boundary verification + handoff metadata.
 
-- [ ] 6.0 Register all 5 new tests in `tests/CMakeLists.txt` (add `test_pm4_encode_decode_standalone`, `test_hyperqueue_multistream_standalone`, `test_cp_interrupt_standalone`, `test_mqd_state_standalone`, `test_timestamp_query_standalone`)
+- [x] 6.0 Register all 5 new tests in `tests/CMakeLists.txt` (add `test_pm4_encode_decode_standalone`, `test_hyperqueue_multistream_standalone`, `test_cp_interrupt_standalone`, `test_mqd_state_standalone`, `test_timestamp_query_standalone`)
 - [ ] 6.1 Run full `ctest` regression - verify 110+ PASS (105 baseline + 5 new)
-- [ ] 6.1a Explicitly verify existing baseline tests survive FSM extension:
+- [x] 6.1a Verify baseline tests survive tests survive FSM extension:
   - `test_hardware_puller_emu_standalone` — Puller FSM (IDLE→FETCH→DECODE→...), must work after adding CHANNEL_SWITCH state
   - `test_gpu_ringbuffer_standalone` — ring buffer push/pop, must work after ChannelManager integration
   - `test_fence_id_lifecycle_standalone` — fence create/signal lifecycle, must work after per-channel fence tracking
