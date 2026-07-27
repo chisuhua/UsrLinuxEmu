@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-07-27
+goal: Trace complete change artifacts for already-implemented BAR ioremap + DMA
+  coherent pool feature (ADR-069/073/064/072)
