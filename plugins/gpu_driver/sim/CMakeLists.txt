@@ -24,6 +24,8 @@ add_library(gpu_sim STATIC
     vram_store.cpp
     bar_sim.cpp
     dma_coherent_pool.cpp
+    # Stage 4.3 - Method Codec (ADR-042): UsrNative encode/decode
+    hardware/method_codec.cpp
 )
 
 set_source_files_properties(

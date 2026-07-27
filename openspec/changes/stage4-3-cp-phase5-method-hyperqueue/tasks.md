@@ -12,7 +12,7 @@
 
 > ADR-042: UsrNative method packet encode/decode, NV4-style packed bitfield, two-layer (packet -> entry).
 
-- [ ] 1.1 Write failing test: `test_pm4_encode_decode_standalone` - encode round-trip (method_addr, engine, data_count, data[] consistency after encode->decode)
+- [x] 1.1 Write failing test: `test_pm4_encode_decode_standalone` - encode round-trip (method_addr, engine, data_count, data[] consistency after encode->decode)
 - [ ] 1.2 Verify test fails: build test, confirm RED phase (compile error or assertion failure expected - no `method_codec.h` yet)
 - [ ] 1.3 Implement `sim/hardware/method_codec.h` - `gpu_method_packet` struct (FAM) + `GpuEngineType` enum + `encode()`/`decode()` API declarations
 - [ ] 1.4 Implement `sim/hardware/method_codec.cpp` - UsrNative encode (entry <- packet) + decode (entry -> packet) logic, reserved bits = 0
