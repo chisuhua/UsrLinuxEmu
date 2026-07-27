@@ -8,6 +8,7 @@
 #include "scheduler/global_scheduler.h"
 #include "scheduler/translator/gpfifo_translator.h"
 #include "hal_user.h"
+#include "channel_manager.h"  // Stage 4.3 Task 2
 
 HardwarePullerEmu::HardwarePullerEmu(struct gpu_hal_ops* hal,
                                      DoorbellEmu* doorbell,
@@ -148,6 +149,19 @@ void HardwarePullerEmu::runLoop() {
         break;
       }
       case State::CHANNEL_SWITCH: {
+        if (channel_mgr_) {
+          ChannelState* ch = channel_mgr_->nextReadyChannel();
+          if (ch) {
+            current_channel_id_ = ch->channel_id;
+            current_gpfifo_addr_ = ch->gpfifo_addr;
+            current_index_ = 0;
+            total_entries_ = ch->total_entries;
+            pending_fence_id_ = ch->pending_fence_id;
+            transitionTo(State::FETCH);
+            break;
+          }
+        }
+
         if (scanQueues(&current_queue_id_, &current_entry_)) {
           transitionTo(State::DECODE);
           break;
@@ -241,6 +255,9 @@ void HardwarePullerEmu::runLoop() {
         handleComplete();
         current_index_++;
         if (current_index_ >= total_entries_) {
+          if (channel_mgr_) {
+            channel_mgr_->yieldChannel(current_channel_id_);
+          }
           transitionTo(State::CHANNEL_SWITCH);
         } else {
           transitionTo(State::FETCH);
@@ -319,6 +336,15 @@ const char* HardwarePullerEmu::stateName() const {
 }
 
 void HardwarePullerEmu::submitBatch(u64 gpfifo_gpu_addr, u32 entry_count, u64 fence_id) {
+  if (channel_mgr_) {
+    channel_mgr_->submitBatch(current_channel_id_, gpfifo_gpu_addr,
+                              entry_count, fence_id);
+    doorbell_pending_.store(true);
+    std::lock_guard<std::mutex> lock(mutex_);
+    cv_.notify_one();
+    return;
+  }
+
   std::lock_guard<std::mutex> lock(mutex_);
   current_gpfifo_addr_ = gpfifo_gpu_addr;
   current_index_ = 0;

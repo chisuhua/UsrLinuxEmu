@@ -17,6 +17,7 @@
 
 class GlobalScheduler;
 class GpuQueueEmu;
+class ChannelManager;  // Stage 4.3 Task 2 - forward declaration
 
 /**
  * HardwarePullerEmu — GPU 命令拉取器仿真 (ADR-021)
@@ -79,6 +80,13 @@ class HardwarePullerEmu {
 
   void signalSemaphore(u64 addr, u32 value);
 
+  // ========== ChannelManager Integration (Stage 4.3 Task 2) ==========
+
+  /** Set the ChannelManager for per-channel batch routing.
+   *  When set, submitBatch() routes through the ChannelManager instead
+   *  of the legacy direct-set path. */
+  void setChannelManager(ChannelManager* mgr) { channel_mgr_ = mgr; }
+
  private:
   /** 从 GPFIFO 拉取下一条 entry（ioctl 路径） */
   bool fetchEntry(gpu_gpfifo_entry* out_entry);
@@ -127,4 +135,8 @@ class HardwarePullerEmu {
   u64 waiting_semaphore_va_ = 0;
   u32 waiting_semaphore_value_ = 0;
   std::atomic<bool> semaphore_signaled_{false};
+
+  // ========== ChannelManager (Stage 4.3 Task 2) ==========
+  ChannelManager* channel_mgr_ = nullptr;
+  uint32_t current_channel_id_ = 0;
 };
