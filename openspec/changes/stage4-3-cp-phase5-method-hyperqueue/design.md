@@ -238,3 +238,12 @@ User ioctl(GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH)
 | HAL ops signature change breaking build | ADR-023 "append-don't-modify": add new ops, keep old |
 | ABI break across TaskRunner shared gpu_types.h | Symbolic link keeps both repos in sync automatically |
 | Performance regression from new FSM states | Baseline ctest benchmark, gate on ≤20% regression |
+
+## Known Debt & Ambiguities
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | **ADR-050 (Indirect Buffer) scope**: Roadmap assigns to 4.4, ADR title says "Phase 5+". 4.3 assumes no IB dependency; if method encoding requires indirect buffer chaining, revisit scope before implementation starts | Known ambiguity |
+| 2 | **test_gpu_fence_return_standalone**: Pre-existing failure (not caused by 4.3). Fix tracked separately | Pre-existing |
+| 3 | **docs-audit warnings**: 3 pre-existing (kernel cpp count baseline, HAL fn-ptr count, Doxygen). HAL count will increase from 17→19 after this change | Pre-existing |
+| 4 | **ctest pass rate 37%**: Mostly runtime/plugin-load failures. 4.3 tests must pass standalone mode; runtime regression tracked separately | Pre-existing |
