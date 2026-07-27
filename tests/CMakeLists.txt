@@ -833,7 +833,7 @@ add_executable(test_cp_interrupt_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_cp_interrupt_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_cp_interrupt_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_cp_interrupt_standalone PRIVATE gpu_hal gpu_hal_mock gpu_core gpu_sim kernel ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(test_cp_interrupt_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins

@@ -28,6 +28,8 @@ struct hal_mock_state {
   int fence_read_count;
   int doorbell_ring_count;
   int interrupt_raise_count;
+  int interrupt_register_count;
+  int interrupt_raise_ex_count;
   int time_wait_count;
 
   /* ── ADR-061/062 扩展（C-12 KFD） ────────────────────── */
@@ -67,7 +69,12 @@ struct hal_mock_state {
   uint64_t last_mem_write_addr;
   uint32_t last_doorbell_queue;
   uint32_t last_interrupt_vector;
+  int last_register_vector;
+  int last_raise_ex_vector;
+  uint64_t last_raise_ex_data;
   uint64_t last_time_wait_us;
+
+  void (*interrupt_handlers[4])(uint64_t user_data);
 
   struct hal_mock_event_state *event_state;
 };
