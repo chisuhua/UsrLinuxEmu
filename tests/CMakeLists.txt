@@ -828,19 +828,19 @@ target_include_directories(test_mqd_state_standalone PRIVATE
 add_test(NAME test_mqd_state_standalone COMMAND $<TARGET_FILE:test_mqd_state_standalone>)
 set_tests_properties(test_mqd_state_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-# Task 4: CP Interrupt (ADR-048) - TDD stubs commented out until implemented
-# add_executable(test_cp_interrupt_standalone
-#     ${CMAKE_CURRENT_SOURCE_DIR}/test_cp_interrupt_standalone.cpp
-#     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
-# )
-# target_link_libraries(test_cp_interrupt_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
-# target_include_directories(test_cp_interrupt_standalone PRIVATE
-#     ${PROJECT_SOURCE_DIR}/include
-#     ${PROJECT_SOURCE_DIR}/plugins
-#     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
-#     ${CMAKE_CURRENT_SOURCE_DIR})
-# add_test(NAME test_cp_interrupt_standalone COMMAND $<TARGET_FILE:test_cp_interrupt_standalone>)
-# set_tests_properties(test_cp_interrupt_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+# Task 4: CP Interrupt (ADR-048) - TDD
+add_executable(test_cp_interrupt_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_cp_interrupt_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_cp_interrupt_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_cp_interrupt_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_cp_interrupt_standalone COMMAND $<TARGET_FILE:test_cp_interrupt_standalone>)
+set_tests_properties(test_cp_interrupt_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # Task 5: Profiling Hooks (ADR-057) - TDD stubs commented out until implemented
 # add_executable(test_timestamp_query_standalone

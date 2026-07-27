@@ -78,7 +78,7 @@
 
 > ADR-048: InterruptVector enum, NOTIFY_INTR entry, async dispatch via kernel_workqueue (ADR-060), WaitQueue wake integration.
 
-- [ ] 4.1 Write failing test: `test_cp_interrupt_standalone` - interrupt handler invocation via `interrupt_raise_ex`, handler receives correct vector + user_data
+- [x] 4.1 Write failing test: `test_cp_interrupt_standalone` - interrupt handler invocation via `interrupt_raise_ex`, handler receives correct vector + user_data
 - [ ] 4.2 Verify test fails: confirm RED phase - no `interrupt.h`, no `interrupt_register`/`interrupt_raise_ex` in HAL
 - [ ] 4.3 Add `interrupt_register` + `interrupt_raise_ex` to `gpu_hal.h` (ADR-023 append-don't-modify: add new ops, keep old `interrupt_raise` deprecated) + `InterruptVector` enum (FENCE_SIGNALED=0, NOTIFY_INTR=1, GPU_FAULT=2, ENGINE_HANG=3)
 - [ ] 4.4 Implement `sim/hardware/interrupt.h` - `InterruptVector` + handler table (per-vector callback array) + `interrupt_handler_t` typedef
