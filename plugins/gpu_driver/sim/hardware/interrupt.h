@@ -1,8 +1,7 @@
 // sim/hardware/interrupt.h - ADR-048 Interrupt & Event Model (Task 4.1)
 //
 // InterruptVector enum + C-ABI register/raise interface.
-// Async dispatch via simple thread (workqueue pattern, ADR-060).
-// Full kernel_workqueue integration is Task 4.5-4.6 (not this task).
+// Async dispatch via kernel_workqueue (ADR-060, Task 5).
 #pragma once
 
 #include <cstdint>
@@ -36,9 +35,9 @@ int interrupt_register(InterruptVector vector, interrupt_handler_t handler);
  * @brief Raise an interrupt with user_data cookie (async dispatch).
  *
  * ADR-048 D5: Dispatch MUST be asynchronous (not on the Puller thread) to
- * prevent deadlock with drv-layer locks. This minimal implementation uses
- * a detached std::thread (workqueue pattern). Task 4.5-4.6 will replace this
- * with kernel_workqueue (ADR-060) integration.
+ * prevent deadlock with drv-layer locks. Dispatch is via kernel_workqueue
+ * (ADR-060): enqueue() is non-blocking, the handler runs on the workqueue
+ * worker thread.
  *
  * If no handler is registered for the vector, the call is a no-op (safe).
  *
@@ -46,3 +45,12 @@ int interrupt_register(InterruptVector vector, interrupt_handler_t handler);
  * @param user_data Cookie passed to the handler
  */
 void interrupt_raise_ex(InterruptVector vector, uint64_t user_data);
+
+/**
+ * @brief Wait for all queued interrupt handlers to finish (test helper).
+ *
+ * Blocks until the interrupt workqueue has drained all pending and in-flight
+ * tasks, or the timeout expires. Primarily for tests that need deterministic
+ * synchronization after interrupt_raise_ex() calls.
+ */
+void interrupt_flush_all(void);
