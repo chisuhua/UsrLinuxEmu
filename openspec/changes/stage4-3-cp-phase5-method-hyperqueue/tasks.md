@@ -104,10 +104,10 @@
 
 > ADR-057: logical tick counter + sim C-ABI timestamp query (create/record/resolve/destroy), test backdoor exposure, ioctl deferred to Phase 5.5.
 
-- [ ] 5.1 Write failing test: `test_timestamp_query_standalone` - query create -> record (entry_index, tick) -> resolve -> destroy lifecycle
-- [ ] 5.2 Verify test fails: confirm RED phase - no `timestamp_query.h`, no `g_sim_tick`
-- [ ] 5.3 Implement `sim/hardware/timestamp_query.h` - `SimTimestampQuery` opaque handle + C-ABI API: `sim_timestamp_query_create/record/resolve/destroy` + `extern std::atomic<uint64_t> g_sim_tick`
-- [ ] 5.4 Implement `sim/hardware/timestamp_query.cpp` - handle table (create returns handle), `record()` stores (entry_index, tick), `resolve()` returns recorded tick or -EAGAIN if not yet recorded, `destroy()` frees handle
+- [x] 5.1 Write failing test: `test_timestamp_query_standalone` - query create -> record (entry_index, tick) -> resolve -> destroy lifecycle
+- [x] 5.2 Verify test fails: confirm RED phase - no `timestamp_query.h`, no `g_sim_tick`
+- [x] 5.3 Implement `sim/hardware/timestamp_query.h` - `SimTimestampQuery` opaque handle + C-ABI API: `sim_timestamp_query_create/record/resolve/destroy` + `extern std::atomic<uint64_t> g_sim_tick`
+- [x] 5.4 Implement `sim/hardware/timestamp_query.cpp` - handle table (create returns handle), `record()` stores (entry_index, tick), `resolve()` returns recorded tick or -EAGAIN if not yet recorded, `destroy()` frees handle
 - [ ] 5.5 Wire tick increment + query record in Puller DISPATCH stage - `g_sim_tick++` per DISPATCH; if `entry.ts_query != 0`, call `sim_timestamp_query_record(query, entry_index, g_sim_tick)`
 - [ ] 5.6 Verify test passes: `test_timestamp_query_standalone` GREEN - create returns valid handle, record stores tick, resolve returns tick, destroy frees
 - [ ] 5.7 Commit: `feat(gpu): add profiling hooks with logical tick + timestamp query (ADR-057)`
