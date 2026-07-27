@@ -32,6 +32,8 @@ add_library(gpu_sim STATIC
     hardware/mqd_state.cpp
     # Stage 4.3 - Interrupt Model (ADR-048): vector + handler table + async dispatch
     hardware/interrupt.cpp
+    # Stage 4.3 - Profiling Hooks (ADR-057): timestamp query lifecycle
+    hardware/timestamp_query.cpp
 )
 
 set_source_files_properties(
