@@ -6,10 +6,12 @@
 
 | 提案 | 优先级 | 来源 | 批准日期 | 批准人 |
 |------|--------|------|----------|--------|
-| [stage4-1-bar-ioremap](improvements/stage4-1-bar-ioremap.md) | P1 | ADR-069 + ADR-073 + ADR-064 Stage 4 | 2026-07-26 | UsrLinuxEmu Team |
+| _(无待消费提案)_ | — | — | — | — |
 
 ---
 
 ## 已实施
 
-（实施完成后归档到此处）
+| 提案 | 归档日期 | 实施方式 | 关联 commits | OpenSpec change |
+|------|----------|----------|--------------|-----------------|
+| [stage4-1-bar-ioremap](improvements/stage4-1-bar-ioremap.md) | 2026-07-27 | TDD 直接落地 + 事后追溯 | `571f9af` + `556b647` + `116ca8c` | `openspec/changes/archive/2026-07-27-stage4-1-bar-ioremap/` |
