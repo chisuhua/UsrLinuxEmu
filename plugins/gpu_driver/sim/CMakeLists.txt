@@ -26,6 +26,8 @@ add_library(gpu_sim STATIC
     dma_coherent_pool.cpp
     # Stage 4.3 - Method Codec (ADR-042): UsrNative encode/decode
     hardware/method_codec.cpp
+    # Stage 4.3 - Channel Manager (ADR-044): Round-Robin channel arbitration
+    hardware/channel_manager.cpp
 )
 
 set_source_files_properties(
