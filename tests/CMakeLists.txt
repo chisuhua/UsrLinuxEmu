@@ -842,16 +842,18 @@ target_include_directories(test_cp_interrupt_standalone PRIVATE
 add_test(NAME test_cp_interrupt_standalone COMMAND $<TARGET_FILE:test_cp_interrupt_standalone>)
 set_tests_properties(test_cp_interrupt_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-# Task 5: Profiling Hooks (ADR-057) - TDD stubs commented out until implemented
-# add_executable(test_timestamp_query_standalone
-#     ${CMAKE_CURRENT_SOURCE_DIR}/test_timestamp_query_standalone.cpp
-#     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
-# )
-# target_link_libraries(test_timestamp_query_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
-# target_include_directories(test_timestamp_query_standalone PRIVATE
-#     ${PROJECT_SOURCE_DIR}/include
-#     ${PROJECT_SOURCE_DIR}/plugins
-#     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
-#     ${CMAKE_CURRENT_SOURCE_DIR})
-# add_test(NAME test_timestamp_query_standalone COMMAND $<TARGET_FILE:test_timestamp_query_standalone>)
-# set_tests_properties(test_timestamp_query_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+# Task 5: Profiling Hooks (ADR-057) - TDD
+add_executable(test_timestamp_query_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_timestamp_query_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_timestamp_query_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_timestamp_query_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_timestamp_query_standalone COMMAND $<TARGET_FILE:test_timestamp_query_standalone>)
+set_tests_properties(test_timestamp_query_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
