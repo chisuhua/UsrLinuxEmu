@@ -33,7 +33,7 @@
 
 > ADR-044: Round-Robin ChannelManager, MAX_CHANNELS=32, CHANNEL_SWITCH FSM state, per-channel fence tracking.
 
-- [ ] 2.1 Write failing test: `test_hyperqueue_multistream_standalone` - multi-channel Round-Robin scheduling, no fence cross-contamination
+- [x] 2.1 Write failing test: `test_hyperqueue_multistream_standalone` - multi-channel Round-Robin scheduling, no fence cross-contamination
 - [ ] 2.2 Verify test fails: confirm RED phase - no `channel_manager.h`, compile error expected
 - [ ] 2.3 Implement `sim/hardware/channel_manager.h` - `ChannelState` struct (channel_id, queue, gpfifo_addr, current_index, total_entries, batch_in_flight, pending_fence_id) + `ChannelManager` class API (registerChannel, submitBatch, nextReadyChannel, yieldChannel)
 - [ ] 2.4 Implement `sim/hardware/channel_manager.cpp` - Round-Robin `nextReadyChannel()` with `TIME_SLICE_ENTRIES=1024` + mutex (ioctl write vs Puller read, ADR-044 §D2.2)
