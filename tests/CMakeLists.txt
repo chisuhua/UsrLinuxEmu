@@ -857,3 +857,23 @@ target_include_directories(test_timestamp_query_standalone PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME test_timestamp_query_standalone COMMAND $<TARGET_FILE:test_timestamp_query_standalone>)
 set_tests_properties(test_timestamp_query_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# === Stage 4.4 CP Phase 5.5 Tests - Semaphore/Barrier (Task 2-6) ===
+# TDD flow: Write test -> verify FAIL -> implement -> verify PASS.
+add_executable(test_semaphore_barrier_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_semaphore_barrier_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler/channel_state.cpp
+)
+target_link_libraries(test_semaphore_barrier_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_semaphore_barrier_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_semaphore_barrier_standalone COMMAND $<TARGET_FILE:test_semaphore_barrier_standalone>)
+set_tests_properties(test_semaphore_barrier_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
