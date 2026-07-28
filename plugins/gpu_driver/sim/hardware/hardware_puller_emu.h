@@ -4,6 +4,7 @@
 #include <cstring>
 #include <map>
 #include <vector>
+#include <array>
 #include <atomic>
 #include <thread>
 #include <mutex>
@@ -14,6 +15,7 @@
 #include "gpu_hal.h"
 #include "doorbell_emu.h"
 #include "fence_id.h"
+#include "scheduler/channel_state.h"  // Stage 4.4: SEM_WAIT/RELEASE/BARRIER
 
 class GlobalScheduler;
 class GpuQueueEmu;
@@ -80,6 +82,58 @@ class HardwarePullerEmu {
 
   void signalSemaphore(u64 addr, u32 value);
 
+  // ========== Semaphore/Barrier Integration (Stage 4.4) ==========
+
+  ChannelSemaphoreState& sema_state() { return sema_state_; }
+
+  /**
+   * Process the current entry's semaphore/barrier method if applicable.
+   * Called from FETCH phase before DISPATCH.
+   * @return true if the entry should proceed to DISPATCH; false if blocked
+   *         (enqueued to pending queue or barrier).
+   */
+  bool processSemOp();
+
+  /**
+   * Process SEM_RELEASE on entry completion.
+   * Called from COMPLETE phase when entry.method == GPU_OP_SEM_RELEASE.
+   */
+  void processSemRelease();
+
+  /**
+   * Re-check pending semaphore entries.
+   * Called at the start of each dispatch cycle.
+   * Released entries are available via sema_state_.released_entries().
+   */
+  void recheckPendingSema();
+
+  // ========== Indirect Buffer JUMP (Stage 4.4 Task 14) ==========
+
+  /**
+   * Process an IB_JUMP entry synchronously.
+   * Validates target_gpu_va, checks nest depth, saves current fetch
+   * position, and switches fetch address to the target.
+   * @param entry GPFIFO entry with method == GPU_OP_IB_JUMP.
+   *              payload[0] = target_gpu_va
+   *              payload[1] = continue_flag (1 = resume after target)
+   *              payload[2] = target_size (entry count at target)
+   * @return 0 on success, -EFAULT if target unmapped, -E2BIG if nest overflow.
+   */
+  int processIbJump(const gpu_gpfifo_entry& entry);
+
+  /**
+   * Complete an IB_JUMP: restore saved fetch position if continue_flag was set.
+   * Called after the jump target batch has been fully consumed.
+   * @return 0 on success, -EINVAL if not in jump state.
+   */
+  int completeIbJump();
+
+  bool isInJump() const { return is_in_jump_; }
+  int jumpDepth() const { return jump_depth_; }
+  u64 jumpTargetAddr() const { return jump_target_addr_; }
+  bool jumpWillContinue() const { return jump_continue_; }
+  u64 savedFetchPc() const;
+
   // ========== ChannelManager Integration (Stage 4.3 Task 2) ==========
 
   /** Set the ChannelManager for per-channel batch routing.
@@ -139,4 +193,21 @@ class HardwarePullerEmu {
   // ========== ChannelManager (Stage 4.3 Task 2) ==========
   ChannelManager* channel_mgr_ = nullptr;
   uint32_t current_channel_id_ = 0;
+
+  // ========== Semaphore/Barrier State (Stage 4.4) ==========
+  ChannelSemaphoreState sema_state_;
+
+  // ========== Indirect Buffer JUMP State (Stage 4.4 Task 14) ==========
+  struct IbJumpFrame {
+    u64 saved_gpfifo_addr;
+    size_t saved_index;
+    size_t saved_total;
+    u64 saved_fence_id;
+  };
+  std::array<IbJumpFrame, MAX_IB_NEST> jump_stack_;
+  int jump_depth_{0};
+  bool is_in_jump_{false};
+  u64 jump_target_addr_{0};
+  u64 jump_target_size_{0};
+  bool jump_continue_{false};
 };
