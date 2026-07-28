@@ -4,6 +4,7 @@
 #include <cstring>
 #include <map>
 #include <vector>
+#include <array>
 #include <atomic>
 #include <thread>
 #include <mutex>
@@ -106,6 +107,33 @@ class HardwarePullerEmu {
    */
   void recheckPendingSema();
 
+  // ========== Indirect Buffer JUMP (Stage 4.4 Task 14) ==========
+
+  /**
+   * Process an IB_JUMP entry synchronously.
+   * Validates target_gpu_va, checks nest depth, saves current fetch
+   * position, and switches fetch address to the target.
+   * @param entry GPFIFO entry with method == GPU_OP_IB_JUMP.
+   *              payload[0] = target_gpu_va
+   *              payload[1] = continue_flag (1 = resume after target)
+   *              payload[2] = target_size (entry count at target)
+   * @return 0 on success, -EFAULT if target unmapped, -E2BIG if nest overflow.
+   */
+  int processIbJump(const gpu_gpfifo_entry& entry);
+
+  /**
+   * Complete an IB_JUMP: restore saved fetch position if continue_flag was set.
+   * Called after the jump target batch has been fully consumed.
+   * @return 0 on success, -EINVAL if not in jump state.
+   */
+  int completeIbJump();
+
+  bool isInJump() const { return is_in_jump_; }
+  int jumpDepth() const { return jump_depth_; }
+  u64 jumpTargetAddr() const { return jump_target_addr_; }
+  bool jumpWillContinue() const { return jump_continue_; }
+  u64 savedFetchPc() const;
+
   // ========== ChannelManager Integration (Stage 4.3 Task 2) ==========
 
   /** Set the ChannelManager for per-channel batch routing.
@@ -168,4 +196,18 @@ class HardwarePullerEmu {
 
   // ========== Semaphore/Barrier State (Stage 4.4) ==========
   ChannelSemaphoreState sema_state_;
+
+  // ========== Indirect Buffer JUMP State (Stage 4.4 Task 14) ==========
+  struct IbJumpFrame {
+    u64 saved_gpfifo_addr;
+    size_t saved_index;
+    size_t saved_total;
+    u64 saved_fence_id;
+  };
+  std::array<IbJumpFrame, MAX_IB_NEST> jump_stack_;
+  int jump_depth_{0};
+  bool is_in_jump_{false};
+  u64 jump_target_addr_{0};
+  u64 jump_target_size_{0};
+  bool jump_continue_{false};
 };

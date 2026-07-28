@@ -66,7 +66,7 @@ static void mock_hal_time_wait(void* ctx, u64 us) { (void)ctx; (void)us; }
 
 static int mock_hal_mem_read_with_validation(void* ctx, u64 dev_addr, void* host_buf, u64 size) {
   (void)ctx;
-  if (g_mapped_addrs.count(dev_addr) == 0 && size >= sizeof(gpu_gpfifo_entry)) {
+  if (g_mapped_addrs.count(dev_addr) == 0) {
     return -EFAULT;
   }
   return mock_hal_mem_read(ctx, dev_addr, host_buf, size);
@@ -138,6 +138,8 @@ int test_single_jump() {
   gpu_gpfifo_entry target_entry = make_launch_entry();
   g_entry_store[jump_target] = target_entry;
 
+  puller.submitBatch(original_addr, 1, 0);
+
   int ret = puller.processIbJump(jump_entry);
 
   if (ret != 0) {
@@ -181,6 +183,8 @@ int test_chained_jump() {
 
   gpu_gpfifo_entry target_entry = make_launch_entry();
   g_entry_store[jump_target] = target_entry;
+
+  puller.submitBatch(original_addr, 1, 0);
 
   int ret = puller.processIbJump(jump_entry);
 
@@ -231,11 +235,14 @@ int test_illegal_jump() {
   DoorbellEmu doorbell;
   HardwarePullerEmu puller(&hal, &doorbell, nullptr);
 
+  u64 original_addr = 0x1000;
   u64 unmapped_target = 0xDEADBEEF;
-  g_mapped_addrs[0x1000] = true;
+  g_mapped_addrs[original_addr] = true;
 
   gpu_gpfifo_entry jump_entry = make_ib_jump_entry(unmapped_target, 0, 1);
-  g_entry_store[0x1000] = jump_entry;
+  g_entry_store[original_addr] = jump_entry;
+
+  puller.submitBatch(original_addr, 1, 0);
 
   int ret = puller.processIbJump(jump_entry);
 
@@ -267,12 +274,19 @@ int test_nest_overflow() {
   HardwarePullerEmu puller(&hal, &doorbell, nullptr);
 
   u64 base_addr = 0x10000;
+  g_mapped_addrs[base_addr] = true;
   for (int i = 0; i < MAX_IB_NEST; i++) {
     u64 target = base_addr + (i + 1) * 0x1000;
-    g_mapped_addrs[base_addr + i * 0x1000] = true;
     g_mapped_addrs[target] = true;
     gpu_gpfifo_entry jump_entry = make_ib_jump_entry(target, 1, 1);
     g_entry_store[base_addr + i * 0x1000] = jump_entry;
+  }
+
+  puller.submitBatch(base_addr, 1, 0);
+
+  for (int i = 0; i < MAX_IB_NEST; i++) {
+    u64 target = base_addr + (i + 1) * 0x1000;
+    gpu_gpfifo_entry jump_entry = make_ib_jump_entry(target, 1, 1);
 
     int ret = puller.processIbJump(jump_entry);
     if (ret != 0) {
