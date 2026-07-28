@@ -191,14 +191,31 @@ void HardwarePullerEmu::runLoop() {
         break;
       }
       case State::DECODE: {
-        // Stage 4.3 Task 1.6: validate method_codec_decode round-trip.
-        // No-op: decode result is discarded; only verifies decode succeeds.
         gpu_method_packet pkt{};
         pkt.method_addr = static_cast<uint16_t>(current_entry_.method);
         pkt.engine = static_cast<uint8_t>(GpuEngineType::COMPUTE);
         pkt.data_count = 0;
         auto encoded = method_codec_encode(pkt, nullptr);
         method_codec_decode(encoded);
+
+        if (current_entry_.method == GPU_OP_SEM_WAIT ||
+            current_entry_.method == GPU_OP_BARRIER_AND ||
+            current_entry_.method == GPU_OP_BARRIER_OR) {
+          if (!processSemOp()) {
+            current_index_++;
+            if (current_index_ >= total_entries_) {
+              if (channel_mgr_) {
+                channel_mgr_->yieldChannel(current_channel_id_);
+              }
+              transitionTo(State::CHANNEL_SWITCH);
+            } else {
+              transitionTo(State::FETCH);
+            }
+            break;
+          }
+          transitionTo(State::SCHEDULE);
+          break;
+        }
 
         transitionTo(current_entry_.release ? State::SEMAPHORE : State::SCHEDULE);
         break;
@@ -262,6 +279,7 @@ void HardwarePullerEmu::runLoop() {
         }
         break;
       case State::COMPLETE:
+        processSemRelease();
         handleComplete();
         current_index_++;
         if (current_index_ >= total_entries_) {
@@ -374,4 +392,135 @@ void HardwarePullerEmu::signalSemaphore(u64 addr, u32 value) {
     semaphore_signaled_.store(true);
     cv_.notify_one();
   }
+}
+
+// ========== Semaphore/Barrier (Stage 4.4) ==========
+
+bool HardwarePullerEmu::processSemOp() {
+  const gpu_gpfifo_entry& entry = current_entry_;
+
+  auto reader = [this](u64 addr) -> u32 {
+    u32 val = 0;
+    hal_->mem_read(hal_->ctx, addr, &val, sizeof(val));
+    return val;
+  };
+
+  switch (entry.method) {
+    case GPU_OP_SEM_WAIT:
+      return sema_state_.process_sem_wait(entry, reader);
+
+    case GPU_OP_SEM_RELEASE:
+      return true;
+
+    case GPU_OP_BARRIER_AND: {
+      u64 barrier_id = entry.semaphore_va;
+      int stream_count = static_cast<int>(entry.semaphore_value);
+      sema_state_.register_barrier_and(barrier_id, stream_count, entry);
+      return false;
+    }
+
+    case GPU_OP_BARRIER_OR: {
+      u64 barrier_id = entry.semaphore_va;
+      sema_state_.register_barrier_or(barrier_id, entry);
+      return false;
+    }
+
+    default:
+      return true;
+  }
+}
+
+void HardwarePullerEmu::processSemRelease() {
+  if (current_entry_.method == GPU_OP_SEM_RELEASE) {
+    auto writer = [this](u64 addr, u32 value) {
+      hal_->mem_write(hal_->ctx, addr, &value, sizeof(value));
+    };
+    sema_state_.process_sem_release(current_entry_, writer);
+  } else if (current_entry_.release) {
+    auto writer = [this](u64 addr, u32 value) {
+      hal_->mem_write(hal_->ctx, addr, &value, sizeof(value));
+    };
+    sema_state_.process_sem_release(current_entry_, writer);
+  }
+}
+
+void HardwarePullerEmu::recheckPendingSema() {
+  auto reader = [this](u64 addr) -> u32 {
+    u32 val = 0;
+    hal_->mem_read(hal_->ctx, addr, &val, sizeof(val));
+    return val;
+  };
+  sema_state_.check_pending(reader);
+}
+
+// ========== Indirect Buffer JUMP (Stage 4.4 Task 14) ==========
+
+int HardwarePullerEmu::processIbJump(const gpu_gpfifo_entry& entry) {
+  u64 target_gpu_va = entry.payload[0];
+  u64 continue_flag = entry.payload[1];
+  u64 target_size = entry.payload[2];
+
+  u8 probe[4];
+  int probe_ret = hal_->mem_read(hal_->ctx, target_gpu_va, probe, sizeof(probe));
+  if (probe_ret != 0) {
+    return -EFAULT;
+  }
+
+  if (jump_depth_ >= MAX_IB_NEST) {
+    return -E2BIG;
+  }
+
+  IbJumpFrame& frame = jump_stack_[jump_depth_];
+  frame.saved_gpfifo_addr = current_gpfifo_addr_;
+  frame.saved_index = current_index_;
+  frame.saved_total = total_entries_;
+  frame.saved_fence_id = pending_fence_id_;
+
+  jump_depth_++;
+  is_in_jump_ = true;
+  jump_target_addr_ = target_gpu_va;
+  jump_target_size_ = target_size;
+  jump_continue_ = (continue_flag != 0);
+
+  current_gpfifo_addr_ = target_gpu_va;
+  current_index_ = 0;
+  total_entries_ = target_size;
+
+  return 0;
+}
+
+int HardwarePullerEmu::completeIbJump() {
+  if (!is_in_jump_ || jump_depth_ == 0) {
+    return -EINVAL;
+  }
+
+  jump_depth_--;
+
+  if (jump_continue_) {
+    const IbJumpFrame& frame = jump_stack_[jump_depth_];
+    current_gpfifo_addr_ = frame.saved_gpfifo_addr;
+    current_index_ = frame.saved_index;
+    total_entries_ = frame.saved_total;
+    pending_fence_id_ = frame.saved_fence_id;
+  }
+
+  if (jump_depth_ == 0) {
+    is_in_jump_ = false;
+    jump_target_addr_ = 0;
+    jump_target_size_ = 0;
+    jump_continue_ = false;
+  } else {
+    const IbJumpFrame& parent = jump_stack_[jump_depth_ - 1];
+    jump_target_addr_ = current_gpfifo_addr_;
+    jump_target_size_ = total_entries_;
+    jump_continue_ = false;
+    (void)parent;
+  }
+
+  return 0;
+}
+
+u64 HardwarePullerEmu::savedFetchPc() const {
+  if (jump_depth_ == 0) return 0;
+  return jump_stack_[jump_depth_ - 1].saved_gpfifo_addr;
 }

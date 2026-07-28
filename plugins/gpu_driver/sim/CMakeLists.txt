@@ -34,6 +34,8 @@ add_library(gpu_sim STATIC
     hardware/interrupt.cpp
     # Stage 4.3 - Profiling Hooks (ADR-057): timestamp query lifecycle
     hardware/timestamp_query.cpp
+    # Stage 4.4 - Semaphore/Barrier pending queue (ChannelSemaphoreState)
+    scheduler/channel_state.cpp
 )
 
 set_source_files_properties(
