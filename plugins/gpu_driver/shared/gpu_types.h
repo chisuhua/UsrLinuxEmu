@@ -53,6 +53,21 @@ struct gpu_gpfifo_entry {
 #define GPU_OP_MEMCPY 0x102          /* DMA memory copy */
 #define GPU_OP_MEMSET 0x103          /* DMA memory set */
 #define GPU_OP_FENCE 0x104           /* Insert fence/barrier */
+#define GPU_OP_SEM_WAIT 0x105        /* Stage 4.4: Semaphore WAIT (block until value >= threshold) */
+#define GPU_OP_SEM_RELEASE 0x106     /* Stage 4.4: Semaphore RELEASE (write value on completion) */
+#define GPU_OP_BARRIER_AND 0x107     /* Stage 4.4: Barrier AND (all streams arrive) */
+#define GPU_OP_BARRIER_OR 0x108      /* Stage 4.4: Barrier OR (first stream arrives) */
+#define GPU_OP_IB_JUMP 0x109         /* Stage 4.4: Indirect Buffer JUMP (switch fetch address) */
+
+/* Channel priority levels (Stage 4.4: Priority Scheduling) */
+#define GPU_CHAN_PRI_IDLE    0  /* No pending work */
+#define GPU_CHAN_PRI_LOW     1  /* Low priority */
+#define GPU_CHAN_PRI_NORMAL  2  /* Normal/default priority */
+#define GPU_CHAN_PRI_HIGH    3  /* High priority */
+#define GPU_CHAN_PRI_REALTIME 4 /* Realtime priority */
+
+/* Indirect Buffer reference (Stage 4.4) */
+#define MAX_IB_NEST 4  /* Maximum IB JUMP nesting depth */
 
 /* Submission flags */
 #define GPU_SUBMIT_FENCE 0x1         /* Wait for fence before execution */
