@@ -55,6 +55,14 @@ class ChannelSemaphoreState {
   ChannelSemaphoreState() = default;
   ~ChannelSemaphoreState() = default;
 
+  // ========== Channel Priority (Stage 4.4: Priority Scheduling) ==========
+
+  /** Set the channel priority level. */
+  void set_priority(int pri) { priority_ = pri; }
+
+  /** Get the channel priority level. */
+  int priority() const { return priority_; }
+
   // ========== Pending Queue (SEM_WAIT) ==========
 
   /** Enqueue an entry into the pending queue (blocked on semaphore). */
@@ -146,6 +154,8 @@ class ChannelSemaphoreState {
   void clear();
 
  private:
+  int priority_{GPU_CHAN_PRI_NORMAL};
+
   std::deque<gpu_gpfifo_entry> pending_entries_;
   std::vector<gpu_gpfifo_entry> released_entries_;
 
