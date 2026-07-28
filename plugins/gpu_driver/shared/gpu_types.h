@@ -69,6 +69,24 @@ struct gpu_gpfifo_entry {
 /* Indirect Buffer reference (Stage 4.4) */
 #define MAX_IB_NEST 4  /* Maximum IB JUMP nesting depth */
 
+/**
+ * gpu_ib_ref - Indirect Buffer reference descriptor (Stage 4.4: IB JUMP)
+ *
+ * Describes a jump target for GPU_OP_IB_JUMP. The Puller saves its
+ * current fetch position, switches to gpu_va, and (if continue_flag
+ * is set) resumes at the saved position after the target batch completes.
+ *
+ * Layout matches payload[] usage in gpu_gpfifo_entry:
+ *   payload[0] = gpu_va (target fetch address)
+ *   payload[1] = continue_flag (1 = resume after, 0 = terminate)
+ *   payload[2] = size (target batch entry count)
+ */
+struct gpu_ib_ref {
+  u64 gpu_va;    /* Target GPU virtual address to jump to */
+  u64 size;      /* Number of entries at the target address */
+  u32 flags;     /* Bit 0: continue_flag (resume after target batch) */
+};
+
 /* Submission flags */
 #define GPU_SUBMIT_FENCE 0x1         /* Wait for fence before execution */
 #define GPU_SUBMIT_INTERRUPT 0x2     /* Generate MSI-X interrupt on completion */
