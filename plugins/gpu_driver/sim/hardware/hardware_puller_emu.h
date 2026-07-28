@@ -14,6 +14,7 @@
 #include "gpu_hal.h"
 #include "doorbell_emu.h"
 #include "fence_id.h"
+#include "scheduler/channel_state.h"  // Stage 4.4: SEM_WAIT/RELEASE/BARRIER
 
 class GlobalScheduler;
 class GpuQueueEmu;
@@ -80,6 +81,31 @@ class HardwarePullerEmu {
 
   void signalSemaphore(u64 addr, u32 value);
 
+  // ========== Semaphore/Barrier Integration (Stage 4.4) ==========
+
+  ChannelSemaphoreState& sema_state() { return sema_state_; }
+
+  /**
+   * Process the current entry's semaphore/barrier method if applicable.
+   * Called from FETCH phase before DISPATCH.
+   * @return true if the entry should proceed to DISPATCH; false if blocked
+   *         (enqueued to pending queue or barrier).
+   */
+  bool processSemOp();
+
+  /**
+   * Process SEM_RELEASE on entry completion.
+   * Called from COMPLETE phase when entry.method == GPU_OP_SEM_RELEASE.
+   */
+  void processSemRelease();
+
+  /**
+   * Re-check pending semaphore entries.
+   * Called at the start of each dispatch cycle.
+   * Released entries are available via sema_state_.released_entries().
+   */
+  void recheckPendingSema();
+
   // ========== ChannelManager Integration (Stage 4.3 Task 2) ==========
 
   /** Set the ChannelManager for per-channel batch routing.
@@ -139,4 +165,7 @@ class HardwarePullerEmu {
   // ========== ChannelManager (Stage 4.3 Task 2) ==========
   ChannelManager* channel_mgr_ = nullptr;
   uint32_t current_channel_id_ = 0;
+
+  // ========== Semaphore/Barrier State (Stage 4.4) ==========
+  ChannelSemaphoreState sema_state_;
 };
