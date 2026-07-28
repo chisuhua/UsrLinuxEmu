@@ -160,17 +160,20 @@ int test_priority_inheritance() {
   low_entry.valid = 1;
   low_entry.method = GPU_OP_LAUNCH_KERNEL;
   low_entry.semaphore_va = 0x100;
-  scheduler.enqueue_with_priority(low_entry, EngineType::COMPUTE, GPU_CHAN_PRI_LOW);
+  scheduler.enqueue_with_priority(low_entry, EngineType::COMPUTE,
+                                  GPU_CHAN_PRI_LOW, 0);
 
   // Channel 1 is REALTIME and will block on a semaphore signalled by channel 0
   gpu_gpfifo_entry rt_entry = {};
   rt_entry.valid = 1;
   rt_entry.method = GPU_OP_LAUNCH_KERNEL;
   rt_entry.semaphore_va = 0x200;
-  scheduler.enqueue_with_priority(rt_entry, EngineType::COMPUTE, GPU_CHAN_PRI_REALTIME);
+  scheduler.enqueue_with_priority(rt_entry, EngineType::COMPUTE,
+                                  GPU_CHAN_PRI_REALTIME, 1);
 
-  // Boost channel 0 (LOW -> HIGH) via priority inheritance
-  scheduler.boost_priority(0, GPU_CHAN_PRI_HIGH);
+  // Boost channel 0 (LOW -> REALTIME) via priority inheritance
+  // Now both are REALTIME, but channel 0 was enqueued first (FIFO)
+  scheduler.boost_priority(0, GPU_CHAN_PRI_REALTIME);
 
   WorkItem item1;
   if (!scheduler.dequeue(&item1)) {
@@ -179,8 +182,8 @@ int test_priority_inheritance() {
   }
 
   // After boost, channel 0's entry (0x100) should be dispatched before
-  // the REALTIME entry (0x200) because it was boosted to HIGH and
-  // enqueued first.
+  // the REALTIME entry (0x200) because it was boosted to the same
+  // priority level and enqueued first (FIFO within same priority).
   if (item1.entry.semaphore_va != 0x100) {
     std::cerr << "FAIL: expected boosted LOW entry (0x100) first, got 0x"
               << std::hex << item1.entry.semaphore_va << "\n";

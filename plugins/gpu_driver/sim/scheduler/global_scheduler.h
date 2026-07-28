@@ -22,6 +22,8 @@ struct WorkItem {
   EngineType engine;
   void* user_data;
   int priority{GPU_CHAN_PRI_NORMAL};
+  int original_priority{GPU_CHAN_PRI_NORMAL};
+  int channel_id{-1};
   uint64_t sequence_id{0};
 };
 
@@ -54,7 +56,7 @@ class GlobalScheduler {
 
   void enqueue(const gpu_gpfifo_entry& entry, EngineType engine);
   void enqueue_with_priority(const gpu_gpfifo_entry& entry, EngineType engine,
-                             int priority);
+                             int priority, int channel_id = -1);
   bool dequeue(WorkItem* out_item);
 
   size_t queueSize() const;
