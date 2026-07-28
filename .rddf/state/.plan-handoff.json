@@ -1,52 +1,34 @@
 {
-  "plan_complete": true,
-  "completed_at": "2026-07-27T23:58:00+00:00",
-  "mode": "backfill-traceability",
-  "note": "Plan phase consumed the single approved proposal (stage4-1-bar-ioremap) by backfilling OpenSpec change artifacts for code already implemented via TDD path (commits 571f9af, 556b647, 116ca8c). The change went directly to archive rather than active queue, so plan-done gate (which requires ≥1 ready-for-ship change) did not fire in its standard form. The plan-done handoff is written manually to signal completion.",
-  "summary": {
-    "approved_proposals_consumed": 1,
-    "new_changes_created": 0,
-    "changes_backfilled": 1,
-    "changes_archived": 1,
-    "ready_for_ship_count": 0
-  },
-  "consumed_proposals": [
-    {
-      "name": "stage4-1-bar-ioremap",
-      "priority": "P1",
-      "source": "ADR-069 + ADR-073 + ADR-064",
-      "implementation_method": "TDD-direct (3 atomic commits before OpenSpec workflow)",
-      "implementation_commits": [
-        "571f9af feat(sim): add Stage 4.1 Phase 1 VRAM store + BAR sim + DMA coherent pool (TDD)",
-        "556b647 feat(compat): Phase 2 - ioremap/iounmap/readl/writel + dma_alloc_coherent compat layer",
-        "116ca8c feat(bar0): add HQD register writel/readl with mqd_state hook"
-      ],
-      "backfill_commit": "44a8af0 feat(openspec): backfill stage4-1-bar-ioremap change artifacts",
-      "archived_path": "openspec/changes/archive/2026-07-27-stage4-1-bar-ioremap/",
-      "specs_created": [
-        "bar-ioremap-compat",
-        "dma-coherent-emulation",
-        "hal-mem-map-bo"
-      ],
-      "validation": "openspec validate: 1 passed, 0 failed"
+    "plan_complete": true,
+    "completed_at": "2026-07-28T04:05:59+00:00",
+    "mode": "standard",
+    "summary": {
+        "active_changes": 1,
+        "artifacts_committed": true,
+        "changes": ["stage4-4-gpu-cp-phase55"]
+    },
+    "changes": [
+        {
+            "name": "stage4-4-gpu-cp-phase55",
+            "phase": "stage-4",
+            "priority": "P1",
+            "source": "ADR-045 + ADR-047 + ADR-050 (Stage 4.4 GPU CP Phase 5.5)",
+            "artifacts": {
+                "proposal": "committed",
+                "design": "committed",
+                "tasks": "committed",
+                "specs": ["priority-scheduling", "semaphore-barrier", "indirect-buffer"]
+            },
+            "deps_analyzed": true,
+            "deps_blockers": [],
+            "ready_for_ship": true
+        }
+    ],
+    "deps_analysis": ".rddf/state/.deps-output.md",
+    "ship_handoff": {
+        "active_changes_count": 1,
+        "ready_for_ship_changes": ["stage4-4-gpu-cp-phase55"],
+        "ship_actionable": true,
+        "reason": "stage4-4-gpu-cp-phase55 is ready for worktree creation and execution"
     }
-  ],
-  "proposal_approved_md_updated": true,
-  "ship_handoff": {
-    "active_changes_count": 0,
-    "ready_for_ship_changes": [],
-    "ship_actionable": false,
-    "reason": "All approved proposals consumed; no code changes need shipping. Stage 4.1 implementation is complete (commits already on main). Use guide-ship only when new approved proposals exist."
-  },
-  "rddf_session": {
-    "session_id": "rds_975db637358e",
-    "parent_session_id": "rds_a74dee83e670",
-    "kind": "stage_plan",
-    "status": "completed-via-backfill"
-  },
-  "next_actions": [
-    "No further plan-side work required.",
-    "If new proposals emerge, run guide-plan again (or use add-improve to record new improvement suggestions).",
-    "The roadmap.md Stage 4 task list remains available for future Stage 4.2+ sub-stages."
-  ]
 }
