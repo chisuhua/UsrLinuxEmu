@@ -452,3 +452,75 @@ void HardwarePullerEmu::recheckPendingSema() {
   };
   sema_state_.check_pending(reader);
 }
+
+// ========== Indirect Buffer JUMP (Stage 4.4 Task 14) ==========
+
+int HardwarePullerEmu::processIbJump(const gpu_gpfifo_entry& entry) {
+  u64 target_gpu_va = entry.payload[0];
+  u64 continue_flag = entry.payload[1];
+  u64 target_size = entry.payload[2];
+
+  u8 probe[4];
+  int probe_ret = hal_->mem_read(hal_->ctx, target_gpu_va, probe, sizeof(probe));
+  if (probe_ret != 0) {
+    return -EFAULT;
+  }
+
+  if (jump_depth_ >= MAX_IB_NEST) {
+    return -E2BIG;
+  }
+
+  IbJumpFrame& frame = jump_stack_[jump_depth_];
+  frame.saved_gpfifo_addr = current_gpfifo_addr_;
+  frame.saved_index = current_index_;
+  frame.saved_total = total_entries_;
+  frame.saved_fence_id = pending_fence_id_;
+
+  jump_depth_++;
+  is_in_jump_ = true;
+  jump_target_addr_ = target_gpu_va;
+  jump_target_size_ = target_size;
+  jump_continue_ = (continue_flag != 0);
+
+  current_gpfifo_addr_ = target_gpu_va;
+  current_index_ = 0;
+  total_entries_ = target_size;
+
+  return 0;
+}
+
+int HardwarePullerEmu::completeIbJump() {
+  if (!is_in_jump_ || jump_depth_ == 0) {
+    return -EINVAL;
+  }
+
+  jump_depth_--;
+
+  if (jump_continue_) {
+    const IbJumpFrame& frame = jump_stack_[jump_depth_];
+    current_gpfifo_addr_ = frame.saved_gpfifo_addr;
+    current_index_ = frame.saved_index;
+    total_entries_ = frame.saved_total;
+    pending_fence_id_ = frame.saved_fence_id;
+  }
+
+  if (jump_depth_ == 0) {
+    is_in_jump_ = false;
+    jump_target_addr_ = 0;
+    jump_target_size_ = 0;
+    jump_continue_ = false;
+  } else {
+    const IbJumpFrame& parent = jump_stack_[jump_depth_ - 1];
+    jump_target_addr_ = current_gpfifo_addr_;
+    jump_target_size_ = total_entries_;
+    jump_continue_ = false;
+    (void)parent;
+  }
+
+  return 0;
+}
+
+u64 HardwarePullerEmu::savedFetchPc() const {
+  if (jump_depth_ == 0) return 0;
+  return jump_stack_[jump_depth_ - 1].saved_gpfifo_addr;
+}
