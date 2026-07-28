@@ -1,5 +1,7 @@
 #include "scheduler/global_scheduler.h"
 
+#include <vector>
+
 GlobalScheduler::GlobalScheduler() = default;
 
 GlobalScheduler::~GlobalScheduler() = default;
@@ -14,7 +16,7 @@ void GlobalScheduler::enqueue(const gpu_gpfifo_entry& entry, EngineType engine) 
 
 void GlobalScheduler::enqueue_with_priority(const gpu_gpfifo_entry& entry,
                                              EngineType engine,
-                                             int priority) {
+                                             int priority, int channel_id) {
   std::lock_guard<std::mutex> lock(mutex_);
   translator_.translate(entry);
   WorkItem item;
@@ -22,7 +24,15 @@ void GlobalScheduler::enqueue_with_priority(const gpu_gpfifo_entry& entry,
   item.engine = engine;
   item.user_data = nullptr;
   item.priority = priority;
+  item.original_priority = priority;
+  item.channel_id = channel_id;
   item.sequence_id = sequence_counter_.fetch_add(1);
+
+  auto it = inherited_priorities_.find(channel_id);
+  if (it != inherited_priorities_.end() && it->second > priority) {
+    item.priority = it->second;
+  }
+
   queue_.insert(std::move(item));
 }
 
@@ -83,11 +93,41 @@ EngineType GlobalScheduler::selectEngine(const gpu_gpfifo_entry& entry) {
 void GlobalScheduler::boost_priority(int channel_id, int boosted_priority) {
   std::lock_guard<std::mutex> lock(mutex_);
   inherited_priorities_[channel_id] = boosted_priority;
+
+  std::vector<WorkItem> to_reinsert;
+  for (auto it = queue_.begin(); it != queue_.end(); ) {
+    if (it->channel_id == channel_id && it->priority < boosted_priority) {
+      WorkItem boosted = *it;
+      boosted.priority = boosted_priority;
+      it = queue_.erase(it);
+      to_reinsert.push_back(std::move(boosted));
+    } else {
+      ++it;
+    }
+  }
+  for (auto& item : to_reinsert) {
+    queue_.insert(std::move(item));
+  }
 }
 
 void GlobalScheduler::restore_priority(int channel_id) {
   std::lock_guard<std::mutex> lock(mutex_);
   inherited_priorities_.erase(channel_id);
+
+  std::vector<WorkItem> to_reinsert;
+  for (auto it = queue_.begin(); it != queue_.end(); ) {
+    if (it->channel_id == channel_id && it->priority != it->original_priority) {
+      WorkItem restored = *it;
+      restored.priority = restored.original_priority;
+      it = queue_.erase(it);
+      to_reinsert.push_back(std::move(restored));
+    } else {
+      ++it;
+    }
+  }
+  for (auto& item : to_reinsert) {
+    queue_.insert(std::move(item));
+  }
 }
 
 bool GlobalScheduler::has_inherited_priority(int channel_id) const {
