@@ -203,6 +203,125 @@ int test_priority_inheritance() {
   return 0;
 }
 
+// ========== Multi-Channel Priority Inheritance Test ==========
+
+int test_multi_channel_priority_inheritance() {
+  GlobalScheduler scheduler;
+
+  // Channel 0: LOW, Channel 1: NORMAL, Channel 2: HIGH
+  gpu_gpfifo_entry low_entry = {};
+  low_entry.valid = 1;
+  low_entry.method = GPU_OP_LAUNCH_KERNEL;
+  low_entry.semaphore_va = 0x100;
+  scheduler.enqueue_with_priority(low_entry, EngineType::COMPUTE,
+                                  GPU_CHAN_PRI_LOW, 0);
+
+  gpu_gpfifo_entry normal_entry = {};
+  normal_entry.valid = 1;
+  normal_entry.method = GPU_OP_LAUNCH_KERNEL;
+  normal_entry.semaphore_va = 0x200;
+  scheduler.enqueue_with_priority(normal_entry, EngineType::COMPUTE,
+                                  GPU_CHAN_PRI_NORMAL, 1);
+
+  gpu_gpfifo_entry high_entry = {};
+  high_entry.valid = 1;
+  high_entry.method = GPU_OP_LAUNCH_KERNEL;
+  high_entry.semaphore_va = 0x300;
+  scheduler.enqueue_with_priority(high_entry, EngineType::COMPUTE,
+                                  GPU_CHAN_PRI_HIGH, 2);
+
+  // Boost all three channels to REALTIME
+  scheduler.boost_priority(0, GPU_CHAN_PRI_REALTIME);
+  scheduler.boost_priority(1, GPU_CHAN_PRI_REALTIME);
+  scheduler.boost_priority(2, GPU_CHAN_PRI_REALTIME);
+
+  // After boost, all are REALTIME. FIFO within same priority means
+  // they should dispatch in original sequence_id order: 0x100, 0x200, 0x300
+  WorkItem item1, item2, item3;
+  if (!scheduler.dequeue(&item1)) {
+    std::cerr << "FAIL: first dequeue failed\n";
+    return 1;
+  }
+  if (!scheduler.dequeue(&item2)) {
+    std::cerr << "FAIL: second dequeue failed\n";
+    return 1;
+  }
+  if (!scheduler.dequeue(&item3)) {
+    std::cerr << "FAIL: third dequeue failed\n";
+    return 1;
+  }
+
+  if (item1.entry.semaphore_va != 0x100) {
+    std::cerr << "FAIL: expected channel 0 (0x100) first, got 0x"
+              << std::hex << item1.entry.semaphore_va << "\n";
+    return 1;
+  }
+  if (item2.entry.semaphore_va != 0x200) {
+    std::cerr << "FAIL: expected channel 1 (0x200) second, got 0x"
+              << std::hex << item2.entry.semaphore_va << "\n";
+    return 1;
+  }
+  if (item3.entry.semaphore_va != 0x300) {
+    std::cerr << "FAIL: expected channel 2 (0x300) third, got 0x"
+              << std::hex << item3.entry.semaphore_va << "\n";
+    return 1;
+  }
+
+  std::cout << "PASS: test_multi_channel_priority_inheritance\n";
+  return 0;
+}
+
+// ========== Priority Flush Test ==========
+
+int test_priority_flush() {
+  GlobalScheduler scheduler;
+
+  gpu_gpfifo_entry low_entry = {};
+  low_entry.valid = 1;
+  low_entry.method = GPU_OP_LAUNCH_KERNEL;
+  low_entry.semaphore_va = 0x100;
+
+  gpu_gpfifo_entry normal_entry = {};
+  normal_entry.valid = 1;
+  normal_entry.method = GPU_OP_LAUNCH_KERNEL;
+  normal_entry.semaphore_va = 0x200;
+
+  gpu_gpfifo_entry high_entry = {};
+  high_entry.valid = 1;
+  high_entry.method = GPU_OP_LAUNCH_KERNEL;
+  high_entry.semaphore_va = 0x300;
+
+  scheduler.enqueue_with_priority(low_entry, EngineType::COMPUTE,
+                                  GPU_CHAN_PRI_LOW);
+  scheduler.enqueue_with_priority(normal_entry, EngineType::COMPUTE,
+                                  GPU_CHAN_PRI_NORMAL);
+  scheduler.enqueue_with_priority(high_entry, EngineType::COMPUTE,
+                                  GPU_CHAN_PRI_HIGH);
+
+  if (scheduler.queueSize() != 3) {
+    std::cerr << "FAIL: expected queue size 3 before flush, got "
+              << scheduler.queueSize() << "\n";
+    return 1;
+  }
+
+  scheduler.flush();
+
+  if (scheduler.queueSize() != 0) {
+    std::cerr << "FAIL: expected queue size 0 after flush, got "
+              << scheduler.queueSize() << "\n";
+    return 1;
+  }
+
+  WorkItem item;
+  if (scheduler.dequeue(&item)) {
+    std::cerr << "FAIL: dequeue should return false after flush\n";
+    return 1;
+  }
+
+  std::cout << "PASS: test_priority_flush\n";
+  return 0;
+}
+
 // ========== Main ==========
 
 int main() {
@@ -214,6 +333,8 @@ int main() {
   result |= test_same_priority_fifo();
   result |= test_starvation_protection();
   result |= test_priority_inheritance();
+  result |= test_multi_channel_priority_inheritance();
+  result |= test_priority_flush();
 
   if (result == 0) {
     std::cout << "\n=== ALL TESTS PASSED ===\n";

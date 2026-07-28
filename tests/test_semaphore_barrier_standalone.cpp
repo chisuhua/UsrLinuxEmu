@@ -310,3 +310,110 @@ TEST_CASE("ChannelSemaphoreState clear resets all state", "[sema]") {
   REQUIRE_FALSE(state.has_pending());
   REQUIRE(state.barrier_waiting_count(0x2000) == 0);
 }
+
+// ========== EDGE CASE TESTS ==========
+
+TEST_CASE("BARRIER_AND double signal after release does not re-trigger",
+          "[barrier][edge]") {
+  ChannelSemaphoreState state;
+
+  u64 barrier_id = 0x7000;
+  int stream_count = 2;
+
+  gpu_gpfifo_entry e1 = make_barrier_and_entry(barrier_id, stream_count);
+  gpu_gpfifo_entry e2 = make_barrier_and_entry(barrier_id, stream_count);
+
+  // Register both streams and signal to trigger the barrier
+  state.register_barrier_and(barrier_id, stream_count, e1);
+  state.register_barrier_and(barrier_id, stream_count, e2);
+
+  state.signal_barrier(barrier_id);
+  state.signal_barrier(barrier_id);
+  REQUIRE(state.is_barrier_released(barrier_id));
+  REQUIRE(state.barrier_released().size() == 2);
+
+  // Now signal stream 1 again — this should NOT re-trigger or duplicate
+  bool re_triggered = state.signal_barrier(barrier_id);
+
+  REQUIRE_FALSE(re_triggered);
+  REQUIRE(state.is_barrier_released(barrier_id));
+  // Released entries must not double
+  REQUIRE(state.barrier_released().size() == 2);
+}
+
+TEST_CASE("Semaphore WAIT with already-satisfied condition proceeds immediately",
+          "[sema][edge]") {
+  ChannelSemaphoreState state;
+  MockGpuMem mem;
+
+  u64 sem_va = 0x8000;
+  u32 threshold = 5;
+
+  // Write the threshold value FIRST — condition is already met
+  mem.write(sem_va, threshold);
+
+  gpu_gpfifo_entry entry = make_sem_wait_entry(sem_va, threshold);
+
+  // process_sem_wait should see value >= threshold and return true immediately
+  // The entry must NOT be enqueued to the pending queue
+  bool can_proceed = state.process_sem_wait(entry, mem.reader());
+
+  REQUIRE(can_proceed);
+  REQUIRE_FALSE(state.has_pending());
+  REQUIRE(state.pending_count() == 0);
+}
+
+TEST_CASE("Multiple pending semaphores checked in order", "[sema][edge]") {
+  ChannelSemaphoreState state;
+  MockGpuMem mem;
+
+  u64 addr_a = 0xA000;
+  u64 addr_b = 0xB000;
+  u64 addr_c = 0xC000;
+
+  gpu_gpfifo_entry entry_a = make_sem_wait_entry(addr_a, 10);
+  gpu_gpfifo_entry entry_b = make_sem_wait_entry(addr_b, 20);
+  gpu_gpfifo_entry entry_c = make_sem_wait_entry(addr_c, 30);
+
+  // All three start blocked (memory defaults to 0)
+  state.process_sem_wait(entry_a, mem.reader());
+  state.process_sem_wait(entry_b, mem.reader());
+  state.process_sem_wait(entry_c, mem.reader());
+
+  REQUIRE(state.pending_count() == 3);
+
+  // Satisfy the SECOND one first (addr_b = 20)
+  mem.write(addr_b, 20);
+
+  bool any_ready = state.check_pending(mem.reader());
+
+  // Only the second entry should be released
+  REQUIRE(any_ready);
+  REQUIRE(state.released_entries().size() == 1);
+  REQUIRE(state.released_entries()[0].semaphore_va == addr_b);
+  // The first and third are still pending
+  REQUIRE(state.has_pending());
+  REQUIRE(state.pending_count() == 2);
+
+  // Now satisfy the FIRST one (addr_a = 10)
+  mem.write(addr_a, 10);
+
+  any_ready = state.check_pending(mem.reader());
+
+  REQUIRE(any_ready);
+  REQUIRE(state.released_entries().size() == 1);
+  REQUIRE(state.released_entries()[0].semaphore_va == addr_a);
+  REQUIRE(state.has_pending());
+  REQUIRE(state.pending_count() == 1);
+
+  // Finally satisfy the THIRD one (addr_c = 30)
+  mem.write(addr_c, 30);
+
+  any_ready = state.check_pending(mem.reader());
+
+  REQUIRE(any_ready);
+  REQUIRE(state.released_entries().size() == 1);
+  REQUIRE(state.released_entries()[0].semaphore_va == addr_c);
+  REQUIRE_FALSE(state.has_pending());
+  REQUIRE(state.pending_count() == 0);
+}

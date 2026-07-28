@@ -320,6 +320,134 @@ int test_nest_overflow() {
   return 0;
 }
 
+// ========== Test 5: JUMP with continue_flag full cycle (restore saved PC) ==========
+
+int test_jump_continue_full_cycle() {
+  reset_test_env();
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+
+  u64 original_addr = 0x1000;
+  u64 jump_target = 0x2000;
+
+  g_mapped_addrs[original_addr] = true;
+  g_mapped_addrs[jump_target] = true;
+
+  // Original batch has a JUMP entry (continue_flag=1) at slot 0
+  gpu_gpfifo_entry jump_entry = make_ib_jump_entry(jump_target, 1, 1);
+  g_entry_store[original_addr] = jump_entry;
+
+  // Target batch has a LAUNCH entry
+  gpu_gpfifo_entry target_entry = make_launch_entry();
+  g_entry_store[jump_target] = target_entry;
+
+  puller.submitBatch(original_addr, 1, 0);
+
+  // Save the original PC before jump
+  u64 saved_pc_before = puller.savedFetchPc();
+
+  int ret = puller.processIbJump(jump_entry);
+  if (ret != 0) {
+    std::cerr << "FAIL: processIbJump with continue should return 0, got " << ret << "\n";
+    return 1;
+  }
+  if (!puller.isInJump()) {
+    std::cerr << "FAIL: puller should be in jump state after processIbJump\n";
+    return 1;
+  }
+  if (puller.jumpDepth() != 1) {
+    std::cerr << "FAIL: jump depth should be 1, got " << puller.jumpDepth() << "\n";
+    return 1;
+  }
+  if (!puller.jumpWillContinue()) {
+    std::cerr << "FAIL: jump should have continue_flag set\n";
+    return 1;
+  }
+  if (puller.jumpTargetAddr() != jump_target) {
+    std::cerr << "FAIL: jump target addr should be 0x" << std::hex << jump_target
+              << ", got 0x" << puller.jumpTargetAddr() << std::dec << "\n";
+    return 1;
+  }
+
+  // The saved PC should match the original batch address
+  u64 saved_pc = puller.savedFetchPc();
+  if (saved_pc != original_addr) {
+    std::cerr << "FAIL: saved PC should be 0x" << std::hex << original_addr
+              << ", got 0x" << saved_pc << std::dec << "\n";
+    return 1;
+  }
+  (void)saved_pc_before;
+
+  // Complete the jump target batch - should restore saved PC context
+  int ret2 = puller.completeIbJump();
+  if (ret2 != 0) {
+    std::cerr << "FAIL: completeIbJump should return 0, got " << ret2 << "\n";
+    return 1;
+  }
+  if (puller.isInJump()) {
+    std::cerr << "FAIL: puller should not be in jump state after completeIbJump\n";
+    return 1;
+  }
+  if (puller.jumpDepth() != 0) {
+    std::cerr << "FAIL: jump depth should be 0 after completion, got "
+              << puller.jumpDepth() << "\n";
+    return 1;
+  }
+  // After completion, savedFetchPc returns 0 (no active jump)
+  if (puller.savedFetchPc() != 0) {
+    std::cerr << "FAIL: savedFetchPc should be 0 after all jumps completed, got 0x"
+              << std::hex << puller.savedFetchPc() << std::dec << "\n";
+    return 1;
+  }
+
+  std::cout << "PASS: test_jump_continue_full_cycle\n";
+  return 0;
+}
+
+// ========== Test 6: completeIbJump with zero jump_depth (no active jump) ==========
+
+int test_jump_zero_depth() {
+  reset_test_env();
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+
+  // No jump has been initiated - jump_depth_ == 0
+  if (puller.isInJump()) {
+    std::cerr << "FAIL: puller should not be in jump state initially\n";
+    return 1;
+  }
+  if (puller.jumpDepth() != 0) {
+    std::cerr << "FAIL: jump depth should be 0 initially, got "
+              << puller.jumpDepth() << "\n";
+    return 1;
+  }
+
+  // completeIbJump on zero depth should handle gracefully (no crash)
+  int ret = puller.completeIbJump();
+
+  if (ret != -EINVAL) {
+    std::cerr << "FAIL: completeIbJump with zero depth should return -EINVAL, got "
+              << ret << "\n";
+    return 1;
+  }
+
+  // State should remain unchanged
+  if (puller.isInJump()) {
+    std::cerr << "FAIL: puller should still not be in jump state\n";
+    return 1;
+  }
+  if (puller.jumpDepth() != 0) {
+    std::cerr << "FAIL: jump depth should still be 0, got "
+              << puller.jumpDepth() << "\n";
+    return 1;
+  }
+
+  std::cout << "PASS: test_jump_zero_depth\n";
+  return 0;
+}
+
 // ========== Main ==========
 
 int main() {
@@ -331,6 +459,8 @@ int main() {
   result |= test_chained_jump();
   result |= test_illegal_jump();
   result |= test_nest_overflow();
+  result |= test_jump_continue_full_cycle();
+  result |= test_jump_zero_depth();
 
   if (result == 0) {
     std::cout << "\n=== ALL TESTS PASSED ===\n";
