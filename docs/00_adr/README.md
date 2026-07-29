@@ -58,7 +58,7 @@
 | [adr-046](adr-046-preemption-context-switch.md) | **抢占与上下文切换**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
 | [adr-047](adr-047-hardware-semaphore-barrier.md) | **Hardware Semaphore & Barrier Model**（Phase 5.5）| 📋 PROPOSED | 2026-07-09 |
 | [adr-048](adr-048-interrupt-event-model.md) | **中断与事件模型**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
-| [adr-049](adr-049-cross-engine-synchronization.md) | **跨引擎同步**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
+| [adr-049](adr-049-cross-engine-synchronization.md) | **跨引擎同步**（Phase 6 — Stage 4.5 实施修订 D1）| ✅ 已接受 | 2026-07-09 (rev. 2026-07-29) |
 | [adr-050](adr-050-indirect-buffer-command-chaining.md) | **Indirect Buffer 命令链**（Phase 5+）| 📋 PROPOSED | 2026-07-09 |
 | [adr-051](adr-051-predication-conditional-execution.md) | **Predication 条件执行**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
 | [adr-052](adr-052-aql-pm4-native-support.md) | **AQL/PM4 Native 支持**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
@@ -91,8 +91,8 @@
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 47 | 001-010, 015-024, 027, 031-037, 039-044, 048, 054, 057, 059-065 |
-| 📋 PROPOSED | 13 | 011-014, 038, 045-047, 049-052, 056, 058, 069, 072-073 |
+| ✅ 已接受 | 48 | 001-010, 015-024, 027, 031-037, 039-044, 048-049, 054, 057, 059-065 |
+| 📋 PROPOSED | 12 | 011-014, 038, 045-047, 050-052, 056, 058, 069, 072-073 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
 | **总计** | **67** | ADR-001 ~ ADR-073 |
 

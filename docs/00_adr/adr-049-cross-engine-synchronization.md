@@ -1,10 +1,10 @@
 # ADR-049: Cross-Engine Synchronization
 
-**状态**: 📋 PROPOSED（Phase 6，ADR-047 之后）
-**日期**: 2026-07-09
+**状态**: ✅ Accepted（Stage 4.5 实施修订 D1）
+**日期**: 2026-07-09（首次提案），2026-07-29（D1 修订）
 **提案人**: Sisyphus（GPU CP 蓝图完整性填充）
 **关联 ADR**: ADR-021 (Puller FSM), ADR-044 (HyperQueue), ADR-047 (Hardware Semaphore)
-**关联 Change**: 无（Phase 6 规划）
+**关联 Change**: `openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem/`
 
 ---
 
@@ -30,23 +30,42 @@
 
 ## Decision
 
-### D1: 引入 sim_timeline_semaphore 新原语
+### D1: 引入 SemaphoreManager class（waiter 回调模式）
+
+根据 Stage 4.5 实施经验，**修订 D1 wait 语义**：由阻塞 wait 改为 waiter 回调注册（non-blocking），避免 Puller 线程阻塞导致 starvation 保护失效。
 
 ```cpp
-// sim/fence_id.h 新增
-// 与 ADR-040 的 sim_fence_id（completion token）和 ADR-047 的 hardware semaphore 不同：
-// timeline semaphore 有 monotonically increasing value + history + cross-engine 适用
-
-typedef uint64_t semaphore_handle_t;
-
-int sim_timeline_semaphore_create(uint64_t initial_value, semaphore_handle_t *handle_out);
-int sim_timeline_semaphore_signal(semaphore_handle_t handle, uint64_t value);  // 写入 value
-int sim_timeline_semaphore_wait(semaphore_handle_t handle, uint64_t value, uint32_t timeout_ms);  // 阻塞直到 >= value
-int sim_timeline_semaphore_query(semaphore_handle_t handle, uint64_t *current_value_out);
-int sim_timeline_semaphore_destroy(semaphore_handle_t handle);
+// 实际实现: plugins/gpu_driver/sim/semaphore_manager.h (Stage 4.5)
+class SemaphoreManager {
+  uint64_t create(uint64_t initial);                                           // 创建
+  int signal(uint64_t handle, uint64_t value);                                 // 单调递增 signal
+  int wait(uint64_t handle, uint64_t expected,
+           std::function<void(uint64_t)> callback, uint64_t user_data);        // 注册 waiter 回调
+  uint64_t query(uint64_t handle);                                             // 查询当前值
+  int destroy(uint64_t handle);                                                // 销毁
+};
 ```
 
-实现：线程安全的 `std::atomic<uint64_t>` + `std::condition_variable` 等待。
+**关键差异**（修订后）：
+- `wait` 改为注册 `std::function<void(uint64_t)>` 回调（非阻塞），waiter 存储为 FIFO 队列
+- `signal` 递增时按 FIFO 顺序唤醒已就绪的 waiter
+- 跨线程安全：`value` 为 `std::atomic<uint64_t>`（release/acquire），waiter 列表由 `std::mutex` 保护，回调在 unlock 后执行（防死锁）
+- 不使用 `std::condition_variable`（原方案避免 Puller 线程阻塞）
+
+**HAL 接口**（C 兼容）：
+```c
+int (*hal_sem_create)(void *ctx, uint64_t initial, uint64_t *out_handle);
+int (*hal_sem_signal)(void *ctx, uint64_t handle, uint64_t value);
+int (*hal_sem_wait)(void *ctx, uint64_t handle, uint64_t expected,
+                    void (*callback)(uint64_t user_data), uint64_t user_data);
+int (*hal_sem_query)(void *ctx, uint64_t handle, uint64_t *out_val);
+int (*hal_sem_destroy)(void *ctx, uint64_t handle);
+```
+
+**fence 迁移**：
+- `fence_create` → `sem_create(0)`；`fence_read` → `sem_query() > 0`
+- 现有 `sim_fence_id_signal` 路径通过 `g_fence_sem_mgr` 全局指针桥接到 `sem_signal`
+- ADR-049 词汇（create/signal/wait/query/destroy）作为 timeline semaphore 的标准原语
 
 ### D2: Engine 间信号传递
 
