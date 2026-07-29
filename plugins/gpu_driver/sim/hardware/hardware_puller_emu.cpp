@@ -10,6 +10,7 @@
 #include "hal_user.h"
 #include "channel_manager.h"  // Stage 4.3 Task 2
 #include "timestamp_query.h"   // Stage 4.3 Task 6 (ADR-057)
+#include "semaphore_manager.h" // Stage 4.5 (ADR-049)
 
 // Stage 4.3 (ADR-057): global logical clock - one tick per DISPATCH cycle
 std::atomic<uint64_t> g_sim_tick{0};
@@ -340,6 +341,14 @@ void HardwarePullerEmu::handleComplete() {
       current_index_ + 1 >= total_entries_) {
     sim_fence_id_signal(pending_fence_id_);
     pending_fence_id_ = 0;  // 单次触发，避免重复 signal
+  }
+
+  /* Stage 4.5 (ADR-049): timeline semaphore signal on batch completion */
+  if (sem_mgr_ && current_entry_.tl_sem_handle != 0 &&
+      current_entry_.tl_signal_value != 0 &&
+      current_index_ + 1 >= total_entries_) {
+    sem_mgr_->signal(current_entry_.tl_sem_handle,
+                     current_entry_.tl_signal_value);
   }
 }
 

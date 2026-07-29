@@ -45,6 +45,10 @@ struct gpu_gpfifo_entry {
   u64 ts_query;         /* Stage 4.3 (ADR-057): timestamp query handle */
   u32 release : 1;     /* Release semaphore on completion */
   u32 _pad : 31;
+  /* Stage 4.5 (ADR-049): timeline semaphore — batch completion signal / pre-dispatch wait */
+  u64 tl_sem_handle;       /* Timeline semaphore handle (0 = none) */
+  u64 tl_signal_value;     /* Value to signal on completion (0 = no signal) */
+  u64 tl_wait_value;       /* Minimum value to wait before dispatch (0 = no wait) */
 } __attribute__((packed));
 
 /* GPU method opcodes */
