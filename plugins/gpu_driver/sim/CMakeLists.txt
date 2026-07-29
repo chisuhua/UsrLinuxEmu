@@ -38,6 +38,8 @@ add_library(gpu_sim STATIC
     scheduler/channel_state.cpp
     # Stage 4.5 - Timeline Semaphore (ADR-049): create/signal/wait/query/destroy
     semaphore_manager.cpp
+    # Stage 4.5 - Backdoor symbols for testing (ADR-057 D5)
+    backdoor_preempt.cpp
 )
 
 set_source_files_properties(
