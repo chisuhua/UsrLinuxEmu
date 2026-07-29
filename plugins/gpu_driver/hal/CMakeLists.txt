@@ -11,6 +11,7 @@ target_include_directories(gpu_hal PUBLIC
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/kernel
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim    # Stage 4.5: SemaphoreManager
     ${PROJECT_SOURCE_DIR}/libgpu_core/include
 )
 

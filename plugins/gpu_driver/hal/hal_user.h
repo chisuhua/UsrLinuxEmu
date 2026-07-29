@@ -17,6 +17,9 @@
 #include "gpu_buddy.h"
 #include "gpu_hal.h"
 
+/* Forward declaration - SemaphoreManager from sim layer (Stage 4.5) */
+class SemaphoreManager;
+
 #define HAL_REGS_COUNT 256
 #define HAL_HEAP_BASE  (0x100000000ULL)  /* GPU device memory base address */
 #define HAL_HEAP_SIZE  (256ULL * 1024 * 1024)
@@ -51,6 +54,9 @@ struct hal_user_context {
   std::mutex event_lock;
   std::condition_variable event_cv;
   bool event_signaled[256];
+
+  /* Stage 4.5: SemaphoreManager for fence→sem migration */
+  SemaphoreManager* sem_mgr = nullptr;
 };
 
 void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx);
