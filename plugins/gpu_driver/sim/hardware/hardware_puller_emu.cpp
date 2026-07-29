@@ -287,7 +287,24 @@ void HardwarePullerEmu::runLoop() {
           if (channel_mgr_) {
             channel_mgr_->yieldChannel(current_channel_id_);
           }
-          transitionTo(State::CHANNEL_SWITCH);
+          /* Stage 4.5 (ADR-046): check preemption at batch boundary.
+           * Skip if in IB jump (jump_stack_ non-empty). */
+          if (preempt_pending_.load() && !isInJump()) {
+            preempt_pending_.store(false);
+            current_channel_id_ = preempt_target_channel_id_;
+            if (channel_mgr_) {
+              ChannelState* ch = channel_mgr_->nextReadyChannel();
+              if (ch) {
+                current_gpfifo_addr_ = ch->gpfifo_addr;
+                current_index_ = 0;
+                total_entries_ = ch->total_entries;
+                pending_fence_id_ = ch->pending_fence_id;
+              }
+            }
+            transitionTo(State::FETCH);
+          } else {
+            transitionTo(State::CHANNEL_SWITCH);
+          }
         } else {
           transitionTo(State::FETCH);
         }

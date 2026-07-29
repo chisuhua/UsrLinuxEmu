@@ -146,6 +146,14 @@ class HardwarePullerEmu {
    *  Stage 4.5 (ADR-049). */
   void setSemaphoreManager(SemaphoreManager* mgr) { sem_mgr_ = mgr; }
 
+  /** Trigger preemption for a higher-priority channel.
+   *  Stage 4.5 (ADR-046): sets pending flag; actual context save happens
+   *  at batch boundary. */
+  void triggerPreempt(uint32_t target_channel_id) {
+    preempt_target_channel_id_ = target_channel_id;
+    preempt_pending_.store(true);
+  }
+
  private:
   /** 从 GPFIFO 拉取下一条 entry（ioctl 路径） */
   bool fetchEntry(gpu_gpfifo_entry* out_entry);
@@ -201,6 +209,10 @@ class HardwarePullerEmu {
 
   // ========== SemaphoreManager (Stage 4.5 ADR-049) ==========
   SemaphoreManager* sem_mgr_ = nullptr;
+
+  // ========== Preemption State (Stage 4.5 ADR-046) ==========
+  std::atomic<bool> preempt_pending_{false};
+  uint32_t preempt_target_channel_id_ = 0;
 
   // ========== Semaphore/Barrier State (Stage 4.4) ==========
   ChannelSemaphoreState sema_state_;
