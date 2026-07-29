@@ -19,6 +19,8 @@
 #include <map>
 #include <mutex>
 
+#include "semaphore_manager.h"  // Stage 4.5 (ADR-040 migration)
+
 namespace {
 
 /* 内部计数器（C 链接 extern 不暴露） */
@@ -31,6 +33,11 @@ std::map<uint64_t, bool> sim_fence_table_;
 std::mutex sim_fence_table_mutex_;
 
 }  // anonymous namespace
+
+/* Stage 4.5 (ADR-040 migration): global SemaphoreManager pointer.
+ * Set by plugin.cpp once the SemaphoreManager is initialized.
+ * Used to migrate sim_fence_id_signal → sem_signal. */
+SemaphoreManager* g_fence_sem_mgr = nullptr;
 
 extern "C" {
 
@@ -66,7 +73,13 @@ int sim_fence_id_check(uint64_t fence_id, bool *signaled) {
 }
 
 void sim_fence_id_signal(uint64_t fence_id) {
-  /* 越界静默忽略（与 driver 层 hal_fence 信号保持对称：silent-on-bad-id） */
+  /* Stage 4.5 (ADR-040 migration): bridge to timeline semaphore.
+   * g_fence_sem_mgr is set by plugin.cpp when SemaphoreManager is available.
+   * During migration, both paths are active for backward compatibility. */
+  if (g_fence_sem_mgr != nullptr) {
+    g_fence_sem_mgr->signal(fence_id, 1);
+  }
+  /* Legacy path: also update fence table so sim_fence_id_check still works */
   if (fence_id < SIM_FENCE_ID_BASE || fence_id > static_cast<uint64_t>(SIM_FENCE_ID_MAX))
     return;
 

@@ -67,6 +67,10 @@ void sim_fence_id_reset_for_test(void);
 
 #ifdef __cplusplus
 }  // extern "C"
+
+/* Stage 4.5 (ADR-040 migration): global SemaphoreManager for fence migration */
+class SemaphoreManager;
+extern SemaphoreManager* g_fence_sem_mgr;
 #endif
 
 #endif  /* SIM_FENCE_ID_H */
