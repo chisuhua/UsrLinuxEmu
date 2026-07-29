@@ -3,6 +3,8 @@
 
 #include "catch_amalgamated.hpp"
 #include "sim/semaphore_manager.h"
+#include <atomic>
+#include <thread>
 
 TEST_CASE("sem_create allocates and returns valid handle", "[sem]") {
     SemaphoreManager mgr;
@@ -83,4 +85,49 @@ TEST_CASE("multiple waiters at different thresholds", "[sem]") {
     mgr.signal(h, 2);
     REQUIRE(count1 == 1);
     REQUIRE(count2 == 1);
+}
+
+TEST_CASE("concurrent signal and query stress test", "[sem][stress]") {
+    SemaphoreManager mgr;
+    uint64_t h = mgr.create(0);
+    constexpr int N = 100;
+
+    std::thread producer([&]() {
+        for (int i = 1; i <= N; i++) {
+            mgr.signal(h, i);
+        }
+    });
+
+    std::thread consumer([&]() {
+        for (int i = 0; i < N; i++) {
+            mgr.query(h);
+        }
+    });
+
+    producer.join();
+    consumer.join();
+    REQUIRE(mgr.query(h) == N);
+}
+
+TEST_CASE("concurrent wait and signal stress test", "[sem][stress]") {
+    SemaphoreManager mgr;
+    uint64_t h = mgr.create(0);
+    constexpr int N = 50;
+    std::atomic<int> callbacks{0};
+
+    std::thread waiter([&]() {
+        for (int i = 1; i <= N; i++) {
+            mgr.wait(h, i, [&callbacks](uint64_t) { callbacks++; }, 0);
+        }
+    });
+
+    std::thread signaler([&]() {
+        for (int i = 1; i <= N; i++) {
+            mgr.signal(h, i);
+        }
+    });
+
+    waiter.join();
+    signaler.join();
+    REQUIRE(callbacks == N);
 }
