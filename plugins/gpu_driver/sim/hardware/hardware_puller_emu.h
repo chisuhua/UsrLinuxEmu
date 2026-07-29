@@ -20,6 +20,7 @@
 class GlobalScheduler;
 class GpuQueueEmu;
 class ChannelManager;  // Stage 4.3 Task 2 - forward declaration
+class SemaphoreManager;  // Stage 4.5 (ADR-049)
 
 /**
  * HardwarePullerEmu — GPU 命令拉取器仿真 (ADR-021)
@@ -141,6 +142,10 @@ class HardwarePullerEmu {
    *  of the legacy direct-set path. */
   void setChannelManager(ChannelManager* mgr) { channel_mgr_ = mgr; }
 
+  /** Set the SemaphoreManager for timeline semaphore operations.
+   *  Stage 4.5 (ADR-049). */
+  void setSemaphoreManager(SemaphoreManager* mgr) { sem_mgr_ = mgr; }
+
  private:
   /** 从 GPFIFO 拉取下一条 entry（ioctl 路径） */
   bool fetchEntry(gpu_gpfifo_entry* out_entry);
@@ -193,6 +198,9 @@ class HardwarePullerEmu {
   // ========== ChannelManager (Stage 4.3 Task 2) ==========
   ChannelManager* channel_mgr_ = nullptr;
   uint32_t current_channel_id_ = 0;
+
+  // ========== SemaphoreManager (Stage 4.5 ADR-049) ==========
+  SemaphoreManager* sem_mgr_ = nullptr;
 
   // ========== Semaphore/Barrier State (Stage 4.4) ==========
   ChannelSemaphoreState sema_state_;
