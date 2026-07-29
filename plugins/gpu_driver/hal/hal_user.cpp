@@ -261,6 +261,22 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   hal->event_wait = user_event_wait;
   hal->event_notify = user_event_notify;
   hal->mem_map_bo = user_mem_map_bo;
+  /* Stage 4.5: preemption stubs (wired when SemaphoreManager available) */
+  hal->hal_preempt = [](void*, uint32_t) -> int { return 0; };
+  hal->hal_resume = [](void*, uint32_t) -> int { return 0; };
+  hal->hal_sem_create = [](void*, uint64_t init, uint64_t* out) -> int {
+    static uint64_t next_handle = 1;
+    *out = next_handle++;
+    return 0;
+  };
+  hal->hal_sem_signal = [](void*, uint64_t, uint64_t) -> int { return 0; };
+  hal->hal_sem_wait = [](void*, uint64_t, uint64_t,
+                          void (*)(uint64_t), uint64_t) -> int { return 0; };
+  hal->hal_sem_query = [](void*, uint64_t, uint64_t* out) -> int {
+    *out = 0;
+    return 0;
+  };
+  hal->hal_sem_destroy = [](void*, uint64_t) -> int { return 0; };
 }
 
 void hal_user_destroy(struct hal_user_context *ctx) {
