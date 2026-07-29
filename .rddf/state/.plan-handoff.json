@@ -1,34 +1,19 @@
 {
-    "plan_complete": true,
-    "completed_at": "2026-07-28T04:05:59+00:00",
-    "mode": "standard",
-    "summary": {
-        "active_changes": 1,
-        "artifacts_committed": true,
-        "changes": ["stage4-4-gpu-cp-phase55"]
-    },
-    "changes": [
-        {
-            "name": "stage4-4-gpu-cp-phase55",
-            "phase": "stage-4",
-            "priority": "P1",
-            "source": "ADR-045 + ADR-047 + ADR-050 (Stage 4.4 GPU CP Phase 5.5)",
-            "artifacts": {
-                "proposal": "committed",
-                "design": "committed",
-                "tasks": "committed",
-                "specs": ["priority-scheduling", "semaphore-barrier", "indirect-buffer"]
-            },
-            "deps_analyzed": true,
-            "deps_blockers": [],
-            "ready_for_ship": true
-        }
-    ],
-    "deps_analysis": ".rddf/state/.deps-output.md",
-    "ship_handoff": {
-        "active_changes_count": 1,
-        "ready_for_ship_changes": ["stage4-4-gpu-cp-phase55"],
-        "ship_actionable": true,
-        "reason": "stage4-4-gpu-cp-phase55 is ready for worktree creation and execution"
+  "handoff_type": "plan-done",
+  "generated_at": "2026-07-29",
+  "guide_plan_version": "v2.0",
+  "active_changes": [
+    {
+      "name": "stage4-5-cp-phase6-preemption-timeline-sem",
+      "status": "proposed",
+      "artifacts": ["proposal", "design", "specs", "tasks"],
+      "all_committed": true,
+      "deps_analyzed": true
     }
+  ],
+  "summary": {
+    "total_changes": 1,
+    "all_artifacts_committed": true,
+    "deps_analysis": ".rddf/state/.deps-output.md"
+  }
 }
