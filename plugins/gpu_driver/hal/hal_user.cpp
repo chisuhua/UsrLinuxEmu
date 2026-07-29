@@ -11,6 +11,8 @@
 #include <thread>
 #include <chrono>
 
+#include "../sim/semaphore_manager.h"  // Stage 4.5: fence→sem migration
+
 /* ── 内部回调实现 ────────────────────────────────── */
 
 static int user_reg_read(void *ctx, uint64_t offset, uint64_t *out_val) {
@@ -78,10 +80,18 @@ static int user_mem_free(void *ctx, uint64_t dev_addr) {
 
 static int user_fence_create(void *ctx, uint64_t *out_fence_id) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
+  /* Stage 4.5: prefer SemaphoreManager when available */
+  if (hc->sem_mgr) {
+    uint64_t h = hc->sem_mgr->create(0);
+    if (h == 0) return -ENOMEM;
+    *out_fence_id = h;
+    return 0;
+  }
+  /* Legacy path: fixed-size array */
   std::lock_guard<std::mutex> lock(hc->fence_lock);
   for (int i = 0; i < HAL_MAX_FENCES; i++) {
     if (!hc->fence_signaled[i]) {
-      hc->fence_signaled[i] = true; /* 占用槽位 */
+      hc->fence_signaled[i] = true;
       *out_fence_id = i;
       return 0;
     }
@@ -91,6 +101,14 @@ static int user_fence_create(void *ctx, uint64_t *out_fence_id) {
 
 static int user_fence_read(void *ctx, uint64_t fence_id, uint64_t *out_val) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
+  /* Stage 4.5: prefer SemaphoreManager when available */
+  if (hc->sem_mgr) {
+    uint64_t val = hc->sem_mgr->query(fence_id);
+    if (val == UINT64_MAX) return -EINVAL;
+    *out_val = (val > 0) ? 1 : 0;
+    return 0;
+  }
+  /* Legacy path: fixed-size array */
   if (fence_id >= HAL_MAX_FENCES)
     return -EINVAL;
   std::lock_guard<std::mutex> lock(hc->fence_lock);
