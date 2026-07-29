@@ -17,8 +17,8 @@ TEST_CASE("channel_register_and_submit", "[hyperqueue]") {
 
 TEST_CASE("two_channel_round_robin_no_cross_contamination", "[hyperqueue]") {
   ChannelManager mgr;
-  mgr.registerChannel(0, nullptr);
-  mgr.registerChannel(1, nullptr);
+  mgr.registerChannel(0, CHAN_PRIO_NORMAL, nullptr);
+  mgr.registerChannel(1, CHAN_PRIO_NORMAL, nullptr);
   mgr.submitBatch(0, 0x1000, 4, 100);
   mgr.submitBatch(1, 0x2000, 4, 200);
   
@@ -39,7 +39,7 @@ TEST_CASE("two_channel_round_robin_no_cross_contamination", "[hyperqueue]") {
 
 TEST_CASE("channel_submit_overwrites_previous_batch", "[hyperqueue]") {
   ChannelManager mgr;
-  mgr.registerChannel(0, nullptr);
+  mgr.registerChannel(0, CHAN_PRIO_NORMAL, nullptr);
   mgr.submitBatch(0, 0x1000, 4, 100);
   mgr.submitBatch(0, 0x3000, 8, 300);
   auto* ch = mgr.nextReadyChannel();
@@ -50,9 +50,9 @@ TEST_CASE("channel_submit_overwrites_previous_batch", "[hyperqueue]") {
 TEST_CASE("max_channels_enforced", "[hyperqueue]") {
   ChannelManager mgr;
   for (uint32_t i = 0; i < 32; i++) {
-    REQUIRE(mgr.registerChannel(i, nullptr) == 0);
+    REQUIRE(mgr.registerChannel(i, CHAN_PRIO_NORMAL, nullptr) == 0);
   }
-  REQUIRE(mgr.registerChannel(32, nullptr) == -ENOSPC);
+  REQUIRE(mgr.registerChannel(32, CHAN_PRIO_NORMAL, nullptr) == -ENOSPC);
 }
 
 // ========== Task 2: Puller + ChannelManager Integration ==========
@@ -118,7 +118,7 @@ TEST_CASE("puller_submit_routes_through_channel_manager", "[puller]") {
   puller.setChannelManager(&mgr);
 
   // Register a channel
-  REQUIRE(mgr.registerChannel(0, nullptr) == 0);
+  REQUIRE(mgr.registerChannel(0, CHAN_PRIO_NORMAL, nullptr) == 0);
 
   // Submit via Puller's submitBatch - should route to ChannelManager
   puller.submitBatch(0x1000, 2, 999);
@@ -154,7 +154,7 @@ TEST_CASE("puller_runloop_processes_channel_manager_batch", "[puller]") {
   REQUIRE(sim_fence_id_check(fence_id, &pre_signaled) == 0);
   REQUIRE_FALSE(pre_signaled);
 
-  REQUIRE(mgr.registerChannel(0, nullptr) == 0);
+  REQUIRE(mgr.registerChannel(0, CHAN_PRIO_NORMAL, nullptr) == 0);
 
   puller.start();
 

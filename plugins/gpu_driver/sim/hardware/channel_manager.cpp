@@ -1,12 +1,12 @@
-// channel_manager.cpp - Round-Robin ChannelManager implementation (ADR-044)
+// channel_manager.cpp - Multi-level priority ChannelManager implementation (ADR-045)
 //
 // Thread safety: All public methods hold mutex_ for the entire operation.
-// This follows the Issue #21 snapshot pattern: nextReadyChannel() returns
-// a pointer into channels_[] which remains valid because the ChannelState
-// array is fixed-size (no reallocation).
+// nextReadyChannel() returns a pointer into channels_[] which remains valid
+// because the ChannelState array is fixed-size (no reallocation).
 
 #include "channel_manager.h"
 
+#include <algorithm>
 #include <cerrno>
 #include <cstring>
 
@@ -16,7 +16,8 @@ ChannelManager::ChannelManager() {
   }
 }
 
-int ChannelManager::registerChannel(uint32_t id, GpuQueueEmu* queue) {
+int ChannelManager::registerChannel(uint32_t id, ChannelPrio priority,
+                                     GpuQueueEmu* queue) {
   if (id >= MAX_CHANNELS) {
     return -ENOSPC;
   }
@@ -30,6 +31,8 @@ int ChannelManager::registerChannel(uint32_t id, GpuQueueEmu* queue) {
   channels_[id].current_index = 0;
   channels_[id].total_entries = 0;
   channels_[id].pending_fence_id = 0;
+  channels_[id].priority = priority;
+  pri_queues_[priority].push(id);
   active_count_++;
   return 0;
 }
@@ -45,7 +48,11 @@ void ChannelManager::submitBatch(uint32_t channel_id, uint64_t gpfifo_addr,
   ch.total_entries = count;
   ch.current_index = 0;
   ch.pending_fence_id = fence_id;
-  ch.batch_in_flight = true;
+  if (!ch.batch_in_flight) {
+    // New batch: add to priority queue if not already in flight
+    ch.batch_in_flight = true;
+    pri_queues_[ch.priority].push(channel_id);
+  }
 }
 
 ChannelState* ChannelManager::nextReadyChannel() {
@@ -53,14 +60,41 @@ ChannelState* ChannelManager::nextReadyChannel() {
   if (active_count_ == 0) {
     return nullptr;
   }
-  // Round-Robin: scan from (last_channel_ + 1) wrapping around.
-  for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
-    uint32_t idx = (last_channel_ + 1 + i) % MAX_CHANNELS;
-    if (registered_[idx] && channels_[idx].batch_in_flight) {
-      last_channel_ = idx;
-      return &channels_[idx];
+
+  // Check if starvation threshold reached and force LOW dequeue
+  if (starvation_counter_ >= kStarvationThreshold) {
+    auto& low_q = pri_queues_[CHAN_PRIO_LOW];
+    while (!low_q.empty()) {
+      uint32_t id = low_q.front();
+      low_q.pop();
+      if (channels_[id].batch_in_flight) {
+        starvation_counter_ = 0;
+        last_channel_ = id;
+        return &channels_[id];
+      }
+    }
+    starvation_counter_ = 0;
+  }
+
+  // Scan queues in priority order: HIGH → NORMAL → LOW
+  for (uint32_t pri = CHAN_PRIO_HIGH; pri <= CHAN_PRIO_LOW; pri++) {
+    auto& q = pri_queues_[pri];
+    while (!q.empty()) {
+      uint32_t id = q.front();
+      if (!channels_[id].batch_in_flight) {
+        q.pop();
+        continue;
+      }
+      last_channel_ = id;
+      if (pri == CHAN_PRIO_LOW) {
+        starvation_counter_ = 0;
+      } else {
+        starvation_counter_++;
+      }
+      return &channels_[id];
     }
   }
+
   return nullptr;
 }
 
