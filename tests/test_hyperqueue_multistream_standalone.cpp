@@ -55,6 +55,61 @@ TEST_CASE("max_channels_enforced", "[hyperqueue]") {
   REQUIRE(mgr.registerChannel(32, CHAN_PRIO_NORMAL, nullptr) == -ENOSPC);
 }
 
+TEST_CASE("priority_scheduling_selects_highest_priority_first", "[hyperqueue][priority]") {
+  ChannelManager mgr;
+  mgr.registerChannel(0, CHAN_PRIO_LOW, nullptr);
+  mgr.registerChannel(1, CHAN_PRIO_NORMAL, nullptr);
+  mgr.registerChannel(2, CHAN_PRIO_HIGH, nullptr);
+  mgr.submitBatch(0, 0x1000, 4, 100);
+  mgr.submitBatch(1, 0x2000, 4, 200);
+  mgr.submitBatch(2, 0x3000, 4, 300);
+
+  auto* ch1 = mgr.nextReadyChannel();
+  REQUIRE(ch1 != nullptr);
+  REQUIRE(ch1->channel_id == 2);  // HIGH first
+  REQUIRE(ch1->gpfifo_addr == 0x3000);
+  mgr.yieldChannel(2);
+
+  auto* ch2 = mgr.nextReadyChannel();
+  REQUIRE(ch2 != nullptr);
+  REQUIRE(ch2->channel_id == 1);  // NORMAL second
+  REQUIRE(ch2->gpfifo_addr == 0x2000);
+  mgr.yieldChannel(1);
+
+  auto* ch3 = mgr.nextReadyChannel();
+  REQUIRE(ch3 != nullptr);
+  REQUIRE(ch3->channel_id == 0);  // LOW third
+  REQUIRE(ch3->gpfifo_addr == 0x1000);
+  mgr.yieldChannel(0);
+
+  REQUIRE(mgr.nextReadyChannel() == nullptr);
+}
+
+TEST_CASE("priority_starvation_forces_low_after_threshold", "[hyperqueue][priority][starvation]") {
+  ChannelManager mgr;
+  mgr.registerChannel(0, CHAN_PRIO_HIGH, nullptr);
+  mgr.registerChannel(1, CHAN_PRIO_LOW, nullptr);
+
+  // Submit both channels
+  mgr.submitBatch(0, 0x1000, 4, 100);
+  mgr.submitBatch(1, 0x2000, 4, 200);
+
+  // 10 iterations: HIGH selected 10 times, counter reaches kStarvationThreshold
+  for (int i = 0; i < 10; i++) {
+    auto* ch = mgr.nextReadyChannel();
+    REQUIRE(ch != nullptr);
+    REQUIRE(ch->channel_id == 0);
+    mgr.yieldChannel(0);
+    mgr.submitBatch(0, 0x1000, 4, 100);  // re-submit HIGH
+  }
+
+  // 11th call: starvation counter >= kStarvationThreshold, forces LOW
+  auto* ch = mgr.nextReadyChannel();
+  REQUIRE(ch != nullptr);
+  REQUIRE(ch->channel_id == 1);
+  REQUIRE(mgr.starvationCounter() == 0);  // counter reset after forced dequeue
+}
+
 // ========== Task 2: Puller + ChannelManager Integration ==========
 
 // Helper: mock HAL that returns zeroed gpfifo entries with release=1
