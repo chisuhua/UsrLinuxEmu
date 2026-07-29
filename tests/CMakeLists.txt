@@ -913,3 +913,8 @@ target_include_directories(test_indirect_buffer_standalone PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME test_indirect_buffer_standalone COMMAND $<TARGET_FILE:test_indirect_buffer_standalone>)
 set_tests_properties(test_indirect_buffer_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# === Stage 4.5 CP Phase 6 Tests - Timeline Semaphore ===
+add_catch_sim_test(test_timeline_semaphore_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_timeline_semaphore_standalone.cpp
+)

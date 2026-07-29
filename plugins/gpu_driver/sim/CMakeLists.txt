@@ -36,6 +36,8 @@ add_library(gpu_sim STATIC
     hardware/timestamp_query.cpp
     # Stage 4.4 - Semaphore/Barrier pending queue (ChannelSemaphoreState)
     scheduler/channel_state.cpp
+    # Stage 4.5 - Timeline Semaphore (ADR-049): create/signal/wait/query/destroy
+    semaphore_manager.cpp
 )
 
 set_source_files_properties(
