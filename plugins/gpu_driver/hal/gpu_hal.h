@@ -91,6 +91,52 @@ struct gpu_hal_ops {
    * Posts handler to kernel_workqueue for async dispatch (never synchronous).
    * Replaces deprecated interrupt_raise(void *ctx, uint32_t vector). */
   void (*interrupt_raise_ex)(void *ctx, uint32_t vector, uint64_t user_data);
+
+  /* ── Stage 4.5: Preemption (ADR-046) ─────────────────────────── */
+
+  /* hal_preempt: preempt the currently executing channel.
+   * @channel_id: channel to preempt
+   * Returns 0 on success, -EINVAL if channel is idle or already preempted. */
+  int (*hal_preempt)(void *ctx, uint32_t channel_id);
+
+  /* hal_resume: resume a preempted channel.
+   * @channel_id: channel to resume
+   * Returns 0 on success, -EINVAL if channel is not PREEMPTED. */
+  int (*hal_resume)(void *ctx, uint32_t channel_id);
+
+  /* ── Stage 4.5: Timeline Semaphore (ADR-049) ─────────────────── */
+
+  /* hal_sem_create: create a timeline semaphore.
+   * @initial: initial value
+   * @out_handle: [out] semaphore handle
+   * Returns 0 on success, -ENOMEM on allocation failure. */
+  int (*hal_sem_create)(void *ctx, uint64_t initial, uint64_t *out_handle);
+
+  /* hal_sem_signal: signal a timeline semaphore (monotonic increment).
+   * @handle: semaphore handle
+   * @value: new value (must be > current)
+   * Returns 0 on success, -EINVAL if handle invalid or value <= current. */
+  int (*hal_sem_signal)(void *ctx, uint64_t handle, uint64_t value);
+
+  /* hal_sem_wait: register a waiter callback on a semaphore.
+   * @handle: semaphore handle
+   * @expected: minimum value to wait for
+   * @callback: function to call when condition met
+   * @user_data: opaque data passed to callback
+   * Returns 0 on success, -EINVAL if handle invalid. */
+  int (*hal_sem_wait)(void *ctx, uint64_t handle, uint64_t expected,
+                      void (*callback)(uint64_t user_data), uint64_t user_data);
+
+  /* hal_sem_query: read current semaphore value.
+   * @handle: semaphore handle
+   * @out_val: [out] current value
+   * Returns 0 on success, -EINVAL if handle invalid. */
+  int (*hal_sem_query)(void *ctx, uint64_t handle, uint64_t *out_val);
+
+  /* hal_sem_destroy: destroy a semaphore.
+   * @handle: semaphore handle
+   * Returns 0 on success, -EINVAL if handle invalid. */
+  int (*hal_sem_destroy)(void *ctx, uint64_t handle);
 };
 
 /* ── inline 包装函数：零开销简化调用 ──────────────────────── */
@@ -165,6 +211,43 @@ static inline int hal_event_wait(struct gpu_hal_ops *hal, uint32_t event_id,
 
 static inline int hal_event_notify(struct gpu_hal_ops *hal, uint32_t event_id) {
   return hal->event_notify(hal->ctx, event_id);
+}
+
+/* ── Stage 4.5 inline wrapper（preemption） ─────────────────── */
+
+static inline int hal_preempt(struct gpu_hal_ops *hal, uint32_t chan_id) {
+  return hal->hal_preempt(hal->ctx, chan_id);
+}
+
+static inline int hal_resume(struct gpu_hal_ops *hal, uint32_t chan_id) {
+  return hal->hal_resume(hal->ctx, chan_id);
+}
+
+/* ── Stage 4.5 inline wrapper（timeline semaphore） ─────────── */
+
+static inline int hal_sem_create(struct gpu_hal_ops *hal, uint64_t init,
+                                  uint64_t *out) {
+  return hal->hal_sem_create(hal->ctx, init, out);
+}
+
+static inline int hal_sem_signal(struct gpu_hal_ops *hal, uint64_t h,
+                                  uint64_t v) {
+  return hal->hal_sem_signal(hal->ctx, h, v);
+}
+
+static inline int hal_sem_wait(struct gpu_hal_ops *hal, uint64_t h,
+                                uint64_t exp,
+                                void (*cb)(uint64_t), uint64_t ud) {
+  return hal->hal_sem_wait(hal->ctx, h, exp, cb, ud);
+}
+
+static inline int hal_sem_query(struct gpu_hal_ops *hal, uint64_t h,
+                                 uint64_t *out) {
+  return hal->hal_sem_query(hal->ctx, h, out);
+}
+
+static inline int hal_sem_destroy(struct gpu_hal_ops *hal, uint64_t h) {
+  return hal->hal_sem_destroy(hal->ctx, h);
 }
 
 #ifdef __cplusplus
