@@ -1,24 +1,15 @@
 {
-  "roadmap_path": "roadmap.md",
-  "stage": "stage-4",
-  "committed_at": "2026-07-26",
-  "summary": "Stage 3 v1.0 stable ✅; Stage 4 启动: ADR-069/072/073 Accepted + stage4-1-bar-ioremap approved",
-  "active_changes": [],
+  "version": "1",
+  "arch_complete_at": "2026-07-29T03:57:18+00:00",
   "adr_count": 68,
-  "adrs": {
-    "foundational": [
-      "ADR-036",
-      "ADR-023",
-      "ADR-018",
-      "ADR-035"
-    ],
-    "staging": [
-      "ADR-069",
-      "ADR-072",
-      "ADR-073"
-    ],
-    "total_accepted": 68,
-    "last_adr": "ADR-073-dma-coherent-emulation"
-  },
-  "approved_proposals": 1
+  "adr_dir": "docs/00_adr",
+  "adr_pattern": "adr-*.md",
+  "completed_adr_ids": [],
+  "roadmap_exists": true,
+  "roadmap_path": "roadmap.md",
+  "current_phase": "stage-4",
+  "architecture_dir": "docs/architecture",
+  "gap_analysis_count": 1,
+  "approved_proposals": ["stage4-1-bar-ioremap", "stage4-5-cp-phase6-preemption-timeline-sem"],
+  "notes": "arch-done: ADR 68 ✅  |  roadmap ✅  |  gap-analysis 1 ✅  |  approved 2 ✅  |  updated 2026-07-29"
 }
