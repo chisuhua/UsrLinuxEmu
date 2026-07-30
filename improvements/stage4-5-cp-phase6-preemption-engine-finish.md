@@ -46,7 +46,7 @@ ADR-046 定义了 Dispatch-level 抢占协议：高优先级 batch 提交 → sa
 - MUST preempt 检查点仅在 Puller FSM batch 边界（DISPATCH→FETCH）触发，不在 mid-entry 中断
 - MUST 每通道 pending fence 表为驱动侧实现，不暴露到 `mqd.h` 头文件
 - MUST NOT 在 preempt→resume 间隙 signal 任何 fence
-- MUST 实现 IB jump_stack 安全：preempt 时保存 jump_stack，resume 时恢复
+- MUST 实现 IB jump_stack 安全：`jump_stack_` 非空（IB 链执行中）时延迟抢占至 IB 链完成（对齐 timeline-sem 已归档实现与"MUST NOT mid-entry 抢占"约束）；jump_stack 为空边界抢占时，resume 执行结果与未抢占对照组逐字节一致
 - MUST 通过 ASan/UBSan + TSan sanitizer 测试
 - SHOULD 复用已归档 change 中已有的 Puller FSM PREEMPT_CHECK 状态定义
 
