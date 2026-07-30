@@ -1,48 +1,53 @@
 {
   "version": 4,
-  "updated_at": "2026-07-30T00:00:00+00:00",
+  "updated_at": "2026-07-30T14:23:11.996581+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
       "name": "stage4-5-cp-phase6-preemption-engine-finish",
-      "path": "openspec/changes/stage4-5-cp-phase6-preemption-engine-finish",
-      "status": "ready",
-      "wave": 1,
+      "phase": "stage-4.5",
+      "category": null,
       "priority": "P1",
-      "blocks": ["stage4-5-cp-phase6-predication-aql"],
-      "blocked_by": [],
-      "conflicts_with": ["stage4-5-cp-phase6-predication-aql"],
-      "files_in_scope": [
-        "plugins/gpu_driver/sim/hardware/mqd_state.{h,cpp}",
-        "plugins/gpu_driver/sim/hardware/hardware_puller_emu.cpp",
-        "plugins/gpu_driver/sim/scheduler/channel_state.{h,cpp}",
-        "plugins/gpu_driver/sim/scheduler/global_scheduler.cpp",
-        "tests/"
+      "status": "archived",
+      "added_at": "2026-07-30T07:38:44.043116+00:00",
+      "worktree_path": null,
+      "plan_path": null,
+      "tasks_total": 53,
+      "blocker": null,
+      "parallel_group": 0,
+      "conflicts": [
+        "stage4-5-cp-phase6-predication-aql"
       ],
-      "adrs_to_upgrade": ["ADR-046", "ADR-045", "ADR-047", "ADR-050"],
-      "adrs_with_text_conflicts": ["ADR-045", "ADR-050"],
-      "review_artifact": "docs/00_adr/adr-045-047-050-backfill-precheck.md",
-      "tasks_total": 53
+      "last_deps_at": "2026-07-30T07:38:44.043116+00:00",
+      "archived_at": "2026-07-30T14:23:11.996581+00:00",
+      "parent_feature": "stage4-5-phase6-gpu-cp",
+      "manual_deps": null,
+      "manual_blocks": [
+        "stage4-5-cp-phase6-predication-aql"
+      ]
     },
     {
       "name": "stage4-5-cp-phase6-predication-aql",
-      "path": "openspec/changes/stage4-5-cp-phase6-predication-aql",
-      "status": "blocked_by",
-      "wave": 2,
+      "phase": "stage-4.5",
+      "category": null,
       "priority": "P1",
-      "blocks": [],
-      "blocked_by": ["stage4-5-cp-phase6-preemption-engine-finish"],
-      "conflicts_with": ["stage4-5-cp-phase6-preemption-engine-finish"],
-      "block_reason": "tasks §3.2/3.3 require mqd_state_preempt()/mqd_state_resume() wired by preemption-engine-finish §3.1/3.2; both modify channel_state.{h,cpp}",
-      "files_in_scope": [
-        "plugins/gpu_driver/shared/gpu_queue.h",
-        "plugins/gpu_driver/sim/hardware/hardware_puller_emu.{h,cpp}",
-        "plugins/gpu_driver/sim/scheduler/channel_state.{h,cpp}",
-        "tests/"
+      "status": "proposed",
+      "added_at": "2026-07-30T07:38:44.043116+00:00",
+      "worktree_path": null,
+      "plan_path": null,
+      "tasks_total": 40,
+      "blocker": "stage4-5-cp-phase6-preemption-engine-finish",
+      "parallel_group": 1,
+      "conflicts": [
+        "stage4-5-cp-phase6-preemption-engine-finish"
       ],
-      "adrs_to_upgrade": ["ADR-051", "ADR-052"],
-      "adrs_with_text_conflicts": [],
-      "tasks_total": 69
+      "last_deps_at": "2026-07-30T07:38:44.043116+00:00",
+      "archived_at": null,
+      "parent_feature": "stage4-5-phase6-gpu-cp",
+      "manual_deps": [
+        "stage4-5-cp-phase6-preemption-engine-finish"
+      ],
+      "manual_blocks": null
     }
   ]
 }
