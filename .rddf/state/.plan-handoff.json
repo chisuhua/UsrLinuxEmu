@@ -1,60 +1,41 @@
 {
-  "plan_complete_at": "2026-07-31T00:11:30+00:00",
-  "active_changes": [
-    "stage4-5-cp-phase6-predication-aql",
-    "stage4-5-cp-phase6-preemption-timeline-sem"
-  ],
+  "plan_complete_at": "2026-07-30T07:43:51.115396+00:00",
+  "active_changes": 1,
   "all_artifacts_committed": true,
   "ship_started_at": null,
-  "current_change": null,
+  "current_change": "stage4-5-cp-phase6-preemption-engine-finish",
   "execution_mode_decisions": {
-    "stage4-5-cp-phase6-predication-aql": {
+    "stage4-5-cp-phase6-preemption-engine-finish": {
       "mode": "worktree",
-      "reason": "大改动 + 需要隔离",
+      "reason": "\u5927\u6539\u52a8 + \u9700\u8981\u9694\u79bb",
       "confidence": "high",
       "details": {
-        "file_count": 6,
-        "task_count": 40,
+        "file_count": 0,
+        "task_count": 42,
         "is_risky": false,
         "change_size": "large",
-        "has_conflicts": true,
+        "has_conflicts": false,
         "has_dependencies": true,
         "is_independent": false
       }
     },
-    "stage4-5-cp-phase6-preemption-timeline-sem": {
+    "stage4-5-cp-phase6-predication-aql": {
       "mode": "worktree",
-      "reason": "大改动 + 需要隔离",
+      "reason": "\u5927\u6539\u52a8 + \u9700\u8981\u9694\u79bb",
       "confidence": "high",
       "details": {
-        "file_count": 12,
-        "task_count": 78,
+        "file_count": 0,
+        "task_count": 40,
         "is_risky": false,
         "change_size": "large",
-        "has_conflicts": true,
+        "has_conflicts": false,
         "has_dependencies": true,
         "is_independent": false
       }
     }
   },
+  "archived_at": "2026-07-30T14:23:11.996581+00:00",
   "archived_changes": [
     "stage4-5-cp-phase6-preemption-engine-finish"
-  ],
-  "recommendation": {
-    "first": "stage4-5-cp-phase6-preemption-timeline-sem",
-    "second": "stage4-5-cp-phase6-predication-aql",
-    "rationale": "preemption-timeline-sem 工作量更大（78 tasks），优先执行减少并行复杂度；predication-aql 在 #1 完成后或接近完成时并行启动"
-  },
-  "file_conflicts": [
-    "plugins/gpu_driver/sim/scheduler/channel_state.{h,cpp}",
-    "plugins/gpu_driver/sim/hardware/hardware_puller_emu.{h,cpp}",
-    "plugins/gpu_driver/shared/gpu_queue.h"
-  ],
-  "shared_infrastructure": [
-    "ADR-054 mqd_state_preempt/resume (delivered by preemption-engine-finish)"
-  ],
-  "parent_feature": "stage4-5-phase6-gpu-cp",
-  "arch_handoff_ref": ".rddf/state/.arch-handoff.json",
-  "deps_output_ref": ".rddf/state/.deps-output.md",
-  "notes": "plan-done: 2 active changes (both stage-4.5 core-impl, parent feature stage4-5-phase6-gpu-cp), all artifacts committed, both openspec validate --strict pass. preemption-engine-finish (archived 2026-07-30) 提供 mqd_state_preempt/resume 基线."
+  ]
 }
