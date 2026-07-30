@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated_at": "2026-07-31T00:11:00.000000+00:00",
+  "updated_at": "2026-07-30T14:23:11.996581+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -16,16 +16,14 @@
       "blocker": null,
       "parallel_group": 0,
       "conflicts": [
-        "stage4-5-cp-phase6-predication-aql",
-        "stage4-5-cp-phase6-preemption-timeline-sem"
+        "stage4-5-cp-phase6-predication-aql"
       ],
-      "last_deps_at": "2026-07-31T00:11:00.000000+00:00",
+      "last_deps_at": "2026-07-30T07:38:44.043116+00:00",
       "archived_at": "2026-07-30T14:23:11.996581+00:00",
       "parent_feature": "stage4-5-phase6-gpu-cp",
       "manual_deps": null,
       "manual_blocks": [
-        "stage4-5-cp-phase6-predication-aql",
-        "stage4-5-cp-phase6-preemption-timeline-sem"
+        "stage4-5-cp-phase6-predication-aql"
       ]
     },
     {
@@ -41,32 +39,9 @@
       "blocker": "stage4-5-cp-phase6-preemption-engine-finish",
       "parallel_group": 1,
       "conflicts": [
-        "stage4-5-cp-phase6-preemption-timeline-sem"
-      ],
-      "last_deps_at": "2026-07-31T00:11:00.000000+00:00",
-      "archived_at": null,
-      "parent_feature": "stage4-5-phase6-gpu-cp",
-      "manual_deps": [
         "stage4-5-cp-phase6-preemption-engine-finish"
       ],
-      "manual_blocks": null
-    },
-    {
-      "name": "stage4-5-cp-phase6-preemption-timeline-sem",
-      "phase": "stage-4.5",
-      "category": null,
-      "priority": "P1",
-      "status": "proposed",
-      "added_at": "2026-07-31T00:11:00.000000+00:00",
-      "worktree_path": null,
-      "plan_path": null,
-      "tasks_total": 78,
-      "blocker": "stage4-5-cp-phase6-preemption-engine-finish",
-      "parallel_group": 1,
-      "conflicts": [
-        "stage4-5-cp-phase6-predication-aql"
-      ],
-      "last_deps_at": "2026-07-31T00:11:00.000000+00:00",
+      "last_deps_at": "2026-07-30T07:38:44.043116+00:00",
       "archived_at": null,
       "parent_feature": "stage4-5-phase6-gpu-cp",
       "manual_deps": [
