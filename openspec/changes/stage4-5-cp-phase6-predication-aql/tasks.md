@@ -16,9 +16,18 @@
 
 ## 3. Predication: Context Switch Persistence
 
-- [ ] 3.1 Add `PredicateState predicate_snapshot_` to `ChannelState`
-- [ ] 3.2 Wire save predicate state on preempt
-- [ ] 3.3 Wire restore predicate state on resume
+> **⛔ 跨 change 依赖（执行顺序约束）**
+>
+> 本节依赖 `stage4-5-cp-phase6-preemption-engine-finish` **先完成**：
+>
+> - **3.2/3.3** 需要该 change 已接线的 `mqd_state_preempt()` / `mqd_state_resume()` 调用链（其 task 3.1/3.2）才可挂接 save/restore
+> - 两个 change 均修改 `plugins/gpu_driver/sim/scheduler/channel_state.{h,cpp}`，必须串行以避免 rebase 冲突
+> - **执行顺序**：先完成 preemption-engine-finish 全部 tasks → 再启动本 change
+> - 详见 `design.md` §"跨 change 依赖" 与 `improvements/stage4-5-cp-phase6-preemption-engine-finish.md`
+
+- [ ] 3.1 Add `PredicateState predicate_snapshot_` to `ChannelState`（与 preemption-engine-finish 的 `pending_fences_` rebase 协调，避免同文件并行冲突）
+- [ ] 3.2 Wire save predicate state on preempt（调用链：`mqd_state_preempt()` → ChannelState save hook）
+- [ ] 3.3 Wire restore predicate state on resume（调用链：`mqd_state_resume()` → ChannelState restore hook）
 
 ## 4. AQL: gpufifo_entry Format Field
 
