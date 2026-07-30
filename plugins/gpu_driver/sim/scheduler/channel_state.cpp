@@ -126,4 +126,39 @@ void ChannelSemaphoreState::clear() {
   released_entries_.clear();
   barriers_.clear();
   barrier_released_.clear();
+  pending_fences_.clear();
+  frozen_ = false;
+}
+
+void ChannelSemaphoreState::bind_pending_fence(uint64_t fence_id, uint64_t sem_handle) {
+  pending_fences_[fence_id] = sem_handle;
+}
+
+void ChannelSemaphoreState::cleanup_pending_fence(uint64_t fence_id) {
+  pending_fences_.erase(fence_id);
+}
+
+bool ChannelSemaphoreState::is_fence_frozen(uint64_t fence_id) const {
+  if (!frozen_) return false;
+  return pending_fences_.find(fence_id) != pending_fences_.end();
+}
+
+ChannelSemaphoreState ChannelSemaphoreState::backup() const {
+  ChannelSemaphoreState copy;
+  copy.pending_entries_ = pending_entries_;
+  copy.released_entries_ = released_entries_;
+  copy.barriers_ = barriers_;
+  copy.barrier_released_ = barrier_released_;
+  copy.pending_fences_ = pending_fences_;
+  copy.frozen_ = frozen_;
+  return copy;
+}
+
+void ChannelSemaphoreState::restore(const ChannelSemaphoreState& saved) {
+  std::swap(pending_entries_, const_cast<ChannelSemaphoreState&>(saved).pending_entries_);
+  std::swap(released_entries_, const_cast<ChannelSemaphoreState&>(saved).released_entries_);
+  std::swap(barriers_, const_cast<ChannelSemaphoreState&>(saved).barriers_);
+  std::swap(barrier_released_, const_cast<ChannelSemaphoreState&>(saved).barrier_released_);
+  std::swap(pending_fences_, const_cast<ChannelSemaphoreState&>(saved).pending_fences_);
+  frozen_ = saved.frozen_;
 }
