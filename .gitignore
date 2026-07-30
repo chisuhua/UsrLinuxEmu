@@ -74,3 +74,14 @@ build-default/
 build-ubsan/
 build_test/
 docs/api/html/
+
+build-asan-ubsan/
+build-tsan/
+
+# rdd-workflow runtime state (not part of repo state)
+.rddf/state/iteration.json.lock
+.rddf/state/iteration.corrupt.*
+.rddf/state/deps-analysis.json
+.rddf/state/deps-analysis.json.lock
+.rddf/state/.deps-ai-result.json
+.rddf/state/openspec-validate.json
