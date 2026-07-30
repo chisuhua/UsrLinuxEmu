@@ -3,10 +3,17 @@
 Stage 4.5 Phase 6 的 Predication（ADR-051）和 AQL/PM4（ADR-052）均为 PROPOSED 但完全未实施。本 change 闭合 Phase 6 剩余能力。
 
 已前置完成（依赖）：
-- Priority Scheduling（ADR-045）✅
+- Priority Scheduling（ADR-045）✅ 已实施（`stage4-4-gpu-cp-phase55` 归档；ADR 状态仍 PROPOSED，由 `stage4-5-cp-phase6-preemption-engine-finish` 补登记 Accepted）
 - Timeline Semaphore（ADR-049）✅ Accepted
-- Indirect Buffer（ADR-050）✅
+- Indirect Buffer（ADR-050）✅ 已实施（`stage4-4-gpu-cp-phase55` 归档；ADR 状态仍 PROPOSED，同上补登记）
 - Puller FSM 与 ChannelManager 已支持完整 GPFIFO dispatch 流程
+
+**跨 change 依赖（执行排序约束）：**
+
+本 change 必须在 `stage4-5-cp-phase6-preemption-engine-finish` **之后**执行：
+
+- tasks 3.2/3.3（preempt/resume 时保存/恢复 predicate 状态）与 spec 场景 "Predicate state survives preempt" 依赖该 change 接线的 `mqd_state_preempt()` / `mqd_state_resume()` 调用链
+- 两个 change 均修改 `plugins/gpu_driver/sim/scheduler/channel_state.{h,cpp}`（该 change 新增 `pending_fences_`，本 change 新增 `predicate_snapshot_`），先落地者可作为后落地者的 rebase 基线，避免并行冲突
 
 ## Goals / Non-Goals
 

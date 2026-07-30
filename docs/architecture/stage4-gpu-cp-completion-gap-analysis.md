@@ -139,3 +139,17 @@
 | 缺失的 standalone 测试 | 7 个 |
 | 估算总工作量 | ~28-30 人天 |
 | **首要阻塞** | **8 份 PROPOSED ADR 需 Accepted** |
+
+---
+
+## 附录：2026-07-30 修订（4.5 change 审查同步）
+
+本文成文于 2026-07-28，此后部分状态已推进。以下修订以事实为准，原文表格保留作历史记录：
+
+1. **4.4 已交付**：`2026-07-28-stage4-4-gpu-cp-phase55` 已归档（28/28 tasks），含 Priority Scheduling、Semaphore/Barrier、Indirect Buffer 及 3 个 standalone 测试。§1/§2 中 "4.4 ❌ 未开始" 已过时。
+2. **ADR-049 已 Accepted**（2026-07-29 D1 修订为 waiter 回调模式），timeline semaphore 由 `2026-07-29-stage4-5-cp-phase6-preemption-timeline-sem` 交付。
+3. **4.5 拆分为两个 change**：`stage4-5-cp-phase6-preemption-engine-finish`（ADR-046 收尾：MQD save/restore + pending fence 表 + 边界处理）与 `stage4-5-cp-phase6-predication-aql`（ADR-051 + ADR-052），后者依赖前者先落地（共用 `channel_state.{h,cpp}`，predicate 状态保存依赖 preempt/resume 接线）。
+4. **§2.1 "quantum 管理" 措辞修正**：ADR-046 D2 的抢占触发模型为事件驱动（高优先级 batch 到达），无时间片概念。preemption-engine-finish 不实现 quantum timer，已在该 change design.md Non-Goals 显式声明。
+5. **§2.1 跨引擎同步范围修正**：ADR-049 timeline semaphore 作为**最小跨引擎 fence** 已交付；多引擎（COPY/GRAPHICS，当前 sim 仅 COMPUTE 引擎）Puller 实例、engine fence registry、`test_cross_engine_sync_standalone` 显式延后，需单独立项，不在 4.5 两个 change 范围。
+6. **§2.1 AQL/PM4 "双格式" 修正**：per ADR-052 D3，PM4 解析延后至 Phase 6.5；4.5 仅交付 AQL 解析 + PM4 stub（`format=2` 返回 -ENOSYS）。
+7. **§6 "首要阻塞" 进展**：ADR-049 ✅；ADR-046/051/052 随上述两个 change 的实施 flip 为 Accepted；ADR-045/047/050 已由 4.4 实施、由 preemption-engine-finish task 6.3 补登记 Accepted；ADR-056 待 Phase 7。

@@ -26,7 +26,7 @@ Stage 4.5 的 Phase 6 包含 4 个 ADR：
     - `GPU_OP_SET_PREDICATE` entry 类型：SET/AND/OR/XOR 操作
     - Puller DECODE 阶段 predicate 检查：`predicate_.enabled == false` 跳过 entry
     - Predicate 状态保存到 `ChannelState`（上下文切换支持）
-    - `test_predication_standalone`：SET/AND/OR/XOR + 跳过 + 嵌套
+    - `test_predication_standalone`：SET/AND/OR/XOR + 跳过 + 上下文切换（嵌套 predicate 明确不实现，见 Out Scope）
   - **AQL 支持**:
     - `gpu_gpfifo_entry` 新增 `format` 字段（0=UsrNative, 1=AQL, 2=PM4）
     - `GpfifoToLaunchParamsTranslator` 新增 `format == FORMAT_AQL` 分支
