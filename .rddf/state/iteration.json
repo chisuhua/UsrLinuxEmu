@@ -1,6 +1,48 @@
 {
   "version": 4,
-  "updated_at": "2026-07-28T15:20:00+00:00",
-  "current_phase": "default",
-  "changes": []
+  "updated_at": "2026-07-30T00:00:00+00:00",
+  "current_phase": "stage-4.5",
+  "changes": [
+    {
+      "name": "stage4-5-cp-phase6-preemption-engine-finish",
+      "path": "openspec/changes/stage4-5-cp-phase6-preemption-engine-finish",
+      "status": "ready",
+      "wave": 1,
+      "priority": "P1",
+      "blocks": ["stage4-5-cp-phase6-predication-aql"],
+      "blocked_by": [],
+      "conflicts_with": ["stage4-5-cp-phase6-predication-aql"],
+      "files_in_scope": [
+        "plugins/gpu_driver/sim/hardware/mqd_state.{h,cpp}",
+        "plugins/gpu_driver/sim/hardware/hardware_puller_emu.cpp",
+        "plugins/gpu_driver/sim/scheduler/channel_state.{h,cpp}",
+        "plugins/gpu_driver/sim/scheduler/global_scheduler.cpp",
+        "tests/"
+      ],
+      "adrs_to_upgrade": ["ADR-046", "ADR-045", "ADR-047", "ADR-050"],
+      "adrs_with_text_conflicts": ["ADR-045", "ADR-050"],
+      "review_artifact": "docs/00_adr/adr-045-047-050-backfill-precheck.md",
+      "tasks_total": 53
+    },
+    {
+      "name": "stage4-5-cp-phase6-predication-aql",
+      "path": "openspec/changes/stage4-5-cp-phase6-predication-aql",
+      "status": "blocked_by",
+      "wave": 2,
+      "priority": "P1",
+      "blocks": [],
+      "blocked_by": ["stage4-5-cp-phase6-preemption-engine-finish"],
+      "conflicts_with": ["stage4-5-cp-phase6-preemption-engine-finish"],
+      "block_reason": "tasks §3.2/3.3 require mqd_state_preempt()/mqd_state_resume() wired by preemption-engine-finish §3.1/3.2; both modify channel_state.{h,cpp}",
+      "files_in_scope": [
+        "plugins/gpu_driver/shared/gpu_queue.h",
+        "plugins/gpu_driver/sim/hardware/hardware_puller_emu.{h,cpp}",
+        "plugins/gpu_driver/sim/scheduler/channel_state.{h,cpp}",
+        "tests/"
+      ],
+      "adrs_to_upgrade": ["ADR-051", "ADR-052"],
+      "adrs_with_text_conflicts": [],
+      "tasks_total": 69
+    }
+  ]
 }
