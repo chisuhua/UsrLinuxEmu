@@ -1,6 +1,6 @@
 # ADR-047: Hardware Semaphore & Barrier Model
 
-**状态**: 📋 PROPOSED（Phase 5.5，ADR-040 之后）
+**状态**: ✅ Accepted（Stage 4.4 gpu-cp-phase55 实施完成，backfill 登记）
 **日期**: 2026-07-09
 **提案人**: Sisyphus（GPU CP 蓝图完整性填充）
 **关联 ADR**: ADR-021 (Puller FSM §决策 3 — 简单 semaphore model), ADR-040 (Puller Fence Completion — completion token)

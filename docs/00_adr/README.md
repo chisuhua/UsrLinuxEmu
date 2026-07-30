@@ -54,12 +54,12 @@
 | [adr-042](adr-042-pushbuffer-method-encoding.md) | **Pushbuffer Method 编解码格式**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-043](adr-043-cp-portability-boundary.md) | **命令处理器可移植性边界**（Phase 4 前置 ADR）| ✅ Accepted | 2026-07-09 |
 | [adr-044](adr-044-multi-channel-hyperqueue-scheduling.md) | **多通道调度与 HyperQueue 语义**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
-| [adr-045](adr-045-priority-scheduling.md) | **优先级调度**（Phase 5.5）| 📋 PROPOSED | 2026-07-09 |
-| [adr-046](adr-046-preemption-context-switch.md) | **抢占与上下文切换**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
-| [adr-047](adr-047-hardware-semaphore-barrier.md) | **Hardware Semaphore & Barrier Model**（Phase 5.5）| 📋 PROPOSED | 2026-07-09 |
+| [adr-045](adr-045-priority-scheduling.md) | **优先级调度**（Phase 5.5）| ✅ Accepted | 2026-07-09 (2026-07-30 backfill) |
+| [adr-046](adr-046-preemption-context-switch.md) | **抢占与上下文切换**（Phase 6）| ✅ Accepted | 2026-07-09 (2026-07-30 Accepted) |
+| [adr-047](adr-047-hardware-semaphore-barrier.md) | **Hardware Semaphore & Barrier Model**（Phase 5.5）| ✅ Accepted | 2026-07-09 (2026-07-30 backfill) |
 | [adr-048](adr-048-interrupt-event-model.md) | **中断与事件模型**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-049](adr-049-cross-engine-synchronization.md) | **跨引擎同步**（Phase 6 — Stage 4.5 实施修订 D1）| ✅ 已接受 | 2026-07-09 (rev. 2026-07-29) |
-| [adr-050](adr-050-indirect-buffer-command-chaining.md) | **Indirect Buffer 命令链**（Phase 5+）| 📋 PROPOSED | 2026-07-09 |
+| [adr-050](adr-050-indirect-buffer-command-chaining.md) | **Indirect Buffer 命令链**（Phase 5+）| ✅ Accepted | 2026-07-09 (2026-07-30 backfill) |
 | [adr-051](adr-051-predication-conditional-execution.md) | **Predication 条件执行**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
 | [adr-052](adr-052-aql-pm4-native-support.md) | **AQL/PM4 Native 支持**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
 | [adr-053](adr-053-doorbell-aggregation-oversubscription.md) | **Doorbell 聚合与过订阅** | ⏸️ Deferred (Never) | 2026-07-09 |
@@ -91,10 +91,12 @@
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 48 | 001-010, 015-024, 027, 031-037, 039-044, 048-049, 054, 057, 059-065 |
-| 📋 PROPOSED | 12 | 011-014, 038, 045-047, 050-052, 056, 058, 069, 072-073 |
+| ✅ 已接受 | 52 | 001-010, 015-024, 027, 031-037, 039-050, 054, 057, 059-065 |
+| 📋 PROPOSED | 8 | 011-014, 038, 051-052, 056, 058, 069, 072-073 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
 | **总计** | **67** | ADR-001 ~ ADR-073 |
+
+> **2026-07-30 变更**：ADR-045（优先级调度）+ ADR-046（抢占与上下文切换）+ ADR-047（Hardware Semaphore & Barrier）+ ADR-050（Indirect Buffer 命令链）状态升 ✅ Accepted。ADR-045/047/050 由 `stage4-4-gpu-cp-phase55` 实施完成，ADR-046 由本 change `stage4-5-cp-phase6-preemption-engine-finish` 实施完成。状态分布：Accepted 48→52，PROPOSED 12→8。
 
 > **2026-07-27 变更**：ADR-057（CP Profiling Hooks / Timestamp）状态升 ✅ 已采纳 (Accepted)。Oracle 评审后修订 4 项：D5 暴露路径决策新增（Phase 5 test backdoor via sim C-ABI，Phase 5.5 延后 ioctl 暴露）、D3 ABI 影响分析新增（gpu_gpfifo_entry 76→84 字节，方案 1 复用 _reserved/semaphore_va vs 方案 2 新增字段，选方案 2 理由）、D2 resolve 语义约束新增（单线程同步 sim，resolve 必须在 submit 返回后调用，timeout_ms 死锁逃逸）、D4 条件标注（依赖 ADR-048，同批 Accepted）。
 
