@@ -5,6 +5,8 @@
 #include <mutex>
 #include <queue>
 
+#include "mqd.h"  // Stage 4.5: MQD cache for preempt/resume
+
 class GpuQueueEmu;
 
 /* Channel priority levels (Stage 4.5, ADR-045)
@@ -99,6 +101,16 @@ class ChannelManager {
   /** Get the starvation counter value (for testing). */
   uint32_t starvationCounter() const { return starvation_counter_; }
 
+  // ========== MQD Cache (Stage 4.5 Preemption) ==========
+
+  /** Get the MQD pointer for a registered channel.
+   *  @param channel_id Channel ID to query
+   *  @return Pointer to MQD, or nullptr if not registered */
+  MQD* getMqdForChannel(uint32_t channel_id);
+
+  /** Set the MQD pointer for a registered channel (called during Queue creation). */
+  void setMqdForChannel(uint32_t channel_id, MQD* mqd);
+
  private:
   ChannelState channels_[MAX_CHANNELS];
   bool registered_[MAX_CHANNELS] = {};
@@ -107,4 +119,5 @@ class ChannelManager {
   uint32_t last_channel_ = MAX_CHANNELS - 1;
   uint32_t starvation_counter_ = 0;
   mutable std::mutex mutex_;
+  std::array<MQD*, MAX_CHANNELS> mqd_cache_{};
 };

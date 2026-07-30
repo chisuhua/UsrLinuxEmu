@@ -109,3 +109,18 @@ uint32_t ChannelManager::activeCount() const {
   std::lock_guard<std::mutex> lock(mutex_);
   return active_count_;
 }
+
+MQD* ChannelManager::getMqdForChannel(uint32_t channel_id) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (channel_id >= MAX_CHANNELS || !registered_[channel_id]) {
+    return nullptr;
+  }
+  return mqd_cache_[channel_id];
+}
+
+void ChannelManager::setMqdForChannel(uint32_t channel_id, MQD* mqd) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (channel_id < MAX_CHANNELS && registered_[channel_id]) {
+    mqd_cache_[channel_id] = mqd;
+  }
+}
