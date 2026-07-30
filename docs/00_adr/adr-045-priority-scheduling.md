@@ -1,6 +1,6 @@
 # ADR-045: Priority Scheduling in GlobalScheduler
 
-**状态**: 📋 PROPOSED（Phase 5.5，ADR-054 + ADR-044 之后）
+**状态**: ✅ Accepted（Stage 4.4 gpu-cp-phase55 实施完成，backfill 登记）
 **日期**: 2026-07-09
 **提案人**: Sisyphus（GPU CP 蓝图完整性填充）
 **关联 ADR**: ADR-021 (Puller FSM), ADR-044 (HyperQueue), ADR-054 (MQD/HQD)

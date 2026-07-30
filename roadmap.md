@@ -113,6 +113,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | 07-21 | Arch-handoff + roadmap 数据同步：确认 stage3-2 ✅ (PR #30, 2026-07-11) |
 | **07-21** | **stage3-3-errno-coverage-audit ✅** — 12 处 Linux errno 修复 + 5 测试文件 + 105 ctest PASS
 | **07-25** | **ADR-069 BAR/ioremap + ADR-072 可移植性验证 + ADR-073 DMA 一致性提案** — Stage 4 前置架构决策集 |
+| **07-30** | **stage4-5-cp-phase6-preemption-engine-finish ✅** — Preemption 引擎核心收尾：MQD state save/restore wiring、pending fence 表、Puller FSM preempt checkpoint、SEM_WAIT 挂起态保存/恢复、17 个 standalone 测试、ADR-045/046/047/050 状态升 Accepted |
 
 ### 后续任务建议
 
