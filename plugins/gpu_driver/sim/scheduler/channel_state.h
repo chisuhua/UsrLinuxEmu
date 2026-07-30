@@ -153,6 +153,34 @@ class ChannelSemaphoreState {
   /** Clear all state (for testing). */
   void clear();
 
+  // ========== Pending Fence Table (Stage 4.5 Preemption) ==========
+
+  /** Bind a pending fence at batch submission time. */
+  void bind_pending_fence(uint64_t fence_id, uint64_t sem_handle);
+
+  /** Freeze all pending fences (called on preempt). */
+  void freeze_pending_fences() { frozen_ = true; }
+
+  /** Rebind pending fences (called on resume). */
+  void rebind_pending_fences() { frozen_ = false; }
+
+  /** Remove a pending fence entry after successful signal. */
+  void cleanup_pending_fence(uint64_t fence_id);
+
+  /** Check if a fence is frozen (preempted but not yet resumed). */
+  bool is_fence_frozen(uint64_t fence_id) const;
+
+  /** Number of pending fence entries. */
+  size_t pending_fence_count() const { return pending_fences_.size(); }
+
+  // ========== Save/Restore for Preempt (SEM_WAIT suspension) ==========
+
+  /** Create a deep-copy backup of semaphore state. */
+  ChannelSemaphoreState backup() const;
+
+  /** Restore semaphore state from backup (via std::swap). */
+  void restore(const ChannelSemaphoreState& saved);
+
  private:
   int priority_{GPU_CHAN_PRI_NORMAL};
 
@@ -161,4 +189,7 @@ class ChannelSemaphoreState {
 
   std::unordered_map<u64, barrier_state> barriers_;
   std::vector<gpu_gpfifo_entry> barrier_released_;
+
+  std::unordered_map<uint64_t, uint64_t> pending_fences_;
+  bool frozen_{false};
 };
