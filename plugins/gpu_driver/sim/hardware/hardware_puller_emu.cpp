@@ -159,10 +159,24 @@ void HardwarePullerEmu::runLoop() {
           ChannelState* ch = channel_mgr_->nextReadyChannel();
           if (ch) {
             current_channel_id_ = ch->channel_id;
-            current_gpfifo_addr_ = ch->gpfifo_addr;
-            current_index_ = 0;
-            total_entries_ = ch->total_entries;
-            pending_fence_id_ = ch->pending_fence_id;
+            /* Stage 4.5: check if this channel was PREEMPTED — restore state */
+            MQD* mqd = channel_mgr_->getMqdForChannel(ch->channel_id);
+            if (mqd && mqd->state == MQD_STATE_PREEMPTED) {
+              mqd_state_resume(mqd);
+              current_gpfifo_addr_ = mqd->gpfifo_addr;
+              current_index_ = mqd->current_index;
+              total_entries_ = mqd->entry_count;
+              pending_fence_id_ = ch->pending_fence_id;
+              /* Restore SEM_WAIT state from backup */
+              sema_state_.restore(sema_state_backup_);
+              /* Unfreeze pending fences */
+              sema_state_.rebind_pending_fences();
+            } else {
+              current_gpfifo_addr_ = ch->gpfifo_addr;
+              current_index_ = 0;
+              total_entries_ = ch->total_entries;
+              pending_fence_id_ = ch->pending_fence_id;
+            }
             transitionTo(State::FETCH);
             break;
           }
