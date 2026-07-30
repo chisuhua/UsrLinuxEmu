@@ -38,17 +38,25 @@ Stage 4.5 第一阶段（`stage4-5-cp-phase6-preemption-timeline-sem`，已归�
 
 ## Decisions
 
-### Decision 1: MQD state 复用 ADR-054 已有 `PreemptContext` 字段
+### Decision 1: MQD state 复用 ADR-054 已有 `saved_*` 字段（不扩展 mqd.h）
 
-ADR-054 已定义 `PreemptContext` 结构（gpfifo_addr, current_index, total_entries, pending_fence_id）。本 change **不新增 ABI 字段**，直接复用已有结构填充 save/restore 数据。
+ADR-054 已定义 `MQD.saved_gpfifo_addr/saved_index/saved_entries` 用于抢占保存。`mqd_state_preempt()` / `mqd_state_resume()` 已实现并按 ADR-054 D4 工作（`plugins/gpu_driver/sim/hardware/mqd_state.cpp:54-87`）。本 change **不修改 mqd.h ABI**，仅补强：
 
-**Why over alternative**: 保持 ABI 稳定，避免驱动的 mqd.h 重新编译。`mqd_state_preempt()` / `mqd_state_resume()` 是 ADR-054 接口预留方法，仅需补全实现。
+- Task 1.1：审计现有实现，添加**断言**（保存/恢复覆盖三个 `saved_*` 字段）
+- Task 1.2：审计现有 `resume` 路径（PREEMPTED→ACTIVE 三字段恢复）
+- **不引入 `pending_fence_id` 到 mqd.h**——pending_fence 状态走 side-table（Decision 2）
 
-### Decision 2: Pending fence 表放在 `ChannelState`，不放在 `mqd.h`
+**Why over alternative**: mqd.h 是 cross-repo ABI（被 TaskRunner 符号链接 symlink），扩展会触发 ADR-035 §Rule 5.1 sync 流程，scope 不匹配本 change。saved_* 已足够保存 GPFIFO 进度。
 
-每通道 pending fence 表 `std::unordered_map<fence_id_t, SemHandle>` 实现为驱动侧 (`ChannelState`) 字段，不暴露到 `mqd.h` 头文件。
+### Decision 2: Pending fence 表放在 `ChannelSemaphoreState`（不放在 `struct ChannelState` 或 `mqd.h`）
 
-**Why over alternative**: mqd.h ABI 已稳定；pending fence 属于 sim runtime 状态而非硬件 ABI。
+每通道 pending fence 表 `std::unordered_map<uint64_t /*fence_id*/, uint64_t /*sem_handle*>> pending_fences_` 实现为 **`ChannelSemaphoreState` 新字段**，不暴露到 `mqd.h` 头文件，也不放到调度侧 `struct ChannelState`（已有 `pending_fence_id` 标量字段，语义不重叠）。
+
+**为什么不是 `struct ChannelState`**：调度侧 `struct ChannelState`（`plugins/gpu_driver/sim/hardware/channel_manager.h:25-34`）只持有**当前** fence_id（标量），与本 change 需要的"preempt→resume 间隙不 signal 的 multi-fence tracking"语义不匹配。
+
+**为什么是 `ChannelSemaphoreState`**：fence 实现就是 timeline semaphore per ADR-049 D1（`fence_create → sem_create(0)`），pending fence 表属于 semaphore 状态视图。predication-aql §3.1 同样指向 `plugins/gpu_driver/sim/scheduler/channel_state.{h,cpp}`，避免双向文件冲突。
+
+**Why over alternative**: mqd.h ABI 已稳定；ChannelSemaphoreState 是 sim runtime 状态（非硬件 ABI）；与 predication-aql 复用同一文件，单一冲突点。
 
 ### Decision 3: Preempt 检查点仅在 batch 边界（DISPATCH→FETCH），且 jump_stack 非空时延迟
 
@@ -58,13 +66,38 @@ Puller FSM 的 preempt 检查点继续在 batch 边界触发（已由归档 task
 
 **Why over alternative**: 保持模拟器性能，避免 wavefront 级追踪；符合 ADR-046 D1（Dispatch-level 仅）与 timeline-sem 提案 MUST 约束（IB 嵌套状态下禁止抢占）。允许 mid-IB 抢占会使 jump_stack 保存/恢复语义复杂化且与已交付行为冲突。
 
-### Decision 4: 边界处理返回码
+### Decision 4: 边界处理返回码（与 ADR-054 §D4 状态转移表对齐）
 
-- IDLE 通道 preempt → 返回 0 no-op
-- double-preempt on PREEMPTED → 返回 0 no-op
-- resume on non-PREEMPTED → 返回 -EINVAL
+| 操作 | 状态 | 返回 | 引用 |
+|------|------|------|------|
+| `mqd_state_preempt` on IDLE | 无活跃队列可抢占 | **-EINVAL** | ADR-054 D4 "IDLE preempt = error" |
+| `mqd_state_preempt` on ACTIVE | 抢占 | 0 | ADR-054 D4 + 本 change wire-up |
+| `mqd_state_preempt` on PREEMPTED | 已抢占 | **0** (no-op, idempotent) | ADR-054 D4 "PREEMPTED preempt = no-op" |
+| `mqd_state_resume` on PREEMPTED | 恢复 | 0 | ADR-054 D4 + 本 change wire-up |
+| `mqd_state_resume` on non-PREEMPTED | 无效转移 | -EINVAL | ADR-054 D4 |
 
-**Why over alternative**: 与 Linux kernel 原语风格一致（EINVAL 表示无效状态转换）。
+**Why over alternative**: 严格遵循 ADR-054 D4 状态转移表（已 Accepted）。早期本 change 的 "IDLE preempt no-op" 表述与 ADR-054 矛盾，已修正（"no-op"语义保留给 `PREEMPTED → preempt` idempotent 情况，而非 IDLE）。
+
+### Decision 5: mqd_state_* 内部实现直接 struct 访问不违反 ADR-054 D3
+
+ADR-054 D3 要求**驱动代码（②）**通过 BAR0 `writel/readel` 访问 HQD 控制位。**sim 端（③）**的内部 `mqd_state_preempt()` 等函数直接 struct 访问 MQD 字段是符合 D3 的，因为：
+
+- 驱动代码调用 `writel(value, bar0 + HQD_CTL_OFFSET)` 触发 `sim_bar0_writel()`（已实现 `plugins/gpu_driver/sim/bar_sim.cpp:40-66`）
+- `sim_bar0_writel()` 在 `reg == 0x00` 时根据写入值调用 `mqd_state_activate/preempt/deactivate`
+- 因此驱动代码始终走 BAR0 协议；sim 端 `mqd_state_*` 是被 BAR0 触发的内部函数
+
+**Why over alternative**: 保持 sim 内部实现的简洁性（避免递归模拟 BAR0 协议），符合 ADR-054 D3 的真实意图（驱动代码真机习语）。
+
+### Decision 6: Preempt 检查点必须先保存后切换（补全现有代码缺陷）
+
+现有 `hardware_puller_emu.cpp:282-311` 的 preempt 检查点**只切换到新通道，没有保存被抢占通道的状态**——`current_gpfifo_addr_/current_index_/total_entries_` 被新通道覆盖后，旧通道进度丢失，`mqd_state_resume()` 无法恢复。
+
+**修复**（Task 3.1/3.2 重写）：
+1. 在 preempt 检查点触发时，**先**调用 `mqd_state_preempt(&old_channel_mqd)`（old_channel_mqd 通过 `channel_mgr_->getMqdForChannel(current_channel_id_)` 获取）
+2. **然后**切换到新通道
+3. Resume 时从 `PREEMPTED` 通道读取其 MQD 指针，调用 `mqd_state_resume(&mqd)`，恢复 gpfifo_addr/index/total_entries
+
+需要在 `ChannelManager` 新增 `MQD* getMqdForChannel(uint32_t channel_id)` 方法（依赖 `sim_bar0_readl(HQD_CTL_OFFSET)` 反向获取，或维护 `std::array<MQD*, MAX_CHANNELS>` 缓存）。
 
 ## Risks / Trade-offs
 

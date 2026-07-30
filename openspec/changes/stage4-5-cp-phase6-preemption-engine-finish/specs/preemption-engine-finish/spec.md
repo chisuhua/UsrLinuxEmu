@@ -8,9 +8,9 @@ The system SHALL transition a channel from ACTIVE to PREEMPTED state when `mqd_s
 - **WHEN** `mqd_state_preempt()` is called on a channel in ACTIVE state
 - **THEN** the channel transitions to PREEMPTED and `PreemptContext` is populated with current gpfifo position
 
-#### Scenario: Preempt IDLE channel is no-op
+#### Scenario: Preempt IDLE channel returns EINVAL
 - **WHEN** `mqd_state_preempt()` is called on a channel in IDLE state
-- **THEN** the call returns 0 and no state change occurs
+- **THEN** the call returns -EINVAL and no state change occurs (per ADR-054 §D4 "IDLE preempt = error — no active queue to preempt")
 
 #### Scenario: Double preempt is no-op
 - **WHEN** `mqd_state_preempt()` is called on a channel already in PREEMPTED state
