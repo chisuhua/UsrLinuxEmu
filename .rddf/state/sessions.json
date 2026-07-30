@@ -247,8 +247,44 @@
       "last_heartbeat": "2026-07-29T07:23:11.751569+00:00",
       "ended_at": "2026-07-29T07:26:05.758568+00:00",
       "end_reason": "arch-done"
+    },
+    {
+      "session_id": "rds_d3bda1c9018b",
+      "kind": "stage_plan",
+      "owner_opencode_session_id": "my-eci-group_1448990",
+      "parent_session_id": "rds_7922e8c90a46",
+      "goal": {
+        "intent": "guide-plan",
+        "subject": "plan-phase",
+        "expected_outcome": "plan-done"
+      },
+      "state": "completed",
+      "attached_changes": [],
+      "context_pointer": ".rddf/state/.plan-handoff.json",
+      "started_at": "2026-07-30T07:24:14.693888+00:00",
+      "last_heartbeat": "2026-07-30T07:24:14.693888+00:00",
+      "ended_at": "2026-07-30T07:44:18.855690+00:00",
+      "end_reason": "plan-done"
+    },
+    {
+      "session_id": "rds_7fcfc7ffb8e7",
+      "kind": "stage_ship",
+      "owner_opencode_session_id": "my-eci-group_1726593",
+      "parent_session_id": "rds_d3bda1c9018b",
+      "goal": {
+        "intent": "guide-ship",
+        "subject": "ship-phase",
+        "expected_outcome": "archive-all"
+      },
+      "state": "completed",
+      "attached_changes": [],
+      "context_pointer": null,
+      "started_at": "2026-07-30T13:39:45.996360+00:00",
+      "last_heartbeat": "2026-07-30T14:23:18.192259+00:00",
+      "ended_at": "2026-07-30T14:23:36.339335+00:00",
+      "end_reason": "ship-done"
     }
   ],
-  "updated_at": "2026-07-29T07:26:05.758568+00:00",
+  "updated_at": "2026-07-30T14:23:36.339335+00:00",
   "version": 1
 }
