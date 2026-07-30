@@ -214,6 +214,9 @@ class HardwarePullerEmu {
   std::atomic<bool> preempt_pending_{false};
   uint32_t preempt_target_channel_id_ = 0;
 
+  // ========== Preemption Backup (Stage 4.5 Preemption Engine) ==========
+  ChannelSemaphoreState sema_state_backup_;
+
   // ========== Semaphore/Barrier State (Stage 4.4) ==========
   ChannelSemaphoreState sema_state_;
 

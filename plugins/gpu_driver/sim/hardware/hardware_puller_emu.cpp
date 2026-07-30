@@ -11,6 +11,7 @@
 #include "channel_manager.h"  // Stage 4.3 Task 2
 #include "timestamp_query.h"   // Stage 4.3 Task 6 (ADR-057)
 #include "semaphore_manager.h" // Stage 4.5 (ADR-049)
+#include "mqd_state.h"         // Stage 4.5 (ADR-046 preempt/resume)
 
 // Stage 4.3 (ADR-057): global logical clock - one tick per DISPATCH cycle
 std::atomic<uint64_t> g_sim_tick{0};
@@ -287,10 +288,23 @@ void HardwarePullerEmu::runLoop() {
           if (channel_mgr_) {
             channel_mgr_->yieldChannel(current_channel_id_);
           }
-          /* Stage 4.5 (ADR-046): check preemption at batch boundary.
-           * Skip if in IB jump (jump_stack_ non-empty). */
+          /* Stage 4.5 (ADR-046): preemption checkpoint at batch boundary.
+           * Skip if in IB jump (jump_stack_ non-empty).
+           * Design Decision 6: save before switch. */
           if (preempt_pending_.load() && !isInJump()) {
             preempt_pending_.store(false);
+            /* 1. Save current channel's MQD state before switching */
+            if (channel_mgr_) {
+              MQD* old_mqd = channel_mgr_->getMqdForChannel(current_channel_id_);
+              if (old_mqd) {
+                mqd_state_preempt(old_mqd);
+              }
+              /* 2. Save SEM_WAIT state for the current channel */
+              sema_state_backup_ = sema_state_.backup();
+              /* 3. Freeze pending fences */
+              sema_state_.freeze_pending_fences();
+            }
+            /* 4. Switch to the target channel */
             current_channel_id_ = preempt_target_channel_id_;
             if (channel_mgr_) {
               ChannelState* ch = channel_mgr_->nextReadyChannel();
@@ -301,6 +315,8 @@ void HardwarePullerEmu::runLoop() {
                 pending_fence_id_ = ch->pending_fence_id;
               }
             }
+            /* 5. Clear sema_state_ for the new channel */
+            sema_state_.clear();
             transitionTo(State::FETCH);
           } else {
             transitionTo(State::CHANNEL_SWITCH);
@@ -353,9 +369,11 @@ void HardwarePullerEmu::handleComplete() {
    * 自身的 current_index_++ 检查，本函数被调用即代表一条 entry 已完成。
    * current_index_ 在 handleComplete() 返回后才自增 — 此处读到的 current_index_
    * 是"已完成最后一条"的语义。设计 D2: 仅当 current_index_ == total_entries_-1
-   * 时才触发 signal。 */
+   * 时才触发 signal。
+   * Stage 4.5: 跳过 frozen fence（preempt→resume 间隙不 signal）。 */
   if (pending_fence_id_ != 0 &&
-      current_index_ + 1 >= total_entries_) {
+      current_index_ + 1 >= total_entries_ &&
+      !sema_state_.is_fence_frozen(pending_fence_id_)) {
     sim_fence_id_signal(pending_fence_id_);
     pending_fence_id_ = 0;  // 单次触发，避免重复 signal
   }
