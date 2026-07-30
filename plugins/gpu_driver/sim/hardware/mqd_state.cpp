@@ -57,8 +57,11 @@ int mqd_state_preempt(MQD* mqd) {
   }
   // preempt: ACTIVE -> PREEMPTED
   // IDLE and PREEMPTED are invalid (no active queue to preempt / already preempted)
-  if (mqd->state != MQD_STATE_ACTIVE) {
+  if (mqd->state == MQD_STATE_IDLE) {
     return -EINVAL;
+  }
+  if (mqd->state == MQD_STATE_PREEMPTED) {
+    return 0;
   }
   // Per ADR-054 §D4: save Puller state (gpfifo_addr, current_index) to preempt context
   // The MQD struct has saved_gpfifo_addr and saved_index fields for this purpose
