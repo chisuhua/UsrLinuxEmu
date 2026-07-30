@@ -828,6 +828,23 @@ target_include_directories(test_mqd_state_standalone PRIVATE
 add_test(NAME test_mqd_state_standalone COMMAND $<TARGET_FILE:test_mqd_state_standalone>)
 set_tests_properties(test_mqd_state_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+# Stage 4.5: Preemption Engine (preemption-engine-finish change)
+add_executable(test_preemption_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_preemption_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_preemption_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_preemption_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_preemption_standalone COMMAND $<TARGET_FILE:test_preemption_standalone>)
+set_tests_properties(test_preemption_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 # Task 4: CP Interrupt (ADR-048) - TDD
 add_executable(test_cp_interrupt_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_cp_interrupt_standalone.cpp
