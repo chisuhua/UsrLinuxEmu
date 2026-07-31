@@ -144,6 +144,17 @@ class HardwarePullerEmu {
   void applyPredicateOp(uint32_t op, uint64_t operand);
   void applyPredicateOpForTest(uint32_t op, uint64_t operand) { applyPredicateOp(op, operand); }
 
+  /** Stage 4.5 (ADR-051): test-only entry processor.
+   *  Decodes SET_PREDICATE from payload[0] packing (op in low 8 bits, value in upper 56 bits). */
+  void processEntryForTest(const gpu_gpfifo_entry& entry) {
+    if (entry.method == GPU_OP_SET_PREDICATE) {
+      uint64_t packed = entry.payload[0];
+      uint32_t op = static_cast<uint32_t>(packed & 0xFF);
+      uint64_t value = packed >> 8;
+      applyPredicateOp(op, value);
+    }
+  }
+
   // ========== ChannelManager Integration (Stage 4.3 Task 2) ==========
 
   /** Set the ChannelManager for per-channel batch routing.

@@ -119,3 +119,26 @@ TEST_CASE("Predication: ChannelState save/restore preserves predicate across pre
   REQUIRE(channel.predicate_for_test().value == 0xAB);
   REQUIRE(channel.predicate_for_test().enabled == true);
 }
+
+// ========== Task 5: SET_PREDICATE entry via processEntryForTest ==========
+
+TEST_CASE("Predication: SET_PREDICATE entry updates register", "[predication]") {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+  gpu_gpfifo_entry entry{};
+  entry.method = GPU_OP_SET_PREDICATE;
+  /* payload[0] = packed(op, value): op in low 8 bits, value in remaining 56 bits */
+  /* For op=SET, value=0: payload[0] = (0 & 0xFF) | (0 << 8) = 0 */
+  entry.payload[0] = 0;
+  puller.processEntryForTest(entry);
+  REQUIRE(puller.predicate_enabled() == false);
+  REQUIRE(puller.predicate_value() == 0u);
+
+  gpu_gpfifo_entry entry2{};
+  entry2.method = GPU_OP_SET_PREDICATE;
+  entry2.payload[0] = (0ULL) | (0xABULL << 8);  /* op=SET, value=0xAB */
+  puller.processEntryForTest(entry2);
+  REQUIRE(puller.predicate_enabled() == true);
+  REQUIRE(puller.predicate_value() == 0xAB);
+}
