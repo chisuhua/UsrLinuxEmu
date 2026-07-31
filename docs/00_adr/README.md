@@ -60,8 +60,8 @@
 | [adr-048](adr-048-interrupt-event-model.md) | **中断与事件模型**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-049](adr-049-cross-engine-synchronization.md) | **跨引擎同步**（Phase 6 — Stage 4.5 实施修订 D1）| ✅ 已接受 | 2026-07-09 (rev. 2026-07-29) |
 | [adr-050](adr-050-indirect-buffer-command-chaining.md) | **Indirect Buffer 命令链**（Phase 5+）| ✅ Accepted | 2026-07-09 (2026-07-30 backfill) |
-| [adr-051](adr-051-predication-conditional-execution.md) | **Predication 条件执行**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
-| [adr-052](adr-052-aql-pm4-native-support.md) | **AQL/PM4 Native 支持**（Phase 6）| 📋 PROPOSED | 2026-07-09 |
+| [adr-051](adr-051-predication-conditional-execution.md) | **Predication 条件执行**（Phase 6）| ✅ Accepted | 2026-07-09 (2026-07-31 Accepted) |
+| [adr-052](adr-052-aql-pm4-native-support.md) | **AQL/PM4 Native 支持**（Phase 6）| ✅ Accepted (PM4 deferred to Phase 6.5) | 2026-07-09 (2026-07-31 Accepted) |
 | [adr-053](adr-053-doorbell-aggregation-oversubscription.md) | **Doorbell 聚合与过订阅** | ⏸️ Deferred (Never) | 2026-07-09 |
 | [adr-054](adr-054-mqd-hqd-state-management.md) | **MQD/HQD 状态管理**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-055](adr-055-cp-error-handling-engine-recovery.md) | **CP 错误处理与引擎恢复** | ⏸️ Deferred (Never) | 2026-07-09 |
@@ -92,10 +92,12 @@
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 52 | 001-010, 015-024, 027, 031-037, 039-050, 054, 057, 059-065 |
-| 📋 PROPOSED | 9 | 011-014, 038, 051-052, 056, 058, 069, 072-074 |
+| ✅ 已接受 | 54 | 001-010, 015-024, 027, 031-037, 039-052, 054, 057, 059-065 |
+| 📋 PROPOSED | 7 | 011-014, 038, 056, 058, 069, 072-074 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
 | **总计** | **67** | ADR-001 ~ ADR-073 |
+
+> **2026-07-31 变更**：ADR-051（Predication 条件执行）+ ADR-052（AQL/PM4 Native 支持）状态升 ✅ Accepted。由 `stage4-5-cp-phase6-predication-aql` 实施完成。状态分布：Accepted 52->54，PROPOSED 9->7。ADR-052 PM4 parsing deferred to Phase 6.5 per ADR-052 D3。
 
 > **2026-07-30 变更**：ADR-045（优先级调度）+ ADR-046（抢占与上下文切换）+ ADR-047（Hardware Semaphore & Barrier）+ ADR-050（Indirect Buffer 命令链）状态升 ✅ Accepted。ADR-045/047/050 由 `stage4-4-gpu-cp-phase55` 实施完成，ADR-046 由本 change `stage4-5-cp-phase6-preemption-engine-finish` 实施完成。状态分布：Accepted 48→52，PROPOSED 12→8。
 
