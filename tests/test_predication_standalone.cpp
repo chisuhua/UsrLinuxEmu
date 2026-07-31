@@ -107,3 +107,15 @@ TEST_CASE("PredicateState: XOR operation toggles bits", "[predication]") {
   puller.applyPredicateOpForTest(3 /*XOR*/, 0xFF);
   REQUIRE(puller.predicate_value() == 0x55u);
 }
+
+TEST_CASE("Predication: ChannelState save/restore preserves predicate across preempt", "[predication]") {
+  ChannelSemaphoreState channel;
+  channel.set_predicate_for_test({true, 0xAB});
+
+  channel.save_predicate_for_test();
+  channel.set_predicate_for_test({false, 0x00});
+  channel.restore_predicate_for_test();
+
+  REQUIRE(channel.predicate_for_test().value == 0xAB);
+  REQUIRE(channel.predicate_for_test().enabled == true);
+}
