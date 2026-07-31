@@ -335,8 +335,26 @@
       "last_heartbeat": "2026-07-31T15:54:22.221731+00:00",
       "ended_at": "2026-07-31T15:55:13.746802+00:00",
       "end_reason": "plan-done"
+    },
+    {
+      "session_id": "rds_bfa12787b1fd",
+      "kind": "stage_ship",
+      "owner_opencode_session_id": "my-eci-group_2069395",
+      "parent_session_id": "rds_069a76b12aa4",
+      "goal": {
+        "intent": "guide-ship",
+        "subject": "ship-phase",
+        "expected_outcome": "archive-all"
+      },
+      "state": "abandoned",
+      "attached_changes": [],
+      "context_pointer": null,
+      "started_at": "2026-07-31T16:36:21.884328+00:00",
+      "last_heartbeat": "2026-07-31T16:36:21.884328+00:00",
+      "ended_at": "2026-07-31T16:40:26.941011+00:00",
+      "end_reason": "user-abandoned"
     }
   ],
-  "updated_at": "2026-07-31T15:55:13.746802+00:00",
+  "updated_at": "2026-07-31T16:40:26.941011+00:00",
   "version": 1
 }
