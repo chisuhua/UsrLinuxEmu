@@ -130,7 +130,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 │                   设备驱动层 (Device Driver)                      │
 │   plugins/gpu_driver/                                             │
 │   • drv/         : GpgpuDevice (table ioctl via getIoctlTablePtr)│
-│   • hal/         : struct gpu_hal_ops (11 fn-ptrs)             │
+│   • hal/         : struct gpu_hal_ops (29 fn-ptrs)             │
 │                    + hal_user (mmap heap + buddy + fences)      │
 │                    + hal_mock                                    │
 │   • shared/      : gpu_ioctl.h, gpu_types.h, gpu_queue.h,       │
@@ -535,6 +535,25 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 - **UsrLinuxEmu 环境**：driver → HAL → `hal_mock.cpp` → sim/
 - **真实 Linux kernel 环境**：driver → HAL → `hal_user.cpp` → 真实硬件
 - driver 代码本身**零修改**即可切换环境
+
+##### `gpu_hal_ops` 函数指针清单（29 fn-ptrs, post-stage4-5）
+
+| 阶段 | 函数指针 | 用途 |
+|------|----------|------|
+| Phase 1.5 (14 ops) | `alloc_bo` / `free_bo` / `map_bo` / `unmap_bo` | BO 内存分配/映射 |
+| | `create_va_space` / `destroy_va_space` | VA Space 管理 |
+| | `create_queue` / `destroy_queue` | Queue 管理 |
+| | `submit_batch` / `wait_fence` | Pushbuffer 提交 + fence 同步 |
+| | `fence_create` / `get_device_info` | fence 创建 + 设备信息查询 |
+| | `doorbell_ring` / `register_irq` | doorbell + 中断注册 |
+| stage4-5 v1 (+8 ops) | `hal_preempt` | 触发 mid-batch preemption |
+| | `hal_resume` | 恢复 preempted channel |
+| | `hal_sem_create` / `hal_sem_signal` / `hal_sem_wait` / `hal_sem_query` / `hal_sem_destroy` | timeline semaphore 生命周期 |
+| | `interrupt_register` | 注册中断回调 |
+| C-12 KFD (+7 ops) | `register_mmu_cb` / `register_firmware_cb` | KFD mmu/firmware 回调 |
+| | `register_gpu` | KFD GPU 注册 |
+| | `map_queue_ring` / `query_queue` | KFD queue 映射/查询 |
+| | `mmu_notifier_register` / `iommu_flush_iotlb` | mmu_notifier + IOTLB flush |
 
 #### 1.10.3 与 ROADMAP 的关系
 
