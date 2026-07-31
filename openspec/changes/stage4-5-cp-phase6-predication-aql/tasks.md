@@ -1,11 +1,11 @@
 ## 1. Predication: Predicate Register & Entry
 
-- [ ] 1.1 Add `PredicateState { bool enabled = true; uint64_t value = 0; } predicate_` to `HardwarePullerEmu`
-- [ ] 1.2 Add `GPU_OP_SET_PREDICATE` enum to `gpu_queue.h` GPFIFO entry types
-- [ ] 1.3 Implement SET operation: `predicate_.value = entry.payload[0]; predicate_.enabled = (value != 0)`
-- [ ] 1.4 Implement AND operation: `predicate_.value &= entry.payload[0]; update enabled`
-- [ ] 1.5 Implement OR operation: `predicate_.value |= entry.payload[0]; update enabled`
-- [ ] 1.6 Implement XOR operation: `predicate_.value ^= entry.payload[0]; update enabled`
+- [x] 1.1 Add `PredicateState { bool enabled = true; uint64_t value = 0; } predicate_` to `HardwarePullerEmu`
+- [x] 1.2 Add `GPU_OP_SET_PREDICATE` enum to `gpu_queue.h` GPFIFO entry types
+- [x] 1.3 Implement SET operation: `predicate_.value = entry.payload[0]; predicate_.enabled = (value != 0)`
+- [x] 1.4 Implement AND operation: `predicate_.value &= entry.payload[0]; update enabled`
+- [x] 1.5 Implement OR operation: `predicate_.value |= entry.payload[0]; update enabled`
+- [x] 1.6 Implement XOR operation: `predicate_.value ^= entry.payload[0]; update enabled`
 
 ## 2. Predication: Puller DECODE Check
 
