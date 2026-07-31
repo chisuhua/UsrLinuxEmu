@@ -25,9 +25,11 @@
 > - **执行顺序**：先完成 preemption-engine-finish 全部 tasks → 再启动本 change
 > - 详见 `design.md` §"跨 change 依赖" 与 `improvements/stage4-5-cp-phase6-preemption-engine-finish.md`
 
-- [ ] 3.1 Add `PredicateState predicate_snapshot_` to `ChannelState`（与 preemption-engine-finish 的 `pending_fences_` rebase 协调，避免同文件并行冲突）
-- [ ] 3.2 Wire save predicate state on preempt（调用链：`mqd_state_preempt()` → ChannelState save hook）
-- [ ] 3.3 Wire restore predicate state on resume（调用链：`mqd_state_resume()` → ChannelState restore hook）
+## 3. Predication: Context Switch Persistence
+
+- [x] 3.1 Add `PredicateState predicate_snapshot_` to `ChannelState`（与 preemption-engine-finish 的 `pending_fences_` rebase 协调，避免同文件并行冲突）
+- [x] 3.2 Wire save predicate state on preempt（调用链：`mqd_state_preempt()` → ChannelState save hook）
+- [x] 3.3 Wire restore predicate state on resume（调用链：`mqd_state_resume()` → ChannelState restore hook）
 
 ## 4. AQL: gpufifo_entry Format Field
 
@@ -59,7 +61,7 @@
 
 - [x] 8.1 Write `test_predication_standalone`: SET/AND/OR/XOR operations
 - [ ] 8.2 Write test: predicate skip in DECODE phase
-- [ ] 8.3 Write test: predicate state survives preempt/resume
+- [x] 8.3 Write test: predicate state survives preempt/resume
 - [x] 8.4 Write `test_aql_standalone`: AQL packet parsing → LaunchParams
 - [x] 8.5 Write test: AQL completion_signal triggers semaphore signal
 - [x] 8.6 Write test: PM4 format returns -ENOSYS
