@@ -12,12 +12,12 @@
 - [x] 2.1 Add `pending_preempt_` flag to scheduler: set on HIGH priority batch arrival, clear after context save
 - [x] 2.2 Implement preemption check point in Puller FSM at batch boundary (after DISPATCH / before FETCH) — skip if `jump_stack_` non-empty
 - [x] 2.3 Implement trigger/effect separation: trigger marks flag immediately, context save only at boundary
-- [ ] 2.4 Wire `mqd_state_preempt()` into preemption flow: ACTIVE → PREEMPTED, save gpfifo_addr/index/entries
-- [ ] 2.5 Wire `mqd_state_resume()` into resume flow: PREEMPTED → ACTIVE, restore gpfifo position
-- [ ] 2.6 Handle preempt on IDLE channel (no-op return 0), double-preempt on PREEMPTED (no-op), resume on non-PREEMPTED (-EINVAL)
-- [ ] 2.7 Implement per-channel pending fence table (`std::unordered_map<fence_id_t, SemHandle>`) — drive-side only, no `mqd.h` ABI change
-- [ ] 2.8 Ensure fence NOT signaled during preempt→resume gap; fence signal binds to resumed batch completion
-- [ ] 2.9 Write `test_preemption_standalone` — all state transitions, fence semantics, IB jump_stack safety
+- [x] 2.4 Wire `mqd_state_preempt()` into preemption flow: ACTIVE → PREEMPTED, save gpfifo_addr/index/entries
+- [x] 2.5 Wire `mqd_state_resume()` into resume flow: PREEMPTED → ACTIVE, restore gpfifo position
+- [x] 2.6 Handle preempt on IDLE channel (no-op return 0), double-preempt on PREEMPTED (no-op), resume on non-PREEMPTED (-EINVAL)
+- [x] 2.7 Implement per-channel pending fence table (`std::unordered_map<fence_id_t, SemHandle>`) — drive-side only, no `mqd.h` ABI change
+- [x] 2.8 Ensure fence NOT signaled during preempt→resume gap; fence signal binds to resumed batch completion
+- [x] 2.9 Write `test_preemption_standalone` — all state transitions, fence semantics, IB jump_stack safety
 
 ## 3. Timeline Semaphore (ADR-049, D1 Revised)
 
