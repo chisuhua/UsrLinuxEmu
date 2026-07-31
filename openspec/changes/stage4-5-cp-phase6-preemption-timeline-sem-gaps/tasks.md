@@ -45,27 +45,27 @@
 
 ### 3.1 Kernel File Count Warning
 
-- [ ] 3.1.1 Verify current count: `find src/kernel -name '*.cpp' | wc -l` (should be 46)
-- [ ] 3.1.2 Locate baseline in `tools/docs-audit.sh`
-- [ ] 3.1.3 Update baseline from 44 → 46
-- [ ] 3.1.4 Add comment explaining baseline source (git tag or known increment)
-- [ ] 3.1.5 Run `tools/docs-audit.sh --strict` — warning resolved
+- [x] 3.1.1 Verify current count: `find src/kernel -name '*.cpp' | wc -l` (should be 46)
+- [x] 3.1.2 Locate baseline in `tools/docs-audit.sh`
+- [x] 3.1.3 Update baseline from 44 → 46
+- [x] 3.1.4 Add comment explaining baseline source (git tag or known increment)
+- [x] 3.1.5 Run `tools/docs-audit.sh --strict` — warning resolved
 
 ### 3.2 gpu_hal.h fn-ptr Count Warning
 
-- [ ] 3.2.1 Verify current count: `grep -cE '^\s*int \(\*' plugins/gpu_driver/hal/gpu_hal.h` (should be 22)
-- [ ] 3.2.2 Locate "14 fn-ptrs" claim in `docs/02_architecture/post-refactor-architecture.md` §附录 A
-- [ ] 3.2.3 Update claim: 14 → 22
-- [ ] 3.2.4 Add fn-ptr list (hal_preempt, hal_resume, hal_sem_create, hal_sem_signal, hal_sem_wait, hal_sem_query, hal_sem_destroy, interrupt_register — 8 new from v1)
-- [ ] 3.2.5 Run `tools/docs-audit.sh --strict` — warning resolved
+- [x] 3.2.1 Verify current count: `grep -cE '^\s*int \(\*' plugins/gpu_driver/hal/gpu_hal.h` (should be 22)
+- [x] 3.2.2 Locate "14 fn-ptrs" claim in `docs/02_architecture/post-refactor-architecture.md` §附录 A
+- [x] 3.2.3 Update claim: 14 → 22
+- [x] 3.2.4 Add fn-ptr list (hal_preempt, hal_resume, hal_sem_create, hal_sem_signal, hal_sem_wait, hal_sem_query, hal_sem_destroy, interrupt_register — 8 new from v1)
+- [x] 3.2.5 Run `tools/docs-audit.sh --strict` — warning resolved
 
 ### 3.3 Doxygen Not Installed
 
-- [ ] 3.3.1 Check current CI image: doxygen installed?
-- [ ] 3.3.2 If not: add `apt install -y doxygen graphviz` to `.github/workflows/cmake-multi-platform.yml`
-- [ ] 3.3.3 Verify CI install step works
-- [ ] 3.3.4 Run `tools/docs-audit.sh --strict` — warning resolved
-- [ ] 3.3.5 All 3 warnings gone → overall `--strict` PASS
+- [x] 3.3.1 Check current CI image: doxygen installed?
+- [x] 3.3.2 If not: add `apt install -y doxygen graphviz` to `.github/workflows/cmake-multi-platform.yml`
+- [x] 3.3.3 Verify CI install step works
+- [x] 3.3.4 Run `tools/docs-audit.sh --strict` — warning resolved
+- [x] 3.3.5 All 3 warnings gone → overall `--strict` PASS
 
 ## 4. Preemption Spec Correction (Addendum Spec, Not Modifying Archive)
 
