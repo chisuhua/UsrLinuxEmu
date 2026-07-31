@@ -23,6 +23,18 @@
 
 #include "gpu_types.h"
 
+/**
+ * PredicateState - Predication register snapshot (Stage 4.5 ADR-051)
+ *
+ * Lives in channel_state.h (the lower-level header) so both
+ * ChannelSemaphoreState and HardwarePullerEmu can use it without
+ * circular includes.
+ */
+struct PredicateState {
+  bool enabled = true;
+  uint64_t value = 0;
+};
+
 /** Memory read callback: returns the u32 value at the given GPU VA. */
 using SemMemReadFn = std::function<u32(u64 addr)>;
 
@@ -181,6 +193,18 @@ class ChannelSemaphoreState {
   /** Restore semaphore state from backup (via std::swap). */
   void restore(const ChannelSemaphoreState& saved);
 
+  // ========== Predicate Save/Restore (Stage 4.5 ADR-051) ==========
+
+  void save_predicate() { predicate_snapshot_ = live_predicate_; }
+  void restore_predicate() { std::swap(predicate_snapshot_, live_predicate_); }
+  void set_predicate(PredicateState p) { live_predicate_ = p; }
+  PredicateState predicate() const { return live_predicate_; }
+
+  void set_predicate_for_test(PredicateState p) { set_predicate(p); }
+  void save_predicate_for_test() { save_predicate(); }
+  void restore_predicate_for_test() { restore_predicate(); }
+  PredicateState predicate_for_test() const { return predicate(); }
+
  private:
   int priority_{GPU_CHAN_PRI_NORMAL};
 
@@ -192,4 +216,7 @@ class ChannelSemaphoreState {
 
   std::unordered_map<uint64_t, uint64_t> pending_fences_;
   bool frozen_{false};
+
+  PredicateState live_predicate_{};
+  PredicateState predicate_snapshot_{};
 };

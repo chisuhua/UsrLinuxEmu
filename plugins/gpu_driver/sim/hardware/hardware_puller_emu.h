@@ -22,11 +22,6 @@ class GpuQueueEmu;
 class ChannelManager;  // Stage 4.3 Task 2 - forward declaration
 class SemaphoreManager;  // Stage 4.5 (ADR-049)
 
-struct PredicateState {
-  bool enabled = true;
-  uint64_t value = 0;
-};
-
 /**
  * HardwarePullerEmu — GPU 命令拉取器仿真 (ADR-021)
  *
