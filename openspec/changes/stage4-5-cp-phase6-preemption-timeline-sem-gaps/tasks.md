@@ -94,13 +94,13 @@
 
 ## 6. Final Verification
 
-- [ ] 6.1 Run `tools/docs-audit.sh --strict` — PASS (3 warnings resolved)
-- [ ] 6.2 Run `./build/bin/test_concurrent_preempt` — PASS
-- [ ] 6.3 Run `./build-asan/bin/test_*_standalone` — all green
-- [ ] 6.4 Run `./build-tsan/bin/test_*_standalone` — all green (including test_concurrent_preempt)
-- [ ] 6.5 Run `cd build && ctest --output-on-failure` — 0 failures
-- [ ] 6.6 Run `openspec validate stage4-5-cp-phase6-preemption-timeline-sem-gaps --strict` — pass
-- [ ] 6.7 Run `git diff archive/2026-07-29-stage4-5-cp-phase6-preemption-timeline-sem/spec.md` — empty (archive spec untouched)
+- [x] 6.1 Run `tools/docs-audit.sh --strict` — PASS (3 warnings resolved)
+- [x] 6.2 Run `./build/bin/test_concurrent_preempt` — PASS
+- [x] 6.3 Run `./build-asan/bin/test_*_standalone` — all green
+- [x] 6.4 Run `./build-tsan/bin/test_*_standalone` — all green (including test_concurrent_preempt)
+- [x] 6.5 Run `cd build && ctest --output-on-failure` — 0 failures
+- [x] 6.6 Run `openspec validate stage4-5-cp-phase6-preemption-timeline-sem-gaps --strict` — pass
+- [x] 6.7 Run `git diff archive/2026-07-29-stage4-5-cp-phase6-preemption-timeline-sem/spec.md` — empty (archive spec untouched)
 - [ ] 6.8 **Predication-aql integration gate**: After predication-aql merges to main, rebase this change and re-run `./build/bin/test_concurrent_preempt` (validates no channel_state.h integration regression)
 
 ## 7. ADR-074 (Hygiene Policy Documents Archive Tasks.md Sync)
@@ -111,16 +111,16 @@
 
 ## 8. Commit & Handoff
 
-- [ ] 8.1 Commit §1 (concurrent test): `feat(test): add test_concurrent_preempt for preempt engine stress validation`
-- [ ] 8.2 Commit §2 (sanitizer): `chore(sanitizer): establish asan-ubsan + tsan clean baseline for stage4-5`
-- [ ] 8.3 Commit §3 (docs-audit): `fix(docs-audit): update kernel file count, gpu_hal fn-ptr count, doxygen CI install`
-- [ ] 8.4 Commit §4 (spec addendum): `docs(arch): add preemption-spec-correctness addendum referencing preemption-engine-finish canonical`
-- [ ] 8.5 Commit §5 (archive sync): `chore(archive): sync preemption-timeline-sem tasks.md checkbox state with implementation`
+- [x] 8.1 Commit §1 (concurrent test): `feat(test): add test_concurrent_preempt for preempt engine stress validation`
+- [x] 8.2 Commit §2 (sanitizer): `chore(sanitizer): establish asan-ubsan + tsan clean baseline for stage4-5`
+- [x] 8.3 Commit §3 (docs-audit): `fix(docs-audit): update kernel file count, gpu_hal fn-ptr count, doxygen CI install`
+- [x] 8.4 Commit §4 (spec addendum): `docs(arch): add preemption-spec-correctness addendum referencing preemption-engine-finish canonical`
+- [x] 8.5 Commit §5 (archive sync): `chore(archive): sync preemption-timeline-sem tasks.md checkbox state with implementation`
 - [ ] 8.6 Commit §6 (predication-aql rebase gate) — defer to gate triggered event
-- [ ] 8.7 Commit §7 (ADR-074): `docs(adr): add ADR-074 archive-tasks.md checkbox hygiene policy`
+- [x] 8.7 Commit §7 (ADR-074): `docs(adr): add ADR-074 archive-tasks.md checkbox hygiene policy`
 - [ ] 8.8 Commit §8 (verification + handoff): `chore(plan): plan-done for stage4-5 preemption-timeline-sem-gaps`
-- [ ] 8.9 Update `.rddf/state/.plan-handoff.json` to add this change
-- [ ] 8.10 Update `.rddf/state/iteration.json` to add this change as "proposed"
+- [x] 8.9 Update `.rddf/state/.plan-handoff.json` to add this change
+- [x] 8.10 Update `.rddf/state/iteration.json` to add this change as "proposed"
 
 ## Cross-Change Coordination
 
