@@ -1,15 +1,15 @@
 ## 1. Concurrent Preempt Test Implementation
 
-- [ ] 1.1 Create `tests/test_concurrent_preempt.cpp` with Catch2 framework
-- [ ] 1.2 Implement `kSubmitThreads = std::thread::hardware_concurrency()` workers
-- [ ] 1.3 Implement `kPreemptCycles = 100` cycles per worker
-- [ ] 1.4 Each worker: fence_create → submit → bd_preempt → submit waiter → bd_resume → fence_read
-- [ ] 1.5 Track fences_submitted, fences_signaled, fences_canceled atomics
-- [ ] 1.6 Hard timeout 60s on thread join (catch deadlock; aligns with spec §"No deadlock")
-- [ ] 1.7 Assertions: fences_submitted == signaled + canceled (no loss); canceled < submitted * 0.01 (cancel ratio < 1%, accounts for legitimate channel-destroy races under TSan; aligns with spec)
-- [ ] 1.8 Register in `tests/CMakeLists.txt` as standalone test
-- [ ] 1.9 Verify build: `cmake --build build --target test_concurrent_preempt_standalone`
-- [ ] 1.10 Run: `./build/bin/test_concurrent_preempt` — PASS
+- [x] 1.1 Create `tests/test_concurrent_preempt.cpp` with Catch2 framework
+- [x] 1.2 Implement `kSubmitThreads = std::thread::hardware_concurrency()` workers
+- [x] 1.3 Implement `kPreemptCycles = 100` cycles per worker
+- [x] 1.4 Each worker: fence_create → submit → bd_preempt → submit waiter → bd_resume → fence_read
+- [x] 1.5 Track fences_submitted, fences_signaled, fences_canceled atomics
+- [x] 1.6 Hard timeout 60s on thread join (catch deadlock; aligns with spec §"No deadlock")
+- [x] 1.7 Assertions: fences_submitted == signaled + canceled (no loss); canceled < submitted * 0.01 (cancel ratio < 1%, accounts for legitimate channel-destroy races under TSan; aligns with spec)
+- [x] 1.8 Register in `tests/CMakeLists.txt` as standalone test
+- [x] 1.9 Verify build: `cmake --build build --target test_concurrent_preempt_standalone`
+- [x] 1.10 Run: `./build/bin/test_concurrent_preempt` — PASS
 
 ## 2. Sanitizer Validation
 
