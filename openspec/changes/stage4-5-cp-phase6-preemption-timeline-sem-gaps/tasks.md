@@ -105,9 +105,9 @@
 
 ## 7. ADR-074 (Hygiene Policy Documents Archive Tasks.md Sync)
 
-- [ ] 7.1 Create `docs/00_adr/adr-074-archive-tasks-md-checkbox-hygiene.md` (establishes policy that archive tasks.md checkboxes may be updated, separate from "archive spec not modified" policy)
-- [ ] 7.2 ADR-074 reaches "✅ Accepted" status per `docs/00_adr/adr-035-governance-policy.md` Rule 2
-- [ ] 7.3 Update `docs/00_adr/README.md` index to add ADR-074 entry (add row to table + update status distribution)
+- [x] 7.1 Create `docs/00_adr/adr-074-archive-tasks-md-checkbox-hygiene.md` (establishes policy that archive tasks.md checkboxes may be updated, separate from "archive spec not modified" policy)
+- [x] 7.2 ADR-074 reaches "✅ Accepted" status per `docs/00_adr/adr-035-governance-policy.md` Rule 2
+- [x] 7.3 Update `docs/00_adr/README.md` index to add ADR-074 entry (add row to table + update status distribution)
 
 ## 8. Commit & Handoff
 
