@@ -57,7 +57,7 @@
 
 ## 8. Standalone Tests
 
-- [ ] 8.1 Write `test_predication_standalone`: SET/AND/OR/XOR operations
+- [x] 8.1 Write `test_predication_standalone`: SET/AND/OR/XOR operations
 - [ ] 8.2 Write test: predicate skip in DECODE phase
 - [ ] 8.3 Write test: predicate state survives preempt/resume
 - [x] 8.4 Write `test_aql_standalone`: AQL packet parsing → LaunchParams

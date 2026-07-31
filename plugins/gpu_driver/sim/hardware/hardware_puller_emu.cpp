@@ -582,3 +582,23 @@ u64 HardwarePullerEmu::savedFetchPc() const {
   if (jump_depth_ == 0) return 0;
   return jump_stack_[jump_depth_ - 1].saved_gpfifo_addr;
 }
+
+void HardwarePullerEmu::applyPredicateOp(uint32_t op, uint64_t operand) {
+  switch (op) {
+    case 0:
+      predicate_.value = operand;
+      break;
+    case 1:
+      predicate_.value &= operand;
+      break;
+    case 2:
+      predicate_.value |= operand;
+      break;
+    case 3:
+      predicate_.value ^= operand;
+      break;
+    default:
+      return;
+  }
+  predicate_.enabled = (predicate_.value != 0);
+}
