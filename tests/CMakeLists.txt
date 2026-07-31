@@ -942,12 +942,15 @@ add_executable(test_predication_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_predication_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_predication_standalone PRIVATE kernel)
+target_link_libraries(test_predication_standalone PRIVATE kernel gpu_sim gpu_drv gpu_hal gpu_hal_mock)
 target_include_directories(test_predication_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME test_predication_standalone COMMAND $<TARGET_FILE:test_predication_standalone>)
 set_tests_properties(test_predication_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

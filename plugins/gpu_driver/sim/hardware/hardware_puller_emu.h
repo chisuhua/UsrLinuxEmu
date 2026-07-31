@@ -22,6 +22,11 @@ class GpuQueueEmu;
 class ChannelManager;  // Stage 4.3 Task 2 - forward declaration
 class SemaphoreManager;  // Stage 4.5 (ADR-049)
 
+struct PredicateState {
+  bool enabled = true;
+  uint64_t value = 0;
+};
+
 /**
  * HardwarePullerEmu — GPU 命令拉取器仿真 (ADR-021)
  *
@@ -135,6 +140,11 @@ class HardwarePullerEmu {
   bool jumpWillContinue() const { return jump_continue_; }
   u64 savedFetchPc() const;
 
+  // ========== Predication State (Stage 4.5 ADR-051) ==========
+
+  bool predicate_enabled() const { return predicate_.enabled; }
+  uint64_t predicate_value() const { return predicate_.value; }
+
   // ========== ChannelManager Integration (Stage 4.3 Task 2) ==========
 
   /** Set the ChannelManager for per-channel batch routing.
@@ -233,4 +243,6 @@ class HardwarePullerEmu {
   u64 jump_target_addr_{0};
   u64 jump_target_size_{0};
   bool jump_continue_{false};
+
+  PredicateState predicate_;
 };
