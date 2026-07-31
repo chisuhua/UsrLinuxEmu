@@ -935,3 +935,19 @@ set_tests_properties(test_indirect_buffer_standalone PROPERTIES WORKING_DIRECTOR
 add_catch_sim_test(test_timeline_semaphore_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_timeline_semaphore_standalone.cpp
 )
+
+# === Stage 4.5 CP Phase 6 Tests - Predication & AQL (ADR-051/052) ===
+# TDD flow: Write test -> verify FAIL -> implement -> verify PASS.
+add_executable(test_predication_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_predication_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_predication_standalone PRIVATE kernel)
+target_include_directories(test_predication_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_predication_standalone COMMAND $<TARGET_FILE:test_predication_standalone>)
+set_tests_properties(test_predication_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
