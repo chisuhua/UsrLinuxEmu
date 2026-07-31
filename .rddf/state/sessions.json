@@ -283,8 +283,24 @@
       "last_heartbeat": "2026-07-30T14:23:18.192259+00:00",
       "ended_at": "2026-07-30T14:23:36.339335+00:00",
       "end_reason": "ship-done"
+    },
+    {
+      "session_id": "rds_fb6b9e104fc5",
+      "kind": "stage_ship",
+      "owner_opencode_session_id": "my-eci-group_1726593",
+      "parent_session_id": null,
+      "goal": {
+        "intent": "guide-ship"
+      },
+      "state": "active",
+      "attached_changes": [],
+      "context_pointer": null,
+      "started_at": "2026-07-31T04:09:36.814349+00:00",
+      "last_heartbeat": "2026-07-31T04:09:36.893492+00:00",
+      "ended_at": null,
+      "end_reason": null
     }
   ],
-  "updated_at": "2026-07-30T14:23:36.339335+00:00",
+  "updated_at": "2026-07-31T04:09:36.893492+00:00",
   "version": 1
 }

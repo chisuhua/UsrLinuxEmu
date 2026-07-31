@@ -1,9 +1,9 @@
 {
   "plan_complete_at": "2026-07-30T07:43:51.115396+00:00",
-  "active_changes": 1,
+  "active_changes": 2,
   "all_artifacts_committed": true,
-  "ship_started_at": null,
-  "current_change": "stage4-5-cp-phase6-preemption-engine-finish",
+  "ship_started_at": "2026-07-31T11:57:00+00:00",
+  "current_change": "stage4-5-cp-phase6-preemption-timeline-sem-gaps",
   "execution_mode_decisions": {
     "stage4-5-cp-phase6-preemption-engine-finish": {
       "mode": "worktree",
@@ -26,6 +26,20 @@
       "details": {
         "file_count": 0,
         "task_count": 40,
+        "is_risky": false,
+        "change_size": "large",
+        "has_conflicts": false,
+        "has_dependencies": true,
+        "is_independent": false
+      }
+    },
+    "stage4-5-cp-phase6-preemption-timeline-sem-gaps": {
+      "mode": "worktree",
+      "reason": "\u5927\u6539\u52a8 + \u9700\u8981\u9694\u79bb",
+      "confidence": "high",
+      "details": {
+        "file_count": 0,
+        "task_count": 81,
         "is_risky": false,
         "change_size": "large",
         "has_conflicts": false,
