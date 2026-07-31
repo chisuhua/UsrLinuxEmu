@@ -46,9 +46,9 @@
 
 ## 6. AQL: Completion Signal → Timeline Semaphore
 
-- [ ] 6.1 Map AQL `completion_signal` handle to `SemaphoreManager` handle
-- [ ] 6.2 On AQL batch completion, call `sem_signal` with completion_signal handle
-- [ ] 6.3 Handle completion_signal=0 as no-op (no signal)
+- [x] 6.1 Map AQL `completion_signal` handle to `SemaphoreManager` handle
+- [x] 6.2 On AQL batch completion, call `sem_signal` with completion_signal handle
+- [x] 6.3 Handle completion_signal=0 as no-op (no signal)
 
 ## 7. PM4 Stub
 
@@ -61,7 +61,7 @@
 - [ ] 8.2 Write test: predicate skip in DECODE phase
 - [ ] 8.3 Write test: predicate state survives preempt/resume
 - [x] 8.4 Write `test_aql_standalone`: AQL packet parsing → LaunchParams
-- [ ] 8.5 Write test: AQL completion_signal triggers semaphore signal
+- [x] 8.5 Write test: AQL completion_signal triggers semaphore signal
 - [x] 8.6 Write test: PM4 format returns -ENOSYS
 
 ## 9. Sanitizer & Verification
