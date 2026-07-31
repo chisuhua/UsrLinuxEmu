@@ -118,7 +118,7 @@
 - [x] 8.5 Commit §5 (archive sync): `chore(archive): sync preemption-timeline-sem tasks.md checkbox state with implementation`
 - [ ] 8.6 Commit §6 (predication-aql rebase gate) — defer to gate triggered event
 - [x] 8.7 Commit §7 (ADR-074): `docs(adr): add ADR-074 archive-tasks.md checkbox hygiene policy`
-- [ ] 8.8 Commit §8 (verification + handoff): `chore(plan): plan-done for stage4-5 preemption-timeline-sem-gaps`
+- [x] 8.8 Commit §8 (verification + handoff): `chore(plan): plan-done for stage4-5 preemption-timeline-sem-gaps`
 - [x] 8.9 Update `.rddf/state/.plan-handoff.json` to add this change
 - [x] 8.10 Update `.rddf/state/iteration.json` to add this change as "proposed"
 
