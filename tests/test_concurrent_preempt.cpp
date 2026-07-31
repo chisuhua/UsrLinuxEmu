@@ -139,8 +139,10 @@ TEST_CASE("Concurrent preempt: no fence loss, no deadlock, low cancel ratio",
   REQUIRE(submitted == signaled + canceled);
 
   // 2. Cancel ratio < 1% (accounts for legitimate channel-destroy races)
+  // Use multiplication (not division) to avoid integer truncation when
+  // submitted < 100 (e.g., TSan reduces kPreemptCycles to 20, so 4*20=80).
   if (submitted > 0) {
-    REQUIRE(canceled < submitted / 100);
+    REQUIRE(canceled * 100 < submitted);
   }
 
   // ========== Cleanup: reset backdoor globals ==========
