@@ -147,13 +147,22 @@ class HardwarePullerEmu {
   /** Stage 4.5 (ADR-051): test-only entry processor.
    *  Decodes SET_PREDICATE from payload[0] packing (op in low 8 bits, value in upper 56 bits). */
   void processEntryForTest(const gpu_gpfifo_entry& entry) {
+    /* Stage 4.5 (ADR-051): DECODE-phase predicate check */
+    if (!predicate_.enabled && entry.method != GPU_OP_SET_PREDICATE) {
+      if (skip_cb_) skip_cb_();
+      return;
+    }
     if (entry.method == GPU_OP_SET_PREDICATE) {
       uint64_t packed = entry.payload[0];
       uint32_t op = static_cast<uint32_t>(packed & 0xFF);
       uint64_t value = packed >> 8;
       applyPredicateOp(op, value);
     }
+    /* Other entries: ignored in this minimal test interface */
   }
+
+  /* Stage 4.5 (ADR-051): test-only skip callback */
+  void setSkipCallbackForTest(std::function<void()> cb) { skip_cb_ = std::move(cb); }
 
   // ========== ChannelManager Integration (Stage 4.3 Task 2) ==========
 
@@ -255,4 +264,5 @@ class HardwarePullerEmu {
   bool jump_continue_{false};
 
   PredicateState predicate_;
+  std::function<void()> skip_cb_;  /* Test-only: invoked when an entry is skipped */
 };
