@@ -57,9 +57,10 @@ The archived `IMPLEMENTATION_NOTES.md` SHALL NOT be modified by this checkbox sy
 
 ### Requirement: Hygiene Policy Documented
 
-The repository SHALL document an explicit policy that archive tasks.md checkboxes may be updated to reflect actual implementation state, separate from the "archive spec not modified" policy.
+The repository SHALL document an explicit policy that archive tasks.md checkboxes may be updated to reflect actual implementation state, separate from the "archive spec not modified" policy. This policy is established via ADR-074.
 
-#### Scenario: Hygiene ADR or section exists
-- **WHEN** `docs/00_adr/` or `docs/02_architecture/post-refactor-architecture.md` is inspected
-- **THEN** a section exists stating "Archive tasks.md checkbox state may be updated to reflect actual implementation commits; this is distinct from the 'archive spec.md not modified' policy"
-- **OR** a new ADR (e.g., ADR-058) is created documenting this hygiene policy
+#### Scenario: ADR-074 exists and is Accepted
+- **WHEN** `docs/00_adr/adr-074-archive-tasks-md-checkbox-hygiene.md` is inspected
+- **THEN** it exists with status "✅ Accepted"
+- **AND** it states: "Archive tasks.md checkbox state may be updated to reflect actual implementation commits; this is distinct from the 'archive spec.md not modified' policy"
+- **AND** it references this change's spec as the originating use case

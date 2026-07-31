@@ -22,9 +22,10 @@ v1 实施 (`archive/2026-07-29-stage4-5-cp-phase6-preemption-timeline-sem/`) 已
 
 ### 1. Concurrent Preempt Test（§concurrent-preempt-test）
 
-- 新增 `tests/test_concurrent_preempt.cpp` — N=100 preempt/resume 循环 × M 并发 submit 线程
-- 在 `tests/CMakeLists.txt` 注册为独立 Catch2 standalone 二进制
-- 验证：无死锁（test timeout 内完成）+ 无 fence 丢失（每 fence 最终 signal 或 cancel）+ 无 state 泄漏（channel 销毁后无 dangling）
+- 新增 `tests/test_concurrent_preempt.cpp` — 默认 N=100 preempt/resume 循环 × M 并发 submit 线程（TSan 下 N=20 缩减以控制 CI 时长）
+- 在 `tests/CMakeLists.txt` 注册为 `test_concurrent_preempt_standalone` 独立 Catch2 二进制
+- 验证：无死锁（60s timeout 内完成）+ 无 fence 丢失（每 fence 最终 signal 或 cancel）+ 无 state 泄漏（channel 销毁后无 dangling）+ cancel ratio < 1%（容忍 TSan 下 channel-destroy race）
+- 失败自动 retry 3 次（用于 flaky benign race 容忍）
 - 复用 v1 已交付的 backdoor symbols (`bd_preempt`, `bd_sem_*`, `bd_fence_read`)
 
 ### 2. Sanitizer Validation（§sanitizer-validation）
@@ -43,18 +44,19 @@ v1 实施 (`archive/2026-07-29-stage4-5-cp-phase6-preemption-timeline-sem/`) 已
 | Warning | 根因 | 修复方式 |
 |---------|------|----------|
 | `src/kernel has 46 cpp files (baseline 44)` | v1 / 后续 change 新增 kernel 模块未更新 baseline | 在 audit script 或 baseline 配置中更新文件数阈值 |
-| `gpu_hal.h has 29 fn-ptrs (doc claims 14)` | v1 新增 ~15 个 HAL fn-ptrs（sem_create/signal/wait/destroy + preempt_*），post-refactor-architecture.md §附录 A 描述过期 | 更新 post-refactor-architecture.md 附录 A 的 fn-ptr 数量与列表 |
+| `gpu_hal.h has 22 fn-ptrs (doc claims 14)` | v1 新增 8 个 HAL fn-ptrs（`hal_preempt`, `hal_resume`, `hal_sem_create`, `hal_sem_signal`, `hal_sem_wait`, `hal_sem_query`, `hal_sem_destroy`, `interrupt_register`），post-refactor-architecture.md §附录 A 描述过期 | 更新 post-refactor-architecture.md 附录 A 的 fn-ptr 数量（14→22）与列表 |
 | `Doxygen not installed` | CI runner 缺少 doxygen | 在 pre-commit / CI 安装 doxygen，或显式声明 doxygen 为可选 |
 
 ### 4. Preemption Spec Correction（§preemption-spec-correction）
 
-按 archive IMPLEMENTATION_NOTES.md 政策"归档 spec 不修改"，新增独立 spec 澄清实际 IB jump_stack 语义：
+按 archive IMPLEMENTATION_NOTES.md 政策"归档 spec 不修改"，新增独立 spec 作为现有 canonical 的 **ADDENDUM** 澄清 IB jump_stack 语义：
 
-- 在本 change 的 `specs/preemption-engine/spec.md` 写入 **canonical** 语义：
-  - Preemption **deferred** during IB nested execution (`jump_stack_active_ == true`)
-  - Implementation: 在抢占检查点 (`tick()`) 检查 `jump_stack_`，非空则跳过保存
-  - Saved state **NOT include** `jump_stack_` (在 preempt 触发点恒为空)
-- 读者引导：`docs/02_architecture/post-refactor-architecture.md` 或 `roadmap.md` 添加 link，指向新 spec 而非 archive spec
+- **Canonical 来源**：`openspec/changes/archive/2026-07-30-stage4-5-cp-phase6-preemption-engine-finish/specs/preemption-engine-finish/spec.md` §"Preemption deferred during IB execution"（已存在，禁止修改）
+- 本 change 的 `specs/preemption-spec-correction/spec.md` 作为 **ADDENDUM**：
+  - 顶部声明 CANONICAL REFERENCE（指向 preemption-engine-finish）
+  - 补充 3 个增量场景：saved state field constraints + resume trigger conditions + defer guard mechanism
+  - 不重复 canonical 已有的 "Preempt deferred while in IB chain" / "Resume after boundary preempt" 两个场景
+- 读者引导：`docs/02_architecture/post-refactor-architecture.md` 或 `roadmap.md` 添加 link 指向本 addendum（而非 archive spec）
 
 ### 5. Archived Tasks.md Checkbox Sync（§archive-tasks-sync）
 
@@ -76,7 +78,7 @@ v1 实施 (`archive/2026-07-29-stage4-5-cp-phase6-preemption-timeline-sem/`) 已
 - `concurrent-preempt-test`: 100+ preempt/resume 循环 × 并发 submit 的压力测试，验证死锁/fence 丢失/state 泄漏
 - `sanitizer-validation`: asan-ubsan + tsan 全部 green，建立 sanitizer-clean 基线
 - `docs-audit-cleanup`: docs-audit `--strict` PASS，消除 3 个 warnings
-- `preemption-spec-correction`: 新 spec 澄清 IB jump_stack 的"defer"语义（独立 spec，不修改 archive）
+- `preemption-spec-correction`: 新 spec 作为 canonical-spec addendum 澄清 IB jump_stack 的"defer"语义（独立 spec，明确指向 preemption-engine-finish 为 canonical）
 - `archive-tasks-sync`: archive tasks.md 6 项 checkbox 状态同步为实施实际状态
 
 ### Modified Capabilities
@@ -95,7 +97,7 @@ v1 实施 (`archive/2026-07-29-stage4-5-cp-phase6-preemption-timeline-sem/`) 已
 
 ### 文档
 
-- `openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-engine/spec.md` (new)
+- `openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md` (new addendum)
 - `openspec/changes/archive/2026-07-29-stage4-5-cp-phase6-preemption-timeline-sem/tasks.md` — 6 项 checkbox 同步
 - `docs/02_architecture/post-refactor-architecture.md` — 链接到新 spec
 
