@@ -82,15 +82,15 @@
 
 ## 5. Archive Tasks.md Checkbox Sync
 
-- [ ] 5.1 Read current `archive/2026-07-29-stage4-5-cp-phase6-preemption-timeline-sem/tasks.md`
-- [ ] 5.2 Update task 2.4: `- [ ]` → `- [x]` (mqd_state_preempt wiring, commit d1f569b)
-- [ ] 5.3 Update task 2.5: `- [ ]` → `- [x]` (mqd_state_resume wiring, commit de620b5)
-- [ ] 5.4 Update task 2.6: `- [ ]` → `- [x]` (IDLE/double-preempt, commit d9728e8)
-- [ ] 5.5 Update task 2.7: `- [ ]` → `- [x]` (pending fence table, commit 91b1fbf)
-- [ ] 5.6 Update task 2.8: `- [ ]` → `- [x]` (fence freeze, commit d1f569b)
-- [ ] 5.7 Update task 2.9: `- [ ]` → `- [x]` (test_preemption_standalone, commit cbe5bf7, PASS)
-- [ ] 5.8 Verify: spec.md NOT modified
-- [ ] 5.9 Verify: IMPLEMENTATION_NOTES.md NOT modified
+- [x] 5.1 Read current `archive/2026-07-29-stage4-5-cp-phase6-preemption-timeline-sem/tasks.md`
+- [x] 5.2 Update task 2.4: `- [ ]` → `- [x]` (mqd_state_preempt wiring, commit d1f569b)
+- [x] 5.3 Update task 2.5: `- [ ]` → `- [x]` (mqd_state_resume wiring, commit de620b5)
+- [x] 5.4 Update task 2.6: `- [ ]` → `- [x]` (IDLE/double-preempt, commit d9728e8)
+- [x] 5.5 Update task 2.7: `- [ ]` → `- [x]` (pending fence table, commit 91b1fbf)
+- [x] 5.6 Update task 2.8: `- [ ]` → `- [x]` (fence freeze, commit d1f569b)
+- [x] 5.7 Update task 2.9: `- [ ]` → `- [x]` (test_preemption_standalone, commit cbe5bf7, PASS)
+- [x] 5.8 Verify: spec.md NOT modified
+- [x] 5.9 Verify: IMPLEMENTATION_NOTES.md NOT modified
 
 ## 6. Final Verification
 
