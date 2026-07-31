@@ -31,18 +31,18 @@
 
 ## 4. AQL: gpufifo_entry Format Field
 
-- [ ] 4.1 Add `uint8_t format` field to `gpu_gpfifo_entry` (default 0=UsrNative)
-- [ ] 4.2 Verify: existing UsrNative path unaffected (format=0 is no-op)
-- [ ] 4.3 Verify: 1 byte size doesn't break struct alignment
+- [x] 4.1 Add `uint8_t format` field to `gpu_gpfifo_entry` (default 0=UsrNative)
+- [x] 4.2 Verify: existing UsrNative path unaffected (format=0 is no-op)
+- [x] 4.3 Verify: 1 byte size doesn't break struct alignment
 
 ## 5. AQL: Packet Parsing
 
-- [ ] 5.1 Add `parseAqlPacket(const gpu_gpfifo_entry&)` to `GpfifoToLaunchParamsTranslator`
-- [ ] 5.2 Map AQL `kernel_object` → `LaunchParams.kernel_addr`
-- [ ] 5.3 Map AQL `kernarg_address` → `LaunchParams.kernargs`
-- [ ] 5.4 Map AQL `grid_size_{x,y,z}` → `LaunchParams.grid_{x,y,z}`
-- [ ] 5.5 Map AQL `workgroup_size_{x,y,z}` → `LaunchParams.block_{x,y,z}`
-- [ ] 5.6 Add `format == FORMAT_AQL` branch in translator dispatch
+- [x] 5.1 Add `parseAqlPacket(const gpu_gpfifo_entry&)` to `GpfifoToLaunchParamsTranslator`
+- [x] 5.2 Map AQL `kernel_object` -> `LaunchParams.kernel_addr`
+- [x] 5.3 Map AQL `kernarg_address` -> `LaunchParams.kernargs`
+- [x] 5.4 Map AQL `grid_size_{x,y,z}` -> `LaunchParams.grid_{x,y,z}`
+- [x] 5.5 Map AQL `workgroup_size_{x,y,z}` -> `LaunchParams.block_{x,y,z}`
+- [x] 5.6 Add `format == FORMAT_AQL` branch in translator dispatch
 
 ## 6. AQL: Completion Signal → Timeline Semaphore
 
@@ -52,17 +52,17 @@
 
 ## 7. PM4 Stub
 
-- [ ] 7.1 Add `FORMAT_PM4 = 2` constant
-- [ ] 7.2 Return -ENOSYS when format=2 is encountered in dispatcher
+- [x] 7.1 Add `FORMAT_PM4 = 2` constant
+- [x] 7.2 Return -ENOSYS when format=2 is encountered in dispatcher
 
 ## 8. Standalone Tests
 
 - [ ] 8.1 Write `test_predication_standalone`: SET/AND/OR/XOR operations
 - [ ] 8.2 Write test: predicate skip in DECODE phase
 - [ ] 8.3 Write test: predicate state survives preempt/resume
-- [ ] 8.4 Write `test_aql_standalone`: AQL packet parsing → LaunchParams
+- [x] 8.4 Write `test_aql_standalone`: AQL packet parsing → LaunchParams
 - [ ] 8.5 Write test: AQL completion_signal triggers semaphore signal
-- [ ] 8.6 Write test: PM4 format returns -ENOSYS
+- [x] 8.6 Write test: PM4 format returns -ENOSYS
 
 ## 9. Sanitizer & Verification
 
