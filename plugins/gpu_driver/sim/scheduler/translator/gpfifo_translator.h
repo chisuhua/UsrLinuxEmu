@@ -33,10 +33,19 @@ class GpfifoToLaunchParamsTranslator {
 
   bool translate(const gpu_gpfifo_entry& entry);
 
+  /** @brief Test-only entry point that dispatches to translate(). */
+  bool translateForTest(const gpu_gpfifo_entry& entry);
+
  private:
   static uint32_t unpackDimX(uint64_t packed);
   static uint32_t unpackDimY(uint64_t packed);
   static uint32_t unpackDimZ(uint64_t packed);
+
+  /** @brief Existing UsrNative GPFIFO translation path. */
+  bool translateUsrNative(const gpu_gpfifo_entry& entry);
+
+  /** @brief AQL packet parser (ADR-052). */
+  bool parseAqlPacket(const gpu_gpfifo_entry& entry);
 
   LaunchParamsCallback launch_cb_;
   std::map<uint32_t, std::string> kernel_names_;

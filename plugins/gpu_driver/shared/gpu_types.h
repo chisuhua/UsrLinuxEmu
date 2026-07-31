@@ -39,6 +39,7 @@ struct gpu_gpfifo_entry {
   u32 method : 12;    /* OP_LAUNCH_KERNEL=0x100, OP_LAUNCH_CPU_TASK=0x101 */
   u32 subchannel : 3; /* Target subchannel */
   u32 _reserved : 15;
+  u8 format;           /* Stage 4.5 (ADR-052): 0=UsrNative, 1=AQL, 2=PM4 */
   u64 payload[7];      /* Method arguments (kernel args / CPU task descriptor) */
   u64 semaphore_va;    /* Completion semaphore virtual address */
   u32 semaphore_value; /* Expected completion value */
