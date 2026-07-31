@@ -75,3 +75,29 @@ The system SHALL document the sanitizer-clean baseline state.
 #### Scenario: Sanitizer status file exists
 - **WHEN** `docs/05-advanced/sanitizer-status.md` is inspected
 - **THEN** it documents the latest sanitizer-green commit SHA + last verified date
+
+### Requirement: No Sanitizer Suppression Policy
+
+The system SHALL NOT use sanitizer suppression files (`.tsan_suppressions`, `.ubsan_suppressions`, `.asan_suppressions`) to silence reports. Every sanitizer report SHALL be either fixed, or explicitly documented as a known false positive with justification.
+
+> **Rationale**: Suppression files are a maintenance burden and can mask real bugs long after they are introduced. The project priority is correctness; false positives are cheaper than masked bugs.
+
+#### Scenario: No suppression file checked in
+- **WHEN** the repository is searched for `*.suppressions` files at the project root
+- **THEN** no such file exists (or, if present, it is empty and the corresponding sanitizer is configured to ignore empty suppressions)
+
+#### Scenario: New sanitizer report triggers fix
+- **WHEN** a CI run reports a new sanitizer finding (not previously documented)
+- **THEN** the finding is treated as a bug
+- **AND** either:
+  1. The code is fixed and the fix is committed in a separate PR, OR
+  2. The finding is documented as a known false positive in `docs/05-advanced/sanitizer-status.md` with:
+    - Specific function/module name
+    - Reason for false positive classification
+    - Link to upstream issue (if applicable)
+    - Reviewer sign-off date
+
+#### Scenario: Sanitizer status file lists known false positives
+- **WHEN** `docs/05-advanced/sanitizer-status.md` is inspected
+- **THEN** it contains a "Known False Positives" section (or empty section with explicit "none" note)
+- **AND** each entry has the fields specified in the previous scenario

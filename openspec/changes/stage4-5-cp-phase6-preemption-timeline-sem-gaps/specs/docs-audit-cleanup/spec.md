@@ -27,13 +27,13 @@ The system SHALL correctly report the current kernel file count in docs-audit, w
 The system SHALL correctly report the current gpu_hal.h fn-ptr count in post-refactor-architecture.md, with no false warning.
 
 #### Scenario: Audit fn-ptr count matches reality
-- **WHEN** `grep -c '^\s*int (\*' plugins/gpu_driver/hal/gpu_hal.h` returns 29
+- **WHEN** `grep -cE '^\s*int \(\*' plugins/gpu_driver/hal/gpu_hal.h` returns 22
 - **THEN** `tools/docs-audit.sh` does NOT emit "gpu_hal.h has X fn-ptrs (doc claims Y)" warning
 
 #### Scenario: Architecture doc fn-ptr count updated
 - **WHEN** `docs/02_architecture/post-refactor-architecture.md` §附录 A is inspected
-- **THEN** the documented fn-ptr count is 29 (matching gpu_hal.h reality)
-- **AND** the new fn-ptrs are listed: `hal_sem_create`, `hal_sem_signal`, `hal_sem_wait`, `hal_sem_destroy`, `hal_preempt_channel`, etc.
+- **THEN** the documented fn-ptr count is 22 (matching gpu_hal.h reality)
+- **AND** the new fn-ptrs are listed: `hal_preempt`, `hal_resume`, `hal_sem_create`, `hal_sem_signal`, `hal_sem_wait`, `hal_sem_query`, `hal_sem_destroy`, `interrupt_register` (8 new fn-ptrs from v1, 14 → 22)
 
 ### Requirement: Doxygen CI Installation
 
