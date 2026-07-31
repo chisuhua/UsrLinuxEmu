@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated_at": "2026-07-31T16:30:00+00:00",
+  "updated_at": "2026-07-31T16:45:00+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -54,7 +54,7 @@
       "phase": "stage-4.5",
       "category": null,
       "priority": "P1",
-      "status": "in_worktree",
+      "status": "archived",
       "added_at": "2026-07-31T11:57:00+00:00",
       "worktree_path": ".rddf/wt/stage4-5-cp-phase6-preemption-timeline-sem-gaps",
       "plan_path": ".rddf/plans/stage4-5-cp-phase6-preemption-timeline-sem-gaps.md",
@@ -63,7 +63,7 @@
       "parallel_group": 2,
       "conflicts": [],
       "last_deps_at": "2026-07-31T16:00:00+00:00",
-      "archived_at": null,
+      "archived_at": "2026-07-31T16:45:00+00:00",
       "parent_feature": "stage4-5-phase6-gpu-cp",
       "manual_deps": null,
       "manual_blocks": null
