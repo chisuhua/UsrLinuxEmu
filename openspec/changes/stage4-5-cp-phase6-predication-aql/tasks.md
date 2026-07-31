@@ -10,7 +10,7 @@
 ## 2. Predication: Puller DECODE Check
 
 - [x] 2.1 Add predicate flag detection in Puller DECODE phase (partial: processEntryForTest stub)
-- [ ] 2.2 Skip entry dispatch when entry has predicate flag AND `predicate_.enabled == false`
+- [x] 2.2 Skip entry dispatch when entry has predicate flag AND `predicate_.enabled == false`
 - [ ] 2.3 Continue FETCH for next entry after predicate skip
 - [ ] 2.4 Verify: predicate skip does not break IB jump_stack logic
 
@@ -60,7 +60,7 @@
 ## 8. Standalone Tests
 
 - [x] 8.1 Write `test_predication_standalone`: SET/AND/OR/XOR operations
-- [ ] 8.2 Write test: predicate skip in DECODE phase
+- [x] 8.2 Write test: predicate skip in DECODE phase
 - [x] 8.3 Write test: predicate state survives preempt/resume
 - [x] 8.4 Write `test_aql_standalone`: AQL packet parsing → LaunchParams
 - [x] 8.5 Write test: AQL completion_signal triggers semaphore signal
