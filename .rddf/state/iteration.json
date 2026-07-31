@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated_at": "2026-07-30T14:23:11.996581+00:00",
+  "updated_at": "2026-07-31T16:00:00+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -31,10 +31,10 @@
       "phase": "stage-4.5",
       "category": null,
       "priority": "P1",
-      "status": "proposed",
+      "status": "in_worktree",
       "added_at": "2026-07-30T07:38:44.043116+00:00",
-      "worktree_path": null,
-      "plan_path": null,
+      "worktree_path": ".rddf/wt/stage4-5-cp-phase6-predication-aql",
+      "plan_path": ".rddf/plans/stage4-5-cp-phase6-predication-aql.md",
       "tasks_total": 40,
       "blocker": "stage4-5-cp-phase6-preemption-engine-finish",
       "parallel_group": 1,
@@ -47,6 +47,25 @@
       "manual_deps": [
         "stage4-5-cp-phase6-preemption-engine-finish"
       ],
+      "manual_blocks": null
+    },
+    {
+      "name": "stage4-5-cp-phase6-preemption-timeline-sem-gaps",
+      "phase": "stage-4.5",
+      "category": null,
+      "priority": "P1",
+      "status": "in_worktree",
+      "added_at": "2026-07-31T11:57:00+00:00",
+      "worktree_path": ".rddf/wt/stage4-5-cp-phase6-preemption-timeline-sem-gaps",
+      "plan_path": ".rddf/plans/stage4-5-cp-phase6-preemption-timeline-sem-gaps.md",
+      "tasks_total": 81,
+      "blocker": null,
+      "parallel_group": 2,
+      "conflicts": [],
+      "last_deps_at": "2026-07-31T16:00:00+00:00",
+      "archived_at": null,
+      "parent_feature": "stage4-5-phase6-gpu-cp",
+      "manual_deps": null,
       "manual_blocks": null
     }
   ]
