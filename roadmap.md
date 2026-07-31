@@ -114,6 +114,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | **07-21** | **stage3-3-errno-coverage-audit ✅** — 12 处 Linux errno 修复 + 5 测试文件 + 105 ctest PASS
 | **07-25** | **ADR-069 BAR/ioremap + ADR-072 可移植性验证 + ADR-073 DMA 一致性提案** — Stage 4 前置架构决策集 |
 | **07-30** | **stage4-5-cp-phase6-preemption-engine-finish ✅** — Preemption 引擎核心收尾：MQD state save/restore wiring、pending fence 表、Puller FSM preempt checkpoint、SEM_WAIT 挂起态保存/恢复、17 个 standalone 测试、ADR-045/046/047/050 状态升 Accepted |
+| **07-31** | **stage4-5-cp-phase6-predication-aql ✅** - Predication + AQL/PM4 (ADR-051 + ADR-052 Accepted). Predicate register + SET_PREDICATE entry + DECODE skip + preempt persistence (ChannelState snapshot). AQL packet parsing + completion_signal -> Timeline Semaphore bridge. PM4 parsing deferred to Phase 6.5. |
 
 ### 后续任务建议
 

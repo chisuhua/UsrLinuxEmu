@@ -1,6 +1,6 @@
 # ADR-051: Predication & Conditional Execution
 
-**状态**: 📋 PROPOSED（Phase 6）
+**状态**: ✅ Accepted (2026-07-31, stage4-5-cp-phase6-predication-aql)
 **日期**: 2026-07-09
 **提案人**: Sisyphus（GPU CP 蓝图完整性填充）
 **关联 ADR**: ADR-021 (Puller FSM), ADR-050 (Indirect Buffer)
