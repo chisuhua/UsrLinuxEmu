@@ -62,6 +62,12 @@ struct gpu_gpfifo_entry {
 #define GPU_OP_BARRIER_AND 0x107     /* Stage 4.4: Barrier AND (all streams arrive) */
 #define GPU_OP_BARRIER_OR 0x108      /* Stage 4.4: Barrier OR (first stream arrives) */
 #define GPU_OP_IB_JUMP 0x109         /* Stage 4.4: Indirect Buffer JUMP (switch fetch address) */
+#define GPU_OP_SET_PREDICATE 0x10A    /* Stage 4.5: Set predicate register (ADR-051) */
+
+/* GPFIFO entry format identifiers (Stage 4.5 Phase 6: AQL/PM4, ADR-051/052) */
+#define FORMAT_USR_NATIVE 0           /* UsrLinuxEmu native GPFIFO format (default) */
+#define FORMAT_AQL 1                  /* AMD AQL (Architected Queuing Language) packet format */
+#define FORMAT_PM4 2                  /* PM4 packet format (stub - returns -ENOSYS) */
 
 /* Channel priority levels (Stage 4.4: Priority Scheduling) */
 #define GPU_CHAN_PRI_IDLE    0  /* No pending work */
