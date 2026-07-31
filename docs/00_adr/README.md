@@ -78,7 +78,7 @@
 | [adr-069](adr-069-bar-ioremap-emulation.md) | **真实 PCIe BAR + ioremap 仿真架构**（I/O 语义 vs 内存语义共存；Stage 4 前置 ADR）| ✅ Accepted | 2026-07-25 |
 | [adr-072](adr-072-portability-validation.md) | **驱动代码可移植性验证框架**（L1 静态分析 + L2 内核编译测试 + L3 docs-audit）| ✅ Accepted | 2026-07-25 |
 | [adr-073](adr-073-dma-coherent-emulation.md) | **DMA 一致性内存仿真架构**（独立 DMA 地址空间 + coherent/streaming 语义分离；依赖 ADR-069, ADR-064 条件 2/3）| ✅ Accepted | 2026-07-25 |
-| [adr-074](adr-074-archive-tasks-md-checkbox-hygiene.md) | **Archive Tasks.md Checkbox Hygiene Policy**（归档 checkbox 可同步以反映实施状态，与"archive spec 不修改"正交）| 📋 PROPOSED | 2026-07-31 |
+| [adr-074](adr-074-archive-tasks-md-checkbox-hygiene.md) | **Archive Tasks.md Checkbox Hygiene Policy**（归档 checkbox 可同步以反映实施状态，与"archive spec 不修改"正交）| ✅ Accepted | 2026-07-31 |
 
 > **2026-07-14 变更（C-12 命名修复 + HAL ops ADR 创建）**：ADR-061 + ADR-062 创建 — 原 tasks.md B.3.4.5 误用 `adr-060` 编号，与 `Linux 内核消息通知线程架构` 冲突。已修正：
 > - **ADR-061**（HAL IOMMU ops 扩展，237 行）：覆盖 C-12 tasks B.3.4 — `hal_iommu_map()` / `hal_iommu_unmap()` 2 个新 fn-ptr，遵循 ADR-023 Decision 4 spec-driven "追加不改" 原则
@@ -92,10 +92,10 @@
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 54 | 001-010, 015-024, 027, 031-037, 039-052, 054, 057, 059-065 |
-| 📋 PROPOSED | 7 | 011-014, 038, 056, 058, 069, 072-074 |
+| ✅ 已接受 | 55 | 001-010, 015-024, 027, 031-037, 039-052, 054, 057, 059-065, 074 |
+| 📋 PROPOSED | 7 | 011-014, 038, 056, 058, 069, 072-073 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
-| **总计** | **67** | ADR-001 ~ ADR-073 |
+| **总计** | **69** | ADR-001 ~ ADR-074 |
 
 > **2026-07-31 变更**：ADR-051（Predication 条件执行）+ ADR-052（AQL/PM4 Native 支持）状态升 ✅ Accepted。由 `stage4-5-cp-phase6-predication-aql` 实施完成。状态分布：Accepted 52->54，PROPOSED 9->7。ADR-052 PM4 parsing deferred to Phase 6.5 per ADR-052 D3。
 

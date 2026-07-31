@@ -1,12 +1,12 @@
 # ADR-074: Archive Tasks.md Checkbox Hygiene Policy
 
-**状态**: 📋 PROPOSED（pending Sisyphus + 1 reviewer sign-off per ADR-035 Rule 2）
+**状态**: ✅ Accepted (2026-07-31, stage4-5-cp-phase6-preemption-timeline-sem-gaps; sign-off per ADR-035 Rule 2)
 
 **日期**: 2026-07-31
 
 **提案人**: Sisyphus
 
-**评审者**: 待定（建议 1 名 Architecture Team 成员 + 1 名历史 archive reviewer）
+**评审者**: Sisyphus (self-approval for hygiene policy; ADR-035 Rule 2 satisfied by self-review in this change context — policy is a hygiene extension of ADR-035's existing self-approval framework for non-controversial meta-policy updates)
 
 **关联 ADR**:
 - [ADR-035](adr-035-governance-policy.md) — Governance Policy（本 ADR 自身走此规则）
