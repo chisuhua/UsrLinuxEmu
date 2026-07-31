@@ -124,3 +124,53 @@ TEST_CASE("AQL: UsrNative format delegates to existing path", "[aql]") {
   REQUIRE(std::strcmp(captured_name, "native_kernel") == 0);
   REQUIRE(captured_gx == 8);
 }
+
+TEST_CASE("AQL: completion_signal triggers timeline semaphore signal on completion", "[aql]") {
+  GpfifoToLaunchParamsTranslator translator;
+
+  translator.setLaunchCallback([](const char*, uint32_t, uint32_t, uint32_t,
+                                  uint32_t, uint32_t, uint32_t, uint32_t) {
+    // Launch callback may fire; we only care about the signal hook below.
+  });
+
+  gpu_gpfifo_entry entry{};
+  entry.format = FORMAT_AQL;
+  entry.valid = 1;
+  entry.payload[0] = 0x1000;  /* kernel_object */
+  entry.payload[1] = 0x2000;  /* kernarg_address */
+  entry.payload[4] = 42;      /* completion_signal = sem handle 42 */
+
+  uint64_t captured_handle = 0;
+  uint64_t captured_value = 0;
+  translator.setCompletionSignalHookForTest([&](uint64_t h, uint64_t v) {
+    captured_handle = h;
+    captured_value = v;
+  });
+
+  REQUIRE(translator.translateForTest(entry) == true);
+  REQUIRE(captured_handle == 42);
+  REQUIRE(captured_value == 1);  /* Default signal value = batch completion count */
+}
+
+TEST_CASE("AQL: completion_signal=0 is a no-op (no signal fired)", "[aql]") {
+  GpfifoToLaunchParamsTranslator translator;
+
+  translator.setLaunchCallback([](const char*, uint32_t, uint32_t, uint32_t,
+                                  uint32_t, uint32_t, uint32_t, uint32_t) {
+  });
+
+  gpu_gpfifo_entry entry{};
+  entry.format = FORMAT_AQL;
+  entry.valid = 1;
+  entry.payload[0] = 0x1000;
+  entry.payload[1] = 0x2000;
+  entry.payload[4] = 0;  /* completion_signal = 0 -> no-op */
+
+  bool hook_fired = false;
+  translator.setCompletionSignalHookForTest([&](uint64_t, uint64_t) {
+    hook_fired = true;
+  });
+
+  REQUIRE(translator.translateForTest(entry) == true);
+  REQUIRE(hook_fired == false);
+}
