@@ -951,3 +951,8 @@ target_include_directories(test_predication_standalone PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME test_predication_standalone COMMAND $<TARGET_FILE:test_predication_standalone>)
 set_tests_properties(test_predication_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+# Task 8: AQL packet parser + format dispatch (ADR-052)
+add_catch_sim_test(test_aql_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_aql_standalone.cpp
+)
