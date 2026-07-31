@@ -292,15 +292,15 @@
       "goal": {
         "intent": "guide-ship"
       },
-      "state": "active",
+      "state": "completed",
       "attached_changes": [],
       "context_pointer": null,
       "started_at": "2026-07-31T04:09:36.814349+00:00",
       "last_heartbeat": "2026-07-31T04:09:36.893492+00:00",
-      "ended_at": null,
-      "end_reason": null
+      "ended_at": "2026-07-31T11:56:40.351322+00:00",
+      "end_reason": "ship-done"
     }
   ],
-  "updated_at": "2026-07-31T04:09:36.893492+00:00",
+  "updated_at": "2026-07-31T11:56:40.351322+00:00",
   "version": 1
 }
