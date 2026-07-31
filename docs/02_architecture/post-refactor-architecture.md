@@ -550,6 +550,10 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 | | `hal_resume` | 恢复 preempted channel |
 | | `hal_sem_create` / `hal_sem_signal` / `hal_sem_wait` / `hal_sem_query` / `hal_sem_destroy` | timeline semaphore 生命周期 |
 | | `interrupt_register` | 注册中断回调 |
+
+**Preemption spec addendum**: See
+[`openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md`](../../openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md)
+for IB jump_stack defer behavior (NOT save/restore — clarifies `archive/2026-07-30-stage4-5-cp-phase6-preemption-engine-finish/specs/preemption-engine-finish/spec.md` canonical).
 | C-12 KFD (+7 ops) | `register_mmu_cb` / `register_firmware_cb` | KFD mmu/firmware 回调 |
 | | `register_gpu` | KFD GPU 注册 |
 | | `map_queue_ring` / `query_queue` | KFD queue 映射/查询 |
