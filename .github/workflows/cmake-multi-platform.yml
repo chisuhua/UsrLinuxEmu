@@ -46,6 +46,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq doxygen graphviz
+
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
@@ -94,6 +99,11 @@ jobs:
         # Fixed in PR #20 (commit will follow).
         with:
           submodules: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq doxygen graphviz
 
       - name: Run docs-audit
         # Pure bash + grep/find — no extra dependencies needed.
@@ -154,7 +164,7 @@ jobs:
         if: matrix.compiler == 'clang'
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq clang lld
+          sudo apt-get install -y -qq clang lld doxygen graphviz
 
       - name: Configure sanitizer
         run: cmake -B build-${{ matrix.sanitizer }} -D${{ matrix.cmake_flag }} -DCMAKE_BUILD_TYPE=Debug -S ${{ github.workspace }}
