@@ -142,3 +142,31 @@ TEST_CASE("Predication: SET_PREDICATE entry updates register", "[predication]") 
   REQUIRE(puller.predicate_enabled() == true);
   REQUIRE(puller.predicate_value() == 0xAB);
 }
+
+// ========== Task 6: DECODE-phase predicate skip ==========
+
+TEST_CASE("Predication: skip when !enabled (DECODE check)", "[predication]") {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+
+  /* Disable predicate via SET_PREDICATE with value=0 */
+  gpu_gpfifo_entry disable{};
+  disable.method = GPU_OP_SET_PREDICATE;
+  /* payload[0] = (op & 0xFF) | (value << 8) = 0 for op=SET, value=0 */
+  disable.payload[0] = 0;
+  puller.processEntryForTest(disable);
+  REQUIRE(puller.predicate_enabled() == false);
+
+  /* Set skip callback */
+  bool callback_invoked = false;
+  puller.setSkipCallbackForTest([&]() { callback_invoked = true; });
+
+  /* Submit a LAUNCH_KERNEL entry - should be skipped (callback invoked, no launch) */
+  gpu_gpfifo_entry launch{};
+  launch.method = GPU_OP_LAUNCH_KERNEL;
+  launch.valid = 1;
+  puller.processEntryForTest(launch);
+
+  REQUIRE(callback_invoked == true);   /* Skip callback invoked */
+}
