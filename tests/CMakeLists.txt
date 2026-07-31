@@ -955,6 +955,24 @@ target_include_directories(test_predication_standalone PRIVATE
 add_test(NAME test_predication_standalone COMMAND $<TARGET_FILE:test_predication_standalone>)
 set_tests_properties(test_predication_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+# === Stage 4.5 CP Phase 6 Gaps - Concurrent Preempt Stress Test ===
+add_executable(test_concurrent_preempt_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_concurrent_preempt.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_concurrent_preempt_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(test_concurrent_preempt_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_concurrent_preempt_standalone COMMAND $<TARGET_FILE:test_concurrent_preempt_standalone>)
+set_tests_properties(test_concurrent_preempt_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 # Task 8: AQL packet parser + format dispatch (ADR-052)
 add_catch_sim_test(test_aql_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_aql_standalone.cpp
