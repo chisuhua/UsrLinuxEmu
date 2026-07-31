@@ -9,7 +9,7 @@
 
 ## 2. Predication: Puller DECODE Check
 
-- [ ] 2.1 Add predicate flag detection in Puller DECODE phase
+- [x] 2.1 Add predicate flag detection in Puller DECODE phase (partial: processEntryForTest stub)
 - [ ] 2.2 Skip entry dispatch when entry has predicate flag AND `predicate_.enabled == false`
 - [ ] 2.3 Continue FETCH for next entry after predicate skip
 - [ ] 2.4 Verify: predicate skip does not break IB jump_stack logic
