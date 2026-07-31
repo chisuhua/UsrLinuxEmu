@@ -64,3 +64,46 @@ TEST_CASE("PredicateState: default state is enabled with value=0", "[predication
     REQUIRE(puller.predicate_value() == 0u);
   }
 }
+
+// ========== Task 4: applyPredicateOp SET/AND/OR/XOR ==========
+
+TEST_CASE("PredicateState: SET operation replaces value and enabled", "[predication]") {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+  puller.applyPredicateOpForTest(0 /*SET*/, 0xFF);
+  REQUIRE(puller.predicate_value() == 0xFF);
+  REQUIRE(puller.predicate_enabled() == true);
+
+  puller.applyPredicateOpForTest(0 /*SET*/, 0);
+  REQUIRE(puller.predicate_enabled() == false);
+}
+
+TEST_CASE("PredicateState: AND operation masks value", "[predication]") {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+  puller.applyPredicateOpForTest(0 /*SET*/, 0xF0);
+  puller.applyPredicateOpForTest(1 /*AND*/, 0x0F);
+  REQUIRE(puller.predicate_value() == 0x00u);
+  REQUIRE(puller.predicate_enabled() == false);
+}
+
+TEST_CASE("PredicateState: OR operation sets bits", "[predication]") {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+  puller.applyPredicateOpForTest(0 /*SET*/, 0x0F);
+  puller.applyPredicateOpForTest(2 /*OR*/, 0xF0);
+  REQUIRE(puller.predicate_value() == 0xFFu);
+  REQUIRE(puller.predicate_enabled() == true);
+}
+
+TEST_CASE("PredicateState: XOR operation toggles bits", "[predication]") {
+  struct gpu_hal_ops hal = make_mock_hal();
+  DoorbellEmu doorbell;
+  HardwarePullerEmu puller(&hal, &doorbell, nullptr);
+  puller.applyPredicateOpForTest(0 /*SET*/, 0xAA);
+  puller.applyPredicateOpForTest(3 /*XOR*/, 0xFF);
+  REQUIRE(puller.predicate_value() == 0x55u);
+}

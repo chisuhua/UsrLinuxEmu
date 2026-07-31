@@ -145,6 +145,10 @@ class HardwarePullerEmu {
   bool predicate_enabled() const { return predicate_.enabled; }
   uint64_t predicate_value() const { return predicate_.value; }
 
+  /* Stage 4.5 (ADR-051): apply predicate op (op: 0=SET, 1=AND, 2=OR, 3=XOR) */
+  void applyPredicateOp(uint32_t op, uint64_t operand);
+  void applyPredicateOpForTest(uint32_t op, uint64_t operand) { applyPredicateOp(op, operand); }
+
   // ========== ChannelManager Integration (Stage 4.3 Task 2) ==========
 
   /** Set the ChannelManager for per-channel batch routing.
