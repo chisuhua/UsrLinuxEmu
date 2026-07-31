@@ -69,16 +69,16 @@
 
 ## 4. Preemption Spec Correction (Addendum Spec, Not Modifying Archive)
 
-- [ ] 4.1 Create `openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md` (NOT `preemption-engine/spec.md` — different intent)
-- [ ] 4.2 Write CANONICAL REFERENCE block at top, pointing to `archive/2026-07-30-stage4-5-cp-phase6-preemption-engine-finish/specs/preemption-engine-finish/spec.md` §"Preemption deferred during IB execution"
-- [ ] 4.3 Write Requirement: "Preemption Saved State Field Constraints (Addendum)" — 2 scenarios (saved state includes expected fields, excludes jump_stack)
-- [ ] 4.4 Write Requirement: "Preemption Resume Trigger Conditions (Addendum)" — 2 scenarios (jump_stack pop allows subsequent preempt, multiple deferred preempts coalesce)
-- [ ] 4.5 Write Requirement: "Defer Guard Mechanism (Addendum — Internal)" — 1 scenario (tick() in-line defer check)
-- [ ] 4.6 Add References section linking to canonical spec + ADR-046 + IMPLEMENTATION_NOTES.md
-- [ ] 4.7 Update `docs/02_architecture/post-refactor-architecture.md` §"Stage 4.5 GPU Compute Pipeline" — add link to new addendum (NOT to archive spec)
-- [ ] 4.8 Update `roadmap.md` Stage 4.5 section — add link to new addendum (NOT to archive spec)
-- [ ] 4.9 Verify: archive `preemption-engine-finish/spec.md` NOT modified (read-only check via `git diff archive/2026-07-30-stage4-5-cp-phase6-preemption-engine-finish/specs/preemption-engine-finish/spec.md`)
-- [ ] 4.10 Verify: archive `preemption-timeline-sem/spec.md` NOT modified (per IMPLEMENTATION_NOTES.md policy)
+- [x] 4.1 Create `openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md` (NOT `preemption-engine/spec.md` — different intent)
+- [x] 4.2 Write CANONICAL REFERENCE block at top, pointing to `archive/2026-07-30-stage4-5-cp-phase6-preemption-engine-finish/specs/preemption-engine-finish/spec.md` §"Preemption deferred during IB execution"
+- [x] 4.3 Write Requirement: "Preemption Saved State Field Constraints (Addendum)" — 2 scenarios (saved state includes expected fields, excludes jump_stack)
+- [x] 4.4 Write Requirement: "Preemption Resume Trigger Conditions (Addendum)" — 2 scenarios (jump_stack pop allows subsequent preempt, multiple deferred preempts coalesce)
+- [x] 4.5 Write Requirement: "Defer Guard Mechanism (Addendum — Internal)" — 1 scenario (tick() in-line defer check)
+- [x] 4.6 Add References section linking to canonical spec + ADR-046 + IMPLEMENTATION_NOTES.md
+- [x] 4.7 Update `docs/02_architecture/post-refactor-architecture.md` §"Stage 4.5 GPU Compute Pipeline" — add link to new addendum (NOT to archive spec)
+- [x] 4.8 Update `roadmap.md` Stage 4.5 section — add link to new addendum (NOT to archive spec)
+- [x] 4.9 Verify: archive `preemption-engine-finish/spec.md` NOT modified (read-only check via `git diff archive/2026-07-30-stage4-5-cp-phase6-preemption-engine-finish/specs/preemption-engine-finish/spec.md`)
+- [x] 4.10 Verify: archive `preemption-timeline-sem/spec.md` NOT modified (per IMPLEMENTATION_NOTES.md policy)
 
 ## 5. Archive Tasks.md Checkbox Sync
 
