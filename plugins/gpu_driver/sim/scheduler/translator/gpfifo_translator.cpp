@@ -92,6 +92,11 @@ bool GpfifoToLaunchParamsTranslator::parseAqlPacket(
                block_x, block_y, block_z, shared_mem);
   }
 
+  uint64_t signal_handle = entry.payload[4];
+  if (signal_handle != 0 && signal_hook_) {
+    signal_hook_(signal_handle, 1);
+  }
+
   return true;
 }
 

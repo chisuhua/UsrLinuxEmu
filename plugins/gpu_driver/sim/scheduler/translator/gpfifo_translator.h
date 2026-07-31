@@ -25,9 +25,15 @@ class GpfifoToLaunchParamsTranslator {
                                                   uint32_t block_x, uint32_t block_y, uint32_t block_z,
                                                   uint32_t shared_mem)>;
 
+  using CompletionSignalHook = std::function<void(uint64_t handle, uint64_t value)>;
+
   GpfifoToLaunchParamsTranslator();
 
   void setLaunchCallback(LaunchParamsCallback cb);
+
+  void setCompletionSignalHook(CompletionSignalHook hook) { signal_hook_ = std::move(hook); }
+
+  void setCompletionSignalHookForTest(CompletionSignalHook hook) { setCompletionSignalHook(std::move(hook)); }
 
   void registerKernel(uint32_t kernel_idx, const char* kernel_name);
 
@@ -48,6 +54,7 @@ class GpfifoToLaunchParamsTranslator {
   bool parseAqlPacket(const gpu_gpfifo_entry& entry);
 
   LaunchParamsCallback launch_cb_;
+  CompletionSignalHook signal_hook_;
   std::map<uint32_t, std::string> kernel_names_;
 };
 
