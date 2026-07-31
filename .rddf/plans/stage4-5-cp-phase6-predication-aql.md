@@ -111,7 +111,7 @@ git commit -m "feat(types): add format field to gpu_gpfifo_entry (ADR-052, defau
 - Modify: `plugins/gpu_driver/sim/hardware/hardware_puller_emu.h` (add struct + member)
 - Test: `tests/test_predication_standalone.cpp` (will exercise in Task 4)
 
-- [ ] **Step 1: Write failing test in `tests/test_predication_standalone.cpp`**
+- [x] **Step 1: Write failing test in `tests/test_predication_standalone.cpp`**
 
 Create `tests/test_predication_standalone.cpp`:
 
@@ -129,12 +129,12 @@ TEST_CASE("PredicateState: default state is enabled with value=0", "[predication
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cmake --build build --target test_predication_standalone -j4 2>&1 | tail -5`
 Expected: FAIL — `predicate_enabled()` and `predicate_value()` not defined.
 
-- [ ] **Step 3: Add `PredicateState` struct + member + accessors**
+- [x] **Step 3: Add `PredicateState` struct + member + accessors**
 
 In `plugins/gpu_driver/sim/hardware/hardware_puller_emu.h`, add (above the `class HardwarePullerEmu` declaration, after the includes):
 
@@ -160,12 +160,12 @@ Add to public section:
   uint64_t predicate_value() const { return predicate_.value; }
 ```
 
-- [ ] **Step 4: Build and rerun test**
+- [x] **Step 4: Build and rerun test**
 
 Run: `cmake --build build --target test_predication_standalone -j4 && ./build/bin/test_predication_standalone`
 Expected: PASS — default state is `enabled=true`, `value=0`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add plugins/gpu_driver/sim/hardware/hardware_puller_emu.h tests/test_predication_standalone.cpp tests/CMakeLists.txt
