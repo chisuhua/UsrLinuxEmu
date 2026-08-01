@@ -68,6 +68,17 @@ class HardwarePullerEmu {
    *          fence_id=0 表示不触发完成回调（向后兼容）。 */
   void submitBatch(u64 gpfifo_gpu_addr, u32 entry_count, u64 fence_id = 0);
 
+  // ========== Programmatic Dependent Launch (Stage 4.6, ADR-056) ==========
+  /** Device-side kernel launch via Puller.
+   * Appends a child kernel dispatch + SEM_RELEASE entry to the in-flight batch.
+   * Returns -E2BIG if MAX_PDL_NEST exceeded, -EFAULT if kernel_addr==0. */
+  int sim_pdl_launch(uint64_t kernel_addr, uint64_t kernargs_va,
+                     uint32_t grid_x, uint32_t block_x,
+                     uint64_t signal_handle, uint64_t signal_value);
+
+  /** Decrement PDL nest counter (called from handleComplete on child kernel completion). */
+  void pdlNestDecrement();
+
   /** Doorbell 触发回调（由 DoorbellEmu 调用） */
   void onDoorbell(u32 queue_id);
 
@@ -265,4 +276,7 @@ class HardwarePullerEmu {
 
   PredicateState predicate_;
   std::function<void()> skip_cb_;  /* Test-only: invoked when an entry is skipped */
+
+  // ========== PDL Nest Counter (Stage 4.6, ADR-056) ==========
+  int pdl_nest_counter_{0};
 };
