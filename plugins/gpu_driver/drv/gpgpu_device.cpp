@@ -525,10 +525,18 @@ long GpgpuDevice::handleCreateQueue(void* argp) {
   uint64_t handle = next_queue_handle_++;
   if (handle == 0) return -ENOMEM;
 
+  // Stage 4.6 (ADR-056 D1): GREEN context forces priority to LOW.
+  // Caller's priority argument is ignored — the channel is, by definition,
+  // a low-priority preemptable context (CUDA 12.x+ semantics).
+  uint32_t effective_priority = args->priority;
+  if (args->context_type == static_cast<uint8_t>(ContextType::GREEN)) {
+    effective_priority = GPU_CHAN_PRI_LOW;
+  }
+
   auto queue = std::make_shared<GpuQueueEmu>(
       static_cast<uint32_t>(handle),
       args->queue_type,
-      args->priority,
+      effective_priority,
       args->ring_buffer_size > 0 ? static_cast<uint32_t>(args->ring_buffer_size) : GPU_MAX_RING_ENTRIES);
 
   queues_[handle] = queue;

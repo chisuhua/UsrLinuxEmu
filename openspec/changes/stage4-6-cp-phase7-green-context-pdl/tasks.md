@@ -6,7 +6,7 @@
 - [x] 1.2 Add `context_type` field to `MQD` struct (default `BROWN`)
 - [x] 1.3 Add `context_type` field to `ChannelState` (mirroring MQD for scheduler access)
 - [x] 1.4 Update `gpu_create_queue` API to accept `context_type` parameter (with default BROWN)
-- [ ] 1.5 Implement GREEN priority override in queue creation (force LOW if context_type=GREEN)
+- [x] 1.5 Implement GREEN priority override in queue creation (force LOW if context_type=GREEN)
 - [ ] 1.6 Verify: GREEN creation ignores explicit HIGH priority parameter (`test_green_context_standalone`)
 - [ ] 1.7 Verify: context_type immutability at runtime (mutation attempts rejected)
 
