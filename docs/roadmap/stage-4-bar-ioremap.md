@@ -39,7 +39,7 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | [4.1](#子阶段-41--真实-bar--ioremap-模拟) | 真实 BAR + ioremap 模拟 | ADR-064 Decision 3 | VRAM backing store + BAR 映射 + dma coherent | ✅ 已归档 |
 | [4.2](#子阶段-42--gpu-cp-phase-4--图启动真实化) | GPU CP Phase 4 — 图启动真实化 | ADR-040/041/043/058 | Puller fence 回调 + Graph→GPFIFO + CP 边界 | ✅ 已归档 |
 | [4.3](#子阶段-43--gpu-cp-phase-5--方法编解码--hyperqueue) | GPU CP Phase 5 — 方法编解码 + HyperQueue | ADR-042/044/048/054/057 | Method encoding + 多通道调度 + 中断 + MQD/HQD | ✅ 已归档 |
-| [4.4](#子阶段-44--gpu-cp-phase-55--优先级--信号量) | GPU CP Phase 5.5 — 优先级 + 信号量 | ADR-045/047/050 | Priority scheduling + Semaphore/Barrier + Indirect Buffer | ❌ 未开始 |
+| [4.4](#子阶段-44--gpu-cp-phase-55--优先级--信号量) | GPU CP Phase 5.5 — 优先级 + 信号量 | ADR-045/047/050 | Priority scheduling + Semaphore/Barrier + Indirect Buffer | ✅ 已归档 (2026-07-28) |
 | [4.5](#子阶段-45--gpu-cp-phase-6--抢占--跨引擎) | GPU CP Phase 6 — 抢占 + 跨引擎同步 | ADR-046/049/051/052 | Preemption + Cross-engine sync + Predication + AQL/PM4 | ❌ 未开始 |
 | [4.6](#子阶段-46--gpu-cp-phase-7--green-context) | GPU CP Phase 7 — Green Context/PDL | ADR-056 | Green Context + PDL | ❌ 未开始 |
 
@@ -154,7 +154,9 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 
 ---
 
-## 子阶段 4.4 — GPU CP Phase 5.5: 优先级 + 信号量
+## 子阶段 4.4 — GPU CP Phase 5.5: 优先级 + 信号量 ✅
+
+**状态**: ✅ 已完成（2026-07-28，commit `452e298 feat: merge stage4-4-gpu-cp-phase55 — GPU CP Phase 5.5 (priority+sema+IB)`，archived commit `b28089f`）
 
 **目标**: 支持优先级调度 + 硬件同步原语。
 
@@ -162,11 +164,24 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 
 ### 关键交付
 
+- [x] **Semaphore/Barrier** — Puller FSM 扩展：`SEM_WAIT` / `SEM_RELEASE` / `BARRIER_AND` / `BARRIER_OR` 四种 GPFIFO entry；FETCH 阶段 WAIT 检查 + 移动到 pending queue；COMPLETE 阶段 RELEASE 写回；`ChannelState` 新增 `std::deque<pending_entry>` pending queue；re-check 主循环
+- [x] **Priority Scheduling** — `ChannelPriority` 枚举（IDLE=0 / LOW=1 / NORMAL=2 / HIGH=3 / REALTIME=4）；`ChannelState::priority` 字段（默认 NORMAL）；`GlobalScheduler` 从 `std::deque` 重构为 `std::multiset` 按 `(priority, sequence_id)` 排序；starvation protection（10-cycle 强制至少 1 个 LOW 调度）；priority inheritance（REALTIME blocked by LOW → boost LOW to HIGH）
+- [x] **Indirect Buffer** — `IB_JUMP` GPFIFO entry 类型；`gpu_ib_ref` 结构（gpu_va / size / flags）；`submitBatch` 增加可选 `ib_refs` 参数；Puller FETCH JUMP 行为（save current PC → switch to target_gpu_va）；`continue_flag` 支持 chained JUMP 返回 saved PC；IB reference 生命周期（batch 完成时 auto-release，验证 target VA mapped）；嵌套深度限制（`MAX_IB_NEST=4`），overflow 返回 `-E2BIG`
+
 ### 验收
 
-- [ ] 高优先级 queue 在 starvation 下先于低优先级完成（`test_priority_sched_standalone`）
-- [ ] Semaphore 跨 stream acquire/release 正确序列化（`test_semaphore_barrier_standalone`）
-- [ ] IB chain walking 正确跟随链表（`test_indirect_buffer_standalone`）
+- [x] 高优先级 queue 在 starvation 下先于低优先级完成（`test_priority_sched_standalone`，225 行 — 3 queues + starvation test）
+- [x] Semaphore 跨 stream acquire/release 正确序列化（`test_semaphore_barrier_standalone`，312 行 — WAIT/RELEASE 序列 + AND barrier + OR barrier + infinite WAIT 不 crash）
+- [x] IB chain walking 正确跟随链表（`test_indirect_buffer_standalone`，342 行 — single JUMP + chained JUMP + illegal target + nest overflow + no leaks）
+- [x] 全栈集成：3 个新测试 + 完整 ctest 套件 PASS，ASan/UBSan/TSan 干净
+
+### 归档 Change
+
+| Change | Tasks | 归档路径 |
+|--------|-------|----------|
+| stage4-4-gpu-cp-phase55 | 28/28 ✅ | `openspec/changes/archive/2026-07-28-stage4-4-gpu-cp-phase55/` |
+
+**改动规模**: 17 files, +2357/-90 行（Puller FSM +153 行、ChannelState +293 行、GlobalScheduler +158 行、gpu_types +33 行、3 个新测试 +879 行）
 
 ---
 
@@ -247,9 +262,9 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | [ADR-048](../00_adr/adr-048-interrupt-event-model.md) | 中断/事件模型 | 4.3 | ✅ Accepted (2026-07-27) |
 | [ADR-054](../00_adr/adr-054-mqd-hqd-state-management.md) | MQD/HQD 状态管理 | 4.3 | ✅ Accepted (2026-07-27) |
 | [ADR-057](../00_adr/adr-057-cp-profiling-hooks-timestamp.md) | Profiling Hooks | 4.3 | ✅ Accepted (2026-07-27) |
-| [ADR-045](../00_adr/adr-045-priority-scheduling.md) | 优先级调度 | 4.4 | 📋 PROPOSED |
-| [ADR-047](../00_adr/adr-047-hardware-semaphore-barrier.md) | Semaphore/Barrier | 4.4 | 📋 PROPOSED |
-| [ADR-050](../00_adr/adr-050-indirect-buffer-command-chaining.md) | Indirect Buffer | 4.4 | 📋 PROPOSED |
+| [ADR-045](../00_adr/adr-045-priority-scheduling.md) | 优先级调度 | 4.4 | ✅ Accepted (2026-07-28) |
+| [ADR-047](../00_adr/adr-047-hardware-semaphore-barrier.md) | Semaphore/Barrier | 4.4 | ✅ Accepted (2026-07-28) |
+| [ADR-050](../00_adr/adr-050-indirect-buffer-command-chaining.md) | Indirect Buffer | 4.4 | ✅ Accepted (2026-07-28) |
 | [ADR-046](../00_adr/adr-046-preemption-context-switch.md) | 抢占/上下文切换 | 4.5 | 📋 PROPOSED |
 | [ADR-049](../00_adr/adr-049-cross-engine-synchronization.md) | 跨引擎同步 | 4.5 | 📋 PROPOSED |
 | [ADR-051](../00_adr/adr-051-predication-conditional-execution.md) | Predication | 4.5 | 📋 PROPOSED |
@@ -263,24 +278,24 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 ```
 4.1 BAR + ioremap ──────────────────────────────────────────────────────────┐
    (✅ 已完成)                                                                │
-                                                                              │
+                                                                               │
 4.2 CP Phase 4 ──> 4.3 CP Phase 5 (Method + HyperQueue) ──> 4.4 CP Phase 5.5│
-   (✅ 已完成)        (✅ 已完成)                  (Priority/Sem)              │
-                                                      │                       │
-                                                      └──> 4.5 CP Phase 6 ──>┤
-                                                       (Preemption/          │
-                                                        Cross-engine)        │
-                                                                     4.6 CP  │
-                                                               Phase 7       │
-                                                           (Green Context)   │
-                                                                              │
+   (✅ 已完成)        (✅ 已完成)                  (✅ Priority/Sem/IB)        │
+                                                       │                       │
+                                                       └──> 4.5 CP Phase 6 ──>┤
+                                                        (Preemption/          │
+                                                         Cross-engine)        │
+                                                                      4.6 CP  │
+                                                                Phase 7       │
+                                                            (Green Context)   │
+                                                                               │
 4.1 为 4.3+ 提供 MMIO 寄存器访问基础 <─────────────────────────────────────────┘
 ```
 
 - **4.1 ↔ 4.2**：无硬依赖。可并行启动。✅ 已完成。
 - **4.1 → 4.3+**：软依赖。4.1 交付 MMIO 寄存器访问 → 4.3 使用。✅
 - **4.2 → 4.3**：CP 边界建立 → 方法编解码和调度。✅ 已完成。
-- **4.3 → 4.4 + 4.5**：基础调度底座就绪 → 高级特性（优先级/抢占）。4.3 ✅ 可启动 4.4/4.5。
+- **4.3 → 4.4 + 4.5**：基础调度底座就绪 → 高级特性（优先级/抢占）。4.3 ✅ → 4.4 ✅ → 4.5 进行中。
 - **4.5 → 4.6**：软依赖。跨引擎同步可用后 Green Context 才能正确 fence。
 
 ---
@@ -307,6 +322,7 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | 日期 | 版本 | 变更 |
 |------|------|------|
 | 2026-07-28 | v2.0 | 4.3 状态更新：✅ 已完成。ADR-042/044/048/054/057 升 ✅ Accepted。依赖图、风险表同步更新。 |
+| 2026-08-01 | v2.1 | 4.4 状态更新：✅ 已归档（commit `452e298` merge + `b28089f` archive）。ADR-045/047/050 升 ✅ Accepted。子阶段表/关键交付/验收/ADR 表/依赖图同步更新。INDEX.md 同步补登记。 |
 | 2026-07-21 | v1.0 | 初版：基于 ADR-064 Stage 4 触发条件 + GPU CP Blueprint Phase 4-7 创建 |
 
 ---
@@ -322,3 +338,4 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | 4.1 | `stage4-1-bar-ioremap` |
 | 4.2 | `phase4-sim-graph-launch-real-impl`, `phase4-sim-graph-launch-test-gaps`, `phase4-cu-mempool-alloc-real-va` |
 | 4.3 | `stage4-3-cp-phase5-method-hyperqueue`, `stage4-3-integration-wiring` |
+| 4.4 | `stage4-4-gpu-cp-phase55` |
