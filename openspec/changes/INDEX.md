@@ -2,12 +2,12 @@
 
 > **更新**: 2026-08-01
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: **0 个活跃 change** + 22 个已完成/已归档
-> **Source**: 2026-07-31 v1-0-release-prep 已归档（13/13 tasks, commit `006bae2`），Stage-4.5 全部归档。无待执行 change。
+> **总数**: **0 个活跃 change** + 23 个已完成/已归档
+> **Source**: 2026-08-01 INDEX 同步：补齐 stage4-4-gpu-cp-phase55 (commit `452e298`, 2026-07-28 已归档但原 INDEX 漏登记)。
 
 ---
 
-## ✅ 已完成 (22 归档)
+## ✅ 已完成 (23 归档)
 
 | 原 ID | Change | 状态 | 证据 |
 |-------|--------|------|------|
@@ -26,6 +26,7 @@
 | **C-12** | **stage1-4-kfd-multi-file-integration** | ✅ 已归档（2026-07-16） | `openspec archive 2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration`（81% 原子任务完成，Phase A/B/C/D 全 [x]，Phase E 8/9 [x] + L1↔L2 skeleton + docs updates；104/104 ctest + docs-audit 43/43 PASS；E.2.3 sanitizer + E.2.4.2/4.3 cross-repo deferred to follow-up PRs per ADR-035 §Rule 5.1） |
 | **stage3-4** | **stage3-4-doxygen-docs** | ✅ 已归档 (2026-07-22) | Doxygen API 参考 + quickstart 完善 + docs-audit 48→48 PASS |
 | **W7** | **kfd-l1-l2-bridge-e2e** | ✅ 已归档 | `177231a` — 44/44 tasks, IoctlEntry 扩展 + 3 E2E tests + TaskRunner PR + 跨仓 sync |
+| **stage4.4** | **stage4-4-gpu-cp-phase55** | ✅ 已归档 (2026-07-28) | commit `452e298 feat: merge stage4-4-gpu-cp-phase55 — GPU CP Phase 5.5 (priority+sema+IB)` + `b28089f chore: archive stage4-4-gpu-cp-phase55`；28/28 tasks（Priority Scheduling + Semaphore/Barrier + Indirect Buffer）；17 files, +2357 lines（含 Puller FSM 扩展、GlobalScheduler multiset 重排、3 个新 standalone 测试）；`openspec/changes/archive/2026-07-28-stage4-4-gpu-cp-phase55/` |
 | **W7-sanitizer** | **three-sanitizer-infra** | ✅ 已归档 (2026-07-22) | commit `5fc0006` — ASan/UBSan/TSan CMake infra + CI require jobs + bug 修复；34/34 tasks；`openspec/changes/archive/2026-07-17-2026-07-16-three-sanitizer-infra/` |
 | **W7-bridge-e2e** | **kfd-l1-l2-bridge-e2e** | ✅ 已归档 (2026-07-22) | commit `177231a` + TaskRunner `d94719c` + submodule bump `aac4be5`；44/44 tasks；`openspec/changes/archive/2026-07-18-2026-07-16-kfd-l1-l2-bridge-e2e/` |
 | **v1.0** | **v1-0-release-prep** | ✅ 已归档 (2026-07-31) | commit `006bae2 chore(openspec): archive v1-0-release-prep` — 13/13 tasks（CHANGELOG.md + RELEASE_NOTES.md + docs/10-migration/v0-to-v1.md + Dockerfile + .github/workflows/release.yml + plan-handoff 标记完成）；`openspec/changes/archive/v1-0-release-prep/` |
@@ -61,9 +62,10 @@
 6. ~~C-12~~ stage1-4-kfd-multi-file-integration ✅ archived
 7. ~~Wave 7 — three-sanitizer-infra~~ ✅ archived
 8. ~~Wave 7 — kfd-l1-l2-bridge-e2e~~ ✅ archived
-9. ~~Stage 4.5 — preemption-engine-finish~~ ✅ archived (2026-07-30)
-10. ~~Stage 4.5 — predication-aql~~ ✅ archived (2026-07-31)
-11. ~~Stage 4.5 — preemption-timeline-sem-gaps~~ ✅ archived (2026-07-31)
+9. ~~Stage 4.4 — gpu-cp-phase55~~ ✅ archived (2026-07-28; 28/28 tasks; commit `452e298`)
+10. ~~Stage 4.5 — preemption-engine-finish~~ ✅ archived (2026-07-30)
+11. ~~Stage 4.5 — predication-aql~~ ✅ archived (2026-07-31)
+12. ~~Stage 4.5 — preemption-timeline-sem-gaps~~ ✅ archived (2026-07-31)
 
 **当前状态**: v1.0 发布准备完成 (P2) + Stage 3.4 文档完善 (P1) + Stage 4.5 preemption/predication 全栈 (P1) 均已交付。下一步建议根据 [roadmap.md](roadmap.md) 进入后续阶段（Stage 5+ 或真机对接）。
 
