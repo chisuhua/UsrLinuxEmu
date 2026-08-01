@@ -855,6 +855,7 @@ target_include_directories(test_context_type_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME test_context_type_standalone COMMAND $<TARGET_FILE:test_context_type_standalone>)
 set_tests_properties(test_context_type_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

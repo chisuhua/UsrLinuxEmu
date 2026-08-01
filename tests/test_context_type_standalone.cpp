@@ -10,6 +10,7 @@
 
 #include "shared/mqd.h"
 #include "shared/gpu_types.h"
+#include "sim/scheduler/channel_state.h"
 
 // ========== ContextType Enum Tests (D1) ==========
 
@@ -79,4 +80,33 @@ TEST_CASE("mqd_context_type_is_first_byte_after_state", "[mqd][abi][green_contex
   base[offsetof(MQD, state) + 4] = 0x01;  // GREEN = 1
   REQUIRE(static_cast<ContextType>(mqd.context_type) == ContextType::GREEN);
   REQUIRE(sizeof(mqd.context_type) == 1);
+}
+
+// ========== ChannelSemaphoreState Context Type Mirror (Task 2) ==========
+
+TEST_CASE("channel_semaphore_state_context_type_defaults_to_brown", "[scheduler][green_context]") {
+  ChannelSemaphoreState state;
+  REQUIRE(state.context_type() == ContextType::BROWN);
+}
+
+TEST_CASE("channel_semaphore_state_context_type_setter_round_trip", "[scheduler][green_context]") {
+  ChannelSemaphoreState state;
+  state.set_context_type(ContextType::GREEN);
+  REQUIRE(state.context_type() == ContextType::GREEN);
+  state.set_context_type(ContextType::BROWN);
+  REQUIRE(state.context_type() == ContextType::BROWN);
+}
+
+TEST_CASE("channel_semaphore_state_priority_independent_of_context_type", "[scheduler][green_context]") {
+  // Sanity: priority_ and context_type_ are independent fields.
+  // Changing one does not mutate the other.
+  ChannelSemaphoreState state;
+  state.set_priority(GPU_CHAN_PRI_HIGH);
+  state.set_context_type(ContextType::GREEN);
+  REQUIRE(state.priority() == GPU_CHAN_PRI_HIGH);
+  REQUIRE(state.context_type() == ContextType::GREEN);
+
+  state.set_priority(GPU_CHAN_PRI_LOW);
+  REQUIRE(state.priority() == GPU_CHAN_PRI_LOW);
+  REQUIRE(state.context_type() == ContextType::GREEN);  // unchanged
 }
