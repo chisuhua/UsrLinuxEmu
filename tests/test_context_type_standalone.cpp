@@ -10,6 +10,7 @@
 
 #include "shared/mqd.h"
 #include "shared/gpu_types.h"
+#include "shared/gpu_ioctl.h"
 #include "sim/scheduler/channel_state.h"
 
 // ========== ContextType Enum Tests (D1) ==========
@@ -109,4 +110,35 @@ TEST_CASE("channel_semaphore_state_priority_independent_of_context_type", "[sche
   state.set_priority(GPU_CHAN_PRI_LOW);
   REQUIRE(state.priority() == GPU_CHAN_PRI_LOW);
   REQUIRE(state.context_type() == ContextType::GREEN);  // unchanged
+}
+
+// ========== gpu_queue_args Context Type Field (Task 3) ==========
+
+TEST_CASE("gpu_queue_args_context_type_field_present", "[ioctl][green_context]") {
+  // The IOCTL struct gained a context_type field at the end. Default-constructed
+  // (zero-init) means BROWN — preserves ABI for existing callers.
+  gpu_queue_args args{};
+  REQUIRE(args.context_type == 0);  // BROWN
+}
+
+TEST_CASE("gpu_queue_args_context_type_set_to_green", "[ioctl][green_context]") {
+  gpu_queue_args args{};
+  args.context_type = static_cast<uint8_t>(ContextType::GREEN);
+  REQUIRE(args.context_type == 1);
+  REQUIRE(static_cast<ContextType>(args.context_type) == ContextType::GREEN);
+}
+
+TEST_CASE("gpu_queue_args_other_fields_unaffected_by_context_type", "[ioctl][green_context]") {
+  // Regression: adding context_type at end of struct must not shift earlier fields.
+  gpu_queue_args args{};
+  args.va_space_handle = 0xCAFE;
+  args.queue_type = GPU_QUEUE_COMPUTE;
+  args.priority = 75;
+  args.ring_buffer_size = 1024;
+  args.context_type = static_cast<uint8_t>(ContextType::GREEN);
+
+  REQUIRE(args.va_space_handle == 0xCAFE);
+  REQUIRE(args.queue_type == GPU_QUEUE_COMPUTE);
+  REQUIRE(args.priority == 75);
+  REQUIRE(args.ring_buffer_size == 1024);
 }
