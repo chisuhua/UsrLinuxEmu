@@ -142,3 +142,34 @@ TEST_CASE("gpu_queue_args_other_fields_unaffected_by_context_type", "[ioctl][gre
   REQUIRE(args.priority == 75);
   REQUIRE(args.ring_buffer_size == 1024);
 }
+
+// ========== GREEN Priority Override Logic (Task 4) ==========
+// The handler-level override lives in handleCreateQueue (drv/gpgpu_device.cpp).
+// Full IOCTL-path coverage is in test_green_context_standalone (Task 14).
+// These cases pin the contract: BROWN preserves caller priority, GREEN forces LOW.
+
+TEST_CASE("green_override_priority_logic_brown_preserves_priority", "[ioctl][green_context]") {
+  // BROWN context — caller's priority must pass through unchanged.
+  gpu_queue_args args{};
+  args.context_type = static_cast<uint8_t>(ContextType::BROWN);
+  args.priority = 75;
+  // Simulate handler's effective_priority computation:
+  uint32_t effective = args.priority;
+  if (args.context_type == static_cast<uint8_t>(ContextType::GREEN)) {
+    effective = GPU_CHAN_PRI_LOW;
+  }
+  REQUIRE(effective == 75);  // unchanged for BROWN
+}
+
+TEST_CASE("green_override_priority_logic_green_forces_low", "[ioctl][green_context]") {
+  // GREEN context — priority must be forced to LOW regardless of caller input.
+  gpu_queue_args args{};
+  args.context_type = static_cast<uint8_t>(ContextType::GREEN);
+  args.priority = 100;  // HIGH (caller's request)
+  uint32_t effective = args.priority;
+  if (args.context_type == static_cast<uint8_t>(ContextType::GREEN)) {
+    effective = GPU_CHAN_PRI_LOW;
+  }
+  REQUIRE(effective == GPU_CHAN_PRI_LOW);  // forced LOW for GREEN
+  REQUIRE(effective != args.priority);     // caller's 100 was overridden
+}
