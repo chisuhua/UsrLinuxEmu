@@ -133,6 +133,38 @@ struct gpu_hal_ops {
    * Returns 0 on success, -EINVAL if handle invalid. */
   int (*hal_sem_query)(void *ctx, uint64_t handle, uint64_t *out_val);
 
+  /* Stage 4.6 (ADR-056) — Green Context: low-priority preemptable CUDA context.
+   * hal_green_context_create: allocate a new green context bound to a TSG (timestamp queue group).
+   * @ctx: HAL context
+   * @tsg_id: TSG ID (typically the channel's TSG)
+   * @out_handle: [out] green context handle (driver-defined)
+   * Returns 0 on success, -ENOSYS for drivers that don't support green contexts. */
+  int (*hal_green_context_create)(void *ctx, uint64_t tsg_id, uint64_t *out_handle);
+
+  /* hal_green_context_destroy: release a green context handle.
+   * @ctx: HAL context
+   * @handle: green context handle from hal_green_context_create
+   * Returns 0 on success, -EINVAL if handle invalid. */
+  int (*hal_green_context_destroy)(void *ctx, uint64_t handle);
+
+  /* Stage 4.6 (ADR-056) — Programmatic Dependent Launch.
+   * hal_pdl_launch: device-side kernel launch (the Puller calls this when
+   * it sees a GPU_OP_PDL_LAUNCH entry).
+   * @ctx: HAL context
+   * @kernel_addr, @kernargs_va, @grid_x, @block_x: dispatch params
+   * @out_signal_handle: [out] timeline semaphore handle to signal on completion
+   * Returns 0 on success, -ENOSYS if driver doesn't support PDL. */
+  int (*hal_pdl_launch)(void *ctx, uint64_t kernel_addr, uint64_t kernargs_va,
+                        uint32_t grid_x, uint32_t block_x,
+                        uint64_t *out_signal_handle);
+
+  /* hal_pdl_signal_completion: signal the PDL completion semaphore.
+   * @ctx: HAL context
+   * @signal_handle: timeline semaphore handle from hal_pdl_launch
+   * @value: monotonic increment value (must be > current)
+   * Returns 0 on success, -EINVAL if handle invalid. */
+  int (*hal_pdl_signal_completion)(void *ctx, uint64_t signal_handle, uint64_t value);
+
   /* hal_sem_destroy: destroy a semaphore.
    * @handle: semaphore handle
    * Returns 0 on success, -EINVAL if handle invalid. */

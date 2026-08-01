@@ -319,6 +319,24 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
     return 0;
   };
   hal->hal_sem_destroy = [](void*, uint64_t) -> int { return 0; };
+  hal->hal_green_context_create = [](void*, uint64_t tsg_id, uint64_t* out) -> int {
+    static uint64_t next_handle = 0x1000;
+    *out = ++next_handle;  // mock: monotonic handle, no real binding
+    return 0;
+  };
+  hal->hal_green_context_destroy = [](void*, uint64_t handle) -> int {
+    if (handle == 0) return -EINVAL;
+    return 0;
+  };
+  hal->hal_pdl_launch = [](void*, uint64_t, uint64_t, uint32_t, uint32_t,
+                           uint64_t* out) -> int {
+    static uint64_t next_sem = 0x2000;
+    *out = ++next_sem;  // mock: monotonic semaphore handle, no real PDL dispatch
+    return 0;
+  };
+  hal->hal_pdl_signal_completion = [](void*, uint64_t, uint64_t) -> int {
+    return 0;  // mock: no real timeline-sem signal
+  };
 }
 
 void hal_mock_destroy(struct hal_mock_state *state) {

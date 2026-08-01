@@ -236,6 +236,10 @@ struct gpu_queue_args {
   u32 flags;                /* OR of GPU_QUEUE_FLAG_* (input) */
   u32 doorbell_off;         /* Doorbell offset within doorbell BAR (input) */
   u32 eop_buffer_size;      /* EOP buffer size for COMPUTE queues (input) */
+
+  /* Stage 4.6 (ADR-056): Context type — 0=BROWN (default), 1=GREEN (low-priority preemptable).
+   * uint8_t (not enum) keeps struct C-compatible for IOCTL _IOWR encoding. */
+  u8 context_type;
 };
 
 /**

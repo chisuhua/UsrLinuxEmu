@@ -64,6 +64,7 @@ struct gpu_gpfifo_entry {
 #define GPU_OP_BARRIER_OR 0x108      /* Stage 4.4: Barrier OR (first stream arrives) */
 #define GPU_OP_IB_JUMP 0x109         /* Stage 4.4: Indirect Buffer JUMP (switch fetch address) */
 #define GPU_OP_SET_PREDICATE 0x10A    /* Stage 4.5: Set predicate register (ADR-051) */
+#define GPU_OP_PDL_LAUNCH 0x10B       /* Stage 4.6 (ADR-056): Programmatic Dependent Launch (device-side kernel launch) */
 
 /* GPFIFO entry format identifiers (Stage 4.5 Phase 6: AQL/PM4, ADR-051/052) */
 #define FORMAT_USR_NATIVE 0           /* UsrLinuxEmu native GPFIFO format (default) */
@@ -79,6 +80,28 @@ struct gpu_gpfifo_entry {
 
 /* Indirect Buffer reference (Stage 4.4) */
 #define MAX_IB_NEST 4  /* Maximum IB JUMP nesting depth */
+
+/* Programmatic Dependent Launch (Stage 4.6, ADR-056).
+ * PDL allows the GPU to launch a child kernel without CPU intervention.
+ * The parent kernel embeds a GPU_OP_PDL_LAUNCH entry; the Puller detects it
+ * during FETCH, constructs a child kernel dispatch + SEM_RELEASE entry, and
+ * appends both to the current batch. Nest depth is bounded by MAX_PDL_NEST. */
+#define MAX_PDL_NEST 4  /* Maximum PDL nesting depth (mirrors MAX_IB_NEST) */
+
+struct gpu_pdl_payload {
+  uint64_t kernel_addr;      /* Child kernel GPU address */
+  uint64_t kernargs_gpu_va;  /* Kernel arguments GPU VA */
+  uint32_t grid_x;           /* CUDA grid dim (1D for now) */
+  uint32_t block_x;          /* CUDA block dim (1D for now) */
+  uint64_t signal_handle;    /* Timeline semaphore handle (signaled on completion) */
+  uint64_t signal_value;     /* Value written to signal_handle on completion */
+};
+
+/* Context Type (Stage 4.6: Green Context, ADR-056) */
+enum class ContextType : uint8_t {
+  BROWN = 0, /* Normal priority, preemptable only by higher-priority BROWN */
+  GREEN = 1, /* Low-priority, preemptable by any pending BROWN */
+};
 
 /**
  * gpu_ib_ref - Indirect Buffer reference descriptor (Stage 4.4: IB JUMP)
