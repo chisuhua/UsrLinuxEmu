@@ -242,16 +242,16 @@ section_arch() {
         check_warn "archive/historical-plans-2026-06-15 has ${plans_n} files (Appendix B claims 8)"
     fi
 
-    # 1.5 HAL function pointer count (29 post-stage4-5 preemption+timeline sem)
-    # Updated 2026-07-31 by stage4-5-cp-phase6-preemption-timeline-sem-gaps (v1: +8 preempt/sem ops)
-    subsection "1.5 struct gpu_hal_ops has 29 function pointers"
+    # 1.5 HAL function pointer count (33 post-stage4-6 Green Context + PDL)
+    # History: 22 baseline -> 29 (+8 for preempt/timeline sem, stage4-5) -> 33 (+4 for green/pdl, stage4-6)
+    subsection "1.5 struct gpu_hal_ops has 33 function pointers"
     if [ -f "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" ]; then
         local hal_count
         hal_count=$(grep -cE "^\s+(int|void)\s+\(\*.*\)\s*\(" "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" 2>/dev/null || echo "0")
-        if [ "${hal_count}" -eq 29 ]; then
+        if [ "${hal_count}" -eq 33 ]; then
             check_pass "gpu_hal.h has ${hal_count} fn-ptrs (matches doc)"
         else
-            check_warn "gpu_hal.h has ${hal_count} fn-ptrs (doc claims 29)"
+            check_warn "gpu_hal.h has ${hal_count} fn-ptrs (doc claims 33)"
         fi
     else
         check_warn "plugins/gpu_driver/hal/gpu_hal.h not found"
