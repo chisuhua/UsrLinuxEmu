@@ -75,6 +75,14 @@ class ChannelSemaphoreState {
   /** Get the channel priority level. */
   int priority() const { return priority_; }
 
+  // ========== Context Type (Stage 4.6: Green Context, ADR-056) ==========
+
+  /** Set the context type (BROWN/GREEN). Mirrors MQD.context_type. */
+  void set_context_type(ContextType ctx) { context_type_ = ctx; }
+
+  /** Get the context type. */
+  ContextType context_type() const { return context_type_; }
+
   // ========== Pending Queue (SEM_WAIT) ==========
 
   /** Enqueue an entry into the pending queue (blocked on semaphore). */
@@ -207,6 +215,7 @@ class ChannelSemaphoreState {
 
  private:
   int priority_{GPU_CHAN_PRI_NORMAL};
+  ContextType context_type_{ContextType::BROWN};
 
   std::deque<gpu_gpfifo_entry> pending_entries_;
   std::vector<gpu_gpfifo_entry> released_entries_;
