@@ -338,3 +338,87 @@ grep -rn '#include.*hal_user.h\|#include.*hal_mock.h' plugins/gpu_driver/drv/ \
 | 文件 | 行号 | 违规 | 修复计划 |
 |------|------|------|---------|
 | `plugins/gpu_driver/drv/gpgpu_device.cpp` | 224 | `static_cast<struct hal_user_context*>(hal_ctx_)` + 访问 `hc->heap` | ADR-064 §实施计划 step 2: 替换为 `hal_mem_map_bo()` |
+
+---
+
+## 修订: drv→sim 边界规则 (HAL boundary scope clarification)
+
+**修订日期**: 2026-08-02
+**修订依据**: [openspec/hal-boundary-cleanup](https://...) + Oracle 评审
+**修订范围**: 决策 5 + ADR-064 修订的延伸 — 明确 HAL 边界规则同时约束 drv→HAL 和 drv→sim 两条通道。
+
+### 背景
+
+ADR-064 修订 1 引入了 HAL 边界禁止规则（决策 5），但只禁止 drv→HAL-impl 头文件（如 `hal_user.h`、`hal_mock.h`）。实际开发中出现了 drv→sim 直连 include（如 `sim/fence_id.h`、`sim/graph.h`）的违规。这两类违规本质相同：drv/ 跨过了规定的抽象层直接访问下层实现。
+
+### 修订内容
+
+**决策 5 (扩展)**：② `drv/` 代码禁止 `#include` 任何 `sim/` 头文件 — **与 HAL 实现头文件同等待遇**。
+
+> **② 驱动代码 (`plugins/gpu_driver/drv/`) 禁止**：
+> 
+> 1. `#include` 任何 HAL 实现内部头文件（`hal_user.h`, `hal_mock.h` 等）
+> 2. 对 HAL 上下文指针进行 `reinterpret_cast` 或访问其内部字段
+> 3. 直接使用 HAL 实现层的宏常量和类型
+> 4. **`#include` 任何 `sim/` 头文件**（新增 — 与上述 1 同等约束）
+
+> **② 驱动代码只能通过以下方式访问 sim/**：
+> 
+> 1. `struct gpu_hal_ops *hal_` 的公开函数指针（HAL fn-ptrs）
+> 2. **`kfd_sim_bridge.h` 桥接器**（composition-root-bound boundary 文件，见下）
+
+### kfd_sim_bridge 例外
+
+`plugins/gpu_driver/drv/kfd_sim_bridge.{h,cpp}` 是 **designated 边界文件**，按照 ADR-036 三区分架构设计：
+
+- header 暴露 `kfd_sim_*` C-ABI 函数给 drv/（+ KFD module）使用
+- implementation 使用 `extern "C"` opaque-struct 前向声明（**0 个 sim/ include**），与 sim/ 类符号解耦
+- composition root (`plugin.cpp`) 是唯一的豁免文件 — 可 `#include` sim/ 头文件用于 process-global sim 初始化（如 `g_vram_store.init(256)`、`g_dma_pool.init()`）
+
+**审计豁免**：grep 工具应忽略 `drv/kfd_sim_bridge.cpp`（豁免文件，自身就是 boundary）和 `plugin.cpp`（composition root）。
+
+### 已知遗留违规（grandfather 列表 — 必须清理）
+
+阶段 4.6 + hal-boundary-cleanup Phase 0 审计确认 7 个 drv→sim include 真在使用中（非 DEAD）：
+
+| include | 用途 | 类别 |
+|---|---|---|
+| `sim/graph.h` | `sim_graph_create/destroy/add_*_node/instantiate` | CUDA Graph runtime（C-ABI 函数） |
+| `sim/hardware/hardware_puller_emu.h` | `HardwarePullerEmu` 完整 C++ 类（`std::shared_ptr<HardwarePullerEmu>` 成员） | C++ class type |
+| `sim/hardware/method_codec.h` | `method_codec_encode()` | C-ABI 函数 |
+| `sim/fence_id.h` | `sim_fence_id_alloc/check` | C-ABI 函数 |
+| `sim/gpu_queue_emu.h` | `GpuQueueEmu` 完整 C++ 类（`std::make_shared<GpuQueueEmu>` 成员） | C++ class type |
+| `sim/mem_pool.h` | `sim_mem_pool_create/destroy/alloc/alloc_async` | C-ABI 函数 |
+| `sim/stream_capture.h` | `sim_stream_capture_begin/end/status` | C-ABI 函数 |
+
+**这 7 个 include 暂 grandfather**，因为：
+- C-ABI 函数（5 个）：trivial wrapper pass-through = boundary laundering，无架构价值
+- C++ class type（2 个）：drv 需要完整类型做 `std::shared_ptr` / `std::make_shared`，薄 wrapper 无法承载
+
+### 升级触发点：ADR-069 Stage 4
+
+这 7 个 grandfather 仅在 **ADR-069 Stage 4（真实 PCIe BAR + ioremap 仿真）** 之前有效。Stage 4 触发后：
+
+- `HardwarePullerEmu` / `GpuQueueEmu` 类必须转为 HAL fn-ptr（per ADR-023 决策 4 spec-driven 扩展）
+- `sim_fence_id_*` / `sim_graph_*` / `sim_mem_pool_*` / `sim_stream_capture_*` 应转为 HAL fn-ptr 或 sim-owned C-ABI facade（drv 通过 opaque handle 持有，sim 负责生命周期）
+
+### 审计实现
+
+`tools/docs-audit.sh §1.6` 实现 **ratchet 模式**：
+- 现有 7 个 include = grandfather 列表（硬编码在 audit 脚本中）
+- 任何**新增** drv→sim include → **FAIL**（列出违规 + grandfather 列表 + 4 个修复选项）
+- 任何**移除**的 grandfather → **PASS with celebration**（ratchet working in reverse）
+
+### 总结
+
+**HAL boundary scope（修订后）**：
+
+| drv 访问下层方式 | 状态 |
+|---|---|
+| `struct gpu_hal_ops` fn-ptrs | ✅ 标准路径 |
+| `kfd_sim_bridge.h` C-ABI 函数 | ✅ sanctioned bridge（KFD + drv 通用） |
+| 任何 `sim/` 头文件 include | ❌ 禁止（除 grandfather 列表） |
+| 任何 `hal_user.h` / `hal_mock.h` include | ❌ 禁止（ADR-064） |
+| 任何 `reinterpret_cast` 到 HAL/sim 内部类型 | ❌ 禁止 |
+
+**豁免文件**：`plugin.cpp`（composition root）+ `drv/kfd_sim_bridge.cpp`（boundary file 自身）。
