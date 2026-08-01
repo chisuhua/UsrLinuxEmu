@@ -96,14 +96,14 @@
 
 ## 10. ADR and Roadmap Updates
 
-- [ ] 10.1 Update `docs/00_adr/adr-056-green-context-pdl.md` status: 📋 PROPOSED → ✅ Accepted (with date)
-- [ ] 10.2 Update `docs/roadmap/stage-4-bar-ioremap.md` § 4.6: ❌ 未开始 → ✅ 已归档
-- [ ] 10.3 Update stage-4-bar-ioremap.md §4.6 关键交付 + 验收 (checkbox + archive records)
-- [ ] 10.4 Update ADR status table: ADR-056 PROPOSED → Accepted (2026-08-XX)
-- [ ] 10.5 Update "已归档 Changes 汇总" 表格: 4.6 行添加 stage4-6-cp-phase7-green-context-pdl
-- [ ] 10.6 Update 变更记录 v2.3 (2026-08-XX)
-- [ ] 10.7 Update risk table: Phase 4 全部完成, "Stage 4 整体验收" 进入可执行态
-- [ ] 10.8 Update dependency graph (optional): 4.6 节点加 ✅
+- [x] 10.1 Update `docs/00_adr/adr-056-green-context-pdl.md` status: 📋 PROPOSED → ✅ Accepted (with date)
+- [x] 10.2 Update `docs/roadmap/stage-4-bar-ioremap.md` § 4.6: ❌ 未开始 → ✅ 已归档
+- [x] 10.3 Update stage-4-bar-ioremap.md §4.6 关键交付 + 验收 (checkbox + archive records)
+- [x] 10.4 Update ADR status table: ADR-056 PROPOSED → Accepted (2026-08-XX)
+- [x] 10.5 Update "已归档 Changes 汇总" 表格: 4.6 行添加 stage4-6-cp-phase7-green-context-pdl
+- [x] 10.6 Update 变更记录 v2.3 (2026-08-XX)
+- [x] 10.7 Update risk table: Phase 4 全部完成, "Stage 4 整体验收" 进入可执行态
+- [x] 10.8 Update dependency graph (optional): 4.6 节点加 ✅
 
 ## 11. Integration and Validation
 
