@@ -16,15 +16,15 @@
 - [x] 2.2 Verify trigger fires only when BROWN priority >= GREEN priority + 1 tier (no preempt BROWN by same BROWN)
 - [x] 2.3 Reuse `mqd_state_preempt()` from ADR-046 (PreemptContext save/restore)
 - [ ] 2.4 Reuse `mqd_state_resume()` to restore GREEN after BROWN completes
-- [ ] 2.5 Verify: GREEN preempt saves correct gpfifo position (validated by test_green_context_standalone)
-- [ ] 2.6 Verify: GREEN resume restores gpfifo position correctly (continues from saved index)
+- [x] 2.5 Verify: GREEN preempt saves correct gpfifo position (validated by test_green_context_standalone)
+- [x] 2.6 Verify: GREEN resume restores gpfifo position correctly (continues from saved index)
 
 ## 3. GREEN Channel Non-Preemption Rule
 
 - [x] 3.1 Add explicit check in `GlobalScheduler::dispatch_next()`: skip preempt if target is also GREEN
-- [ ] 3.2 Add test scenario: 2 GREEN channels, second submission does NOT preempt first
-- [ ] 3.3 Verify: GREEN channels follow normal priority/FIFO ordering
-- [ ] 3.4 Add test scenario: 3 GREEN channels dispatched in FIFO order (no preemptions)
+- [x] 3.2 Add test scenario: 2 GREEN channels, second submission does NOT preempt first
+- [x] 3.3 Verify: GREEN channels follow normal priority/FIFO ordering
+- [x] 3.4 Add test scenario: 3 GREEN channels dispatched in FIFO order (no preemptions)
 - [ ] 3.5 Verify starvation protection still works for GREEN channels (per ADR-045)
 
 ## 4. Green Context HAL Operations
