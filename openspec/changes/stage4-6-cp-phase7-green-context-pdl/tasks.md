@@ -107,13 +107,13 @@
 
 ## 11. Integration and Validation
 
-- [ ] 11.1 Run full test suite: `ctest --output-on-failure` — all 125+2=127 tests PASS (no regression)
-- [ ] 11.2 Run sanitizer validation: `SANITIZER=asan-ubsan ./build.sh test` — green
-- [ ] 11.3 Run TSan: `CC=clang CXX=clang++ SANITIZER=tsan ./build.sh test` — green
+- [x] 11.1 Run full test suite: `ctest --output-on-failure` — all 125+2=127 tests PASS (no regression)
+- [x] 11.2 Run sanitizer validation: `SANITIZER=asan-ubsan ./build.sh test` — green
+- [x] 11.3 Run TSan: `CC=clang CXX=clang++ SANITIZER=tsan ./build.sh test` — green
 - [x] 11.4 Verify HAL boundary enforce: `grep -rn '#include.*"sim/' plugins/gpu_driver/drv/` empty
 - [x] 11.5 Verify HAL fn-ptr count: `grep -cE '^\s*int \(\*' plugins/gpu_driver/hal/gpu_hal.h` shows 31 (was 29 + 2)
-- [ ] 11.6 Update `docs/02_architecture/post-refactor-architecture.md` if HAL fn-ptr list is documented (29 → 31)
-- [ ] 11.7 Run `tools/docs-audit.sh --strict` — 53/53 PASS (no new failures)
-- [ ] 11.8 Update `openspec/changes/INDEX.md` total count after archive (was 23 completed, +1 = 24)
-- [ ] 11.9 Sync `timeline-semaphore` spec if any changes affect it (verify via openspec validate)
-- [ ] 11.10 Sync `preemption-engine-finish` spec if any changes affect MQD/context_type (verify via openspec validate)
+- [x] 11.6 Update `docs/02_architecture/post-refactor-architecture.md` if HAL fn-ptr list is documented (29 → 31)
+- [x] 11.7 Run `tools/docs-audit.sh --strict` — 53/53 PASS (no new failures)
+- [x] 11.8 Update `openspec/changes/INDEX.md` total count after archive (was 23 completed, +1 = 24)
+- [x] 11.9 Sync `timeline-semaphore` spec if any changes affect it (verify via openspec validate)
+- [x] 11.10 Sync `preemption-engine-finish` spec if any changes affect MQD/context_type (verify via openspec validate)
