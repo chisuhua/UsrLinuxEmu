@@ -40,7 +40,7 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | [4.2](#子阶段-42--gpu-cp-phase-4--图启动真实化) | GPU CP Phase 4 — 图启动真实化 | ADR-040/041/043/058 | Puller fence 回调 + Graph→GPFIFO + CP 边界 | ✅ 已归档 |
 | [4.3](#子阶段-43--gpu-cp-phase-5--方法编解码--hyperqueue) | GPU CP Phase 5 — 方法编解码 + HyperQueue | ADR-042/044/048/054/057 | Method encoding + 多通道调度 + 中断 + MQD/HQD | ✅ 已归档 |
 | [4.4](#子阶段-44--gpu-cp-phase-55--优先级--信号量) | GPU CP Phase 5.5 — 优先级 + 信号量 | ADR-045/047/050 | Priority scheduling + Semaphore/Barrier + Indirect Buffer | ✅ 已归档 (2026-07-28) |
-| [4.5](#子阶段-45--gpu-cp-phase-6--抢占--跨引擎) | GPU CP Phase 6 — 抢占 + 跨引擎同步 | ADR-046/049/051/052 | Preemption + Cross-engine sync + Predication + AQL/PM4 | ❌ 未开始 |
+| [4.5](#子阶段-45--gpu-cp-phase-6--抢占--跨引擎) | GPU CP Phase 6 — 抢占 + 跨引擎同步 | ADR-046/049/051/052 | Preemption + Cross-engine sync + Predication + AQL/PM4 | ✅ 已归档 (2026-07-31) |
 | [4.6](#子阶段-46--gpu-cp-phase-7--green-context) | GPU CP Phase 7 — Green Context/PDL | ADR-056 | Green Context + PDL | ❌ 未开始 |
 
 ---
@@ -185,24 +185,43 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 
 ---
 
-## 子阶段 4.5 — GPU CP Phase 6: 抢占 + 跨引擎
+## 子阶段 4.5 — GPU CP Phase 6: 抢占 + 跨引擎 ✅
+
+**状态**: ✅ 已完成（2026-07-29 ~ 2026-07-31，4 个 changes 全归档；commit `9153073 archive: preemption-timeline-sem-gaps change archived` 作为最终归档点）
 
 **目标**: 支持 GPU 任务抢占 + 跨引擎同步。
 
-> 来源：ADR-046（Preemption）、ADR-049（Cross-engine Sync）、ADR-051（Predication）、ADR-052（AQL/PM4）
+> 来源：ADR-046（Preemption）、ADR-049（Cross-engine Sync，D1 修订为 waiter 回调模式）、ADR-051（Predication）、ADR-052（AQL/PM4 Native，PM4 解析 deferred 到 Phase 6.5 per ADR-052 D3）
 
 ### 关键交付
 
-- [ ] 抢占与上下文切换（ADR-046：mid-batch preemption + context save/restore）
-- [ ] 跨引擎同步（ADR-049：COMPUTE↔COPY↔GRAPHICS 引擎间 fence）
-- [ ] Predication 条件执行（ADR-051：conditional draw/dispatch）
-- [ ] AQL/PM4 Native 支持（ADR-052：HSA AQL packets + PM4 microcode）
+- [x] **Preemption**（ADR-046）— `mqd_state_preempt/resume` 实现 ACTIVE↔PREEMPTED 状态机，gpfifo 地址/索引/entries save/restore；Puller FSM 在 batch 边界（DISPATCH 后 / FETCH 前）插入 preempt checkpoint，跳过 `jump_stack_` 非空场景；per-channel pending fence 表保证 preempt→resume gap 不 leak fence
+- [x] **Cross-engine Sync**（ADR-049, D1 修订）— `SemaphoreManager` class（create/signal/wait/query/destroy）；`std::atomic<uint64_t>` value + `std::mutex` 保护 waiter FIFO；`std::function<void(uint64_t)>` 回调模式（非阻塞，避免 Puller 线程阻塞导致 starvation）；`gpu_gpfifo_entry.timeline{handle, signal_value, wait_value}` 自动 signal/wait；HAL `hal_sem_create/signal/wait/query/destroy` 5 fn-ptrs；fence 迁移（`fence_create` → `sem_create(0)`，`fence_read` → `sem_query() > 0`）
+- [x] **Predication**（ADR-051）— Predicate register + `SET_PREDICATE` entry + DECODE skip；preempt 持久化（ChannelState snapshot 包含 predicate）
+- [x] **AQL Native**（ADR-052）— AQL packet 解析 + `completion_signal` → Timeline Semaphore 桥；PM4 microcode 解析 deferred 到 Phase 6.5
+- [x] **ADR-040 Fence 迁移** — `sim_fence_id_signal` → `sem_signal` 路径迁移，dual implementation 移除
+- [x] **HAL 扩展** — `hal_preempt/resume` + 5 个 `hal_sem_*` fn-ptrs 加入 `struct gpu_hal_ops`，hal_user/hal_mock 对称实现；HAL 边界 (`grep -rn '#include.*"sim/' plugins/gpu_driver/drv/`) 空
+- [x] **Sanitizer 验证** — ASan + UBSan + TSan 三 sanitizer 全绿（120/123 + 116/123 ctest PASS，3 个 pre-existing path failures 无回归）；test_concurrent_preempt_standalone 60s timeout 保护 + 取消率 < 1% 验证
 
 ### 验收
 
-- [ ] mid-batch 抢占后 context 恢复正确（`test_preemption_standalone`）
-- [ ] 跨引擎 fence 不交叉泄漏（`test_cross_engine_sync_standalone`）
-- [ ] Predication 条件为 false 时命令被 skip（`test_predication_standalone`）
+- [x] mid-batch 抢占后 context 恢复正确（`test_preemption_standalone` 477 assertions, 17 cases；TSan 绿）
+- [x] 跨引擎 fence / timeline semaphore 不交叉泄漏（`test_timeline_semaphore_standalone` 28 assertions, 10 cases；create/signal/query/wait/destroy + FIFO + monotonic + 错误路径覆盖）
+- [x] Predication 条件为 false 时命令被 skip（`test_predication_standalone` 通过 predication-aql 验证）
+- [x] AQL completion_signal → Timeline Semaphore 桥正常（test_preemption_standalone + test_timeline_semaphore_standalone 集成验证）
+- [x] 并发压力：`test_concurrent_preempt_standalone` N=hardware_concurrency 并发 + 100 cycles/worker，no deadlock, no fence loss
+- [x] HAL 边界 enforce：`grep -rn '#include.*"sim/' plugins/gpu_driver/drv/` 输出为空
+
+### 归档 Changes
+
+| Change | Tasks | 归档路径 | 关键交付 |
+|--------|-------|----------|----------|
+| stage4-5-cp-phase6-preemption-timeline-sem | 28/28 ✅ | `openspec/changes/archive/2026-07-29-stage4-5-cp-phase6-preemption-timeline-sem/` | ADR-049 SemaphoreManager + HAL + 4 ADR-040 迁移 + 5 HAL Ops + 6 C-ABI backdoor |
+| stage4-5-cp-phase6-preemption-engine-finish | 53/53 ✅ | `openspec/changes/archive/2026-07-30-stage4-5-cp-phase6-preemption-engine-finish/` | ADR-046 preemption engine core |
+| stage4-5-cp-phase6-predication-aql | 40/40 ✅ | `openspec/changes/archive/2026-07-31-stage4-5-cp-phase6-predication-aql/` | ADR-051 predication + ADR-052 AQL |
+| stage4-5-cp-phase6-preemption-timeline-sem-gaps | 81/81 ✅ | `openspec/changes/archive/2026-07-31-stage4-5-cp-phase6-preemption-timeline-sem-gaps/` | concurrent test + ASan/UBSan/TSan 验证 + docs-audit 清理 + preemption-spec-correction addendum |
+
+**注**: 跨引擎 fence 完整 D3（含 per-engine sim_timeline_semaphore + drv handler 创建 shared semaphore）在主线仅做基础实现，复杂 multi-engine Puller（COMPUTE + COPY + GRAPHICS 并行执行）依赖未来真机 driver 验证场景，按 ADR-049 Phase 6+ 触发条件保持现态。
 
 ---
 
@@ -265,10 +284,10 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | [ADR-045](../00_adr/adr-045-priority-scheduling.md) | 优先级调度 | 4.4 | ✅ Accepted (2026-07-28) |
 | [ADR-047](../00_adr/adr-047-hardware-semaphore-barrier.md) | Semaphore/Barrier | 4.4 | ✅ Accepted (2026-07-28) |
 | [ADR-050](../00_adr/adr-050-indirect-buffer-command-chaining.md) | Indirect Buffer | 4.4 | ✅ Accepted (2026-07-28) |
-| [ADR-046](../00_adr/adr-046-preemption-context-switch.md) | 抢占/上下文切换 | 4.5 | 📋 PROPOSED |
-| [ADR-049](../00_adr/adr-049-cross-engine-synchronization.md) | 跨引擎同步 | 4.5 | 📋 PROPOSED |
-| [ADR-051](../00_adr/adr-051-predication-conditional-execution.md) | Predication | 4.5 | 📋 PROPOSED |
-| [ADR-052](../00_adr/adr-052-aql-pm4-native-support.md) | AQL/PM4 Native | 4.5 | 📋 PROPOSED |
+| [ADR-046](../00_adr/adr-046-preemption-context-switch.md) | 抢占/上下文切换 | 4.5 | ✅ Accepted (2026-07-30) |
+| [ADR-049](../00_adr/adr-049-cross-engine-synchronization.md) | 跨引擎同步 | 4.5 | ✅ Accepted (2026-07-29, D1 修订为 waiter 回调模式) |
+| [ADR-051](../00_adr/adr-051-predication-conditional-execution.md) | Predication | 4.5 | ✅ Accepted (2026-07-31) |
+| [ADR-052](../00_adr/adr-052-aql-pm4-native-support.md) | AQL/PM4 Native | 4.5 | ✅ Accepted (2026-07-31, PM4 解析 deferred to Phase 6.5 per ADR-052 D3) |
 | [ADR-056](../00_adr/adr-056-green-context-pdl.md) | Green Context/PDL | 4.6 | 📋 PROPOSED |
 
 ---
@@ -283,8 +302,10 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
    (✅ 已完成)        (✅ 已完成)                  (✅ Priority/Sem/IB)        │
                                                        │                       │
                                                        └──> 4.5 CP Phase 6 ──>┤
-                                                        (Preemption/          │
-                                                         Cross-engine)        │
+                                                        (✅ Preemption/      │
+                                                         Cross-engine/       │
+                                                         Predication/        │
+                                                         AQL/PM4)            │
                                                                       4.6 CP  │
                                                                 Phase 7       │
                                                             (Green Context)   │
@@ -295,8 +316,8 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 - **4.1 ↔ 4.2**：无硬依赖。可并行启动。✅ 已完成。
 - **4.1 → 4.3+**：软依赖。4.1 交付 MMIO 寄存器访问 → 4.3 使用。✅
 - **4.2 → 4.3**：CP 边界建立 → 方法编解码和调度。✅ 已完成。
-- **4.3 → 4.4 + 4.5**：基础调度底座就绪 → 高级特性（优先级/抢占）。4.3 ✅ → 4.4 ✅ → 4.5 进行中。
-- **4.5 → 4.6**：软依赖。跨引擎同步可用后 Green Context 才能正确 fence。
+- **4.3 → 4.4 + 4.5**：基础调度底座就绪 → 高级特性（优先级/抢占）。4.3 ✅ → 4.4 ✅ → 4.5 ✅ → 4.6 待启动。
+- **4.5 → 4.6**：软依赖。跨引擎同步可用后 Green Context 才能正确 fence。✅ 4.5 → 4.6 可启动。
 
 ---
 
@@ -305,9 +326,9 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | 风险 | 概率 | 影响 | 缓解 |
 |------|------|------|------|
 | BAR 模拟性能开销大 | 中 | 中 | mmap(MAP_ANONYMOUS) 而非每次 syscall；性能基准纳入 CI（回退阈值 ≤ 20%）|
-| GPU CP Phase 4-7 工作量大 | 中 — 已交付 Phase 4+5, 余 3 个 Phase | 中 | 按 Phase 递进交付已验证；4.4-4.6 继续此模式 |
+| GPU CP Phase 4-7 工作量大 | 低 — 已交付 Phase 4+5+5.5+6, 仅 Phase 7 余 | 中 | 按 Phase 递进交付已验证；4.6 继续此模式 |
 | ioremap 习语与真实内核 API 不一致 | 低 — Stage 4.1 已交付 | 高 | 已验证：Linux 6.12 LTS API 签名对齐确认 |
-| HAL ops 爆炸增长 | 中 | 高 | 当前 ~18 ops (4.3 新增 method encode/decode + channel ops)；设定 ops 上限 ≤ 25 |
+| HAL ops 爆炸增长 | 中 | 高 | 当前 ~22 fn-ptrs（4.5 新增 hal_preempt + 5 hal_sem_* + 其他）；距上限 ≤ 25 还有 ~3 个余量 |
 
 ---
 
@@ -323,6 +344,7 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 |------|------|------|
 | 2026-07-28 | v2.0 | 4.3 状态更新：✅ 已完成。ADR-042/044/048/054/057 升 ✅ Accepted。依赖图、风险表同步更新。 |
 | 2026-08-01 | v2.1 | 4.4 状态更新：✅ 已归档（commit `452e298` merge + `b28089f` archive）。ADR-045/047/050 升 ✅ Accepted。子阶段表/关键交付/验收/ADR 表/依赖图同步更新。INDEX.md 同步补登记。 |
+| 2026-08-01 | v2.2 | 4.5 状态更新：✅ 已归档（4 changes: preemption-engine-finish / predication-aql / preemption-timeline-sem / preemption-timeline-sem-gaps, 2026-07-29 ~ 2026-07-31）。ADR-046/049/051/052 升 ✅ Accepted。子阶段表/关键交付/验收/ADR 表/依赖图/风险表同步更新。 |
 | 2026-07-21 | v1.0 | 初版：基于 ADR-064 Stage 4 触发条件 + GPU CP Blueprint Phase 4-7 创建 |
 
 ---
@@ -339,3 +361,4 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | 4.2 | `phase4-sim-graph-launch-real-impl`, `phase4-sim-graph-launch-test-gaps`, `phase4-cu-mempool-alloc-real-va` |
 | 4.3 | `stage4-3-cp-phase5-method-hyperqueue`, `stage4-3-integration-wiring` |
 | 4.4 | `stage4-4-gpu-cp-phase55` |
+| 4.5 | `stage4-5-cp-phase6-preemption-timeline-sem`, `stage4-5-cp-phase6-preemption-engine-finish`, `stage4-5-cp-phase6-predication-aql`, `stage4-5-cp-phase6-preemption-timeline-sem-gaps` |
