@@ -301,6 +301,13 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   hal->hal_green_context_destroy = [](void*, uint64_t) -> int {
     return -ENOSYS;
   };
+  hal->hal_pdl_launch = [](void*, uint64_t, uint64_t, uint32_t, uint32_t,
+                           uint64_t*) -> int {
+    return -ENOSYS;
+  };
+  hal->hal_pdl_signal_completion = [](void*, uint64_t, uint64_t) -> int {
+    return -ENOSYS;
+  };
 }
 
 void hal_user_destroy(struct hal_user_context *ctx) {
