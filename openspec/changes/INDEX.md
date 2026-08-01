@@ -1,13 +1,13 @@
 # Active Changes Index
 
-> **更新**: 2026-07-22
+> **更新**: 2026-08-01
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: **1 个活跃 change** + 17 个已完成/已归档
-> **Source**: 2026-07-22 Stage 3.4 Doxygen 文档完成并归档，仅剩 v1.0 发布准备
+> **总数**: **0 个活跃 change** + 22 个已完成/已归档
+> **Source**: 2026-07-31 v1-0-release-prep 已归档（13/13 tasks, commit `006bae2`），Stage-4.5 全部归档。无待执行 change。
 
 ---
 
-## ✅ 已完成 (16 归档)
+## ✅ 已完成 (22 归档)
 
 | 原 ID | Change | 状态 | 证据 |
 |-------|--------|------|------|
@@ -26,56 +26,26 @@
 | **C-12** | **stage1-4-kfd-multi-file-integration** | ✅ 已归档（2026-07-16） | `openspec archive 2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration`（81% 原子任务完成，Phase A/B/C/D 全 [x]，Phase E 8/9 [x] + L1↔L2 skeleton + docs updates；104/104 ctest + docs-audit 43/43 PASS；E.2.3 sanitizer + E.2.4.2/4.3 cross-repo deferred to follow-up PRs per ADR-035 §Rule 5.1） |
 | **stage3-4** | **stage3-4-doxygen-docs** | ✅ 已归档 (2026-07-22) | Doxygen API 参考 + quickstart 完善 + docs-audit 48→48 PASS |
 | **W7** | **kfd-l1-l2-bridge-e2e** | ✅ 已归档 | `177231a` — 44/44 tasks, IoctlEntry 扩展 + 3 E2E tests + TaskRunner PR + 跨仓 sync |
+| **W7-sanitizer** | **three-sanitizer-infra** | ✅ 已归档 (2026-07-22) | commit `5fc0006` — ASan/UBSan/TSan CMake infra + CI require jobs + bug 修复；34/34 tasks；`openspec/changes/archive/2026-07-17-2026-07-16-three-sanitizer-infra/` |
+| **W7-bridge-e2e** | **kfd-l1-l2-bridge-e2e** | ✅ 已归档 (2026-07-22) | commit `177231a` + TaskRunner `d94719c` + submodule bump `aac4be5`；44/44 tasks；`openspec/changes/archive/2026-07-18-2026-07-16-kfd-l1-l2-bridge-e2e/` |
+| **v1.0** | **v1-0-release-prep** | ✅ 已归档 (2026-07-31) | commit `006bae2 chore(openspec): archive v1-0-release-prep` — 13/13 tasks（CHANGELOG.md + RELEASE_NOTES.md + docs/10-migration/v0-to-v1.md + Dockerfile + .github/workflows/release.yml + plan-handoff 标记完成）；`openspec/changes/archive/v1-0-release-prep/` |
+| **stage4.5-preempt** | **stage4-5-cp-phase6-preemption-engine-finish** | ✅ 已归档 (2026-07-30) | commit `888b7cc chore(state): mark preemption-timeline-sem-gaps as archived in iteration.json`；53/53 tasks；`openspec/changes/archive/2026-07-30-stage4-5-cp-phase6-preemption-engine-finish/` |
+| **stage4.5-predicate** | **stage4-5-cp-phase6-predication-aql** | ✅ 已归档 (2026-07-31) | commit `c0cbe94 chore(plan): remove plan files for archived changes (predication-aql + gaps)`；40/40 tasks；`openspec/changes/archive/2026-07-31-stage4-5-cp-phase6-predication-aql/` |
+| **stage4.5-gaps** | **stage4-5-cp-phase6-preemption-timeline-sem-gaps** | ✅ 已归档 (2026-07-31) | commit `9153073 archive: preemption-timeline-sem-gaps change archived` — 81/81 tasks；`openspec/changes/archive/2026-07-31-stage4-5-cp-phase6-preemption-timeline-sem-gaps/` |
 
 ---
 
 ## 🔄 活跃 Changes
 
-### 本季度 (P3)
-
-### `2026-07-16-three-sanitizer-infra` ✅ (P3)
-**Effort**: 3-5 天
-**Why**: C-12 E.2.3 deferred — 补齐 ASan/UBSan CMake infra（TSan 已有）
-**进度（2026-07-22）**: 34/34 tasks ✅ **已归档**
-- Phase A: CMake Infra (8 tasks) — root CMakeLists.txt + tests/CMakeLists.txt
-- Phase B: Plugin Artifact Isolation (5 tasks) — `scripts/stage-plugin.sh`
-- Phase C: ASan Run + Bug Fixes (8 tasks) — fix: move device VA base to sanitizer-safe window
-- Phase D: UBSan Run + Bug Fixes (7 tasks) — 0 runtime error
-- Phase E: CI Integration (6 tasks) — sanitizer-asan/ubsan/tsan matrix jobs
-**证据**: commit `5fc0006` — ASan/UBSan/TSan CMake infra + CI require jobs + bug 修复
-
-### `2026-07-16-kfd-l1-l2-bridge-e2e` ✅ (P3)
-**Effort**: 1-2 周
-**Why**: C-12 E.2.4 deferred — 跨仓 L1↔L2 bridge 端到端验证（ADR-035 §Rule 5.1 4-step）
-**进度（2026-07-22）**: 44/44 tasks ✅ **已归档**
-- Phase A: UsrLinuxEmu 端 E2E (17 tasks) — GpgpuDevice IoctlEntry 扩展 (32→36) + 3 个真实 E2E 测试
-- Phase B: TaskRunner 端 Change (9 tasks) — GpuDriverClient +4 KFD methods + 跨仓 PR
-- Phase C: 跨仓 Submodule Bump (7 tasks) — 双仓 submodule sync
-- Phase D: 文档 + 归档 (6 tasks) — taskrunner-index + kfd-portability-boundary 更新
-- Phase E: 验收 (5 tasks) — 104/104 + TaskRunner 13/13 ctest PASS
-**证据**: commit `177231a` + TaskRunner `d94719c` + submodule bump `aac4be5`
-
-### `v1-0-release-prep` 🟡 (P2)
-**Effort**: 2-3 天 (不含 Docker 可选)
-**Why**: v1.0 发布必备 — CHANGELOG + Migration Guide + Binary Release + Docker
-**进度（2026-07-22）**: 0/29 tasks
-- Phase 1: CHANGELOG & Release Notes (3 tasks)
-- Phase 2: Migration Guide (5 tasks) — System B→C ioctl mapping + kernel SHARED + directory restructure
-- Phase 3: Binary Release Workflow (4 tasks) — GitHub Actions release.yml + static linking
-- Phase 4: Docker (2 tasks, optional)
-- Phase 5: plan-handoff Update (1 task)
+> **当前 0 个活跃 change**（2026-08-01）。所有 P1/P2/P3 changes 均已归档。下一步请通过 `openspec-propose` 创建新提案。
 
 ---
-
-> **C-12 已归档**（2026-07-16）— 详见 [archive/2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration/](archive/2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration/)
-> **Stage 3.4 已归档**（2026-07-22）— 详见 [archive/2026-07-22-stage3-4-doxygen-docs/](archive/2026-07-22-stage3-4-doxygen-docs/)
 
 ## 依赖图
 
 ```
-[v1-0-release-prep] ← 唯一活跃 change，无阻塞依赖
-[C-12/kfd-multi-file] ✅ ARCHIVED 2026-07-16
-[stage3-4-doxygen-docs] ✅ ARCHIVED 2026-07-22
+（无活跃 change — 依赖图清空）
+所有 P1/P2/P3 changes 已 archived (2026-07-22 / 2026-07-31)
 ```
 
 ---
@@ -83,7 +53,7 @@
 ## 推荐执行顺序
 
 ### 本季度
-1. **v1-0-release-prep** 🟡 P2（0/29 tasks） — CHANGELOG + Migration Guide + Binary Release
+1. ~~**v1-0-release-prep**~~ ✅ archived (2026-07-31; 13/13 tasks; commit `006bae2`)
 2. ~~stage3-4-doxygen-docs~~ ✅ archived（2026-07-22；15/15 tasks）
 3. ~~C-09~~ phase4-cu-mempool-alloc-real-va ✅ archived
 4. ~~C-10~~ stage3-2-perf-bench-baseline ✅ archived
@@ -91,8 +61,11 @@
 6. ~~C-12~~ stage1-4-kfd-multi-file-integration ✅ archived
 7. ~~Wave 7 — three-sanitizer-infra~~ ✅ archived
 8. ~~Wave 7 — kfd-l1-l2-bridge-e2e~~ ✅ archived
+9. ~~Stage 4.5 — preemption-engine-finish~~ ✅ archived (2026-07-30)
+10. ~~Stage 4.5 — predication-aql~~ ✅ archived (2026-07-31)
+11. ~~Stage 4.5 — preemption-timeline-sem-gaps~~ ✅ archived (2026-07-31)
 
-**当前状态**: Stage 3.4 文档完善 (P1) + v1.0 发布准备 (P2)。无其他待执行 change。
+**当前状态**: v1.0 发布准备完成 (P2) + Stage 3.4 文档完善 (P1) + Stage 4.5 preemption/predication 全栈 (P1) 均已交付。下一步建议根据 [roadmap.md](roadmap.md) 进入后续阶段（Stage 5+ 或真机对接）。
 
 ---
 
