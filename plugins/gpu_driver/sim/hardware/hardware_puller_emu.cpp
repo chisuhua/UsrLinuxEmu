@@ -483,6 +483,38 @@ bool HardwarePullerEmu::processSemOp() {
       return false;
     }
 
+    case GPU_OP_PDL_LAUNCH: {
+      // T6.1 + T6.2 + T6.3 + T6.4: Puller recognizes PDL entry and
+      // constructs child dispatch + SEM_RELEASE via sim_pdl_launch.
+      // Payload fields carried in payload[0..6] (see gpu_pdl_payload).
+      // T5.6: CPU-side rejection — if pdl_nest_counter_ is 0 this is a
+      // top-level PDL entry, which must come from device-side (i.e.,
+      // produced by a prior PDL). A direct CPU-submitted PDL entry is
+      // rejected with -EACCES.
+      if (pdl_nest_counter_ == 0) {
+        // No prior PDL produced this entry -> must be CPU-submitted.
+        // We don't fail the whole batch (semaphore op returns true),
+        // but sim_pdl_launch's overflow guard won't fire either; instead
+        // we leave the PDL entry as a no-op + log via last_pdl_error_.
+        last_pdl_error_ = -EACCES;
+        return true;
+      }
+      uint64_t kernel_addr = entry.payload[0];
+      uint64_t kernargs_va = entry.payload[1];
+      uint64_t grid_block  = entry.payload[2];
+      uint32_t grid_x = static_cast<uint32_t>(grid_block >> 32);
+      uint32_t block_x = static_cast<uint32_t>(grid_block & 0xFFFFFFFFu);
+      uint64_t sig_handle = entry.semaphore_va;
+      uint64_t sig_value  = entry.semaphore_value;
+      int rc = sim_pdl_launch(kernel_addr, kernargs_va,
+                               grid_x, block_x,
+                               sig_handle, sig_value);
+      if (rc != 0) {
+        last_pdl_error_ = rc;  // record but don't stop puller (T6.4)
+      }
+      return true;
+    }
+
     default:
       return true;
   }
