@@ -2,12 +2,12 @@
 
 > **更新**: 2026-08-01
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: **0 个活跃 change** + 23 个已完成/已归档
+> **总数**: **0 个活跃 change** + 24 个已完成/已归档
 > **Source**: 2026-08-01 INDEX 同步：补齐 stage4-4-gpu-cp-phase55 (commit `452e298`, 2026-07-28 已归档但原 INDEX 漏登记)。
 
 ---
 
-## ✅ 已完成 (23 归档)
+## ✅ 已完成 (24 归档)
 
 | 原 ID | Change | 状态 | 证据 |
 |-------|--------|------|------|
@@ -33,6 +33,7 @@
 | **stage4.5-preempt** | **stage4-5-cp-phase6-preemption-engine-finish** | ✅ 已归档 (2026-07-30) | commit `888b7cc chore(state): mark preemption-timeline-sem-gaps as archived in iteration.json`；53/53 tasks；`openspec/changes/archive/2026-07-30-stage4-5-cp-phase6-preemption-engine-finish/` |
 | **stage4.5-predicate** | **stage4-5-cp-phase6-predication-aql** | ✅ 已归档 (2026-07-31) | commit `c0cbe94 chore(plan): remove plan files for archived changes (predication-aql + gaps)`；40/40 tasks；`openspec/changes/archive/2026-07-31-stage4-5-cp-phase6-predication-aql/` |
 | **stage4.5-gaps** | **stage4-5-cp-phase6-preemption-timeline-sem-gaps** | ✅ 已归档 (2026-07-31) | commit `9153073 archive: preemption-timeline-sem-gaps change archived` — 81/81 tasks；`openspec/changes/archive/2026-07-31-stage4-5-cp-phase6-preemption-timeline-sem-gaps/` |
+| **stage4.6** | **stage4-6-cp-phase7-green-context-pdl** | ✅ 已归档 (2026-08-01) | merge commit `c6f6ed3` — 19 atomic commits（ContextType + MQD.context_type + GREEN priority override + ChannelManager preemption + GPU_OP_PDL_LAUNCH + sim_pdl_launch + HAL +4 fn-ptrs）；ADR-056 Accepted；127/127 ctest PASS（+2 new tests）；docs-audit 53/53 PASS；HAL fn-ptr 29→33；MQD 128B ABI 保留；`openspec/changes/archive/2026-08-01-stage4-6-cp-phase7-green-context-pdl/` |
 
 ---
 
@@ -66,6 +67,7 @@
 10. ~~Stage 4.5 — preemption-engine-finish~~ ✅ archived (2026-07-30)
 11. ~~Stage 4.5 — predication-aql~~ ✅ archived (2026-07-31)
 12. ~~Stage 4.5 — preemption-timeline-sem-gaps~~ ✅ archived (2026-07-31)
+13. ~~Stage 4.6 — green-context-pdl~~ ✅ archived (2026-08-01)
 
 **当前状态**: v1.0 发布准备完成 (P2) + Stage 3.4 文档完善 (P1) + Stage 4.5 preemption/predication 全栈 (P1) 均已交付。下一步建议根据 [roadmap.md](roadmap.md) 进入后续阶段（Stage 5+ 或真机对接）。
 
