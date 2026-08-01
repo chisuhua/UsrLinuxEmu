@@ -44,7 +44,7 @@
 - [x] 5.3 Add `pdl_nest_counter_` field to `HardwarePullerEmu` (init 0, increment/decrement per launch)
 - [x] 5.4 Add `MAX_PDL_NEST=4` constant (mirroring `MAX_IB_NEST=4` from ADR-050)
 - [x] 5.5 Implement PDL guard: `sim_pdl_launch` returns `-E2BIG` if `pdl_nest_counter_ >= MAX_PDL_NEST`
-- [ ] 5.6 Implement CPU-side rejection: `submitBatch` rejects direct `GPU_OP_PDL_LAUNCH` entries with `-EACCES` (PDL is internal only)
+- [x] 5.6 Implement CPU-side rejection: `submitBatch` rejects direct `GPU_OP_PDL_LAUNCH` entries with `-EACCES` (PDL is internal only)
 
 ## 6. Puller PDL Dispatch
 
@@ -52,10 +52,10 @@
 - [x] 6.2 Construct child kernel dispatch entry from PDL payload (`kernel_addr`, `kernargs_va`, `grid/block`)
 - [x] 6.3 Construct `GPU_OP_SEM_RELEASE` entry using PDL `signal_handle` + `signal_value`
 - [x] 6.4 Append both entries to current batch tail (in-memory vector)
-- [ ] 6.5 Increment `pdl_nest_counter_` after append
-- [ ] 6.6 Decrement `pdl_nest_counter_` after child kernel completes (in `completeStage()`)
-- [ ] 6.7 Verify: child kernel executes after PDL append (validated by test_pdl_standalone)
-- [ ] 6.8 Verify: SEM_RELEASE fires after child completion (semaphore value incremented)
+- [x] 6.5 Increment `pdl_nest_counter_` after append
+- [x] 6.6 Decrement `pdl_nest_counter_` after child kernel completes (in `completeStage()`)
+- [x] 6.7 Verify: child kernel executes after PDL append (validated by test_pdl_standalone)
+- [x] 6.8 Verify: SEM_RELEASE fires after child completion (semaphore value incremented)
 
 ## 7. PDL HAL Operations
 
@@ -83,13 +83,13 @@
 ## 9. Test: test_pdl_standalone
 
 - [ ] 9.1 Create `tests/test_pdl_standalone.cpp` with Catch2 framework
-- [ ] 9.2 Implement `test_pdl_basic_launch`: parent K launches child K via PDL → child executes → semaphore signaled
-- [ ] 9.3 Implement `test_pdl_nested_chain_4`: K0→K1→K2→K3→K4 all execute in order
-- [ ] 9.4 Implement `test_pdl_nest_overflow_returns_e2big`: 5th level PDL launch returns -E2BIG
-- [ ] 9.5 Implement `test_pdl_invalid_kernel_addr`: unmapped kernel_addr returns -EFAULT
-- [ ] 9.6 Implement `test_cpu_rejected_pdl_entry`: submitBatch rejects direct PDL entry with -EACCES
-- [ ] 9.7 Implement `test_hal_pdl_launch_signal_completion`: HAL ops round-trip + signal_value verification
-- [ ] 9.8 Implement `test_pdl_nest_counter_balanced`: 4 nested launches + 4 completions → nest back to 0
+- [x] 9.2 Implement `test_pdl_basic_launch`: parent K launches child K via PDL → child executes → semaphore signaled
+- [x] 9.3 Implement `test_pdl_nested_chain_4`: K0→K1→K2→K3→K4 all execute in order
+- [x] 9.4 Implement `test_pdl_nest_overflow_returns_e2big`: 5th level PDL launch returns -E2BIG
+- [x] 9.5 Implement `test_pdl_invalid_kernel_addr`: unmapped kernel_addr returns -EFAULT
+- [x] 9.6 Implement `test_cpu_rejected_pdl_entry`: submitBatch rejects direct PDL entry with -EACCES
+- [x] 9.7 Implement `test_hal_pdl_launch_signal_completion`: HAL ops round-trip + signal_value verification
+- [x] 9.8 Implement `test_pdl_nest_counter_balanced`: 4 nested launches + 4 completions → nest back to 0
 - [ ] 9.9 Register in `tests/CMakeLists.txt` as standalone test
 - [ ] 9.10 Verify build: `cmake --build build --target test_pdl_standalone`
 - [ ] 9.11 Run: `./build/bin/test_pdl_standalone` — all PASS
