@@ -257,8 +257,76 @@ section_arch() {
         check_warn "plugins/gpu_driver/hal/gpu_hal.h not found"
     fi
 
-    # 1.6 plugin loading mode (__attribute__((constructor)) must NOT be used)
-    subsection "1.6 Plugin loading uses module mod symbol pattern (no constructor attribute)"
+    # 1.6 HAL boundary ratchet (drv/ must not include sim/ except grandfathered)
+    # Per ADR-023 + openspec/hal-boundary-cleanup: drv/ accesses sim/ only via
+    # ① explicit HAL fn-ptrs, or ② the kfd_sim_bridge (composition-root-bound
+    # boundary file), or ③ the grandfather list (process-global sim singletons
+    # + C++ class types pending ADR-069 Stage 4 escalation).
+    #
+    # Grandfathered includes (DO NOT ADD MORE without architectural review):
+    #   - sim/graph.h                        (CUDA Graph runtime)
+    #   - sim/hardware/hardware_puller_emu.h (HardwarePullerEmu C++ class)
+    #   - sim/hardware/method_codec.h        (method_codec_encode C-ABI)
+    #   - sim/fence_id.h                     (sim_fence_id_alloc/check C-ABI)
+    #   - sim/gpu_queue_emu.h                (GpuQueueEmu C++ class)
+    #   - sim/mem_pool.h                     (sim_mem_pool_* C-ABI)
+    #   - sim/stream_capture.h               (sim_stream_capture_* C-ABI)
+    subsection "1.6 HAL boundary: drv/->sim/ includes grandfathered (ratchet)"
+    local drv_sim_includes
+    drv_sim_includes=$(grep -rhE '#include[[:space:]]+"sim/' \
+        "${REPO_ROOT}/plugins/gpu_driver/drv" 2>/dev/null | \
+        sed -E 's/.*#include[[:space:]]+"([^"]+)".*/\1/' | sort -u)
+    local drv_sim_count
+    drv_sim_count=$(echo -n "${drv_sim_includes}" | grep -c . 2>/dev/null || echo 0)
+    # Grandfather list (must match exactly when clean; shrinks when fixed).
+    local -A grandfather
+    grandfather["sim/graph.h"]=1
+    grandfather["sim/hardware/hardware_puller_emu.h"]=1
+    grandfather["sim/hardware/method_codec.h"]=1
+    grandfather["sim/fence_id.h"]=1
+    grandfather["sim/gpu_queue_emu.h"]=1
+    grandfather["sim/mem_pool.h"]=1
+    grandfather["sim/stream_capture.h"]=1
+    local -a new_includes=()
+    local -a removed_includes=()
+    while IFS= read -r inc; do
+        [ -z "${inc}" ] && continue
+        if [ -z "${grandfather[${inc}]+_}" ]; then
+            new_includes+=("${inc}")
+        else
+            unset 'grandfather[${inc}]'
+        fi
+    done <<< "${drv_sim_includes}"
+    for inc in "${!grandfather[@]}"; do
+        removed_includes+=("${inc}")
+    done
+    if [ ${#new_includes[@]} -gt 0 ]; then
+        check_fail "drv/ adds NEW sim/ includes outside grandfather list:"
+        for inc in "${new_includes[@]}"; do
+            echo "      + ${inc}"
+        done
+        echo "    Existing grandfathered (7):"
+        echo "      - sim/graph.h"
+        echo "      - sim/hardware/hardware_puller_emu.h"
+        echo "      - sim/hardware/method_codec.h"
+        echo "      - sim/fence_id.h"
+        echo "      - sim/gpu_queue_emu.h"
+        echo "      - sim/mem_pool.h"
+        echo "      - sim/stream_capture.h"
+        echo "    Action: either remove the include, route through kfd_sim_bridge,"
+        echo "    add a HAL fn-ptr (ADR-023 Decision 4), or extend the grandfather list"
+        echo "    via an ADR that documents the architectural rationale."
+    elif [ ${#removed_includes[@]} -gt 0 ]; then
+        check_pass "HAL boundary ratchet CLEAN (${#removed_includes[@]} removed since last check):"
+        for inc in "${removed_includes[@]}"; do
+            echo "      - ${inc}"
+        done
+    else
+        check_pass "drv/->sim/ grandfather list unchanged (${drv_sim_count} includes)"
+    fi
+
+    # 1.7 plugin loading mode (__attribute__((constructor)) must NOT be used)
+    subsection "1.7 Plugin loading uses module mod symbol pattern (no constructor attribute)"
     local ctor_count
     ctor_count=$(grep -rE "__attribute__\(\(constructor\)\)" \
         "${REPO_ROOT}/plugins" "${REPO_ROOT}/drivers" "${REPO_ROOT}/src" "${REPO_ROOT}/tests" \
@@ -269,8 +337,8 @@ section_arch() {
         check_warn "Found ${ctor_count} __attribute__((constructor)) in code (should use module mod)"
     fi
 
-    # 1.7 AGENTS.md test framework declaration
-    subsection "1.7 AGENTS.md does not mis-claim GTest/Catch2"
+    # 1.8 AGENTS.md test framework declaration
+    subsection "1.8 AGENTS.md does not mis-claim GTest/Catch2"
     local agents_gtest
     agents_gtest=$(grep -ciE "gtest|google test|catch2" "${REPO_ROOT}/AGENTS.md" 2>/dev/null | head -1 | tr -d '[:space:]')
     agents_gtest="${agents_gtest:-0}"
@@ -283,23 +351,23 @@ section_arch() {
     fi
 
     # 1.8 libgpu_core naming
-    subsection "1.8 libgpu_core header is gpu_buddy.h (not buddy.h or gpu_buddy_allocator.h)"
+    subsection "1.9 libgpu_core header is gpu_buddy.h (not buddy.h or gpu_buddy_allocator.h)"
     if [ -f "${REPO_ROOT}/libgpu_core/include/gpu_buddy.h" ]; then
         check_pass "libgpu_core/include/gpu_buddy.h exists"
     else
         check_warn "libgpu_core/include/gpu_buddy.h missing"
     fi
 
-    # 1.9 archive/empty_directories/ must not exist
-    subsection "1.9 archive/empty_directories/ must not exist"
+    # 1.10 archive/empty_directories/ must not exist
+    subsection "1.10 archive/empty_directories/ must not exist"
     if [ ! -e "${REPO_ROOT}/archive/empty_directories" ]; then
         check_pass "archive/empty_directories/ does not exist (orphan zone removed)"
     else
         check_fail "archive/empty_directories/ exists; remove it (was 0 tracked files, always empty)"
     fi
 
-    # 1.10 archive/stale_builds/ must not exist
-    subsection "1.10 archive/stale_builds/ must not exist"
+    # 1.11 archive/stale_builds/ must not exist
+    subsection "1.11 archive/stale_builds/ must not exist"
     if [ ! -e "${REPO_ROOT}/archive/stale_builds" ]; then
         check_pass "archive/stale_builds/ does not exist (orphan zone removed)"
     else
@@ -307,7 +375,7 @@ section_arch() {
     fi
 
     # 1.11 CHANGELOG.md must exist at project root
-    subsection "1.11 CHANGELOG.md exists"
+    subsection "1.12 CHANGELOG.md exists"
     if [ -f "${REPO_ROOT}/CHANGELOG.md" ]; then
         check_pass "CHANGELOG.md exists"
     else
@@ -315,7 +383,7 @@ section_arch() {
     fi
 
     # 1.12 RELEASE_NOTES.md must exist at project root
-    subsection "1.12 RELEASE_NOTES.md exists"
+    subsection "1.13 RELEASE_NOTES.md exists"
     if [ -f "${REPO_ROOT}/RELEASE_NOTES.md" ]; then
         check_pass "RELEASE_NOTES.md exists"
     else
@@ -323,7 +391,7 @@ section_arch() {
     fi
 
     # 1.13 docs/10-migration/v0-to-v1.md must exist
-    subsection "1.13 Migration guide exists"
+    subsection "1.14 Migration guide exists"
     if [ -f "${REPO_ROOT}/docs/10-migration/v0-to-v1.md" ]; then
         check_pass "docs/10-migration/v0-to-v1.md exists"
     else

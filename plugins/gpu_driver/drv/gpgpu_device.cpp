@@ -19,8 +19,6 @@
 #include "sim/gpu_queue_emu.h"
 #include "sim/mem_pool.h"
 #include "sim/stream_capture.h"
-#include "sim/vram_store.h"
-#include "sim/dma_coherent_pool.h"
 #include "shared/gpu_events.h"
 #include "shared/gpu_ioctl.h"
 #include "shared/gpu_types.h"
@@ -57,13 +55,11 @@ GpgpuDevice::GpgpuDevice(struct gpu_hal_ops* hal)
       handles_(), bo_map_() {
   registered_kernels_["simple_kernel"] = 0;
   registered_kernels_["matmul_kernel"] = 1;
-  // Stage 4.1: Initialize VRAM backing store (256MB) and DMA coherent pool
-  if (!usr_linux_emu::g_vram_store.init(256)) {
-    // non-fatal: log warning, continue without BAR support
-  }
-  if (!usr_linux_emu::g_dma_pool.init()) {
-    // non-fatal: log warning
-  }
+  // Stage 4.1: VRAM backing store (g_vram_store) and DMA coherent pool
+  // (g_dma_pool) are process-global sim singletons. They are initialized
+  // by the composition root (plugin.cpp::plugin_init_internal) BEFORE
+  // this device ctor runs — that is the canonical location for
+  // process-lifetime sim init, not a per-device ctor.
 }
 
 GpgpuDevice::~GpgpuDevice() = default;
