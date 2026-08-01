@@ -319,6 +319,15 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
     return 0;
   };
   hal->hal_sem_destroy = [](void*, uint64_t) -> int { return 0; };
+  hal->hal_green_context_create = [](void*, uint64_t tsg_id, uint64_t* out) -> int {
+    static uint64_t next_handle = 0x1000;
+    *out = ++next_handle;  // mock: monotonic handle, no real binding
+    return 0;
+  };
+  hal->hal_green_context_destroy = [](void*, uint64_t handle) -> int {
+    if (handle == 0) return -EINVAL;
+    return 0;
+  };
 }
 
 void hal_mock_destroy(struct hal_mock_state *state) {
