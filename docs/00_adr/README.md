@@ -65,7 +65,7 @@
 | [adr-053](adr-053-doorbell-aggregation-oversubscription.md) | **Doorbell 聚合与过订阅** | ⏸️ Deferred (Never) | 2026-07-09 |
 | [adr-054](adr-054-mqd-hqd-state-management.md) | **MQD/HQD 状态管理**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-055](adr-055-cp-error-handling-engine-recovery.md) | **CP 错误处理与引擎恢复** | ⏸️ Deferred (Never) | 2026-07-09 |
-| [adr-056](adr-056-green-context-pdl.md) | **Green Context / PDL**（Phase 7）| 📋 PROPOSED | 2026-07-09 |
+| [adr-056](adr-056-green-context-pdl.md) | **Green Context / PDL**（Phase 7）| ✅ Accepted | 2026-07-09 (2026-08-01 Accepted) |
 | [adr-057](adr-057-cp-profiling-hooks-timestamp.md) | **CP Profiling Hooks / Timestamp**（Phase 5）| ✅ 已采纳 (Accepted) | 2026-07-27 |
 | [adr-058](adr-058-sim-mem-pool-real-va.md) | **sim_mem_pool Real VA Allocation via gpu_buddy + mmap Backing**（Phase 4）| ✅ Accepted | 2026-07-11 |
 | [adr-059](adr-059-kfd-multi-file-integration.md) | **KFD Multi-File Integration Architecture Boundary**（C-12 sub-project, Stage 1.4 后续子项目）| ✅ Accepted | 2026-07-14 |
@@ -93,7 +93,7 @@
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
 | ✅ 已接受 | 55 | 001-010, 015-024, 027, 031-037, 039-052, 054, 057, 059-065, 074 |
-| 📋 PROPOSED | 7 | 011-014, 038, 056, 058, 069, 072-073 |
+| 📋 PROPOSED | 6 | 011-014, 038, 058, 069, 072-073 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
 | **总计** | **69** | ADR-001 ~ ADR-074 |
 
