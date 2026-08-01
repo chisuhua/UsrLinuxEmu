@@ -133,6 +133,20 @@ struct gpu_hal_ops {
    * Returns 0 on success, -EINVAL if handle invalid. */
   int (*hal_sem_query)(void *ctx, uint64_t handle, uint64_t *out_val);
 
+  /* Stage 4.6 (ADR-056) — Green Context: low-priority preemptable CUDA context.
+   * hal_green_context_create: allocate a new green context bound to a TSG (timestamp queue group).
+   * @ctx: HAL context
+   * @tsg_id: TSG ID (typically the channel's TSG)
+   * @out_handle: [out] green context handle (driver-defined)
+   * Returns 0 on success, -ENOSYS for drivers that don't support green contexts. */
+  int (*hal_green_context_create)(void *ctx, uint64_t tsg_id, uint64_t *out_handle);
+
+  /* hal_green_context_destroy: release a green context handle.
+   * @ctx: HAL context
+   * @handle: green context handle from hal_green_context_create
+   * Returns 0 on success, -EINVAL if handle invalid. */
+  int (*hal_green_context_destroy)(void *ctx, uint64_t handle);
+
   /* hal_sem_destroy: destroy a semaphore.
    * @handle: semaphore handle
    * Returns 0 on success, -EINVAL if handle invalid. */
