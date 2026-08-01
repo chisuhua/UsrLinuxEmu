@@ -483,8 +483,93 @@ bool HardwarePullerEmu::processSemOp() {
       return false;
     }
 
+    case GPU_OP_PDL_LAUNCH: {
+      // T6.1 + T6.2 + T6.3 + T6.4: Puller recognizes PDL entry and
+      // constructs child dispatch + SEM_RELEASE via sim_pdl_launch.
+      // Payload fields carried in payload[0..6] (see gpu_pdl_payload).
+      // T5.6: CPU-side rejection — if pdl_nest_counter_ is 0 this is a
+      // top-level PDL entry, which must come from device-side (i.e.,
+      // produced by a prior PDL). A direct CPU-submitted PDL entry is
+      // rejected with -EACCES.
+      if (pdl_nest_counter_ == 0) {
+        // No prior PDL produced this entry -> must be CPU-submitted.
+        // We don't fail the whole batch (semaphore op returns true),
+        // but sim_pdl_launch's overflow guard won't fire either; instead
+        // we leave the PDL entry as a no-op + log via last_pdl_error_.
+        last_pdl_error_ = -EACCES;
+        return true;
+      }
+      uint64_t kernel_addr = entry.payload[0];
+      uint64_t kernargs_va = entry.payload[1];
+      uint64_t grid_block  = entry.payload[2];
+      uint32_t grid_x = static_cast<uint32_t>(grid_block >> 32);
+      uint32_t block_x = static_cast<uint32_t>(grid_block & 0xFFFFFFFFu);
+      uint64_t sig_handle = entry.semaphore_va;
+      uint64_t sig_value  = entry.semaphore_value;
+      int rc = sim_pdl_launch(kernel_addr, kernargs_va,
+                               grid_x, block_x,
+                               sig_handle, sig_value);
+      if (rc != 0) {
+        last_pdl_error_ = rc;  // record but don't stop puller (T6.4)
+      }
+      return true;
+    }
+
     default:
       return true;
+  }
+}
+
+// ========== Programmatic Dependent Launch (Stage 4.6, ADR-056) ==========
+
+int HardwarePullerEmu::sim_pdl_launch(uint64_t kernel_addr, uint64_t kernargs_va,
+                                       uint32_t grid_x, uint32_t block_x,
+                                       uint64_t signal_handle, uint64_t signal_value) {
+  if (pdl_nest_counter_ >= MAX_PDL_NEST) {
+    return -E2BIG;  // T9.4: nest overflow
+  }
+  if (kernel_addr == 0) {
+    return -EFAULT;  // T9.5
+  }
+
+  // Construct child kernel dispatch entry from PDL payload.
+  // We re-use current_entry_'s storage as scratch — it's overwritten on next fetch.
+  gpu_gpfifo_entry child = current_entry_;
+  child.method = GPU_OP_LAUNCH_KERNEL;  // child = dispatch kernel
+  child.valid = 1;
+  // stage 4.6: PDL child kernel payload encoded in payload[] (see gpu_gpfifo_entry).
+  // For now we only carry the kernel address; full payload decode is deferred.
+  child.payload[0] = kernel_addr;
+  child.payload[1] = kernargs_va;
+  child.payload[2] = (uint64_t(grid_x) << 32) | uint64_t(block_x);
+
+  // Stage 4.6: child kernel + signal entry are appended to an internal PDL
+  // queue. The Puller FSM processes them inline (see processSemOp case
+  // GPU_OP_PDL_LAUNCH). For now we record them via the scheduler's enqueue.
+  if (scheduler_) {
+    scheduler_->enqueue_with_priority(child, EngineType::COMPUTE,
+                                       GPU_CHAN_PRI_LOW, current_channel_id_);
+  }
+
+  // Construct SEM_RELEASE entry for completion signal.
+  gpu_gpfifo_entry sig = current_entry_;
+  sig.method = GPU_OP_SEM_RELEASE;
+  sig.semaphore_va = signal_handle;
+  sig.semaphore_value = static_cast<uint32_t>(signal_value);
+  if (scheduler_) {
+    scheduler_->enqueue_with_priority(sig, EngineType::FIRMWARE,
+                                       GPU_CHAN_PRI_LOW, current_channel_id_);
+  }
+
+  ++pdl_nest_counter_;
+  return 0;
+}
+
+void HardwarePullerEmu::pdlNestDecrement() {
+  // Called from handleComplete when a child kernel dispatch completes.
+  // Mirrors ADR-050's IB nest decrement pattern.
+  if (pdl_nest_counter_ > 0) {
+    --pdl_nest_counter_;
   }
 }
 

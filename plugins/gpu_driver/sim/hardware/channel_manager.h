@@ -6,6 +6,7 @@
 #include <queue>
 
 #include "mqd.h"  // Stage 4.5: MQD cache for preempt/resume
+#include "gpu_types.h"  // Stage 4.6: ContextType (BROWN/GREEN)
 
 class GpuQueueEmu;
 
@@ -33,6 +34,7 @@ struct ChannelState {
   bool batch_in_flight = false;
   uint64_t pending_fence_id = 0;
   ChannelPrio priority = CHAN_PRIO_NORMAL;
+  ContextType context_type = ContextType::BROWN;  // Stage 4.6 (ADR-056)
 };
 
 /**
@@ -69,6 +71,13 @@ class ChannelManager {
    * @return 0 on success, -ENOSPC if id >= MAX_CHANNELS or already registered
    */
   int registerChannel(uint32_t id, ChannelPrio priority, GpuQueueEmu* queue);
+  // Stage 4.6 (ADR-056): overload that records the context type (BROWN/GREEN).
+  // Default BROWN preserves backward compatibility for existing callers.
+  int registerChannel(uint32_t id, ChannelPrio priority, GpuQueueEmu* queue,
+                      ContextType context_type);
+
+  /** Set context_type on an already-registered channel (no-op if not registered). */
+  void setChannelContextType(uint32_t id, ContextType context_type);
 
   /**
    * Submit a batch to a channel. Overwrites any previous in-flight batch.
