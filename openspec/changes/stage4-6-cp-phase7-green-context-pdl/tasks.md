@@ -41,9 +41,9 @@
 
 - [x] 5.1 Add `GPU_OP_PDL_LAUNCH` enum value to `gpu_gpfifo_entry_type` in `plugins/gpu_driver/shared/gpu_types.h`
 - [x] 5.2 Add PDL payload struct: `{kernel_addr (u64), kernargs_gpu_va (u64), grid_x (u32), block_x (u32), signal_handle (u64), signal_value (u64)}`
-- [ ] 5.3 Add `pdl_nest_counter_` field to `HardwarePullerEmu` (init 0, increment/decrement per launch)
-- [ ] 5.4 Add `MAX_PDL_NEST=4` constant (mirroring `MAX_IB_NEST=4` from ADR-050)
-- [ ] 5.5 Implement PDL guard: `sim_pdl_launch` returns `-E2BIG` if `pdl_nest_counter_ >= MAX_PDL_NEST`
+- [x] 5.3 Add `pdl_nest_counter_` field to `HardwarePullerEmu` (init 0, increment/decrement per launch)
+- [x] 5.4 Add `MAX_PDL_NEST=4` constant (mirroring `MAX_IB_NEST=4` from ADR-050)
+- [x] 5.5 Implement PDL guard: `sim_pdl_launch` returns `-E2BIG` if `pdl_nest_counter_ >= MAX_PDL_NEST`
 - [ ] 5.6 Implement CPU-side rejection: `submitBatch` rejects direct `GPU_OP_PDL_LAUNCH` entries with `-EACCES` (PDL is internal only)
 
 ## 6. Puller PDL Dispatch

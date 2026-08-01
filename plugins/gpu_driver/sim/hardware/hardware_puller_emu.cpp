@@ -488,6 +488,59 @@ bool HardwarePullerEmu::processSemOp() {
   }
 }
 
+// ========== Programmatic Dependent Launch (Stage 4.6, ADR-056) ==========
+
+int HardwarePullerEmu::sim_pdl_launch(uint64_t kernel_addr, uint64_t kernargs_va,
+                                       uint32_t grid_x, uint32_t block_x,
+                                       uint64_t signal_handle, uint64_t signal_value) {
+  if (pdl_nest_counter_ >= MAX_PDL_NEST) {
+    return -E2BIG;  // T9.4: nest overflow
+  }
+  if (kernel_addr == 0) {
+    return -EFAULT;  // T9.5
+  }
+
+  // Construct child kernel dispatch entry from PDL payload.
+  // We re-use current_entry_'s storage as scratch — it's overwritten on next fetch.
+  gpu_gpfifo_entry child = current_entry_;
+  child.method = GPU_OP_LAUNCH_KERNEL;  // child = dispatch kernel
+  child.valid = 1;
+  // stage 4.6: PDL child kernel payload encoded in payload[] (see gpu_gpfifo_entry).
+  // For now we only carry the kernel address; full payload decode is deferred.
+  child.payload[0] = kernel_addr;
+  child.payload[1] = kernargs_va;
+  child.payload[2] = (uint64_t(grid_x) << 32) | uint64_t(block_x);
+
+  // Stage 4.6: child kernel + signal entry are appended to an internal PDL
+  // queue. The Puller FSM processes them inline (see processSemOp case
+  // GPU_OP_PDL_LAUNCH). For now we record them via the scheduler's enqueue.
+  if (scheduler_) {
+    scheduler_->enqueue_with_priority(child, EngineType::COMPUTE,
+                                       GPU_CHAN_PRI_LOW, current_channel_id_);
+  }
+
+  // Construct SEM_RELEASE entry for completion signal.
+  gpu_gpfifo_entry sig = current_entry_;
+  sig.method = GPU_OP_SEM_RELEASE;
+  sig.semaphore_va = signal_handle;
+  sig.semaphore_value = static_cast<uint32_t>(signal_value);
+  if (scheduler_) {
+    scheduler_->enqueue_with_priority(sig, EngineType::FIRMWARE,
+                                       GPU_CHAN_PRI_LOW, current_channel_id_);
+  }
+
+  ++pdl_nest_counter_;
+  return 0;
+}
+
+void HardwarePullerEmu::pdlNestDecrement() {
+  // Called from handleComplete when a child kernel dispatch completes.
+  // Mirrors ADR-050's IB nest decrement pattern.
+  if (pdl_nest_counter_ > 0) {
+    --pdl_nest_counter_;
+  }
+}
+
 void HardwarePullerEmu::processSemRelease() {
   if (current_entry_.method == GPU_OP_SEM_RELEASE) {
     auto writer = [this](u64 addr, u32 value) {
