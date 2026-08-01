@@ -29,8 +29,8 @@
 
 ## 4. Green Context HAL Operations
 
-- [ ] 4.1 Add `hal_green_context_create` fn-ptr to `struct gpu_hal_ops` (with `ctx`, `tsg_id`, `out_handle` parameters)
-- [ ] 4.2 Add `hal_green_context_destroy` fn-ptr to `struct gpu_hal_ops` (with `ctx`, `handle` parameters)
+- [x] 4.1 Add `hal_green_context_create` fn-ptr to `struct gpu_hal_ops` (with `ctx`, `tsg_id`, `out_handle` parameters)
+- [x] 4.2 Add `hal_green_context_destroy` fn-ptr to `struct gpu_hal_ops` (with `ctx`, `handle` parameters)
 - [ ] 4.3 Implement `hal_green_context_create` in `plugins/gpu_driver/hal/hal_mock.cpp` (mock GREEN context storage)
 - [ ] 4.4 Implement `hal_green_context_create` in `plugins/gpu_driver/hal/hal_user.cpp` (real driver stub)
 - [ ] 4.5 Implement `hal_green_context_destroy` in `hal_mock.cpp` + `hal_user.cpp`
