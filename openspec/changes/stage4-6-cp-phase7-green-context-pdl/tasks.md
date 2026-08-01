@@ -35,7 +35,7 @@
 - [x] 4.4 Implement `hal_green_context_create` in `plugins/gpu_driver/hal/hal_user.cpp` (real driver stub)
 - [x] 4.5 Implement `hal_green_context_destroy` in `hal_mock.cpp` + `hal_user.cpp`
 - [ ] 4.6 Add inline helper `hal_green_context_create(hal, tsg, &out)` and `hal_green_context_destroy(hal, h)` to gpu_hal.h
-- [ ] 4.7 Verify HAL boundary: `grep -rn '#include.*"sim/' plugins/gpu_driver/drv/` returns empty (ADR-023 enforce)
+- [x] 4.7 Verify HAL boundary: `grep -rn '#include.*"sim/' plugins/gpu_driver/drv/` returns empty (ADR-023 enforce)
 
 ## 5. PDL Infrastructure
 
@@ -65,7 +65,7 @@
 - [x] 7.4 Implement `hal_pdl_signal_completion` in `hal_mock.cpp` (delegate to sim timeline semaphore)
 - [x] 7.5 Implement both in `hal_user.cpp` (real driver stubs)
 - [ ] 7.6 Add inline helpers `hal_pdl_launch(...)` and `hal_pdl_signal_completion(...)` to gpu_hal.h
-- [ ] 7.7 Verify HAL boundary (ADR-023): no `sim/` includes in `drv/`
+- [x] 7.7 Verify HAL boundary (ADR-023): no `sim/` includes in `drv/`
 
 ## 8. Test: test_green_context_standalone
 
@@ -110,8 +110,8 @@
 - [ ] 11.1 Run full test suite: `ctest --output-on-failure` — all 125+2=127 tests PASS (no regression)
 - [ ] 11.2 Run sanitizer validation: `SANITIZER=asan-ubsan ./build.sh test` — green
 - [ ] 11.3 Run TSan: `CC=clang CXX=clang++ SANITIZER=tsan ./build.sh test` — green
-- [ ] 11.4 Verify HAL boundary enforce: `grep -rn '#include.*"sim/' plugins/gpu_driver/drv/` empty
-- [ ] 11.5 Verify HAL fn-ptr count: `grep -cE '^\s*int \(\*' plugins/gpu_driver/hal/gpu_hal.h` shows 31 (was 29 + 2)
+- [x] 11.4 Verify HAL boundary enforce: `grep -rn '#include.*"sim/' plugins/gpu_driver/drv/` empty
+- [x] 11.5 Verify HAL fn-ptr count: `grep -cE '^\s*int \(\*' plugins/gpu_driver/hal/gpu_hal.h` shows 31 (was 29 + 2)
 - [ ] 11.6 Update `docs/02_architecture/post-refactor-architecture.md` if HAL fn-ptr list is documented (29 → 31)
 - [ ] 11.7 Run `tools/docs-audit.sh --strict` — 53/53 PASS (no new failures)
 - [ ] 11.8 Update `openspec/changes/INDEX.md` total count after archive (was 23 completed, +1 = 24)
