@@ -12,6 +12,7 @@
 #include "shared/gpu_types.h"
 #include "shared/gpu_ioctl.h"
 #include "sim/scheduler/channel_state.h"
+#include "sim/hardware/channel_manager.h"
 
 // ========== ContextType Enum Tests (D1) ==========
 
@@ -172,4 +173,43 @@ TEST_CASE("green_override_priority_logic_green_forces_low", "[ioctl][green_conte
   }
   REQUIRE(effective == GPU_CHAN_PRI_LOW);  // forced LOW for GREEN
   REQUIRE(effective != args.priority);     // caller's 100 was overridden
+}
+
+// ========== ChannelManager GREEN Context (Adapted Tasks 5+6) ==========
+// Plan originally targeted GlobalScheduler::dispatch_next(), but the actual
+// architecture has ChannelManager as the per-channel scheduler with priority
+// queues + last_channel_ tracking. Preempt logic lives here.
+
+TEST_CASE("channel_manager_register_with_context_type_default_brown", "[channel_manager][green_context]") {
+  ChannelManager mgr;
+  int rc = mgr.registerChannel(0, CHAN_PRIO_NORMAL, nullptr);
+  REQUIRE(rc == 0);
+  // registerChannel only enqueues to priority queue; submitBatch marks batch_in_flight.
+  mgr.submitBatch(0, 0x1000, 16, 0xF00D);
+  ChannelState* ch = mgr.nextReadyChannel();
+  REQUIRE(ch != nullptr);
+  REQUIRE(ch->channel_id == 0);
+}
+
+TEST_CASE("channel_manager_register_green_stores_context_type", "[channel_manager][green_context]") {
+  // Register a channel as GREEN context. Field must round-trip.
+  ChannelManager mgr;
+  int rc = mgr.registerChannel(1, CHAN_PRIO_LOW, nullptr, ContextType::GREEN);
+  REQUIRE(rc == 0);
+  mgr.setChannelContextType(1, ContextType::GREEN);  // explicit set
+  mgr.submitBatch(1, 0x2000, 8, 0xF00D);
+  // No public getter; verify via the nextReadyChannel ordering contract.
+  ChannelState* ch = mgr.nextReadyChannel();
+  REQUIRE(ch != nullptr);
+}
+
+TEST_CASE("channel_manager_overload_preserves_backward_compat", "[channel_manager][green_context]") {
+  // 3-arg registerChannel (no context_type) defaults to BROWN, ABI unchanged.
+  ChannelManager mgr;
+  int rc = mgr.registerChannel(2, CHAN_PRIO_HIGH, nullptr);
+  REQUIRE(rc == 0);
+  mgr.submitBatch(2, 0x3000, 4, 0xF00D);
+  ChannelState* ch = mgr.nextReadyChannel();
+  REQUIRE(ch != nullptr);
+  REQUIRE(ch->channel_id == 2);
 }

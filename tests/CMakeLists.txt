@@ -851,11 +851,13 @@ add_executable(test_context_type_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_context_type_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
+target_link_libraries(test_context_type_standalone PRIVATE gpu_sim)
 target_include_directories(test_context_type_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
     ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME test_context_type_standalone COMMAND $<TARGET_FILE:test_context_type_standalone>)
 set_tests_properties(test_context_type_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
