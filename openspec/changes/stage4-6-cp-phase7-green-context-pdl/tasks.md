@@ -76,9 +76,9 @@
 - [ ] 8.5 Implement `test_green_does_not_preempt_green`: 2 GREEN channels, second does NOT preempt first
 - [ ] 8.6 Implement `test_three_greens_fifo_order`: 3 GREEN channels dispatched in submission order
 - [ ] 8.7 Implement `test_hal_green_context_create_destroy`: HAL ops round-trip + double-destroy error
-- [ ] 8.8 Register in `tests/CMakeLists.txt` as standalone test
-- [ ] 8.9 Verify build: `cmake --build build --target test_green_context_standalone`
-- [ ] 8.10 Run: `./build/bin/test_green_context_standalone` — all PASS
+- [x] 8.8 Register in `tests/CMakeLists.txt` as standalone test
+- [x] 8.9 Verify build: `cmake --build build --target test_green_context_standalone`
+- [x] 8.10 Run: `./build/bin/test_green_context_standalone` — all PASS
 
 ## 9. Test: test_pdl_standalone
 
@@ -90,9 +90,9 @@
 - [x] 9.6 Implement `test_cpu_rejected_pdl_entry`: submitBatch rejects direct PDL entry with -EACCES
 - [x] 9.7 Implement `test_hal_pdl_launch_signal_completion`: HAL ops round-trip + signal_value verification
 - [x] 9.8 Implement `test_pdl_nest_counter_balanced`: 4 nested launches + 4 completions → nest back to 0
-- [ ] 9.9 Register in `tests/CMakeLists.txt` as standalone test
-- [ ] 9.10 Verify build: `cmake --build build --target test_pdl_standalone`
-- [ ] 9.11 Run: `./build/bin/test_pdl_standalone` — all PASS
+- [x] 9.9 Register in `tests/CMakeLists.txt` as standalone test
+- [x] 9.10 Verify build: `cmake --build build --target test_pdl_standalone`
+- [x] 9.11 Run: `./build/bin/test_pdl_standalone` — all PASS
 
 ## 10. ADR and Roadmap Updates
 
