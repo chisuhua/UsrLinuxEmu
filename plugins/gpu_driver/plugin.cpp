@@ -11,6 +11,8 @@
 #include "sim/hardware/doorbell_emu.h"
 #include "sim/hardware/hardware_puller_emu.h"
 #include "sim/scheduler/global_scheduler.h"
+#include "sim/vram_store.h"
+#include "sim/dma_coherent_pool.h"
 #include "drv/kfd/kfd_module.h"
 
 #include <kernel/uvm/mm_shim.h>
@@ -81,6 +83,16 @@ static int plugin_init_internal() {
   if (kfd_ret != 0) {
     std::cerr << "[GpuPlugin] Failed to init KFD subsystem: " << kfd_ret << "\n";
     return kfd_ret;
+  }
+
+  // Stage 4.1: process-global sim singletons. Composition root owns these
+  // (not GpgpuDevice ctor) because they are process-lifetime, not per-device.
+  if (!g_vram_store.init(256)) {
+    std::cerr << "[GpuPlugin] WARN: g_vram_store.init(256) failed "
+              << "(BAR support disabled)\n";
+  }
+  if (!g_dma_pool.init()) {
+    std::cerr << "[GpuPlugin] WARN: g_dma_pool.init() failed\n";
   }
 
   hal_holder.puller->start();
