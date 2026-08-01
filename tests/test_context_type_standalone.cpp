@@ -213,3 +213,107 @@ TEST_CASE("channel_manager_overload_preserves_backward_compat", "[channel_manage
   REQUIRE(ch != nullptr);
   REQUIRE(ch->channel_id == 2);
 }
+
+// ========== GREEN Preemption Rules (Tasks 5+6 integration) ==========
+// nextReadyChannel() returns the currently-running channel (last_channel_)
+// until yieldChannel() is called. For multi-channel scheduling, the test
+// must yield after each dispatch. The pre-pass only fires when last_channel_
+// is GREEN with batch_in_flight still true AND a higher-priority BROWN is pending.
+
+TEST_CASE("brown_pending_preempts_running_green", "[channel_manager][preempt]") {
+  // T8.3: GREEN running, then BROWN pending — nextReadyChannel pre-pass
+  // detects BROWN in HIGH queue and preempt GREEN.
+  ChannelManager mgr;
+  mgr.registerChannel(3, CHAN_PRIO_LOW, nullptr, ContextType::GREEN);
+  mgr.registerChannel(4, CHAN_PRIO_HIGH, nullptr, ContextType::BROWN);
+  mgr.submitBatch(3, 0x3000, 8, 0xF00D);   // GREEN submitted first
+
+  // First call: dispatches ch3 (GREEN, the only batch_in_flight)
+  ChannelState* first = mgr.nextReadyChannel();
+  REQUIRE(first != nullptr);
+  REQUIRE(first->channel_id == 3);
+
+  // Now submit BROWN while GREEN is "running" (last_channel_=3, GREEN).
+  mgr.submitBatch(4, 0x4000, 16, 0xF00D);
+
+  // Second call: pre-pass sees ch4 (BROWN, HIGH) pending, last_channel_=3 GREEN
+  // -> preempt ch3, then return ch4.
+  ChannelState* second = mgr.nextReadyChannel();
+  REQUIRE(second != nullptr);
+  REQUIRE(second->channel_id == 4);  // BROWN won the preemption
+}
+
+TEST_CASE("green_running_does_not_get_preempted_by_another_green", "[channel_manager][preempt]") {
+  // T8.5: GREEN running + GREEN pending -> NO preempt (D3 rule).
+  // Both at LOW priority, both GREEN — the pre-pass should not fire because
+  // no BROWN is pending in higher-priority queues.
+  ChannelManager mgr;
+  mgr.registerChannel(5, CHAN_PRIO_LOW, nullptr, ContextType::GREEN);
+  mgr.registerChannel(6, CHAN_PRIO_LOW, nullptr, ContextType::GREEN);
+  mgr.submitBatch(5, 0x5000, 4, 0xF00D);
+
+  ChannelState* first = mgr.nextReadyChannel();
+  REQUIRE(first != nullptr);
+  REQUIRE(first->channel_id == 5);
+
+  // Submit second GREEN while first is running.
+  mgr.submitBatch(6, 0x6000, 4, 0xF00D);
+
+  // Second call: pre-pass checks for BROWN in HIGH/NORMAL queues — none,
+  // so no preempt. Returns ch5 again (still batch_in_flight).
+  ChannelState* second = mgr.nextReadyChannel();
+  REQUIRE(second != nullptr);
+  // ch5 still running (not preempted by ch6 GREEN)
+  REQUIRE(second->channel_id == 5);
+
+  // Yield ch5, then nextReadyChannel should return ch6 (FIFO within LOW).
+  mgr.yieldChannel(5);
+  ChannelState* third = mgr.nextReadyChannel();
+  REQUIRE(third != nullptr);
+  REQUIRE(third->channel_id == 6);  // FIFO order, not preempted
+}
+
+TEST_CASE("three_greens_fifo_order_within_low_priority", "[channel_manager][preempt]") {
+  // T8.6: 3 GREEN channels dispatched in FIFO submission order.
+  ChannelManager mgr;
+  mgr.registerChannel(7, CHAN_PRIO_LOW, nullptr, ContextType::GREEN);
+  mgr.registerChannel(8, CHAN_PRIO_LOW, nullptr, ContextType::GREEN);
+  mgr.registerChannel(9, CHAN_PRIO_LOW, nullptr, ContextType::GREEN);
+
+  std::vector<int> order;
+  for (int cid = 7; cid <= 9; cid++) {
+    mgr.submitBatch(cid, 0x7000 + (cid - 7) * 0x1000, 4, 0xF00D);
+    ChannelState* ch = mgr.nextReadyChannel();
+    REQUIRE(ch != nullptr);
+    order.push_back(static_cast<int>(ch->channel_id));
+    mgr.yieldChannel(cid);  // release before next submit
+  }
+  REQUIRE(order.size() == 3);
+  // Within same priority, FIFO order is preserved (no preemption among GREENs)
+  REQUIRE(order[0] == 7);
+  REQUIRE(order[1] == 8);
+  REQUIRE(order[2] == 9);
+}
+
+TEST_CASE("brown_does_not_preempt_other_browns", "[channel_manager][preempt]") {
+  // T8.2 negative: BROWN pending + BROWN running -> NO preempt (same-tier rule).
+  ChannelManager mgr;
+  mgr.registerChannel(10, CHAN_PRIO_NORMAL, nullptr, ContextType::BROWN);
+  mgr.registerChannel(11, CHAN_PRIO_NORMAL, nullptr, ContextType::BROWN);
+  mgr.submitBatch(10, 0xA000, 4, 0xF00D);
+
+  ChannelState* first = mgr.nextReadyChannel();
+  REQUIRE(first != nullptr);
+  REQUIRE(first->channel_id == 10);  // first dispatched
+
+  mgr.submitBatch(11, 0xB000, 4, 0xF00D);
+  ChannelState* second = mgr.nextReadyChannel();
+  REQUIRE(second != nullptr);
+  // ch10 still running (not preempted by ch11 BROWN)
+  REQUIRE(second->channel_id == 10);
+
+  mgr.yieldChannel(10);
+  ChannelState* third = mgr.nextReadyChannel();
+  REQUIRE(third != nullptr);
+  REQUIRE(third->channel_id == 11);
+}
