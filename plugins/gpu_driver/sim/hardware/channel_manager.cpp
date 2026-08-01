@@ -10,6 +10,8 @@
 #include <cerrno>
 #include <cstring>
 
+#include "mqd_state.h"  // ADR-046 mqd_state_preempt/resume for GREEN context preemption
+
 ChannelManager::ChannelManager() {
   for (uint32_t i = 0; i < MAX_CHANNELS; i++) {
     channels_[i].channel_id = i;
@@ -18,6 +20,11 @@ ChannelManager::ChannelManager() {
 
 int ChannelManager::registerChannel(uint32_t id, ChannelPrio priority,
                                      GpuQueueEmu* queue) {
+  return registerChannel(id, priority, queue, ContextType::BROWN);
+}
+
+int ChannelManager::registerChannel(uint32_t id, ChannelPrio priority,
+                                     GpuQueueEmu* queue, ContextType context_type) {
   if (id >= MAX_CHANNELS) {
     return -ENOSPC;
   }
@@ -32,9 +39,18 @@ int ChannelManager::registerChannel(uint32_t id, ChannelPrio priority,
   channels_[id].total_entries = 0;
   channels_[id].pending_fence_id = 0;
   channels_[id].priority = priority;
+  channels_[id].context_type = context_type;
   pri_queues_[priority].push(id);
   active_count_++;
   return 0;
+}
+
+void ChannelManager::setChannelContextType(uint32_t id, ContextType context_type) {
+  if (id >= MAX_CHANNELS) return;
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (registered_[id]) {
+    channels_[id].context_type = context_type;
+  }
 }
 
 void ChannelManager::submitBatch(uint32_t channel_id, uint64_t gpfifo_addr,
@@ -59,6 +75,36 @@ ChannelState* ChannelManager::nextReadyChannel() {
   std::lock_guard<std::mutex> lock(mutex_);
   if (active_count_ == 0) {
     return nullptr;
+  }
+
+  // Stage 4.6 (ADR-056 D2): BROWN pending + GREEN running -> preempt GREEN.
+  // Implemented as a "pre-pass" that scans higher-priority queues and, if any
+  // pending BROWN exists while last_channel_ is GREEN, preempt the GREEN via
+  // mqd_state_preempt (ADR-046) and reset its batch_in_flight so it can be
+  // re-dispatched after the BROWN completes.
+  if (last_channel_ < MAX_CHANNELS && registered_[last_channel_] &&
+      channels_[last_channel_].context_type == ContextType::GREEN &&
+      channels_[last_channel_].batch_in_flight) {
+    bool green_preempted = false;
+    for (uint32_t pri = CHAN_PRIO_HIGH; pri <= CHAN_PRIO_NORMAL && !green_preempted; pri++) {
+      // std::queue is not iterable; copy + scan, but don't mutate the real queue.
+      std::queue<uint32_t> snapshot = pri_queues_[pri];
+      while (!snapshot.empty() && !green_preempted) {
+        uint32_t candidate = snapshot.front();
+        snapshot.pop();
+        if (candidate != last_channel_ &&
+            channels_[candidate].batch_in_flight &&
+            channels_[candidate].context_type == ContextType::BROWN) {
+          // BROWN pending — preempt GREEN.
+          if (mqd_cache_[last_channel_] != nullptr) {
+            mqd_state_preempt(mqd_cache_[last_channel_]);
+          }
+          channels_[last_channel_].batch_in_flight = false;
+          pri_queues_[channels_[last_channel_].priority].push(last_channel_);
+          green_preempted = true;
+        }
+      }
+    }
   }
 
   // Check if starvation threshold reached and force LOW dequeue

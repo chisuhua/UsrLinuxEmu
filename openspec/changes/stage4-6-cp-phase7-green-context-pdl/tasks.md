@@ -12,16 +12,16 @@
 
 ## 2. Dispatch-level Preemption Integration
 
-- [ ] 2.1 Add preemption trigger in `GlobalScheduler::dispatch_next()` (BROWN pending + GREEN running → preempt GREEN)
-- [ ] 2.2 Verify trigger fires only when BROWN priority >= GREEN priority + 1 tier (no preempt BROWN by same BROWN)
-- [ ] 2.3 Reuse `mqd_state_preempt()` from ADR-046 (PreemptContext save/restore)
+- [x] 2.1 Add preemption trigger in `GlobalScheduler::dispatch_next()` (BROWN pending + GREEN running → preempt GREEN)
+- [x] 2.2 Verify trigger fires only when BROWN priority >= GREEN priority + 1 tier (no preempt BROWN by same BROWN)
+- [x] 2.3 Reuse `mqd_state_preempt()` from ADR-046 (PreemptContext save/restore)
 - [ ] 2.4 Reuse `mqd_state_resume()` to restore GREEN after BROWN completes
 - [ ] 2.5 Verify: GREEN preempt saves correct gpfifo position (validated by test_green_context_standalone)
 - [ ] 2.6 Verify: GREEN resume restores gpfifo position correctly (continues from saved index)
 
 ## 3. GREEN Channel Non-Preemption Rule
 
-- [ ] 3.1 Add explicit check in `GlobalScheduler::dispatch_next()`: skip preempt if target is also GREEN
+- [x] 3.1 Add explicit check in `GlobalScheduler::dispatch_next()`: skip preempt if target is also GREEN
 - [ ] 3.2 Add test scenario: 2 GREEN channels, second submission does NOT preempt first
 - [ ] 3.3 Verify: GREEN channels follow normal priority/FIFO ordering
 - [ ] 3.4 Add test scenario: 3 GREEN channels dispatched in FIFO order (no preemptions)
