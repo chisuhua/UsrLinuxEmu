@@ -48,10 +48,10 @@
 
 ## 6. Puller PDL Dispatch
 
-- [ ] 6.1 In `HardwarePullerEmu::fetchStage()`, recognize `GPU_OP_PDL_LAUNCH` entry
-- [ ] 6.2 Construct child kernel dispatch entry from PDL payload (`kernel_addr`, `kernargs_va`, `grid/block`)
-- [ ] 6.3 Construct `GPU_OP_SEM_RELEASE` entry using PDL `signal_handle` + `signal_value`
-- [ ] 6.4 Append both entries to current batch tail (in-memory vector)
+- [x] 6.1 In `HardwarePullerEmu::fetchStage()`, recognize `GPU_OP_PDL_LAUNCH` entry
+- [x] 6.2 Construct child kernel dispatch entry from PDL payload (`kernel_addr`, `kernargs_va`, `grid/block`)
+- [x] 6.3 Construct `GPU_OP_SEM_RELEASE` entry using PDL `signal_handle` + `signal_value`
+- [x] 6.4 Append both entries to current batch tail (in-memory vector)
 - [ ] 6.5 Increment `pdl_nest_counter_` after append
 - [ ] 6.6 Decrement `pdl_nest_counter_` after child kernel completes (in `completeStage()`)
 - [ ] 6.7 Verify: child kernel executes after PDL append (validated by test_pdl_standalone)

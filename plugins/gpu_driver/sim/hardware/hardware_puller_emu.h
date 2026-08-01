@@ -279,4 +279,5 @@ class HardwarePullerEmu {
 
   // ========== PDL Nest Counter (Stage 4.6, ADR-056) ==========
   int pdl_nest_counter_{0};
+  int last_pdl_error_{0};  // last PDL error code (0 = none); test-readable
 };
