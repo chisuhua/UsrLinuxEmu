@@ -2,8 +2,8 @@
 
 ## 1. Green Context Infrastructure
 
-- [ ] 1.1 Add `ContextType` enum to `plugins/gpu_driver/shared/gpu_types.h` (`BROWN=0`, `GREEN=1`)
-- [ ] 1.2 Add `context_type` field to `MQD` struct (default `BROWN`)
+- [x] 1.1 Add `ContextType` enum to `plugins/gpu_driver/shared/gpu_types.h` (`BROWN=0`, `GREEN=1`)
+- [x] 1.2 Add `context_type` field to `MQD` struct (default `BROWN`)
 - [ ] 1.3 Add `context_type` field to `ChannelState` (mirroring MQD for scheduler access)
 - [ ] 1.4 Update `gpu_create_queue` API to accept `context_type` parameter (with default BROWN)
 - [ ] 1.5 Implement GREEN priority override in queue creation (force LOW if context_type=GREEN)

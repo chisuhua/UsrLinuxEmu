@@ -845,6 +845,20 @@ target_include_directories(test_preemption_standalone PRIVATE
 add_test(NAME test_preemption_standalone COMMAND $<TARGET_FILE:test_preemption_standalone>)
 set_tests_properties(test_preemption_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+# Stage 4.6: Green Context + PDL — Task 1 regression guard (ContextType enum + MQD.context_type field)
+# Cross-ABI with TaskRunner via shared/mqd.h symlink (ADR-035 §Rule 5.1)
+add_executable(test_context_type_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_context_type_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_include_directories(test_context_type_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_context_type_standalone COMMAND $<TARGET_FILE:test_context_type_standalone>)
+set_tests_properties(test_context_type_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 # Task 4: CP Interrupt (ADR-048) - TDD
 add_executable(test_cp_interrupt_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_cp_interrupt_standalone.cpp
