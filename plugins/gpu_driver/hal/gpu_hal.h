@@ -147,6 +147,24 @@ struct gpu_hal_ops {
    * Returns 0 on success, -EINVAL if handle invalid. */
   int (*hal_green_context_destroy)(void *ctx, uint64_t handle);
 
+  /* Stage 4.6 (ADR-056) — Programmatic Dependent Launch.
+   * hal_pdl_launch: device-side kernel launch (the Puller calls this when
+   * it sees a GPU_OP_PDL_LAUNCH entry).
+   * @ctx: HAL context
+   * @kernel_addr, @kernargs_va, @grid_x, @block_x: dispatch params
+   * @out_signal_handle: [out] timeline semaphore handle to signal on completion
+   * Returns 0 on success, -ENOSYS if driver doesn't support PDL. */
+  int (*hal_pdl_launch)(void *ctx, uint64_t kernel_addr, uint64_t kernargs_va,
+                        uint32_t grid_x, uint32_t block_x,
+                        uint64_t *out_signal_handle);
+
+  /* hal_pdl_signal_completion: signal the PDL completion semaphore.
+   * @ctx: HAL context
+   * @signal_handle: timeline semaphore handle from hal_pdl_launch
+   * @value: monotonic increment value (must be > current)
+   * Returns 0 on success, -EINVAL if handle invalid. */
+  int (*hal_pdl_signal_completion)(void *ctx, uint64_t signal_handle, uint64_t value);
+
   /* hal_sem_destroy: destroy a semaphore.
    * @handle: semaphore handle
    * Returns 0 on success, -EINVAL if handle invalid. */
