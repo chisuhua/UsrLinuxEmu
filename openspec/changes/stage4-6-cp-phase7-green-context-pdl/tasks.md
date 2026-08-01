@@ -61,9 +61,9 @@
 
 - [x] 7.1 Add `hal_pdl_launch` fn-ptr to `struct gpu_hal_ops` (kernel_addr, kernargs_va, grid_x, block_x, out_signal_handle)
 - [x] 7.2 Add `hal_pdl_signal_completion` fn-ptr (signal_handle, value)
-- [ ] 7.3 Implement `hal_pdl_launch` in `hal_mock.cpp` (delegate to sim_pdl_launch, increment nest counter)
-- [ ] 7.4 Implement `hal_pdl_signal_completion` in `hal_mock.cpp` (delegate to sim timeline semaphore)
-- [ ] 7.5 Implement both in `hal_user.cpp` (real driver stubs)
+- [x] 7.3 Implement `hal_pdl_launch` in `hal_mock.cpp` (delegate to sim_pdl_launch, increment nest counter)
+- [x] 7.4 Implement `hal_pdl_signal_completion` in `hal_mock.cpp` (delegate to sim timeline semaphore)
+- [x] 7.5 Implement both in `hal_user.cpp` (real driver stubs)
 - [ ] 7.6 Add inline helpers `hal_pdl_launch(...)` and `hal_pdl_signal_completion(...)` to gpu_hal.h
 - [ ] 7.7 Verify HAL boundary (ADR-023): no `sim/` includes in `drv/`
 
