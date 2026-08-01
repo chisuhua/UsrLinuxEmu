@@ -55,7 +55,8 @@ typedef struct {
 
   // State (4 bytes) + reserved for future expansion (8 bytes)
   uint32_t state;          // MQD_STATE_IDLE / ACTIVE / PREEMPTED
-  uint64_t _reserved;      // future expansion (ADR-045 priority, ADR-046 preempt detail)
+  uint8_t  context_type;   // Stage 4.6 (ADR-056): ContextType (BROWN=0, GREEN=1)
+  uint8_t  _reserved[7];   // remaining bytes kept for future expansion
 }  __attribute__((packed)) MQD;
 
 // Compile-time size assertion (must be power-of-2 aligned for BAR mapping)

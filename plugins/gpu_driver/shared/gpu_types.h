@@ -80,6 +80,12 @@ struct gpu_gpfifo_entry {
 /* Indirect Buffer reference (Stage 4.4) */
 #define MAX_IB_NEST 4  /* Maximum IB JUMP nesting depth */
 
+/* Context Type (Stage 4.6: Green Context, ADR-056) */
+enum class ContextType : uint8_t {
+  BROWN = 0, /* Normal priority, preemptable only by higher-priority BROWN */
+  GREEN = 1, /* Low-priority, preemptable by any pending BROWN */
+};
+
 /**
  * gpu_ib_ref - Indirect Buffer reference descriptor (Stage 4.4: IB JUMP)
  *
