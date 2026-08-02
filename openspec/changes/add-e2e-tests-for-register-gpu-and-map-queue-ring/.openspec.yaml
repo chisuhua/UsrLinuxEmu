@@ -1,0 +1,4 @@
+name: add-e2e-tests-for-register-gpu-and-map-queue-ring
+priority: P1
+skip_specs: true
+created: 2026-08-02

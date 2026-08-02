@@ -1,0 +1,13 @@
+roadmap:
+  phase: "default"
+  category: "core-test"
+  priority: "P2"
+  change_type: "functional"
+  gate_checklist: []
+  cross_phase_deps: []
+  manual_deps: []
+  manual_blocks: []
+  parent_feature: null
+  category_validation:
+    valid: true
+    reason: ""

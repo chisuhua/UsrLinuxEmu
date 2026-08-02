@@ -1,0 +1,4 @@
+name: add-abi-dispatch-consistency-test
+priority: P2
+skip_specs: true
+created: 2026-08-02
