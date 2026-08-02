@@ -1,55 +1,129 @@
 {
-  "plan_complete_at": "2026-07-30T07:43:51.115396+00:00",
-  "active_changes": 2,
+  "version": "2",
+  "plan_complete_at": "2026-08-02T17:17:25.559849+00:00",
+  "plan_phase": "guide-plan",
+  "previous_phase": "guide-design",
+  "design_complete_at": "2026-08-02T16:46:47.535292+00:00",
+  "design_handoff_path": ".rddf/state/.design-handoff.json",
+  "arch_complete_at": "2026-07-29T03:57:18+00:00",
+  "arch_handoff_path": ".rddf/state/.arch-handoff.json",
+  "active_changes": 4,
   "all_artifacts_committed": true,
-  "ship_started_at": "2026-07-31T11:57:00+00:00",
-  "current_change": "stage4-5-cp-phase6-preemption-timeline-sem-gaps",
+  "openspec_validate_passed": true,
+  "openspec_validate_path": ".rddf/state/openspec-validate.json",
+  "deps_analysis_path": ".rddf/state/.deps-output.md",
+  "iteration_json_path": ".rddf/state/iteration.json",
+  "candidates_source": "proposal-approved.md (IOCTL 端到端测试完备性审计 batch)",
+  "next_phase": "guide-ship",
+  "recommended_execution_order": [
+    "Wave 0 (P0 prerequisite): wire-mmu-fw-callback-ioctls-to-active-dispatch",
+    "Wave 1 (P1/P1/P2 parallel): add-e2e-tests-for-register-gpu-and-map-queue-ring",
+    "Wave 1 (P1/P1/P2 parallel): strengthen-semantic-assertions-for-destroy-va-space-and-query-queue",
+    "Wave 1 (P1/P1/P2 parallel): add-abi-dispatch-consistency-test"
+  ],
   "execution_mode_decisions": {
-    "stage4-5-cp-phase6-preemption-engine-finish": {
+    "wire-mmu-fw-callback-ioctls-to-active-dispatch": {
       "mode": "worktree",
-      "reason": "\u5927\u6539\u52a8 + \u9700\u8981\u9694\u79bb",
+      "reason": "test-only changes allow direct commit; wire-mfw impl change requires isolation per rdd-workflow policy",
       "confidence": "high",
       "details": {
-        "file_count": 0,
-        "task_count": 42,
-        "is_risky": false,
-        "change_size": "large",
-        "has_conflicts": false,
+        "is_risky": true,
+        "change_size": "medium",
         "has_dependencies": true,
         "is_independent": false
       }
     },
-    "stage4-5-cp-phase6-predication-aql": {
+    "add-e2e-tests-for-register-gpu-and-map-queue-ring": {
       "mode": "worktree",
-      "reason": "\u5927\u6539\u52a8 + \u9700\u8981\u9694\u79bb",
+      "reason": "test-only changes allow direct commit; wire-mfw impl change requires isolation per rdd-workflow policy",
       "confidence": "high",
       "details": {
-        "file_count": 0,
-        "task_count": 40,
         "is_risky": false,
-        "change_size": "large",
-        "has_conflicts": false,
-        "has_dependencies": true,
-        "is_independent": false
+        "change_size": "small",
+        "has_dependencies": false,
+        "is_independent": true
       }
     },
-    "stage4-5-cp-phase6-preemption-timeline-sem-gaps": {
+    "strengthen-semantic-assertions-for-destroy-va-space-and-query-queue": {
       "mode": "worktree",
-      "reason": "\u5927\u6539\u52a8 + \u9700\u8981\u9694\u79bb",
+      "reason": "test-only changes allow direct commit; wire-mfw impl change requires isolation per rdd-workflow policy",
       "confidence": "high",
       "details": {
-        "file_count": 0,
-        "task_count": 81,
         "is_risky": false,
-        "change_size": "large",
-        "has_conflicts": false,
-        "has_dependencies": true,
-        "is_independent": false
+        "change_size": "small",
+        "has_dependencies": false,
+        "is_independent": true
+      }
+    },
+    "add-abi-dispatch-consistency-test": {
+      "mode": "worktree",
+      "reason": "test-only changes allow direct commit; wire-mfw impl change requires isolation per rdd-workflow policy",
+      "confidence": "high",
+      "details": {
+        "is_risky": false,
+        "change_size": "small",
+        "has_dependencies": false,
+        "is_independent": true
       }
     }
   },
-  "archived_at": "2026-07-30T14:23:11.996581+00:00",
-  "archived_changes": [
-    "stage4-5-cp-phase6-preemption-engine-finish"
-  ]
+  "changes": [
+    {
+      "name": "wire-mmu-fw-callback-ioctls-to-active-dispatch",
+      "priority": "P0",
+      "phase": "stage-4.7",
+      "category": "core-impl",
+      "parallel_group": 0,
+      "source": "IOCTL 端到端测试完备性审计 (2026-08-02)"
+    },
+    {
+      "name": "add-e2e-tests-for-register-gpu-and-map-queue-ring",
+      "priority": "P1",
+      "phase": "stage-4.7",
+      "category": "core-test",
+      "parallel_group": 1,
+      "source": "IOCTL 端到端测试完备性审计 (2026-08-02)"
+    },
+    {
+      "name": "strengthen-semantic-assertions-for-destroy-va-space-and-query-queue",
+      "priority": "P1",
+      "phase": "stage-4.7",
+      "category": "core-test",
+      "parallel_group": 1,
+      "source": "IOCTL 端到端测试完备性审计 (2026-08-02)"
+    },
+    {
+      "name": "add-abi-dispatch-consistency-test",
+      "priority": "P2",
+      "phase": "stage-4.7",
+      "category": "core-test",
+      "parallel_group": 1,
+      "source": "IOCTL 端到端测试完备性审计 (2026-08-02)"
+    }
+  ],
+  "summary": {
+    "total_proposals_consumed": 4,
+    "by_priority": {
+      "P0": 1,
+      "P1": 2,
+      "P2": 1
+    },
+    "by_category": {
+      "core-impl": 1,
+      "core-test": 3
+    },
+    "by_wave": {
+      "Wave 0 (P0 prerequisite)": 1,
+      "Wave 1 (P1/P1/P2 parallel)": 3
+    },
+    "true_file_conflicts": 0,
+    "shared_adr_refs": [
+      "ADR-018",
+      "ADR-023",
+      "ADR-024",
+      "ADR-036",
+      "ADR-017"
+    ]
+  },
+  "notes": "plan-done 2026-08-02 17:30 — consumed 4 newly-approved proposals from design-handoff 2026-08-02 16:46 (IOCTL 端到端测试完备性审计 batch). All 4 changes validate clean via openspec CLI 1.4.1. Recommended ship order: Wave 0 (P0 wire-mfw alone, sets baseline) → Wave 1 (3 tests in parallel). skills/ at repo root remains untracked (misplaced rdd-workflow skill-pack, 2.9M, not part of this plan)."
 }
