@@ -1,6 +1,38 @@
 {
-  "design_complete_at": "2026-07-31T15:50:35.202910+00:00",
-  "proposals_reviewed": 1,
-  "all_proposals_have_decision": true,
-  "version": 1
+  "design_done": true,
+  "completed_at": "2026-08-02T16:46:47.535292+00:00",
+  "proposals_reviewed": [
+    {
+      "name": "wire-mmu-fw-callback-ioctls-to-active-dispatch",
+      "priority": "P0",
+      "source": "IOCTL \u7aef\u5230\u7aef\u6d4b\u8bd5\u5b8c\u5907\u6027\u5ba1\u8ba1 (2026-08-02)",
+      "decision": "approved",
+      "approver": "Arch Team"
+    },
+    {
+      "name": "add-e2e-tests-for-register-gpu-and-map-queue-ring",
+      "priority": "P1",
+      "source": "IOCTL \u7aef\u5230\u7aef\u6d4b\u8bd5\u5b8c\u5907\u6027\u5ba1\u8ba1 (2026-08-02)",
+      "decision": "approved",
+      "approver": "Arch Team"
+    },
+    {
+      "name": "strengthen-semantic-assertions-for-destroy-va-space-and-query-queue",
+      "priority": "P1",
+      "source": "IOCTL \u7aef\u5230\u7aef\u6d4b\u8bd5\u5b8c\u5907\u6027\u5ba1\u8ba1 (2026-08-02)",
+      "decision": "approved",
+      "approver": "Arch Team"
+    },
+    {
+      "name": "add-abi-dispatch-consistency-test",
+      "priority": "P2",
+      "source": "IOCTL \u7aef\u5230\u7aef\u6d4b\u8bd5\u5b8c\u5907\u6027\u5ba1\u8ba1 (2026-08-02)",
+      "decision": "approved",
+      "approver": "Arch Team"
+    }
+  ],
+  "approved_count": 4,
+  "rejected_count": 0,
+  "deferred_count": 0,
+  "next_phase": "guide-plan"
 }
