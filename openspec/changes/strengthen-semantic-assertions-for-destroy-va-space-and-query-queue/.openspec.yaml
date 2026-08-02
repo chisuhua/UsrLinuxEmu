@@ -1,0 +1,4 @@
+name: strengthen-semantic-assertions-for-destroy-va-space-and-query-queue
+priority: P1
+skip_specs: true
+created: 2026-08-02

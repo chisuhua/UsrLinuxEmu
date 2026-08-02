@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated_at": "2026-07-31T16:45:00+00:00",
+  "updated_at": "2026-08-02T17:09:34.992947+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -67,6 +67,38 @@
       "parent_feature": "stage4-5-phase6-gpu-cp",
       "manual_deps": null,
       "manual_blocks": null
+    },
+    {
+      "added_at": "2026-08-02T17:03:57.658170+00:00",
+      "name": "wire-mmu-fw-callback-ioctls-to-active-dispatch",
+      "status": "proposed",
+      "phase": "stage-4.7",
+      "category": "core-impl",
+      "priority": "P0"
+    },
+    {
+      "added_at": "2026-08-02T17:03:58.531425+00:00",
+      "name": "add-e2e-tests-for-register-gpu-and-map-queue-ring",
+      "status": "proposed",
+      "phase": "stage-4.7",
+      "category": "core-test",
+      "priority": "P1"
+    },
+    {
+      "added_at": "2026-08-02T17:03:59.439920+00:00",
+      "name": "strengthen-semantic-assertions-for-destroy-va-space-and-query-queue",
+      "status": "proposed",
+      "phase": "stage-4.7",
+      "category": "core-test",
+      "priority": "P1"
+    },
+    {
+      "added_at": "2026-08-02T17:04:00.317319+00:00",
+      "name": "add-abi-dispatch-consistency-test",
+      "status": "proposed",
+      "phase": "stage-4.7",
+      "category": "core-test",
+      "priority": "P2"
     }
   ]
 }
