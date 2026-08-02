@@ -39,19 +39,10 @@ System C IOCTL 端到端测试完备性审计（2026-08-02） 发现 `wire-mmu-f
 
 ## Capabilities
 
-### New Capabilities
-
-- `dispatch-consistency`: System C IOCTL 端到端测试完备性审计（2026-08-02） — 第一段实施
-
 ### Modified Capabilities
 
-`ioctl-dispatch-consistency`: System C IOCTL 端到端测试完备性审计（2026-08-02） 中识别的能力缺口
-  - 修复方向: `plugins/gpu_driver/drv/gpgpu_device.h:26` `kNumIoctls` 由 36 改为 38
+- `ioctl-dispatch-completeness`: 派发表 kNumIoctls 同步至 ABI 头（38 项）+ handler 转发至 kfd_sim_bridge
 
 ## Impact
 
 - `test_register_cb_ioctl_standalone.cpp`
-
-## Dependencies (out of scope)
-
-本提案不修改 ABI 头（`plugins/gpu_driver/shared/gpu_ioctl.h`），仅活跃派发表变化。

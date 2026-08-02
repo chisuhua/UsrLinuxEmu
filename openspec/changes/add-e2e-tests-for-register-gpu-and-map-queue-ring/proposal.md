@@ -39,16 +39,11 @@ System C IOCTL 端到端测试完备性审计（2026-08-02） 发现 `add-e2e-te
 
 ## Capabilities
 
-### Modified Capabilities
+### New Capabilities
 
-`ioctl-testing-discipline`: System C IOCTL 端到端测试完备性审计（2026-08-02） 中识别的能力缺口
-  - 修复方向: 新增 `tests/test_register_gpu_map_queue_ring_e2e_standalone.cpp`（Catch2，遵循 `add_standalone_test` 链接 kernel + plugin runtime 加载）
+- `ioctl-end-to-end-test-discipline`: 通过 `/dev/gpgpu0` 插件路径完成的端到端 ioctl 测试纪律
 
 ## Impact
 
 - `tests/test_register_gpu_map_queue_ring_e2e_standalone.cpp`
 - `CREATE_VA_SPACE`
-
-## Dependencies (out of scope)
-
-本提案不修改 ABI 头（`plugins/gpu_driver/shared/gpu_ioctl.h`），仅活跃派发表变化。
