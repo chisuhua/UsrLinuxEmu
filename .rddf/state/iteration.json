@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated_at": "2026-08-02T17:09:34.992947+00:00",
+  "updated_at": "2026-08-02T17:16:10.221722+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -74,7 +74,18 @@
       "status": "proposed",
       "phase": "stage-4.7",
       "category": "core-impl",
-      "priority": "P0"
+      "priority": "P0",
+      "last_deps_at": "2026-08-02T17:15:55.278230+00:00",
+      "blocker": null,
+      "parallel_group": 0,
+      "conflicts": [
+        "add-abi-dispatch-consistency-test"
+      ],
+      "manual_blocks": [
+        "add-e2e-tests-for-register-gpu-and-map-queue-ring",
+        "strengthen-semantic-assertions-for-destroy-va-space-and-query-queue",
+        "add-abi-dispatch-consistency-test"
+      ]
     },
     {
       "added_at": "2026-08-02T17:03:58.531425+00:00",
@@ -82,7 +93,13 @@
       "status": "proposed",
       "phase": "stage-4.7",
       "category": "core-test",
-      "priority": "P1"
+      "priority": "P1",
+      "last_deps_at": "2026-08-02T17:15:55.278260+00:00",
+      "blocker": null,
+      "parallel_group": 1,
+      "conflicts": [
+        "strengthen-semantic-assertions-for-destroy-va-space-and-query-queue"
+      ]
     },
     {
       "added_at": "2026-08-02T17:03:59.439920+00:00",
@@ -90,7 +107,13 @@
       "status": "proposed",
       "phase": "stage-4.7",
       "category": "core-test",
-      "priority": "P1"
+      "priority": "P1",
+      "last_deps_at": "2026-08-02T17:15:55.278270+00:00",
+      "blocker": null,
+      "parallel_group": 1,
+      "conflicts": [
+        "add-e2e-tests-for-register-gpu-and-map-queue-ring"
+      ]
     },
     {
       "added_at": "2026-08-02T17:04:00.317319+00:00",
@@ -98,7 +121,13 @@
       "status": "proposed",
       "phase": "stage-4.7",
       "category": "core-test",
-      "priority": "P2"
+      "priority": "P2",
+      "last_deps_at": "2026-08-02T17:15:55.278277+00:00",
+      "blocker": null,
+      "parallel_group": 1,
+      "conflicts": [
+        "wire-mmu-fw-callback-ioctls-to-active-dispatch"
+      ]
     }
   ]
 }
