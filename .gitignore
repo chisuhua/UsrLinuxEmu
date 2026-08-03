@@ -86,3 +86,7 @@ build-tsan/
 .rddf/state/.deps-ai-result.json
 .rddf/state/openspec-validate.json
 build_worktree/
+
+# External symlinks (rddf-workflow skill pack + codegraph index)
+skills
+.codegraph
