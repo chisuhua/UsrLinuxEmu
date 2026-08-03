@@ -2,9 +2,9 @@
 
 > **更新**: 2026-08-03
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: **0 个活跃 change** + 89 个已完成/已归档（截至 2026-08-03；4 个 Stage 4 closeout + 1 B-class foundation + 1 B-class removal #1 (fence-id) 都已 ship + archive）
-> **Source**: 2026-08-03 INDEX 同步 — rebuild archive table from `openspec/changes/archive/`（89 dirs）+ 0 active changes
-> （2026-08-01 INDEX 漏登记 59 个 directory entries；本次同步覆盖 2026-06 早期维护窗口 → 2026-08-01 stage4.6 → 2026-08-03 stage4 closeout batch + B-class foundation + B-class removal #1）
+> **总数**: **0 个活跃 change** + 90 个已完成/已归档（截至 2026-08-03；4 个 Stage 4 closeout + 1 B-class foundation + 2 B-class removals (fence-id, method-codec) 都已 ship + archive）
+> **Source**: 2026-08-03 INDEX 同步 — rebuild archive table from `openspec/changes/archive/`（90 dirs）+ 0 active changes
+> （2026-08-01 INDEX 漏登记 59 个 directory entries；本次同步覆盖 2026-06 早期维护窗口 → 2026-08-01 stage4.6 → 2026-08-03 stage4 closeout batch + B-class foundation + B-class removals #1-#2）
 
 ---
 
