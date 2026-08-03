@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include "shared/method_codec_types.h"  // ADR-072 §Decision 2 A-class: method_codec types in shared/
 
 #ifdef __cplusplus
 extern "C" {
