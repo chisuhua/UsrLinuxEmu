@@ -107,16 +107,16 @@ git commit -m "test(gpu): add test_register_cb_ioctl end-to-end coverage for 0x0
 
 - Modify: `AGENTS.md (IOCTL 列表)`, `README.md (GPU IOCTL 编号表 标注 0x02/0x03 活跃)`
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
 ```bash
 N/A (verification only)
 ```
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - AGENTS.md / README.md: 0x02 + 0x03 标记为活跃命令（debounce 之前的「dead code」措辞）
   - `grep -rn '#include.*"sim/' plugins/gpu_driver/drv/` 输出为空 — HAL 边界不变 (ADR-023)
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 cd build && ctest --output-on-failure
 Expected: 既有 PASS + 新增 5 TEST_CASE 全 PASS, 0 regression
@@ -124,7 +124,7 @@ git diff plugins/gpu_driver/shared/gpu_ioctl.h  # 必须为空
 git diff plugins/gpu_driver/drv/gpu_drm_driver.cpp  # 必须为空
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add AGENTS.md README.md
 git commit -m "docs(gpu): mark GPU_IOCTL_REGISTER_MMU_EVENT_CB / REGISTER_FIRMWARE_CB as active"
