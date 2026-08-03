@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated_at": "2026-08-03T04:31:56.072900+00:00",
+  "updated_at": "2026-08-03T04:44:22.498032+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -106,7 +106,7 @@
     {
       "added_at": "2026-08-02T17:03:59.439920+00:00",
       "name": "strengthen-semantic-assertions-for-destroy-va-space-and-query-queue",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.7",
       "category": "core-test",
       "priority": "P1",
@@ -115,7 +115,8 @@
       "parallel_group": 1,
       "conflicts": [
         "add-e2e-tests-for-register-gpu-and-map-queue-ring"
-      ]
+      ],
+      "archived_at": "2026-08-03T03:50:00+00:00"
     },
     {
       "added_at": "2026-08-02T17:04:00.317319+00:00",
