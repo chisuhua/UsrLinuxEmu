@@ -282,6 +282,31 @@ static inline int hal_sem_destroy(struct gpu_hal_ops *hal, uint64_t h) {
   return hal->hal_sem_destroy(hal->ctx, h);
 }
 
+/* ── Stage 4.6 inline wrapper（Green Context — ADR-056） ──────── */
+
+static inline int hal_green_context_create(struct gpu_hal_ops *hal, uint64_t tsg_id,
+                                            uint64_t *out_handle) {
+  return hal->hal_green_context_create(hal->ctx, tsg_id, out_handle);
+}
+
+static inline int hal_green_context_destroy(struct gpu_hal_ops *hal, uint64_t handle) {
+  return hal->hal_green_context_destroy(hal->ctx, handle);
+}
+
+/* ── Stage 4.6 inline wrapper（PDL — ADR-056） ───────────────── */
+
+static inline int hal_pdl_launch(struct gpu_hal_ops *hal, uint64_t kernel_addr,
+                                 uint64_t kernargs_va, uint32_t grid_x, uint32_t block_x,
+                                 uint64_t *out_signal_handle) {
+  return hal->hal_pdl_launch(hal->ctx, kernel_addr, kernargs_va, grid_x, block_x,
+                             out_signal_handle);
+}
+
+static inline int hal_pdl_signal_completion(struct gpu_hal_ops *hal, uint64_t signal_handle,
+                                            uint64_t value) {
+  return hal->hal_pdl_signal_completion(hal->ctx, signal_handle, value);
+}
+
 #ifdef __cplusplus
 }
 #endif
