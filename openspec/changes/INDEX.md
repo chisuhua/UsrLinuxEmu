@@ -8,15 +8,22 @@
 
 ---
 
+## ✅ 2026-08-03 归档 (Stage 4 closeout batch, 4 changes)
+
+| 归档 | 摘要 | 状态 |
+|------|------|------|
+| `2026-08-03-stage4-6-green-context-pdl-closeout` | A2 inline HAL wrappers (commit 93e5f60) + A1 verify items closeout; P3-A3 deferred to sibling | ✅ archived |
+| `2026-08-03-stage4-6-green-context-pdl-tests-standalone` | P3-A3: 10 test cases (52 assertions, all PASS) | ✅ archived |
+| `2026-08-03-stage4-port-l2-linux-612-lts-build` | stage4 L2 build harness + CI workflow + operator handbook (ADR-072 §L2) | ✅ archived |
+| `2026-08-03-stage4-port-bar-perf-baseline` | BAR perf baseline + CI gating (Stage 4 整体验收 §4) | ✅ archived |
+
+---
+
 ## ⚪ 活跃 Changes
 
-> **4 个活跃**（2026-08-03）。Stage 4 closeout batch + Stage 4 整体验收 gates 全部已通过 `openspec-propose` 生成，pending review / approval / implementation。
-> 下一步：review 各 change，决定是否进入 ship 阶段。
+> **0 个活跃**（2026-08-03）。Stage 4 整体收尾 — 4 closeout changes 已 ship + archive。下一波 follow-up 由 [docs/roadmap/stage-4-bar-ioremap.md §"Stage 4 整体验收"](../../roadmap/stage-4-bar-ioremap.md) 与 [docs/architecture/stage4-gpu-cp-completion-gap-analysis.md §6](../../architecture/stage4-gpu-cp-completion-gap-analysis.md) 驱动。
 
-### 活跃 — Stage 4 closeout batch (4 changes)
-
-| Change | 摘要 | 状态 |
-|--------|------|------|
+--------|------|------|
 | `2026-08-03-stage4-6-green-context-pdl-closeout` | P2-A2 inline HAL wrappers (hal_green_context_create/destroy + hal_pdl_launch/signal_completion) DONE in this session via gpu_hal.h；A1 verify items close-out via functional verify（tasks 1.6/1.7/2.4/3.5/9.1 functional 完整、勾选状态修正）；P3-A3 (8.1-8.7 test_green_context_standalone) deferred to sibling `2026-08-03-stage4-6-green-context-pdl-tests-standalone` | Pending impl review + A2-A1 close out approval |
 | `2026-08-03-stage4-6-green-context-pdl-tests-standalone` | P3-A3: tests/test_green_context_standalone.cpp 创建 + 6 unit cases（8.2 GREEN priority override / 8.3 BROWN preempt GREEN / 8.4 GREEN resume / 8.5 GREEN↛GREEN / 8.6 FIFO / 8.7 HAL round-trip）；CMakeLists.txt 注册 + ctest；hal_mock.cpp 配合 | Pending impl (sibling to closeout) |
 | `2026-08-03-stage4-port-l2-linux-612-lts-build` | P2-D-L2: ADR-072 L2 build harness — Linux 6.12 LTS 内核源码树编译 plugins/gpu_driver/drv/；CI workflow `l2-portability.yml` + 操作手册；零修改约束验证 | Pending impl（基础设施：kernel build env） |
