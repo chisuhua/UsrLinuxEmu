@@ -130,6 +130,8 @@ const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
       {GPU_IOCTL_MEM_POOL_EXPORT, "MEM_POOL_EXPORT", &GpgpuDevice::handleMemPoolExport},
       {GPU_IOCTL_GET_PROCESS_APERTURE, "GET_PROCESS_APERTURE", &GpgpuDevice::handleGetProcessAperture},
       {GPU_IOCTL_UPDATE_QUEUE, "UPDATE_QUEUE", &GpgpuDevice::handleUpdateQueue},
+      {GPU_IOCTL_REGISTER_MMU_EVENT_CB, "REGISTER_MMU_EVENT_CB", &GpgpuDevice::handleRegisterMMUCB},
+      {GPU_IOCTL_REGISTER_FIRMWARE_CB, "REGISTER_FIRMWARE_CB", &GpgpuDevice::handleRegisterFirmwareCB},
       {GPU_IOCTL_MAP_MEMORY, "MAP_MEMORY", &GpgpuDevice::handleMapMemory},
       {GPU_IOCTL_UNMAP_MEMORY, "UNMAP_MEMORY", &GpgpuDevice::handleUnmapMemory},
   };
@@ -1101,5 +1103,17 @@ long GpgpuDevice::handleUpdateQueue(void* argp) {
   auto* args = static_cast<struct gpu_update_queue_args*>(argp);
   if (!args) return -EFAULT;
   return kfd_sim_handle_update_queue(args);
+}
+
+long GpgpuDevice::handleRegisterMMUCB(void* argp) {
+  auto* args = static_cast<struct gpu_mmu_event_cb_args*>(argp);
+  if (!args) return -EFAULT;
+  return kfd_sim_register_mmu_cb(args);
+}
+
+long GpgpuDevice::handleRegisterFirmwareCB(void* argp) {
+  auto* args = static_cast<struct gpu_firmware_cb_args*>(argp);
+  if (!args) return -EFAULT;
+  return kfd_sim_register_firmware_cb(args);
 }
 

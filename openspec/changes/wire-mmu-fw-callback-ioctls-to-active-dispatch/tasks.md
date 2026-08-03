@@ -2,11 +2,11 @@
 
 ## 1. Implementation
 
-- [ ] 1.1 `plugins/gpu_driver/drv/gpgpu_device.h:26` `kNumIoctls` 由 36 改为 38
-- [ ] 1.2 `plugins/gpu_driver/drv/gpgpu_device.cpp:96-137` `getIoctlTablePtr()` 静态表新增 2 项：
-- [ ] 1.3 `GPU_IOCTL_REGISTER_MMU_EVENT_CB` → `handleRegisterMMUCB`
-- [ ] 1.4 `GPU_IOCTL_REGISTER_FIRMWARE_CB` → `handleRegisterFirmwareCB`
-- [ ] 1.5 `GpgpuDevice` 私有新增 2 个 `handle*(void*)` 转发函数，逻辑等价于 `gpu_ioctl_register_mmu_cb` / `gpu_ioctl_register_firmware_cb`（直接调 `kfd_sim_register_mmu_cb` / `kfd_sim_register_firmware_cb`）
+- [x] 1.1 `plugins/gpu_driver/drv/gpgpu_device.h:26` `kNumIoctls` 由 36 改为 38
+- [x] 1.2 `plugins/gpu_driver/drv/gpgpu_device.cpp:96-137` `getIoctlTablePtr()` 静态表新增 2 项：
+- [x] 1.3 `GPU_IOCTL_REGISTER_MMU_EVENT_CB` → `handleRegisterMMUCB`
+- [x] 1.4 `GPU_IOCTL_REGISTER_FIRMWARE_CB` → `handleRegisterFirmwareCB`
+- [x] 1.5 `GpgpuDevice` 私有新增 2 个 `handle*(void*)` 转发函数，逻辑等价于 `gpu_ioctl_register_mmu_cb` / `gpu_ioctl_register_firmware_cb`（直接调 `kfd_sim_register_mmu_cb` / `kfd_sim_register_firmware_cb`）
 - [ ] 1.6 新增 CTest-registered 端到端测试 `test_register_cb_ioctl_standalone.cpp`：
 - [ ] 1.7 plugin 加载 + VFS open + `fops->ioctl`
 - [ ] 1.8 验证 sim 侧 MMU notifier / firmware 回调注册表变更
