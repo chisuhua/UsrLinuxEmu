@@ -12,6 +12,8 @@
 #include <chrono>
 
 #include "../sim/semaphore_manager.h"  // Stage 4.5: fence→sem migration
+#include "../sim/fence_id.h"             // Stage 4.6 L2 foundation: fence_id_* fn-ptrs
+#include "../sim/hardware/method_codec.h" // Stage 4.6 L2 foundation: method_codec_encode fn-ptr
 
 /* ── 内部回调实现 ────────────────────────────────── */
 
@@ -307,6 +309,30 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   };
   hal->hal_pdl_signal_completion = [](void*, uint64_t, uint64_t) -> int {
     return -ENOSYS;
+  };
+
+  /* ── Stage 4.6 L2 foundation (ADR-072 §Decision 4) — B-class fix (Phase 1) ─
+   * 5 new fn-ptrs enabling drv/ to call sim-layer functions without
+   * #including sim/ headers. Production impl delegates to existing sim
+   * functions; mock impl lives in hal_mock.cpp. */
+  hal->fence_id_alloc = [](void*) -> int64_t {
+    return sim_fence_id_alloc();
+  };
+  hal->fence_id_signal = [](void*, uint64_t fence_id) -> void {
+    sim_fence_id_signal(fence_id);
+  };
+  hal->fence_id_check = [](void*, uint64_t fence_id, bool* signaled) -> int {
+    return sim_fence_id_check(fence_id, signaled);
+  };
+  hal->method_codec_encode = [](void*, const gpu_method_packet* pkt,
+                              const uint32_t* data) -> int {
+    /* Result vector discarded by drv/ callers (see gpgpu_device.cpp). */
+    (void)method_codec_encode(*pkt, data);
+    return 0;
+  };
+  hal->heap_ptr = [](void* ctx, uint64_t gpu_va) -> void* {
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    return hc->heap + (gpu_va - HAL_HEAP_BASE);
   };
 }
 

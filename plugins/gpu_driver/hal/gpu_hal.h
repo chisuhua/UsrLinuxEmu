@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -169,6 +170,41 @@ struct gpu_hal_ops {
    * @handle: semaphore handle
    * Returns 0 on success, -EINVAL if handle invalid. */
   int (*hal_sem_destroy)(void *ctx, uint64_t handle);
+
+  /* ── Stage 4.6 L2 foundation (ADR-072 §Decision 4) — B-class fix (Phase 1) ─
+   * Append-only per ADR-023 Decision 4 (spec-driven extension).
+   * 5 new fn-ptrs enabling drv/ to call sim-layer functions without
+   * #including sim/ headers (foundation for 3 removal changes:
+   * fence-id, method-codec, hal-user). */
+
+  /* fence_id_alloc: allocate next sim-layer fence_id.
+   * Range [SIM_FENCE_ID_BASE, SIM_FENCE_ID_MAX] per sim/fence_id.h.
+   * @return new fence_id (>= SIM_FENCE_ID_BASE), or < 0 on error. */
+  int64_t (*fence_id_alloc)(void *ctx);
+
+  /* fence_id_signal: mark fence_id as triggered (called when batch completes).
+   * @fence_id  sim-layer fence_id from fence_id_alloc */
+  void (*fence_id_signal)(void *ctx, uint64_t fence_id);
+
+  /* fence_id_check: query triggered state of fence_id.
+   * @fence_id  sim-layer fence_id (range [SIM_FENCE_ID_BASE, ...])
+   * @signaled  [out] true = triggered, false = not yet
+   * @return 0 on success, -1 if fence_id out of range */
+  int (*fence_id_check)(void *ctx, uint64_t fence_id, bool *signaled);
+
+  /* method_codec_encode: encode GPFIFO entry payload (per ADR-042).
+   * Wraps sim/hardware/method_codec.h::method_codec_encode.
+   * @pkt   method packet descriptor
+   * @data  optional data words (may be nullptr)
+   * @return 0 on success (result vector discarded by drv/ callers) */
+  int (*method_codec_encode)(void *ctx, const struct gpu_method_packet* pkt,
+                            const uint32_t* data);
+
+  /* heap_ptr: return host pointer for a given GPU VA.
+   * Replaces direct access to hal_user_context->heap field.
+   * @gpu_va  GPU virtual address (will be offset by HAL_HEAP_BASE internally)
+   * @return host pointer (or nullptr if VA unmapped) */
+  void* (*heap_ptr)(void *ctx, uint64_t gpu_va);
 };
 
 /* ── inline 包装函数：零开销简化调用 ──────────────────────── */
@@ -305,6 +341,32 @@ static inline int hal_pdl_launch(struct gpu_hal_ops *hal, uint64_t kernel_addr,
 static inline int hal_pdl_signal_completion(struct gpu_hal_ops *hal, uint64_t signal_handle,
                                             uint64_t value) {
   return hal->hal_pdl_signal_completion(hal->ctx, signal_handle, value);
+}
+
+/* ── Stage 4.6 L2 foundation (ADR-072 §Decision 4) — B-class fix (Phase 1) ─
+ * Inline wrappers for the 5 new fn-ptrs enabling drv/ to call sim-layer
+ * functions without #including sim/ headers. Zero-overhead call forwarding. */
+
+static inline int64_t hal_fence_id_alloc(struct gpu_hal_ops *hal) {
+  return hal->fence_id_alloc(hal->ctx);
+}
+
+static inline void hal_fence_id_signal(struct gpu_hal_ops *hal, uint64_t fence_id) {
+  hal->fence_id_signal(hal->ctx, fence_id);
+}
+
+static inline int hal_fence_id_check(struct gpu_hal_ops *hal, uint64_t fence_id, bool *signaled) {
+  return hal->fence_id_check(hal->ctx, fence_id, signaled);
+}
+
+static inline int hal_method_codec_encode(struct gpu_hal_ops *hal,
+                                         const struct gpu_method_packet* pkt,
+                                         const uint32_t* data) {
+  return hal->method_codec_encode(hal->ctx, pkt, data);
+}
+
+static inline void* hal_heap_ptr(struct gpu_hal_ops *hal, uint64_t gpu_va) {
+  return hal->heap_ptr(hal->ctx, gpu_va);
 }
 
 #ifdef __cplusplus
