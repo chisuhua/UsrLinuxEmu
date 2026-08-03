@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated_at": "2026-08-02T17:16:10.221722+00:00",
+  "updated_at": "2026-08-03T03:59:37.851744+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -71,7 +71,7 @@
     {
       "added_at": "2026-08-02T17:03:57.658170+00:00",
       "name": "wire-mmu-fw-callback-ioctls-to-active-dispatch",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.7",
       "category": "core-impl",
       "priority": "P0",
@@ -85,7 +85,8 @@
         "add-e2e-tests-for-register-gpu-and-map-queue-ring",
         "strengthen-semantic-assertions-for-destroy-va-space-and-query-queue",
         "add-abi-dispatch-consistency-test"
-      ]
+      ],
+      "archived_at": "2026-08-03T03:00:00+00:00"
     },
     {
       "added_at": "2026-08-02T17:03:58.531425+00:00",
