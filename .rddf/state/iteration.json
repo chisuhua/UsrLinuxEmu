@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated_at": "2026-08-03T03:59:37.851744+00:00",
+  "updated_at": "2026-08-03T04:31:56.072900+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -91,7 +91,7 @@
     {
       "added_at": "2026-08-02T17:03:58.531425+00:00",
       "name": "add-e2e-tests-for-register-gpu-and-map-queue-ring",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.7",
       "category": "core-test",
       "priority": "P1",
@@ -100,7 +100,8 @@
       "parallel_group": 1,
       "conflicts": [
         "strengthen-semantic-assertions-for-destroy-va-space-and-query-queue"
-      ]
+      ],
+      "archived_at": "2026-08-03T03:30:00+00:00"
     },
     {
       "added_at": "2026-08-02T17:03:59.439920+00:00",
