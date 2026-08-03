@@ -139,6 +139,23 @@ drv/handler
 
 > **迁移计划**：`sim_fence_id_alloc` / `sim_fence_id_signal` / `sim_fence_id_check` 将在 Phase 5 提升为 HAL 接口（`hal_fence_id_alloc` 等），作为 ADR-023 的扩展走 ADR 流程。在此之前，drv handler 对 sim fence 的直接调用视为"已规划迁移的技术债"，不在 Phase 4 阻塞。Phase 4 实现时不引入新的 sim 层直接调用。
 
+> **2026-08-03 复审修订**（per ADR-072 §Decision 2 revision note）：
+>
+> **原 11 处违规**（2026-07-09 审计时为 11）—— **实测 12 处**（新增 `gpgpu_device.cpp:17` 的 `sim/hardware/method_codec.h`，drv/ 调用 `method_codec_encode()`）。
+>
+> **A/B/C 实际分布**（与 ADR-072 §Decision 2 修订同步）：
+> - **A-class: 0 处**（与 ADR-072 原分类相反）。原因：所有"看似仅 typedef/常量"的头文件（`fence_id.h`、`hal_user.h` 等）实际被 drv/ 调用了函数或访问了字段：
+>   - `fence_id.h` — drv/ 调 `sim_fence_id_alloc()`（B-class）
+>   - `hal_user.h` — drv/ 调 `static_cast<struct hal_user_context*>(hal_ctx_)->heap`（B-class 字段访问）
+> - **B-class: 12 处**（全部归入）
+> - **C-class: 0 处**（与原 ADR-072 估计的 2 处不同，因为实测发现 `mem_pool.h` 和 `stream_capture.h` 都可以走 B-class 的 HAL fn-ptr 路径解决）
+>
+> **修复策略变更**（per ADR-072 §Decision 4 修订）：
+> - **foundation change**: 扩展 `struct gpu_hal_ops`（per ADR-023 Decision 4 spec-driven "追加不改" 原则），为每个被 drv/ 调用的 sim 符号添加 fn-ptr
+> - **removal changes**: 每移除 1 个 sim include = 1 个 change（共 7 个 sim/* includes + 1 个 hal/hal_user.h = 8 个 removal changes）
+> - 不再区分 A/B/C 路径——全部走 B-class 修复路径
+> - 推迟时机：从 Phase 4 阻塞 → Stage 4 closeout 后由单独 batch 启动（per openspec change `2026-08-03-stage4-port-l2-linux-612-lts-build` 暴露的 L2 gate 驱动）
+
 ---
 
 ## Consequences
