@@ -40,10 +40,10 @@
 - Modify: `plugins/gpu_driver/drv/gpgpu_device.h:26`, `plugins/gpu_driver/drv/gpgpu_device.cpp:96-137`
 - Test: `(deferred to Task 2)`
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
   *(production change — verification deferred to Task 2 test or post-commit ctest)*
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - `plugins/gpu_driver/drv/gpgpu_device.h:26` — `static constexpr size_t kNumIoctls = 38;`
   - `plugins/gpu_driver/drv/gpgpu_device.cpp:96-137` — `getIoctlTablePtr()` 内 36-项表后追加 2 项：
   -   - `{ GPU_IOCTL_REGISTER_MMU_EVENT_CB, &GpgpuDevice::handleRegisterMMUCB }`
@@ -54,12 +54,12 @@
   - 声明在 `GpgpuDevice` 类私有区（与既有 `handleRegisterGPU` 等同位置）。
   - **MUST NOT** 触碰 `gpu_drm_driver.cpp`（DRM 表清理另案 follow-up）；**MUST NOT** 修改 `gpu_ioctl.h`。
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 `cd build && make -j4` 编译通过，无新增 warning；`abi-dump` / `nm` 验证 `handleRegisterMMUCB` 存在
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add plugins/gpu_driver/drv/gpgpu_device.h plugins/gpu_driver/drv/gpgpu_device.cpp
 git commit -m "feat(gpu): wire MMU + firmware callback ioctls into active dispatch table (kNumIoctls 36→38)"

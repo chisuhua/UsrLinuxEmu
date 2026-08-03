@@ -23,7 +23,9 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   // Phase 3 (PR #20+#26) adds 18 IOCTLs (stream+graph+mempool).
   // Phase 4 (PR #27) adds MEM_POOL_EXPORT.
   // C-12 E.2.4 (L1↔L2 bridge): +4 KFD ioctls (MAP/UNMAP_MEMORY, GET_PROCESS_APERTURE, UPDATE_QUEUE).
-  static constexpr size_t kNumIoctls = 36;
+  // openspec/2026-08-02-wire-mmu-fw-callback-ioctls-to-active-dispatch:
+  //   +2 KFD callback ioctls (REGISTER_MMU_EVENT_CB, REGISTER_FIRMWARE_CB).
+  static constexpr size_t kNumIoctls = 38;
 
   explicit GpgpuDevice(struct gpu_hal_ops* hal);
   ~GpgpuDevice();
@@ -159,6 +161,8 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   long handleUnmapMemory(void* argp);
   long handleGetProcessAperture(void* argp);
   long handleUpdateQueue(void* argp);
+  long handleRegisterMMUCB(void* argp);
+  long handleRegisterFirmwareCB(void* argp);
 
   struct IoctlEntry {
     unsigned long request;
