@@ -14,7 +14,6 @@
 #include "kernel/vfs.h"
 #include "sim/graph.h"
 #include "sim/hardware/hardware_puller_emu.h"
-#include "sim/hardware/method_codec.h"
 #include "sim/gpu_queue_emu.h"
 #include "sim/mem_pool.h"
 #include "sim/stream_capture.h"
@@ -351,7 +350,7 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
     }
   }
 
-  // Stage 4.3 Task 1.5: validate method_codec_encode for each valid entry.
+  // Stage 4.3 Task 1.5: validate hal_method_codec_encode for each valid entry.
   // No-op: round-trip result is discarded; only verifies encode succeeds.
   for (u32 i = 0; i < args->count; ++i) {
     if (!entries[i].valid) continue;
@@ -359,7 +358,7 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
     pkt.method_addr = static_cast<uint16_t>(entries[i].method);
     pkt.engine = static_cast<uint8_t>(GpuEngineType::COMPUTE);
     pkt.data_count = 0;
-    method_codec_encode(pkt, nullptr);
+    hal_method_codec_encode(hal_, &pkt, nullptr);
   }
 
   if (puller_ && !has_fence) {
