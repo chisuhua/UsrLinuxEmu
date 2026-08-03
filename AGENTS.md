@@ -144,7 +144,7 @@ TaskRunner 应使用 System C 接口。
 |--------|------|----------|------|
 | `VFS::instance()` | 单例 | `include/kernel/vfs.h` | 设备注册/打开/查找 — Meyers singleton |
 | `ModuleLoader` | 静态类 | `include/kernel/module_loader.h` | `dlopen` + `dlsym("mod")` 插件发现 |
-| `GpgpuDevice` | 类 | `plugins/gpu_driver/drv/gpgpu_device.cpp` | 中心枢纽 — 37 ioctl handler 表驱动派发 |
+| `GpgpuDevice` | 类 | `plugins/gpu_driver/drv/gpgpu_device.cpp` | 中心枢纽 — 38 ioctl handler 表驱动派发 |
 | `gpu_hal_ops` | 结构体 | `plugins/gpu_driver/hal/gpu_hal.h` | HAL 接口契约 — 14 函数指针 |
 | `HardwarePullerEmu` | 类 | `plugins/gpu_driver/sim/hardware/` | FSM 状态机 — IDLE→FETCH→DECODE→DISPATCH→... |
 | `ServiceRegistry` | 单例 | `include/kernel/service_registry.h` | 跨模块服务注册/查找 |
