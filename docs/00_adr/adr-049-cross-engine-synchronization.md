@@ -115,9 +115,22 @@ entry.timeline.wait_value = 5;
 - ⚠️ 显式依赖 ADR-047（hardware semaphore 是单 slot 退化）
 - ⚠️ `sim_timeline_semaphore` 新增 5 个 C-ABI 函数，增加 sim 层 API 表面积
 - ⚠️ `gpu_gpfifo_entry` 新增 timeline 字段（~16 bytes）
+- ⚠️ Phase 6+ multi-engine Puller 延后（见下文触发条件）— 当前 sim 仅 COMPUTE 引擎 Puller，COPY/GRAPHICS Puller 实例 + engine fence registry 待真机 driver 验证期触发
 
 ### Phase 6 触发条件
 
 - ADR-047 (hardware semaphore) ✅ Accepted
 - 多引擎 Puller（ADR-044 ChannelManager with multi-engine）已实现
 - TaskRunner 需要跨引擎 fence 测试（compute → copy pipeline）
+
+### Phase 6+ 触发条件（deferred follow-up — multi-engine Puller）
+
+Phase 6（timeline semaphore 基础实现）已交付。但跨引擎 fence 完整 D3（per-engine sim_timeline_semaphore + drv handler 创建 shared semaphore + multi-engine Puller 真实并行执行）需以下条件触发：
+
+1. TaskRunner 真实机驱动验证：CUDA/HIP 多引擎 pipeline（compute → copy → graphics 真实驱动并行执行）
+2. sim 层注册 COPY/GRAPHICS 引擎 Puller 实例（当前仅 COMPUTE）
+3. TaskRunner 端提交 Compute+Cpy+GFX 混合 batch，验证 engine fence registry 生效
+
+**未触发**前的当前状态：`test_cross_engine_sync_standalone` 显式延后，需单独立项；主线保留 timeline semaphore 基础（最小跨引擎 fence）已交付（per ADR-049 D2 + stage4-5-cp-phase6-preemption-timeline-sem archive）。
+
+**关联 ADR**：ADR-044（multi-channel HyperQueue scheduling — multi-engine 调度底座）+ ADR-049 本 ADR。

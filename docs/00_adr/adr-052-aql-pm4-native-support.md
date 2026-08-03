@@ -74,10 +74,22 @@ PM4 解析更为复杂（method 地址空间编码、NI/INC 控制、subchannel 
 - ✅ ROCm/HIP 路径可用——AQL 64 字节标准包兼容
 - ✅ UsrNative 不被废弃——通过 format 字段共存
 - ✅ format 字段仅 1 byte，对现有结构体影响极小
-- ⚠️ PM4 延后至 Phase 6.5，TaskRunner CUDA 路径在 PM4 完成前只能用 UsrNative
+- ⚠️ PM4 延后至 Phase 6.5（见下文 Phase 6.5 触发条件）— TaskRunner CUDA 路径在 PM4 完成前只用 UsrNative
 - ⚠️ AQL `completion_signal` 需要 ADR-049 的 timeline semaphore 支持
 
 ### Phase 6 触发条件
 
 - ADR-049 (timeline semaphore) ✅ Accepted
 - TaskRunner 确认需要 ROCm/HIP 路径（AQL）
+
+### Phase 6.5 触发条件（deferred follow-up — PM4 microcode 解析）
+
+Phase 6 当前已交付 AQL 解析（format=1）。PM4 解析延后至 Phase 6.5，需以下任一条件触发（任一满足即启动；以本 ADR 为 canonical）：
+
+1. TaskRunner 端 CUDA 路径完成 PoC，要求 PM4 microcode 兼容（避免 UsrNative 临时路径）
+2. ROCm/HIP 真实链路测试需要 PM4 ↔ CUDA 对照
+3. 跨格式混合提交测试（AQL + PM4 同一队列）
+
+**未触发**前的当前状态：`format=2` 返回 -ENOSYS（per ADR-052 D3 已实施）。
+
+**关联档案**：`openspec/changes/archive/2026-07-31-stage4-5-cp-phase6-predication-aql/`（predication-aql 实施交付 AQL，PM4 stub 显式延后；3 项 stage4-5-predicate 残留任务含 PM4 D3 deferred 标记）
