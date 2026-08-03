@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated_at": "2026-08-03T04:44:22.498032+00:00",
+  "updated_at": "2026-08-03T05:02:16.757142+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -121,7 +121,7 @@
     {
       "added_at": "2026-08-02T17:04:00.317319+00:00",
       "name": "add-abi-dispatch-consistency-test",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.7",
       "category": "core-test",
       "priority": "P2",
@@ -130,7 +130,8 @@
       "parallel_group": 1,
       "conflicts": [
         "wire-mmu-fw-callback-ioctls-to-active-dispatch"
-      ]
+      ],
+      "archived_at": "2026-08-03T04:10:00+00:00"
     }
   ]
 }
