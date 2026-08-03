@@ -71,13 +71,13 @@ git commit -m "feat(gpu): wire MMU + firmware callback ioctls into active dispat
 - Modify: `tests/CMakeLists.txt (add_standalone_test)`
 - Test: `tests/test_register_cb_ioctl_standalone.cpp`
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
 ```bash
 cd build && make test_register_cb_ioctl_standalone -j4
 Expected: BUILD/target FAIL or new test binary missing CTest registration
 ```
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - tests/test_register_cb_ioctl_standalone.cpp (Catch2 standalone):
   -   - `TEST_CASE("REGISTER_MMU_EVENT_CB end-to-end via /dev/gpgpu0")`
   -   -   plugin 加载 + `VFS::instance().open("/dev/gpgpu0", 0)`
@@ -91,13 +91,13 @@ Expected: BUILD/target FAIL or new test binary missing CTest registration
   - Tests/CMakeLists.txt: 添加 `add_standalone_test(test_register_cb_ioctl_standalone)` 行。
   - **MUST NOT** 直接 `#include "sim/"`；通过 `kfd_sim_bridge` 公共 API 访问。
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 cd build && make test_register_cb_ioctl_standalone -j4 && ./bin/test_register_cb_ioctl_standalone
 Expected: 5 TEST_CASE 全 PASS
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add tests/test_register_cb_ioctl_standalone.cpp tests/CMakeLists.txt
 git commit -m "test(gpu): add test_register_cb_ioctl end-to-end coverage for 0x02/0x03"

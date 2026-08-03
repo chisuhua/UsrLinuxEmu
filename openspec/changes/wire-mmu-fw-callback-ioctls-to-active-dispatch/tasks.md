@@ -7,10 +7,10 @@
 - [x] 1.3 `GPU_IOCTL_REGISTER_MMU_EVENT_CB` → `handleRegisterMMUCB`
 - [x] 1.4 `GPU_IOCTL_REGISTER_FIRMWARE_CB` → `handleRegisterFirmwareCB`
 - [x] 1.5 `GpgpuDevice` 私有新增 2 个 `handle*(void*)` 转发函数，逻辑等价于 `gpu_ioctl_register_mmu_cb` / `gpu_ioctl_register_firmware_cb`（直接调 `kfd_sim_register_mmu_cb` / `kfd_sim_register_firmware_cb`）
-- [ ] 1.6 新增 CTest-registered 端到端测试 `test_register_cb_ioctl_standalone.cpp`：
-- [ ] 1.7 plugin 加载 + VFS open + `fops->ioctl`
-- [ ] 1.8 验证 sim 侧 MMU notifier / firmware 回调注册表变更
-- [ ] 1.9 通过 sim 触发回调，测试侧收到并断言回调计数 + 入参
+- [x] 1.6 新增 CTest-registered 端到端测试 `test_register_cb_ioctl_standalone.cpp`：
+- [x] 1.7 plugin 加载 + VFS open + `fops->ioctl`
+- [x] 1.8 验证 sim 侧 MMU notifier / firmware 回调注册表变更
+- [x] 1.9 通过 sim 触发回调，测试侧收到并断言回调计数 + 入参
 - [ ] 1.10 AGENTS.md / README 中 IOCTL 列表确认 0x02/0x03 现为活跃命令
 
 ## 2. Verification
