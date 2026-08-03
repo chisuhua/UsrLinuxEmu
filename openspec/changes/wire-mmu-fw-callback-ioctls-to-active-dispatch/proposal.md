@@ -39,7 +39,7 @@ System C IOCTL 端到端测试完备性审计（2026-08-02） 发现 `wire-mmu-f
 
 ## Capabilities
 
-### Modified Capabilities
+### New Capabilities
 
 - `ioctl-dispatch-completeness`: 派发表 kNumIoctls 同步至 ABI 头（38 项）+ handler 转发至 kfd_sim_bridge
 
