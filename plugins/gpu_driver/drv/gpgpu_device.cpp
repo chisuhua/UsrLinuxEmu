@@ -21,7 +21,6 @@
 #include "shared/gpu_ioctl.h"
 #include "shared/gpu_types.h"
 #include "hal/gpu_hal.h"
-#include "hal/hal_user.h"
 
 constexpr u32 VENDOR_SIMULATED = 0x1000;
 constexpr u32 DEVICE_SIMULATED_V1 = 0x1001;
@@ -227,12 +226,8 @@ long GpgpuDevice::handleAllocBo(void* argp) {
     return -ENOMEM;
   }
 
-  auto hc = static_cast<struct hal_user_context*>(hal_ctx_);
-  if (!hc) {
-    std::cerr << "[GpgpuDevice] ALLOC_BO: hal_ctx_ not set, BO will have no host_ptr\n";
-  }
   BoInfo info{gpu_va, args->size, args->domain, args->flags,
-              hc ? reinterpret_cast<void*>(hc->heap + (gpu_va - HAL_HEAP_BASE)) : nullptr};
+              hal_heap_ptr(hal_, gpu_va)};
   bo_map_[handle] = info;
 
   args->handle = handle;
