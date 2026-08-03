@@ -290,6 +290,8 @@ set(CATCH2_SIM_TESTS
     test_hardware_puller_emu_concurrent_regression_standalone.cpp
     # Phase 3.1+3.2 — test_gpu_plugin extended with 18 new IOCTL dispatch cases
     test_gpu_plugin.cpp
+    # add-e2e (2026-08-02) — Tasks 1+2 E2E coverage of REGISTER_GPU + MAP_QUEUE_RING
+    test_register_gpu_map_queue_ring_e2e_standalone.cpp
     # Phase 3.1+3.2 — cross-repo integration test (GpuDriverClient-style ioctl chain)
     test_gpu_driver_client_phase31_standalone.cpp
     # Phase 3.3 — error injection via HAL mock (links gpu_hal_mock for controlled failures)

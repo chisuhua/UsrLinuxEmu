@@ -33,13 +33,13 @@
 - Modify: `tests/CMakeLists.txt`
 - Test: `tests/test_register_gpu_map_queue_ring_e2e_standalone.cpp`
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
 ```bash
 cd build && make test_register_gpu_map_queue_ring_e2e_standalone -j4
 Expected: build FAIL (target not defined)
 ```
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - tests/test_register_gpu_map_queue_ring_e2e_standalone.cpp:
   -   - `TEST_CASE("REGISTER_GPU end-to-end via /dev/gpgpu0")`:
   -     plugin 加载 → `VFS::instance().open("/dev/gpgpu0", 0)`
@@ -49,13 +49,13 @@ Expected: build FAIL (target not defined)
   - **承认 stub-only 语义**：不试图验证多 GPU 注册 (Phase 3)。
   - Tests/CMakeLists.txt: `add_standalone_test(test_register_gpu_map_queue_ring_e2e_standalone)`
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 cd build && make test_register_gpu_map_queue_ring_e2e_standalone -j4 && ./bin/test_register_gpu_map_queue_ring_e2e_standalone "REGISTER_GPU*"
 Expected: 2 TEST_CASE 全 PASS
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add tests/test_register_gpu_map_queue_ring_e2e_standalone.cpp tests/CMakeLists.txt
 git commit -m "test(gpu): add REGISTER_GPU end-to-end smoke (0x32) via plugin path"
@@ -66,13 +66,13 @@ git commit -m "test(gpu): add REGISTER_GPU end-to-end smoke (0x32) via plugin pa
 - Modify: `tests/test_register_gpu_map_queue_ring_e2e_standalone.cpp`
 - Test: `tests/test_register_gpu_map_queue_ring_e2e_standalone.cpp`
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
 ```bash
 ./bin/test_register_gpu_map_queue_ring_e2e_standalone "MAP_QUEUE_RING*"
 Expected: Test binary FAIL (test cases not yet added)
 ```
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - 追加 3 个 TEST_CASE 到同一文件:
   -   - `TEST_CASE("MAP_QUEUE_RING end-to-end full semantics")`:
   -     前置: CREATE_VA_SPACE + CREATE_QUEUE (与 tests/test_gpu_plugin.cpp 同顺序)
@@ -87,13 +87,13 @@ Expected: Test binary FAIL (test cases not yet added)
   -     后续 `MAP_QUEUE_RING` 同 handle 期望 `-ENOENT`
   - **承认 mm-shim 限制**：如果不暴露 test-only `GpuQueueEmu` API，使用 `mmap_ptr` ring head 间接验证。
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 ./bin/test_register_gpu_map_queue_ring_e2e_standalone
 Expected: 5 TEST_CASE 全 PASS（2 + 3）
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add tests/test_register_gpu_map_queue_ring_e2e_standalone.cpp
 git commit -m "test(gpu): add MAP_QUEUE_RING end-to-end semantics (mmap_ptr + doorbell + destroy)"
@@ -102,22 +102,22 @@ git commit -m "test(gpu): add MAP_QUEUE_RING end-to-end semantics (mmap_ptr + do
 ### Task 3: 完整 ctest 回归 + 0 regression
 
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
 ```bash
 N/A
 ```
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - `cd build && ctest --output-on-failure` 验证全部测试 PASS
   - 确认 76+ ctest 计数 + 新增 5 TEST_CASE, 0 regression
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 cd build && ctest --output-on-failure | tee /tmp/ctest-result.log
 Expected: 0 failed. 既有 + 新增全 PASS.
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 (
 n
