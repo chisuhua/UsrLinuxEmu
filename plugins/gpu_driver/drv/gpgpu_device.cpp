@@ -15,7 +15,6 @@
 #include "sim/graph.h"
 #include "sim/hardware/hardware_puller_emu.h"
 #include "sim/hardware/method_codec.h"
-#include "sim/fence_id.h"
 #include "sim/gpu_queue_emu.h"
 #include "sim/mem_pool.h"
 #include "sim/stream_capture.h"
@@ -373,13 +372,13 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
       return -ENOENT;
     }
 
-    /* ADR-040 D3: 改用 sim_fence_id_alloc() 替代 hal_fence_create()。
+    /* ADR-040 D3: 改用 hal_fence_id_alloc(hal_) 替代 hal_fence_create() (Stage 4.6 L2 foundation)。
      * 旧 HAL fence 在 puller path 下永远不会被 signal（HAL 仿真层无完成回调），
      * 改用 sim fence 后，HardwarePullerEmu::handleComplete() 在 batch 全量完成时
      * 自动 signal 该 fence_id。 */
-    int64_t sim_fence = sim_fence_id_alloc();
+    int64_t sim_fence = hal_fence_id_alloc(hal_);
     if (sim_fence < 0) {
-      std::cerr << "[GpgpuDevice] PUSHBUFFER: sim_fence_id_alloc failed\n";
+      std::cerr << "[GpgpuDevice] PUSHBUFFER: hal_fence_id_alloc failed\n";
       return -ENOMEM;
     }
     u64 fence_id = static_cast<u64>(sim_fence);
@@ -473,7 +472,7 @@ long GpgpuDevice::handleWaitFence(void* argp) {
 
   /* Fix-1 / Oracle H4: fence_id 范围分发
    *   - driver 层 fence (HAL) : [1, SIM_FENCE_ID_BASE - 1]  → hal_fence_read
-   *   - sim 层 fence           : [SIM_FENCE_ID_BASE, INT64_MAX] → sim_fence_id_check
+   *   - sim 层 fence           : [SIM_FENCE_ID_BASE, INT64_MAX] → hal_fence_id_check
    * 两层 fence_id 范围互不冲突（SIM_FENCE_ID_BASE 宏定义见 sim/fence_id.h）。
    * 与 gpu_drm_driver.cpp:262-288 (gpu_ioctl_wait_fence) 保持双命名空间一致。 */
   while (elapsed_ms < args->timeout_ms || args->timeout_ms == 0) {
@@ -484,7 +483,7 @@ long GpgpuDevice::handleWaitFence(void* argp) {
       if (ret == 0 && hal_signaled) signaled = true;
     } else {
       bool sim_signaled = false;
-      int ret = sim_fence_id_check(fence_id, &sim_signaled);
+      int ret = hal_fence_id_check(hal_, fence_id, &sim_signaled);
       if (ret == 0 && sim_signaled) signaled = true;
     }
 
@@ -964,11 +963,11 @@ long GpgpuDevice::handleGraphLaunch(void* argp) {
 
   /* ADR-040: allocate a sim-layer fence. Puller will signal it on
    * handleComplete() once the batch is fully consumed. fence is NOT
-   * signaled here — caller must use sim_fence_id_check (via WAIT_FENCE)
+   * signaled here — caller must use hal_fence_id_check (via WAIT_FENCE)
    * to block until completion. */
-  int64_t sim_fence = sim_fence_id_alloc();
+  int64_t sim_fence = hal_fence_id_alloc(hal_);
   if (sim_fence < 0) {
-    std::cerr << "[GpgpuDevice] GRAPH_LAUNCH: sim_fence_id_alloc failed\n";
+    std::cerr << "[GpgpuDevice] GRAPH_LAUNCH: hal_fence_id_alloc failed\n";
     return -ENOMEM;
   }
   uint64_t fence_id = static_cast<uint64_t>(sim_fence);
