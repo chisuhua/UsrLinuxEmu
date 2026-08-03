@@ -2,9 +2,9 @@
 
 > **更新**: 2026-08-03
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: **0 个活跃 change** + 87 个已完成/已归档（截至 2026-08-03；4 个 Stage 4 closeout changes 已 ship + archive）
-> **Source**: 2026-08-03 INDEX 同步 — rebuild archive table from `openspec/changes/archive/`（87 dirs）+ 0 active changes（see 活跃 Changes section）
-> （2026-08-01 INDEX 漏登记 59 个 directory entries；本次同步覆盖 2026-06 早期维护窗口 → 2026-08-01 stage4.6 → 2026-08-03 stage4 closeout batch）
+> **总数**: **1 个活跃 change** + 87 个已完成/已归档（截至 2026-08-03；4 个 Stage 4 closeout changes 已 ship + archive；1 个 B-class foundation proposal queued）
+> **Source**: 2026-08-03 INDEX 同步 — rebuild archive table from `openspec/changes/archive/`（87 dirs）+ 1 active proposal（see 活跃 Changes section）
+> （2026-08-01 INDEX 漏登记 59 个 directory entries；本次同步覆盖 2026-06 早期维护窗口 → 2026-08-01 stage4.6 → 2026-08-03 stage4 closeout batch + B-class foundation）
 
 ---
 
