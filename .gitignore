@@ -85,3 +85,4 @@ build-tsan/
 .rddf/state/deps-analysis.json.lock
 .rddf/state/.deps-ai-result.json
 .rddf/state/openspec-validate.json
+build_worktree/
