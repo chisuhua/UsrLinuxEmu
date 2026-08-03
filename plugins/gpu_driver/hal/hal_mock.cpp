@@ -337,6 +337,29 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
   hal->hal_pdl_signal_completion = [](void*, uint64_t, uint64_t) -> int {
     return 0;  // mock: no real timeline-sem signal
   };
+
+  /* ── Stage 4.6 L2 foundation (ADR-072 §Decision 4) — B-class fix (Phase 1) ─
+   * 5 new fn-ptrs enabling drv/ to call sim-layer functions without
+   * #including sim/ headers. Mock impl returns test-friendly defaults
+   * (no real sim-layer state, deterministic for test reproducibility). */
+  hal->fence_id_alloc = [](void*) -> int64_t {
+    static std::atomic<uint64_t> next{0x1000};
+    return ++next;  // mock: monotonic counter, no real sim state
+  };
+  hal->fence_id_signal = [](void*, uint64_t) -> void {
+    // mock: no real sim signal, tests verify via other fn-ptrs
+  };
+  hal->fence_id_check = [](void*, uint64_t, bool* signaled) -> int {
+    if (signaled) *signaled = true;  // mock: always signaled
+    return 0;
+  };
+  hal->method_codec_encode = [](void*, const gpu_method_packet*,
+                              const uint32_t*) -> int {
+    return 0;  // mock: no real encoding
+  };
+  hal->heap_ptr = [](void*, uint64_t) -> void* {
+    return nullptr;  // mock: no real heap backing
+  };
 }
 
 void hal_mock_destroy(struct hal_mock_state *state) {
