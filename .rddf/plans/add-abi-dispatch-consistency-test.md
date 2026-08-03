@@ -33,13 +33,13 @@
 - Modify: `tests/CMakeLists.txt`
 - Test: `tests/test_ioctl_abi_dispatch_consistency_standalone.cpp`
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
 ```bash
 cd build && make test_ioctl_abi_dispatch_consistency_standalone -j4
 Expected: build FAIL (target not defined)
 ```
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - tests/test_ioctl_abi_dispatch_consistency_standalone.cpp:
   -   - `constexpr std::array<uint32_t, 38> kAbiIoctlRequests = {{ ... }};`
   -     注释行引用每个值对应的 ABI 名（如 `{0x01, "PUSHBUFFER_SUBMIT_BATCH"}`）
@@ -53,13 +53,13 @@ Expected: build FAIL (target not defined)
   -   - `SECTION("duplicates detected")`: 检测重复 entry
   - Tests/CMakeLists.txt: `add_standalone_test(test_ioctl_abi_dispatch_consistency_standalone)`
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 cd build && make test_ioctl_abi_dispatch_consistency_standalone -j4 && ./bin/test_ioctl_abi_dispatch_consistency_standalone
 Expected: 全部 4 SECTION 全 PASS（前提：kNumIoctls=38 + 派发表与 ABI 一致——见 wire-mfw 任务）
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add tests/test_ioctl_abi_dispatch_consistency_standalone.cpp tests/CMakeLists.txt
 git commit -m "test(gpu): add ABI dispatch consistency CI gate (PR #20 drift prevention)"
@@ -68,26 +68,26 @@ git commit -m "test(gpu): add ABI dispatch consistency CI gate (PR #20 drift pre
 ### Task 2: CRITICAL wire-mfw 依赖：派发表必须先修复
 
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
 ```bash
 # 此 change 必须 ship 在 wire-mfw 合并后才有意义:
 cd build && ctest -R test_ioctl_abi_dispatch_consistency_standalone
 Expected: 当前 (kNumIoctls=36) 失败 — 派发表 36 ≠ ABI 38
 ```
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - **依赖关系**：本 change 是 wave 1，必须等 wire-mfu (wave 0) 合并后再运行
   - 若 wire-mfu 未合并，本测试必然失败（kNumIoctls 36 vs ABI 38 不等）
   - 执行顺序：wire-mwu PR 合并 → 本 change 可执行
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 # 在 wire-muw 合并后:
 cd build && ctest -R test_ioctl_abi_dispatch_consistency_standalone --output-on-failure
 Expected: 0 failed
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 (
 n
@@ -129,22 +129,22 @@ y
 ### Task 3: 全量 ctest 回归 + 文档更新
 
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
 ```bash
 N/A
 ```
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - `cd build && ctest --output-on-failure` 验证 0 regression
   - 在 AGENTS.md 中记录本测试作为 CI gate 入口
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 cd build && ctest --output-on-failure
 Expected: 0 failed
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 (
 n

@@ -248,6 +248,7 @@ long GpgpuDevice::handleAllocBo(void* argp) {
 }
 
 long GpgpuDevice::handleFreeBo(void* argp) {
+  if (!argp) return -EFAULT;
   auto handle = *static_cast<u32*>(argp);
   if (handle == 0)
     return -EINVAL;
@@ -831,6 +832,7 @@ long GpgpuDevice::handleCreateVASpace(void* argp) {
 }
 
 long GpgpuDevice::handleDestroyVASpace(void* argp) {
+  if (!argp) return -EFAULT;
   auto handle = *static_cast<gpu_va_space_handle_t*>(argp);
 
   std::lock_guard<std::mutex> lock(va_space_mutex_);
