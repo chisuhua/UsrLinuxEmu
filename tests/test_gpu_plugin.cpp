@@ -968,3 +968,35 @@ TEST_CASE_METHOD(GpuPluginTestFixture,
   long result = ioctl(GPU_IOCTL_MEM_POOL_EXPORT, &args);
   REQUIRE(result != 0);
 }
+
+
+TEST_CASE_METHOD(GpuPluginTestFixture,
+                 "GPU_IOCTL_QUERY_QUEUE E2E semantic (queue_type + doorbell)",
+                 "[strengthen][query_queue][plugin-path]")
+{
+  // Setup: VA space + queue (compute)
+  struct gpu_va_space_args va_args = {};
+  va_args.page_size = 0;
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_VA_SPACE, &va_args) == 0);
+  gpu_va_space_handle_t va_handle = va_args.va_space_handle;
+
+  struct gpu_queue_args q_args = {};
+  q_args.va_space_handle = va_handle;
+  q_args.queue_type = GPU_QUEUE_COMPUTE;
+  q_args.priority = 0;
+  q_args.ring_buffer_size = 1024 * sizeof(gpu_gpfifo_entry);
+  REQUIRE(ioctl(GPU_IOCTL_CREATE_QUEUE, &q_args) == 0);
+  REQUIRE(q_args.queue_handle != 0);
+
+  // QUERY_QUEUE semantic assertions
+  struct gpu_queue_info_args query_args = {};
+  query_args.queue_handle = q_args.queue_handle;
+  long result = ioctl(GPU_IOCTL_QUERY_QUEUE, &query_args);
+  REQUIRE(result == 0);
+  REQUIRE(query_args.queue_type == GPU_QUEUE_COMPUTE);
+  REQUIRE(query_args.queue_id != 0);
+  REQUIRE(query_args.doorbell_offset != 0);
+
+  ioctl(GPU_IOCTL_DESTROY_QUEUE, &q_args.queue_handle);
+  ioctl(GPU_IOCTL_DESTROY_VA_SPACE, &va_handle);
+}

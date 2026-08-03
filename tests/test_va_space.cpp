@@ -303,6 +303,68 @@ int test_invalid_va_space() {
   return 0;
 }
 
+
+
+int test_destroy_va_space_invalidation() {
+  std::cout << "=== test_destroy_va_space_invalidation ===\n";
+  ModuleLoader::load_plugins("plugins");
+  auto dev = VFS::instance().open("/dev/gpgpu0", 0);
+  if (!dev) {
+    std::cerr << "[FAIL] Failed to open /dev/gpgpu0\n";
+    return 1;
+  }
+  int fd = 0;
+
+  // Create a VA Space
+  struct gpu_va_space_args va_args = {};
+  va_args.page_size = 0;
+  int ret = dev->fops->ioctl(fd, GPU_IOCTL_CREATE_VA_SPACE, &va_args);
+  if (ret != 0) {
+    std::cerr << "[FAIL] CREATE_VA_SPACE failed: " << ret << "\n";
+    return 1;
+  }
+  gpu_va_space_handle_t handle = va_args.va_space_handle;
+  std::cout << "[INFO] CREATE_VA_SPACE: handle=" << handle << "\n";
+
+  // Destroy once (success)
+  ret = dev->fops->ioctl(fd, GPU_IOCTL_DESTROY_VA_SPACE, &handle);
+  if (ret != 0) {
+    std::cerr << "[FAIL] DESTROY_VA_SPACE (1st call) failed: " << ret << "\n";
+    return 1;
+  }
+  std::cout << "[INFO] DESTROY_VA_SPACE: 1st call OK\n";
+
+  // Destroy again (must fail — handle is invalidated)
+  ret = dev->fops->ioctl(fd, GPU_IOCTL_DESTROY_VA_SPACE, &handle);
+  if (ret >= 0) {
+    std::cerr << "[FAIL] DESTROY_VA_SPACE (2nd call) should fail, got: " << ret << "\n";
+    return 1;
+  }
+  std::cout << "[INFO] DESTROY_VA_SPACE: 2nd call correctly rejected (" << ret << ")\n";
+
+  // Attempt CREATE_QUEUE against destroyed handle (must fail)
+  struct gpu_queue_args q_args = {};
+  q_args.va_space_handle = handle;
+  q_args.queue_type = 0;  // GPU_QUEUE_COMPUTE
+  q_args.priority = 50;
+  q_args.ring_buffer_size = 1024 * sizeof(gpu_gpfifo_entry);
+  ret = dev->fops->ioctl(fd, GPU_IOCTL_CREATE_QUEUE, &q_args);
+  if (ret >= 0) {
+    std::cerr << "[FAIL] CREATE_QUEUE with destroyed va_space_handle should fail, got: " << ret << "\n";
+    return 1;
+  }
+  std::cout << "[INFO] CREATE_QUEUE against destroyed handle correctly rejected (" << ret << ")\n";
+
+  // Multiple destroys must not crash (REQUIRE_NOTHROW equivalent)
+  for (int i = 0; i < 3; i++) {
+    dev->fops->ioctl(fd, GPU_IOCTL_DESTROY_VA_SPACE, &handle);
+  }
+  std::cout << "[INFO] Repeated DESTROY_VA_SPACE did not crash\n";
+
+  std::cout << "[PASS] test_destroy_va_space_invalidation\n";
+  return 0;
+}
+
 int main() {
   std::cout << "GPU VA Space Abstraction Test (Phase 2)\n";
   std::cout << "==========================================\n";
@@ -313,6 +375,7 @@ int main() {
   failures += test_va_space_with_queue();
   failures += test_cascade_destroy();
   failures += test_invalid_va_space();
+  failures += test_destroy_va_space_invalidation();
 
   if (failures == 0) {
     std::cout << "\n=== ALL TESTS PASSED ===\n";
