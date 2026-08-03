@@ -175,8 +175,26 @@
       "last_heartbeat": "2026-07-30T07:24:14.693888+00:00",
       "ended_at": "2026-07-30T07:44:18.855690+00:00",
       "end_reason": "plan-done"
+    },
+    {
+      "session_id": "rds_d84070927bf5",
+      "kind": "stage_ship",
+      "owner_opencode_session_id": "my-eci-group_2734454",
+      "parent_session_id": "rds_b19cf351e792",
+      "goal": {
+        "intent": "guide-ship",
+        "subject": "ship-phase",
+        "expected_outcome": "archive-all"
+      },
+      "state": "active",
+      "attached_changes": [],
+      "context_pointer": null,
+      "started_at": "2026-08-03T02:52:19.503942+00:00",
+      "last_heartbeat": "2026-08-03T02:52:19.503942+00:00",
+      "ended_at": null,
+      "end_reason": null
     }
   ],
-  "updated_at": "2026-08-02T17:18:45.036974+00:00",
+  "updated_at": "2026-08-03T02:52:19.503942+00:00",
   "version": 1
 }
