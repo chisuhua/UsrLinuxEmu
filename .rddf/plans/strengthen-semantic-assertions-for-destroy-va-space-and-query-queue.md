@@ -32,13 +32,13 @@
 - Modify: `tests/test_va_space.cpp`
 - Test: `tests/test_va_space.cpp`
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
 ```bash
 cd build && make test_va_space -j4 && ./bin/test_va_space
 Expected: 既有 TEST_CASE PASS, 增强后的新断言因不存在而 PASS (no-op)
 ```
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - tests/test_va_space.cpp: 找到既有 `TEST_CASE("...DESTROY_VA_SPACE...")` 在其后追加新 TEST_CASE:
   -   - `TEST_CASE("DESTROY_VA_SPACE downstream invalidation")`:
   -     `CREATE_VA_SPACE` 拿 handle
@@ -48,13 +48,13 @@ Expected: 既有 TEST_CASE PASS, 增强后的新断言因不存在而 PASS (no-o
   -     重复多次 destroy 不引发崩溃 (REQUIRE_NOTHROW 等)
   - **不破坏既有 CREATE_VA_SPACE / CREATE_QUEUE / DESTROY_QUEUE 测试用例。**
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 cd build && make test_va_space -j4 && ./bin/test_va_space "DESTROY_VA_SPACE*"
 Expected: 新 + 既有 TEST_CASE 全 PASS
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add tests/test_va_space.cpp
 git commit -m "test(gpu): strengthen DESTROY_VA_SPACE semantic assertions (destroy invalidation)"
@@ -65,13 +65,13 @@ git commit -m "test(gpu): strengthen DESTROY_VA_SPACE semantic assertions (destr
 - Modify: `tests/test_gpu_plugin.cpp`
 - Test: `tests/test_gpu_plugin.cpp`
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
 ```bash
 ./bin/test_gpu_plugin "QUERY_QUEUE*"
 Expected: 找不到 TEST_CASE → 测试通过但缺失覆盖
 ```
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - tests/test_gpu_plugin.cpp: 追加新 TEST_CASE:
   -   - `TEST_CASE("GPU_IOCTL_QUERY_QUEUE E2E semantic")`:
   -     前置: CREATE_VA_SPACE + CREATE_QUEUE (特定 queue_type=COMPUTE=0 + ring_buffer_size)
@@ -81,13 +81,13 @@ Expected: 找不到 TEST_CASE → 测试通过但缺失覆盖
   -     REQUIRE `args.doorbell_offset ∈ [DOORBELL_ALLOC_BASE, ...)` 合理范围
   - **走完整 plugin 路径（不是 GpgpuDevice(nullptr) 直接调用）** — 区别于 test_stub_handlers_tier2。
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 cd build && make test_gpu_plugin -j4 && ./bin/test_gpu_plugin "QUERY_QUEUE*"
 Expected: 1+ TEST_CASE 全 PASS
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add tests/test_gpu_plugin.cpp
 git commit -m "test(gpu): add QUERY_QUEUE E2E semantic assertions (queue_type + queue_id + doorbell)"
@@ -96,22 +96,22 @@ git commit -m "test(gpu): add QUERY_QUEUE E2E semantic assertions (queue_type + 
 ### Task 3: 全量 ctest 回归验证
 
 
-- [ ] **Step 1: Verify starting state**
+- [x] **Step 1: Verify starting state**
 ```bash
 N/A
 ```
 
-- [ ] **Step 2: Implementation**
+- [x] **Step 2: Implementation**
   - `cd build && ctest --output-on-failure`
   - 确认既有 76+ ctest 全 PASS + 新增强化 TEST_CASE PASS, 0 regression
 
-- [ ] **Step 3: Run tests to verify they pass**
+- [x] **Step 3: Run tests to verify they pass**
 ```bash
 cd build && ctest --output-on-failure
 Expected: 0 failed
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 (
 n
