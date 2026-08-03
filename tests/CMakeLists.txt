@@ -265,6 +265,8 @@ set(CATCH2_SIM_TESTS
     # Stage 1.4 — Tier-2 runtime penetration tests (STUB_HANDLER upgrades)
     test_register_mmu_cb_runtime_standalone.cpp
     test_register_firmware_cb_runtime_standalone.cpp
+    # wire-muw (2026-08-02) — Task 2 E2E coverage of 0x02/0x03 active dispatch
+    test_register_cb_ioctl_standalone.cpp
     test_stub_handlers_tier2_standalone.cpp
     test_mmu_notifier_callback_runtime_standalone.cpp
     test_iommu_invalidate_runtime_standalone.cpp
