@@ -6,7 +6,7 @@
 > **关联 ADR**: [ADR-064](../00_adr/adr-064-memory-model-staging.md) Decision 3（Stage 4 触发条件） + [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md)（BAR/ioremap 仿真架构） + [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md)（DMA 一致性仿真） + [ADR-040~057](../00_adr/README.md)（GPU CP Blueprint）
 > **关联蓝图**: [blueprint.md](blueprint.md) §③ 硬件模拟（成熟态）
 > **维护者**: UsrLinuxEmu Architecture Team
-> **最后更新**: 2026-07-27（4.2 closeout: 确认已交付 + roadmap 刷新）
+> **最后更新**: 2026-08-03（4.6 closeout 同步：✅ archived + ADR-056 flip + 残留 verify/测试保留为 follow-up）
 
 ---
 
@@ -227,15 +227,17 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 
 ## 子阶段 4.6 — GPU CP Phase 7: Green Context
 
+**状态**: ✅ 已归档 (2026-08-01, merge commit c6f6ed3)
+
 **目标**: 支持 Green Context（低开销用户态上下文切换）。
 
 > 来源：ADR-056（Green Context/PDL）
 
 ### 关键交付
 
-- [ ] Green Context 上下文创建/切换（ADR-056）
-- [ ] PDL（Push Doorbell List）支持
-- [ ] 多 context 并发调度
+- [x] Green Context 上下文创建/切换（ADR-056）
+- [x] PDL（Push Doorbell List）支持
+- [x] 多 context 并发调度
 
 ### 验收
 
@@ -252,6 +254,8 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 - ❌ **VRAM 持久化**：`mmap(MAP_ANONYMOUS)`，无文件持久化（per ADR-064 Decision 3）
 - ❌ **完整模拟真实 GPU 指令集执行**：sim 仅模拟行为
 - ❌ **Doorbell 聚合/过订阅**（ADR-053）**和 CP 错误恢复**（ADR-055）：Deferred (Never)
+
+> **4.1 多进程 BAR 映射隔离** 仍 deferred 至 ADR-011 触发 (Phase 3)。见 ADR-011 当前状态 🔄 Proposed。
 
 ---
 
@@ -288,7 +292,7 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | [ADR-049](../00_adr/adr-049-cross-engine-synchronization.md) | 跨引擎同步 | 4.5 | ✅ Accepted (2026-07-29, D1 修订为 waiter 回调模式) |
 | [ADR-051](../00_adr/adr-051-predication-conditional-execution.md) | Predication | 4.5 | ✅ Accepted (2026-07-31) |
 | [ADR-052](../00_adr/adr-052-aql-pm4-native-support.md) | AQL/PM4 Native | 4.5 | ✅ Accepted (2026-07-31, PM4 解析 deferred to Phase 6.5 per ADR-052 D3) |
-| [ADR-056](../00_adr/adr-056-green-context-pdl.md) | Green Context/PDL | 4.6 | 📋 PROPOSED |
+| [ADR-056](../00_adr/adr-056-green-context-pdl.md) | Green Context/PDL | 4.6 | ✅ Accepted (2026-08-01) |
 
 ---
 
@@ -308,7 +312,7 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
                                                          AQL/PM4)            │
                                                                       4.6 CP  │
                                                                 Phase 7       │
-                                                            (Green Context)   │
+                                                             (✅ Green Context) │
                                                                                │
 4.1 为 4.3+ 提供 MMIO 寄存器访问基础 <─────────────────────────────────────────┘
 ```
@@ -345,6 +349,7 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | 2026-07-28 | v2.0 | 4.3 状态更新：✅ 已完成。ADR-042/044/048/054/057 升 ✅ Accepted。依赖图、风险表同步更新。 |
 | 2026-08-01 | v2.1 | 4.4 状态更新：✅ 已归档（commit `452e298` merge + `b28089f` archive）。ADR-045/047/050 升 ✅ Accepted。子阶段表/关键交付/验收/ADR 表/依赖图同步更新。INDEX.md 同步补登记。 |
 | 2026-08-01 | v2.2 | 4.5 状态更新：✅ 已归档（4 changes: preemption-engine-finish / predication-aql / preemption-timeline-sem / preemption-timeline-sem-gaps, 2026-07-29 ~ 2026-07-31）。ADR-046/049/051/052 升 ✅ Accepted。子阶段表/关键交付/验收/ADR 表/依赖图/风险表同步更新。 |
+| 2026-08-03 | v2.3 | 4.6 状态更新: ✅ 已归档 (commit c6f6ed3 + 14 残留 verify/测试作为 follow-up)。ADR-056 升 ✅ Accepted (2026-08-01)。索引/差距分析同步刷新 |
 | 2026-07-21 | v1.0 | 初版：基于 ADR-064 Stage 4 触发条件 + GPU CP Blueprint Phase 4-7 创建 |
 
 ---

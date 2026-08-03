@@ -7,7 +7,7 @@
 > **性质**: 架构层叙事，描述从当前 MVP 到终态蓝图的演进路径
 > **不绑定**: 本路线图不引用具体 OpenSpec change 编号。后续 OpenSpec change 根据本路线图派生
 > **同步关系**: 与 `docs/sync-plan.md` 互补（sync-plan 负责跨仓同步点，本路线图负责架构演进阶段）
-> **最后更新**: 2026-07-28
+> **最后更新**: 2026-08-03
 > **维护者**: UsrLinuxEmu Architecture Team
 
 ---
@@ -38,7 +38,8 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | **阶段 1** | ✅ 已达成 (2026-07-16) | Linux 内核环境模拟（DRM + UVM + IOMMU + ATS + PCIe BAR/中断）；C-12 KFD 多文件集成 81% 完成 + L1↔L2 bridge skeleton | [docs/roadmap/stage-1-kernel-emu.md](docs/roadmap/stage-1-kernel-emu.md) |
 | **阶段 2** | ✅ 已达成 (2026-07-05) | 多设备插件化（网络 + 存储）| [docs/roadmap/stage-2-multi-device.md](docs/roadmap/stage-2-multi-device.md) |
 | **阶段 3** | ✅ 已达成 (2026-07-23) | v1.0 稳定（CUDA E2E ✅、sanitizer ✅、bridge ✅、perf ✅、errno 审计 ✅、文档 ✅、CI ubuntu ✅、Release ✅）| [docs/roadmap/stage-3-v1.0.md](docs/roadmap/stage-3-v1.0.md) |
-| **阶段 4** | 🔄 进行中 | 真实 BAR + ioremap 模拟 + GPU CP Phase 4-7 完整化（4.1 ✅ / 4.2 ✅ / 4.3 ✅ / 4.4-4.6 ❌）| [docs/roadmap/stage-4-bar-ioremap.md](docs/roadmap/stage-4-bar-ioremap.md) |
+| **阶段 4** | ✅ 已达成 (2026-08-01) | 真实 BAR + ioremap 模拟 + GPU CP Phase 4-7 完整化（4.1 ✅ / 4.2 ✅ / 4.3 ✅ / 4.4 ✅ / 4.5 ✅ / 4.6 ✅；4.6 closeout change 进行中：A1 verify + A2 inline HAL helpers）| [docs/roadmap/stage-4-bar-ioremap.md](docs/roadmap/stage-4-bar-ioremap.md) |
+| **阶段 5** | 📋 规划中（trigger-gated） | 真实多引擎 Puller + PM4 microcode 解析 + 4.6 closeout follow-up；triggered by ADR-049 Phase 6+ / ADR-052 Phase 6.5 条件（详见各 ADR）| [docs/roadmap/stage-5-multi-engine-pm4.md](docs/roadmap/stage-5-multi-engine-pm4.md)（占位，待 trigger 启动）|
 | **终态蓝图** | 📋 愿景 | 3 区分成熟形态，可移植驱动可在真实 Linux 内核中编译运行 | [docs/roadmap/blueprint.md](docs/roadmap/blueprint.md) |
 
 ---
@@ -61,8 +62,21 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
    ↓
 阶段 4 (真实 BAR + ioremap + GPU CP 完整化，6 子阶段)
    ↓
+阶段 5 (multi-engine Puller + PM4 microcode + 4.6 closeout follow-up；trigger-gated)
+   ↓
 终态蓝图（3 区分成熟形态）
 ```
+
+---
+
+## Stage 5 触发条件（占位文档）
+
+Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时启动。当前各 deferred 触发详见：
+
+- [ADR-049 §"Phase 6+ 触发条件"](docs/00_adr/adr-049-cross-engine-synchronization.md) — multi-engine Puller 真实并行（COMPUTE+COPY+GRAPHICS）
+- [ADR-052 §"Phase 6.5 触发条件"](docs/00_adr/adr-052-aql-pm4-native-support.md) — PM4 microcode 解析完整实现
+- [stage-4 §"Stage 4 整体验收"](docs/roadmap/stage-4-bar-ioremap.md) — ② 可移植性 (Linux 6.12 LTS L2) + BAR 性能 ≤20% 回归 CI gating
+- [stage-4-6 archive tasks 1.6/1.7/2.4/3.5/4.6/7.6/8.x/9.1](openspec/changes/archive/2026-08-01-stage4-6-cp-phase7-green-context-pdl/tasks.md) — 14 项残留 verify + inline HAL helpers + standalone tests (P2-A1+A2 + P3-A3 follow-up)
 
 ---
 
