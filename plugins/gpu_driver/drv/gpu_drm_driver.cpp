@@ -23,7 +23,6 @@
 #include "linux_compat/drm/drm_ioctl.h"
 #include "drv/kfd_sim_bridge.h"
 #include "kernel/uvm/mm_shim.h"
-#include "sim/fence_id.h"
 #include "sim/stream_capture.h"
 #include "sim/graph.h"
 #include "sim/mem_pool.h"
@@ -274,24 +273,18 @@ static long gpu_ioctl_wait_fence(struct drm_device* dev, void* data, struct drm_
   while (elapsed_ms < args->timeout_ms || args->timeout_ms == 0) {
     u64 signaled = 0;
 
-    /* Fix-1 / Oracle H4: fence_id 范围分发
-     *   - driver 层 fence (HAL) : [1, SIM_FENCE_ID_BASE - 1]  → hal_fence_read
-     *   - sim 层 fence           : [SIM_FENCE_ID_BASE, INT64_MAX] → sim_fence_id_check
-     * 两层 fence_id 范围互不冲突（SIM_FENCE_ID_BASE 宏定义见 sim/fence_id.h）。
-     */
+    /* Stage 4.6: All fence_ids now go through the unified hal_fence_id_check fn-ptr
+     * (added by B-class foundation change 2026-08-03-stage4-l2-foundation-hal-fence-method-heap).
+     * Legacy hal_fence_read path removed (hal_fence_create deprecated per ADR-040 D3). */
     int ret;
-    if (fence_id < SIM_FENCE_ID_BASE) {
-      ret = hal_fence_read(self->hal_, fence_id, &signaled);
-    } else {
-      bool sim_signaled = false;
-      ret = sim_fence_id_check(fence_id, &sim_signaled);
-      signaled = sim_signaled ? 1 : 0;
-    }
+    bool sim_signaled = false;
+    ret = hal_fence_id_check(self->hal_, fence_id, &sim_signaled);
+    signaled = sim_signaled ? 1 : 0;
 
     if (ret == 0 && signaled) {
       args->status = 1;
       std::cout << "[GpgpuDevice] WAIT_FENCE: id=" << fence_id
-                << (fence_id < SIM_FENCE_ID_BASE ? " (HAL)" : " (sim)") << " signaled=true (waited "
+                << " signaled=true (waited "
                 << elapsed_ms << "ms)\n";
       return 0;
     }
