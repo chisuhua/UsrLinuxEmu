@@ -10,12 +10,12 @@
 #include "kernel/file_ops.h"
 #include "shared/gpu_types.h"
 #include "shared/gpu_queue.h"
+#include "shared/gpu_hal_handles.h"
 #include "linux_compat/drm/drm_device.h"
 
 struct gpu_hal_ops;
 
 class HardwarePullerEmu;
-class GpuQueueEmu;
 
 class GpgpuDevice : public usr_linux_emu::FileOperations {
  public:
@@ -91,7 +91,7 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   // ========== Queue 管理 ==========
 
   /** 获取或创建 Queue（由 ioctl handler 调用） */
-  std::shared_ptr<GpuQueueEmu> getQueue(uint64_t queue_handle);
+  hal_queue_handle_t getQueue(uint64_t queue_handle);
   bool removeQueue(uint64_t queue_handle);
 
   // ========== VA Space 管理 (Phase 2) ==========
@@ -172,10 +172,19 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
 
   static const IoctlEntry* getIoctlTablePtr();
 
-  /** Queue 句柄 → QueueEmu 映射 */
-  std::unordered_map<uint64_t, std::shared_ptr<GpuQueueEmu>> queues_;
+  /** Queue 句柄 → HAL opaque queue handle 映射 */
+  std::unordered_map<uint64_t, hal_queue_handle_t> queues_;
   mutable std::mutex queue_mutex_;
   uint64_t next_queue_handle_ = 1;
+
+  /** drv 层缓存的 queue 元数据（用于 QUERY_QUEUE / MAP_QUEUE_RING） */
+  struct QueueInfo {
+    uint32_t queue_type = 0;
+    uint32_t ring_size = 0;
+    void* shared_mem = nullptr;
+    uint64_t ring_addr = 0;
+  };
+  std::unordered_map<uint64_t, QueueInfo> queue_infos_;
 
   // ========== VA Space 数据 (Phase 2) ==========
 

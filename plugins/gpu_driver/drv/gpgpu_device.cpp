@@ -14,7 +14,6 @@
 #include "kernel/vfs.h"
 #include "sim/graph.h"
 #include "sim/hardware/hardware_puller_emu.h"
-#include "sim/gpu_queue_emu.h"
 #include "sim/mem_pool.h"
 #include "sim/stream_capture.h"
 #include "shared/gpu_events.h"
@@ -358,36 +357,26 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
 
   if (puller_ && !has_fence) {
     // S3.5: 即使在 puller path 中也创建 fence 并返回
-    auto q = getQueue(effective_stream_id);
-    if (!q) {
+    hal_queue_handle_t q = getQueue(effective_stream_id);
+    if (q == 0) {
       usr_linux_emu::Logger::warn(
           "[GpgpuDevice] PUSHBUFFER_SUBMIT_BATCH: queue not found: stream_id=" +
           std::to_string(effective_stream_id));
       return -ENOENT;
     }
 
-    /* ADR-040 D3: 改用 hal_fence_id_alloc(hal_) 替代 hal_fence_create() (Stage 4.6 L2 foundation)。
-     * 旧 HAL fence 在 puller path 下永远不会被 signal（HAL 仿真层无完成回调），
-     * 改用 sim fence 后，HardwarePullerEmu::handleComplete() 在 batch 全量完成时
-     * 自动 signal 该 fence_id。 */
-    int64_t sim_fence = hal_fence_id_alloc(hal_);
-    if (sim_fence < 0) {
-      std::cerr << "[GpgpuDevice] PUSHBUFFER: hal_fence_id_alloc failed\n";
-      return -ENOMEM;
-    }
-    u64 fence_id = static_cast<u64>(sim_fence);
-
     u64 gpfifo_addr = GPFIFO_BASE;
-    int submit_ret = q->submit(gpfifo_addr, args->count, fence_id);
+    int64_t out_fence = 0;
+    int submit_ret = hal_queue_submit(hal_, q, gpfifo_addr, args->count, &out_fence);
     if (submit_ret != 0) {
       std::cerr << "[GpgpuDevice] PUSHBUFFER: queue submit failed (ret=" << submit_ret << ")\n";
       return submit_ret;
     }
     hal_doorbell_ring(hal_, static_cast<u32>(effective_stream_id));  // Use effective_stream_id as queue_id
-    args->fence_id = fence_id;  // S3.5: 返回 fence_id 给调用者
+    args->fence_id = static_cast<uint64_t>(out_fence);  // S3.5: 返回 fence_id 给调用者
     std::cout << "[GpgpuDevice] PUSHBUFFER: puller path, gpfifo=0x" << std::hex << gpfifo_addr
               << " count=" << std::dec << args->count << " queue=" << effective_stream_id
-              << " fence_id=" << fence_id << "\n";
+              << " fence_id=" << args->fence_id << "\n";
     return 0;
   } else if (has_fence) {
     std::cerr << "[GpgpuDevice] PUSHBUFFER: FENCE in batch, using sync path\n";
@@ -525,13 +514,21 @@ long GpgpuDevice::handleCreateQueue(void* argp) {
     effective_priority = GPU_CHAN_PRI_LOW;
   }
 
-  auto queue = std::make_shared<GpuQueueEmu>(
-      static_cast<uint32_t>(handle),
-      args->queue_type,
-      effective_priority,
-      args->ring_buffer_size > 0 ? static_cast<uint32_t>(args->ring_buffer_size) : GPU_MAX_RING_ENTRIES);
+  uint32_t ring_size = args->ring_buffer_size > 0
+                           ? static_cast<uint32_t>(args->ring_buffer_size)
+                           : GPU_MAX_RING_ENTRIES;
+  hal_queue_handle_t queue_handle = 0;
+  int hal_ret = hal_queue_create(hal_, static_cast<uint32_t>(handle),
+                                 args->queue_type, effective_priority,
+                                 ring_size, &queue_handle);
+  if (hal_ret != 0 || queue_handle == 0) {
+    std::cerr << "[GpgpuDevice] CREATE_QUEUE: hal_queue_create failed (ret="
+              << hal_ret << ")\n";
+    return -ENOMEM;
+  }
 
-  queues_[handle] = queue;
+  queues_[handle] = queue_handle;
+  queue_infos_[handle] = {args->queue_type, ring_size, nullptr, 0};
 
   // Dynamic doorbell offset: base + queue_handle * stride
   args->queue_handle = handle;
@@ -540,10 +537,13 @@ long GpgpuDevice::handleCreateQueue(void* argp) {
   // Attach queue to VA Space
   attachQueueToVASpace(args->va_space_handle, handle);
 
-  // Phase 2.5: 注册到 Puller
+  // Phase 2.5: register puller with the queue via HAL.
+  // Interim: the hal_puller_handle_t is the raw HardwarePullerEmu pointer
+  // cast to opaque; the real opaque-handle wire-up is in the
+  // removal-hardware-puller-emu change.
   if (puller_) {
-    puller_->registerQueue(queue.get());
-    queue->setPuller(puller_.get());
+    hal_queue_register_puller(hal_, queue_handle,
+        reinterpret_cast<hal_puller_handle_t>(puller_.get()));
   }
 
   std::cout << "[GpgpuDevice] CREATE_QUEUE: handle=" << handle
@@ -561,6 +561,8 @@ long GpgpuDevice::handleDestroyQueue(void* argp) {
   std::lock_guard<std::mutex> lock(queue_mutex_);
   auto it = queues_.find(handle);
   if (it == queues_.end()) return -ENOENT;
+
+  hal_queue_handle_t queue_handle = it->second;
 
   // Detach from VA Space (find which VA space has this queue)
   {
@@ -581,7 +583,9 @@ long GpgpuDevice::handleDestroyQueue(void* argp) {
     puller_->unregisterQueue(static_cast<uint32_t>(handle));
   }
 
+  hal_queue_destroy(hal_, queue_handle);
   queues_.erase(it);
+  queue_infos_.erase(handle);
   std::cout << "[GpgpuDevice] DESTROY_QUEUE: handle=" << handle << "\n";
   return 0;
 }
@@ -593,27 +597,33 @@ long GpgpuDevice::handleMapQueueRing(void* argp) {
   std::lock_guard<std::mutex> lock(queue_mutex_);
   auto it = queues_.find(args->queue_handle);
   if (it == queues_.end()) return -ENOENT;
+  auto info_it = queue_infos_.find(args->queue_handle);
+  if (info_it == queue_infos_.end()) return -ENOENT;
 
   // HOTFIX v1.4.1: do not dereference user-provided ring_addr directly;
   // userspace can't safely write to arbitrary user addresses.  Allocate
-  // our own aligned backing store and pass that to attachSharedMemory.
+  // our own aligned backing store and pass that to hal_queue_attach_shmem.
   size_t ring_mem_size = sizeof(gpu_ring_header) +
-      it->second->ringSize() * sizeof(gpu_gpfifo_entry);
-  if (!it->second->shared_mem_) {
-    if (posix_memalign(&it->second->shared_mem_, 4096, ring_mem_size) != 0) {
+      info_it->second.ring_size * sizeof(gpu_gpfifo_entry);
+  if (!info_it->second.shared_mem) {
+    if (posix_memalign(&info_it->second.shared_mem, 4096, ring_mem_size) != 0) {
       std::cerr << "[GpgpuDevice] MAP_QUEUE_RING: posix_memalign failed\n";
       return -ENOMEM;
     }
   }
-  int ret = it->second->attachSharedMemory(it->second->shared_mem_, ring_mem_size);
+  int ret = hal_queue_attach_shmem(hal_, it->second,
+                                    info_it->second.shared_mem, ring_mem_size);
   if (ret != 0) {
-    std::cerr << "[GpgpuDevice] MAP_QUEUE_RING: attachSharedMemory failed\n";
+    std::cerr << "[GpgpuDevice] MAP_QUEUE_RING: hal_queue_attach_shmem failed\n";
     return -ENOMEM;
   }
 
+  info_it->second.ring_addr =
+      reinterpret_cast<uint64_t>(info_it->second.shared_mem) + sizeof(gpu_ring_header);
+
   std::cout << "[GpgpuDevice] MAP_QUEUE_RING: handle=" << args->queue_handle
             << " user_addr=0x" << std::hex << args->ring_addr
-            << " backing=0x" << it->second->shared_mem_ << std::dec << "\n";
+            << " backing=0x" << info_it->second.shared_mem << std::dec << "\n";
   return 0;
 }
 
@@ -624,24 +634,30 @@ long GpgpuDevice::handleQueryQueue(void* argp) {
   std::lock_guard<std::mutex> lock(queue_mutex_);
   auto it = queues_.find(args->queue_handle);
   if (it == queues_.end()) return -ENOENT;
+  auto info_it = queue_infos_.find(args->queue_handle);
+  if (info_it == queue_infos_.end()) return -ENOENT;
 
-  auto& queue = it->second;
-  args->queue_type = queue->queueType();
-  args->queue_id = queue->queueId();
+  auto& info = info_it->second;
+  args->queue_type = info.queue_type;
+  args->queue_id = static_cast<uint32_t>(args->queue_handle);
   // Dynamic doorbell offset: base + queue_handle * stride
   args->doorbell_offset = DOORBELL_ALLOC_BASE + (args->queue_handle * DOORBELL_ALLOC_STRIDE);
-  args->ring_size = queue->ringHeader() ? queue->ringHeader()->capacity : 0;
-  // ring_addr: base of entries after ring header (0 if not mapped yet)
-  args->ring_addr = queue->ringHeader() ? reinterpret_cast<uint64_t>(queue->ringHeader() + 1) : 0;
-  args->pending_count = queue->pendingCount();
+  args->ring_size = info.ring_size;
+  args->ring_addr = info.ring_addr;
+  if (info.shared_mem) {
+    auto* header = static_cast<gpu_ring_header*>(info.shared_mem);
+    args->pending_count = header->write_idx - header->read_idx;
+  } else {
+    args->pending_count = 0;
+  }
   return 0;
 }
 
-std::shared_ptr<GpuQueueEmu> GpgpuDevice::getQueue(uint64_t queue_handle) {
+hal_queue_handle_t GpgpuDevice::getQueue(uint64_t queue_handle) {
   std::lock_guard<std::mutex> lock(queue_mutex_);
   auto it = queues_.find(queue_handle);
   if (it != queues_.end()) return it->second;
-  return nullptr;
+  return 0;
 }
 
 bool GpgpuDevice::removeQueue(uint64_t queue_handle) {
@@ -777,7 +793,7 @@ void* GpgpuDevice::mmap(void* addr, size_t length, int prot, int flags, int fd, 
   if (offset >= QUEUE_RING_MMAP_BASE) {
     // Ring Buffer 区域
     // 当前方案：共享内存由 TaskRunner 管理
-    // GpuQueueEmu::attachSharedMemory() 在 MAP_QUEUE_RING 中处理
+    // hal_queue_attach_shmem() 在 MAP_QUEUE_RING 中处理
     // 返回 MAP_FAILED 让 TaskRunner fallback 到 ioctl 路径
     std::cerr << "[GpgpuDevice] mmap QUEUE_RING: falling back to user-shared shm\n";
     return MAP_FAILED;
@@ -947,26 +963,16 @@ long GpgpuDevice::handleGraphLaunch(void* argp) {
 
   /* ADR-033 R2: stream_id = LOW32(queue_handle). Cast u32 stream_id to u64
    * for queue lookup. */
-  auto q = getQueue(static_cast<uint64_t>(args->stream_id));
-  if (!q) {
+  hal_queue_handle_t q = getQueue(static_cast<uint64_t>(args->stream_id));
+  if (q == 0) {
     usr_linux_emu::Logger::warn(
         "[GpgpuDevice] GRAPH_LAUNCH: queue not found, stream_id=" +
         std::to_string(args->stream_id));
     return -ENOENT;
   }
 
-  /* ADR-040: allocate a sim-layer fence. Puller will signal it on
-   * handleComplete() once the batch is fully consumed. fence is NOT
-   * signaled here — caller must use hal_fence_id_check (via WAIT_FENCE)
-   * to block until completion. */
-  int64_t sim_fence = hal_fence_id_alloc(hal_);
-  if (sim_fence < 0) {
-    std::cerr << "[GpgpuDevice] GRAPH_LAUNCH: hal_fence_id_alloc failed\n";
-    return -ENOMEM;
-  }
-  uint64_t fence_id = static_cast<uint64_t>(sim_fence);
-
-  int submit_ret = q->submit(gpfifo_addr, entry_count, fence_id);
+  int64_t out_fence = 0;
+  int submit_ret = hal_queue_submit(hal_, q, gpfifo_addr, entry_count, &out_fence);
   if (submit_ret != 0) {
     std::cerr << "[GpgpuDevice] GRAPH_LAUNCH: queue submit failed (ret="
               << submit_ret << ")\n";
@@ -977,12 +983,12 @@ long GpgpuDevice::handleGraphLaunch(void* argp) {
     hal_doorbell_ring(hal_, args->stream_id);
   }
 
-  args->fence_id_out = static_cast<int64_t>(fence_id);
+  args->fence_id_out = out_fence;
   std::cout << "[GpgpuDevice] GRAPH_LAUNCH: exec=" << args->exec_handle
             << " stream=" << args->stream_id
             << " gpfifo=0x" << std::hex << gpfifo_addr << std::dec
             << " entries=" << entry_count
-            << " fence_id=" << fence_id << "\n";
+            << " fence_id=" << out_fence << "\n";
   return 0;
 }
 
