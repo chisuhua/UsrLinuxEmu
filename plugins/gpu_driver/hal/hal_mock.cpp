@@ -417,6 +417,11 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
   hal->mem_pool_get_attr = [](void*, uint64_t, uint32_t, void*,
                               uint64_t) -> int { return 0; };
   hal->mem_pool_trim = [](void*, uint64_t, uint64_t) -> int { return 0; };
+  hal->mem_pool_export_shareable = [](void*, uint64_t, uint32_t, uint32_t,
+                                       int32_t* fd_out) -> int {
+    if (fd_out) *fd_out = -1;
+    return 0;
+  };
 
   /* ── stream_capture mocks (3) ────────────────────────────────── */
   hal->stream_capture_begin = [](void*, uint64_t, uint32_t) -> int {

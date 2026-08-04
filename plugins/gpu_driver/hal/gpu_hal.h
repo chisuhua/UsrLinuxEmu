@@ -284,6 +284,12 @@ struct gpu_hal_ops {
   /* mem_pool_trim: trim pool to minimum size (memory reclaim). */
   int (*mem_pool_trim)(void *ctx, uint64_t handle, uint64_t min_bytes);
 
+  /* mem_pool_export_shareable: export pool as a shareable handle (POSIX FD).
+   * Phase 4 addition; not part of the original 9 core mem_pool fn-ptrs but
+   * required to keep drv/ free of direct sim/mem_pool.h dependency. */
+  int (*mem_pool_export_shareable)(void *ctx, uint64_t handle, uint32_t handle_type,
+                                    uint32_t flags, int32_t *fd_out);
+
   /* ── stream_capture fn-ptrs (3) ─────────────────────────────── */
 
   /* stream_capture_begin: start recording ops on a stream. */
@@ -601,6 +607,12 @@ static inline int hal_mem_pool_get_attr(struct gpu_hal_ops *hal, uint64_t h,
 static inline int hal_mem_pool_trim(struct gpu_hal_ops *hal, uint64_t h,
                                     uint64_t min_bytes) {
   return hal->mem_pool_trim(hal->ctx, h, min_bytes);
+}
+
+static inline int hal_mem_pool_export_shareable(struct gpu_hal_ops *hal,
+                                                uint64_t h, uint32_t handle_type,
+                                                uint32_t flags, int32_t *fd_out) {
+  return hal->mem_pool_export_shareable(hal->ctx, h, handle_type, flags, fd_out);
 }
 
 /* ── stream_capture inline wrappers (3) ───────────────────────── */

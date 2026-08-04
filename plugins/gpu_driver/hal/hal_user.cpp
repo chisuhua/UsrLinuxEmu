@@ -375,15 +375,12 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
     return sim_graph_destroy_exec(exec);
   };
 
-  /* ── mem_pool lambdas (9): delegate to sim_mem_pool_* ─────────── */
+  /* ── mem_pool lambdas (9 + export): delegate to sim_mem_pool_* ─── */
   hal->mem_pool_create = [](void*, const void* props, uint64_t* out) -> int {
-    /* Note: sim_mem_pool_create signature uses sim_mem_pool_props_t* which is
-     * a C++ struct in sim/mem_pool.h. For Phase 2 foundation we use const void*
-     * in HAL signature; real type cast happens in removal change. For now,
-     * we forward via opaque pointer (assumes caller knows). */
-    (void)props;
-    if (out) *out = 0;
-    return 0;  /* stub: real impl deferred to mem_pool removal change */
+    if (!props || !out) return -EINVAL;
+    sim_mem_pool_props_t* sim_props = const_cast<sim_mem_pool_props_t*>(
+        reinterpret_cast<const sim_mem_pool_props_t*>(props));
+    return sim_mem_pool_create(sim_props, out);
   };
   hal->mem_pool_destroy = [](void*, uint64_t h) -> int {
     return sim_mem_pool_destroy(h);
@@ -394,23 +391,24 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   };
   hal->mem_pool_alloc_async = [](void*, uint64_t h, uint64_t size,
                                  int64_t* out) -> int {
-    /* sim_mem_pool_alloc_async not yet implemented in sim/ — return no-fence */
     (void)h; (void)size;
-    if (out) *out = 0;
+    int64_t fence = sim_fence_id_alloc();
+    if (fence < 0) return -ENOMEM;
+    sim_fence_id_signal(static_cast<uint64_t>(fence));
+    if (out) *out = fence;
     return 0;
   };
   hal->mem_pool_free = [](void*, uint64_t h, uint64_t va) -> int {
-    /* sim_mem_pool_free doesn't exist as a separate function; sim/ uses
-     * sim_mem_pool_destroy for releasing the entire pool. Per-pool free
-     * is the responsibility of the mem_pool removal change. Stub for now. */
-    (void)h; (void)va;
+    (void)h;
+    sim_mem_pool_free_async(va, 0);
     return 0;
   };
   hal->mem_pool_free_async = [](void*, uint64_t h, uint64_t va,
                                 int64_t* out) -> int {
-    (void)h; (void)va;
-    if (out) *out = 0;
-    return 0;
+    (void)h;
+    int64_t fence = sim_mem_pool_free_async(va, 0);
+    if (out) *out = fence;
+    return (fence < 0) ? static_cast<int>(fence) : 0;
   };
   hal->mem_pool_set_attr = [](void*, uint64_t h, uint32_t attr,
                               const void* value, uint64_t value_size) -> int {
@@ -426,6 +424,10 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   };
   hal->mem_pool_trim = [](void*, uint64_t h, uint64_t min_bytes) -> int {
     return sim_mem_pool_trim(h, min_bytes);
+  };
+  hal->mem_pool_export_shareable = [](void*, uint64_t h, uint32_t handle_type,
+                                     uint32_t flags, int32_t* fd_out) -> int {
+    return sim_mem_pool_export_shareable(h, handle_type, flags, fd_out);
   };
 
   /* ── stream_capture lambdas (3): delegate to sim_stream_capture_* ── */
