@@ -360,6 +360,103 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
   hal->heap_ptr = [](void*, uint64_t) -> void* {
     return nullptr;  // mock: no real heap backing
   };
+
+  /* ── Stage 4.6 L2 foundation (ADR-072 §Decision 4) — Phase 2 ─── */
+  /* Mock fn-ptrs: test-friendly defaults (monotonic counter, true, 0,
+   * nullptr). No real sim state, deterministic for test reproducibility. */
+
+  /* ── graph mocks (7) ────────────────────────────────────────── */
+  hal->graph_create = [](void*, uint64_t* out) -> int {
+    static std::atomic<uint64_t> next{0x2000};
+    if (out) *out = ++next;
+    return 0;
+  };
+  hal->graph_destroy = [](void*, uint64_t) -> int { return 0; };
+  hal->graph_add_kernel_node = [](void*, uint64_t, uint32_t,
+                                  uint32_t, uint32_t, uint32_t,
+                                  uint32_t, uint32_t, uint32_t,
+                                  uint64_t*) -> int {
+    return 0;
+  };
+  hal->graph_add_memcpy_node = [](void*, uint64_t, uint64_t, uint64_t,
+                                  uint64_t, int) -> int { return 0; };
+  hal->graph_instantiate = [](void*, uint64_t, uint64_t* out) -> int {
+    static std::atomic<uint64_t> next{0x3000};
+    if (out) *out = ++next;
+    return 0;
+  };
+  hal->graph_launch = [](void*, uint64_t, uint32_t, uint64_t*,
+                         uint32_t*) -> int { return 0; };
+  hal->graph_destroy_exec = [](void*, uint64_t) -> int { return 0; };
+
+  /* ── mem_pool mocks (9) ──────────────────────────────────────── */
+  hal->mem_pool_create = [](void*, const void*, uint64_t* out) -> int {
+    static std::atomic<uint64_t> next{0x4000};
+    if (out) *out = ++next;
+    return 0;
+  };
+  hal->mem_pool_destroy = [](void*, uint64_t) -> int { return 0; };
+  hal->mem_pool_alloc = [](void*, uint64_t, uint64_t, uint64_t* out) -> int {
+    static std::atomic<uint64_t> next{0x5000};
+    if (out) *out = ++next;
+    return 0;
+  };
+  hal->mem_pool_alloc_async = [](void*, uint64_t, uint64_t,
+                                 int64_t* out) -> int {
+    if (out) *out = 0;
+    return 0;
+  };
+  hal->mem_pool_free = [](void*, uint64_t, uint64_t) -> int { return 0; };
+  hal->mem_pool_free_async = [](void*, uint64_t, uint64_t,
+                                int64_t* out) -> int {
+    if (out) *out = 0;
+    return 0;
+  };
+  hal->mem_pool_set_attr = [](void*, uint64_t, uint32_t, const void*,
+                              uint64_t) -> int { return 0; };
+  hal->mem_pool_get_attr = [](void*, uint64_t, uint32_t, void*,
+                              uint64_t) -> int { return 0; };
+  hal->mem_pool_trim = [](void*, uint64_t, uint64_t) -> int { return 0; };
+
+  /* ── stream_capture mocks (3) ────────────────────────────────── */
+  hal->stream_capture_begin = [](void*, uint64_t, uint32_t) -> int {
+    return 0;
+  };
+  hal->stream_capture_end = [](void*, uint64_t, uint64_t* out) -> int {
+    if (out) *out = 0;
+    return 0;
+  };
+  hal->stream_capture_status = [](void*, uint64_t, uint32_t* out) -> int {
+    if (out) *out = 0;  // mock: never capturing
+    return 0;
+  };
+
+  /* ── gpu_queue_emu mocks (5) ─────────────────────────────────── */
+  hal->queue_create = [](void*, uint32_t, uint32_t, uint32_t, uint32_t,
+                         hal_queue_handle_t* out) -> int {
+    static std::atomic<uint64_t> next{0x6000};
+    if (out) *out = ++next;
+    return 0;
+  };
+  hal->queue_attach_shmem = [](void*, hal_queue_handle_t, void*,
+                               uint64_t) -> int { return 0; };
+  hal->queue_submit = [](void*, hal_queue_handle_t, uint64_t, uint32_t,
+                         int64_t* out) -> int {
+    if (out) *out = 0;
+    return 0;
+  };
+  hal->queue_destroy = [](void*, hal_queue_handle_t) -> int { return 0; };
+  hal->queue_register_puller = [](void*, hal_queue_handle_t,
+                                  hal_puller_handle_t) -> int { return 0; };
+
+  /* ── hardware_puller_emu mocks (3) ───────────────────────────── */
+  hal->puller_set_puller = [](void*, hal_puller_handle_t, uint64_t) -> int {
+    return 0;
+  };
+  hal->puller_register_queue = [](void*, hal_puller_handle_t,
+                                  hal_queue_handle_t) -> int { return 0; };
+  hal->puller_unregister_queue = [](void*, hal_puller_handle_t,
+                                    uint32_t) -> int { return 0; };
 }
 
 void hal_mock_destroy(struct hal_mock_state *state) {
