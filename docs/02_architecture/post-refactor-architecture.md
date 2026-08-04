@@ -130,7 +130,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 │                   设备驱动层 (Device Driver)                      │
 │   plugins/gpu_driver/                                             │
 │   • drv/         : GpgpuDevice (table ioctl via getIoctlTablePtr)│
-│   • hal/         : struct gpu_hal_ops (29 fn-ptrs)             │
+│   • hal/         : struct gpu_hal_ops (62 fn-ptrs)             │
 │                    + hal_user (mmap heap + buddy + fences)      │
 │                    + hal_mock                                    │
 │   • shared/      : gpu_ioctl.h, gpu_types.h, gpu_queue.h,       │
@@ -536,7 +536,7 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 - **真实 Linux kernel 环境**：driver → HAL → `hal_user.cpp` → 真实硬件
 - driver 代码本身**零修改**即可切换环境
 
-##### `gpu_hal_ops` 函数指针清单（29 fn-ptrs, post-stage4-5）
+##### `gpu_hal_ops` 函数指针清单（62 fn-ptrs, post-stage4-7 B-class L2 Phase 2 foundation）
 
 | 阶段 | 函数指针 | 用途 |
 |------|----------|------|
@@ -550,6 +550,13 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 | | `hal_resume` | 恢复 preempted channel |
 | | `hal_sem_create` / `hal_sem_signal` / `hal_sem_wait` / `hal_sem_query` / `hal_sem_destroy` | timeline semaphore 生命周期 |
 | | `interrupt_register` | 注册中断回调 |
+| stage4-7 Phase 2 foundation (+27 ops) | `graph_create` / `graph_destroy` / `graph_add_kernel_node` / `graph_add_memcpy_node` / `graph_instantiate` / `graph_launch` / `graph_destroy_exec` | CUDA Graph 生命周期（sim/graph.h） |
+| | `mem_pool_create` / `mem_pool_destroy` / `mem_pool_alloc` / `mem_pool_alloc_async` / `mem_pool_free` / `mem_pool_free_async` / `mem_pool_set_attr` / `mem_pool_get_attr` / `mem_pool_trim` | sim_mem_pool 生命周期（sim/mem_pool.h） |
+| | `stream_capture_begin` / `stream_capture_end` / `stream_capture_status` | CUDA stream capture（sim/stream_capture.h） |
+| | `queue_create` / `queue_attach_shmem` / `queue_submit` / `queue_destroy` / `queue_register_puller` | GpuQueueEmu class（opaque hal_queue_handle_t） |
+| | `puller_set_puller` / `puller_register_queue` / `puller_unregister_queue` | HardwarePullerEmu class（opaque hal_puller_handle_t） |
+
+> **完整 fn-ptr 清单**（62 个）以 `plugins/gpu_driver/hal/gpu_hal.h` 为准。class 类型（`GpuQueueEmu` / `HardwarePullerEmu`）通过 opaque `uint64_t` handle 暴露（ADR-023 §Decision 4 C 兼容约束），drv/ 侧在后续 removal change 中 cast 还原。
 
 **Preemption spec addendum**: See
 [`openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md`](../../openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md)

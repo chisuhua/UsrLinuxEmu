@@ -242,16 +242,20 @@ section_arch() {
         check_warn "archive/historical-plans-2026-06-15 has ${plans_n} files (Appendix B claims 8)"
     fi
 
-    # 1.5 HAL function pointer count (33 post-stage4-6 Green Context + PDL)
+    # 1.5 HAL function pointer count (62 post-stage4-7 B-class L2 Phase 2 foundation)
     # History: 22 baseline -> 29 (+8 for preempt/timeline sem, stage4-5) -> 33 (+4 for green/pdl, stage4-6)
-    subsection "1.5 struct gpu_hal_ops has 33 function pointers"
+    #          -> 35 (+2: fence_id_alloc int64_t + heap_ptr void*, counted via struct-member regex, stage4-6 L2 Phase 1)
+    #          -> 62 (+27: graph/mem_pool/stream_capture/gpu_queue_emu/hardware_puller_emu, stage4-7 Phase 2 foundation)
+    # Count = unique (*name) tokens inside the struct, excluding nested fn-ptr params (callback/handler).
+    subsection "1.5 struct gpu_hal_ops has 62 function pointers"
     if [ -f "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" ]; then
         local hal_count
-        hal_count=$(grep -cE "^\s+(int|void)\s+\(\*.*\)\s*\(" "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" 2>/dev/null || echo "0")
-        if [ "${hal_count}" -eq 33 ]; then
+        hal_count=$(awk '/^struct gpu_hal_ops {/,/^};/' "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" \
+          | grep -oE "\(\*[a-z_]+\)" | grep -vE "callback|handler" | sort -u | wc -l | tr -d ' ')
+        if [ "${hal_count}" -eq 62 ]; then
             check_pass "gpu_hal.h has ${hal_count} fn-ptrs (matches doc)"
         else
-            check_warn "gpu_hal.h has ${hal_count} fn-ptrs (doc claims 33)"
+            check_warn "gpu_hal.h has ${hal_count} fn-ptrs (doc claims 62)"
         fi
     else
         check_warn "plugins/gpu_driver/hal/gpu_hal.h not found"
