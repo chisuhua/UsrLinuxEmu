@@ -23,7 +23,6 @@
 #include "linux_compat/drm/drm_ioctl.h"
 #include "drv/kfd_sim_bridge.h"
 #include "kernel/uvm/mm_shim.h"
-#include "sim/stream_capture.h"
 
 /* DRM ioctl command numbers — mirror GPU_IOCTL_* values for zero-change kernel migration */
 #define DRM_IOCTL_GET_DEVICE_INFO GPU_IOCTL_GET_DEVICE_INFO
@@ -488,30 +487,28 @@ static long gpu_ioctl_unmap_memory(struct drm_device* dev, void* data, struct dr
  *   int64_t → fence_id (≥ 1<<32) on success, <0 on error */
 
 static long gpu_ioctl_stream_capture_begin(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_stream_capture_args*>(data);
   if (!args) return -EFAULT;
-  return sim_stream_capture_begin(args->stream_id, args->mode);
+  return hal_stream_capture_begin(self->hal_, args->stream_id, args->mode);
 }
 
 static long gpu_ioctl_stream_capture_end(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_stream_capture_args*>(data);
   if (!args) return -EFAULT;
   /* Mode field unused on END; pass 0. */
   args->mode = 0;
-  return sim_stream_capture_end(args->stream_id, &args->graph_handle_out);
+  return hal_stream_capture_end(self->hal_, args->stream_id, &args->graph_handle_out);
 }
 
 static long gpu_ioctl_stream_capture_status(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_stream_capture_status_args*>(data);
   if (!args) return -EFAULT;
-  /* IOCTL status_out is u32; sim enum is int-sized — copy through a local. */
-  sim_stream_capture_status_t local_status = SIM_STREAM_CAPTURE_NONE;
-  int rc = sim_stream_capture_status(args->stream_id, &local_status);
+  int rc = hal_stream_capture_status(self->hal_, args->stream_id,
+                                     &args->status_out);
   if (rc == 0) {
-    args->status_out = static_cast<u32>(local_status);
     std::cout << "[GpgpuDevice] STREAM_CAPTURE_STATUS: stream=" << args->stream_id
               << " status=" << args->status_out << "\n";
   }
