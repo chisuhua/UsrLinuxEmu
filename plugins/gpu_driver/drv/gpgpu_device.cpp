@@ -12,7 +12,6 @@
 #include "kernel/logger.h"
 #include "drv/kfd_sim_bridge.h"
 #include "kernel/vfs.h"
-#include "sim/graph.h"
 #include "sim/mem_pool.h"
 #include "sim/fence_id.h"
 #include "sim/stream_capture.h"
@@ -908,20 +907,20 @@ long GpgpuDevice::handleStreamCaptureStatus(void* argp) {
 long GpgpuDevice::handleGraphCreate(void* argp) {
   auto* args = static_cast<struct gpu_graph_create_args*>(argp);
   if (!args) return -EFAULT;
-  return sim_graph_create(&args->graph_handle_out);
+  return hal_graph_create(hal_, &args->graph_handle_out);
 }
 
 long GpgpuDevice::handleGraphDestroy(void* argp) {
   auto* args = static_cast<struct gpu_graph_destroy_args*>(argp);
   if (!args) return -EFAULT;
-  return sim_graph_destroy(args->graph_handle);
+  return hal_graph_destroy(hal_, args->graph_handle);
 }
 
 long GpgpuDevice::handleGraphAddKernelNode(void* argp) {
   auto* args = static_cast<struct gpu_graph_add_kernel_node_args*>(argp);
   if (!args) return -EFAULT;
   uint64_t bo = args->kernargs_bo_handle;
-  return sim_graph_add_kernel_node(args->graph_handle, args->kernel_index,
+  return hal_graph_add_kernel_node(hal_, args->graph_handle, args->kernel_index,
                                    args->grid_x, args->grid_y, args->grid_z,
                                    args->block_x, args->block_y, args->block_z,
                                    &bo);
@@ -930,25 +929,25 @@ long GpgpuDevice::handleGraphAddKernelNode(void* argp) {
 long GpgpuDevice::handleGraphAddMemcpyNode(void* argp) {
   auto* args = static_cast<struct gpu_graph_add_memcpy_node_args*>(argp);
   if (!args) return -EFAULT;
-  return sim_graph_add_memcpy_node(args->graph_handle, args->src_va, args->dst_va,
+  return hal_graph_add_memcpy_node(hal_, args->graph_handle, args->src_va, args->dst_va,
                                    args->size, static_cast<int>(args->is_h2d));
 }
 
 long GpgpuDevice::handleGraphInstantiate(void* argp) {
   auto* args = static_cast<struct gpu_graph_instantiate_args*>(argp);
   if (!args) return -EFAULT;
-  return sim_graph_instantiate(args->graph_handle, &args->exec_handle_out);
+  return hal_graph_instantiate(hal_, args->graph_handle, &args->exec_handle_out);
 }
 
 long GpgpuDevice::handleGraphLaunch(void* argp) {
   auto* args = static_cast<struct gpu_graph_launch_args*>(argp);
   if (!args) return -EFAULT;
 
-  /* ADR-043 D4: sim_graph_launch is a read-only lookup (no fence alloc,
+  /* ADR-043 D4: hal_graph_launch is a read-only lookup (no fence alloc,
    * no Puller interaction). The drv layer owns the fence lifecycle. */
   uint64_t gpfifo_addr = 0;
   uint32_t entry_count = 0;
-  int sim_ret = sim_graph_launch(args->exec_handle, args->stream_id,
+  int sim_ret = hal_graph_launch(hal_, args->exec_handle, args->stream_id,
                                  &gpfifo_addr, &entry_count);
   if (sim_ret != 0) return sim_ret;
   if (entry_count == 0) {
@@ -992,7 +991,7 @@ long GpgpuDevice::handleGraphLaunch(void* argp) {
 long GpgpuDevice::handleGraphDestroyExec(void* argp) {
   auto* args = static_cast<struct gpu_graph_destroy_exec_args*>(argp);
   if (!args) return -EFAULT;
-  return sim_graph_destroy_exec(args->exec_handle);
+  return hal_graph_destroy_exec(hal_, args->exec_handle);
 }
 
 long GpgpuDevice::handleMemPoolCreate(void* argp) {

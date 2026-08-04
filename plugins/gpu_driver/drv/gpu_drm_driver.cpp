@@ -24,7 +24,6 @@
 #include "drv/kfd_sim_bridge.h"
 #include "kernel/uvm/mm_shim.h"
 #include "sim/stream_capture.h"
-#include "sim/graph.h"
 #include "sim/mem_pool.h"
 
 /* DRM ioctl command numbers — mirror GPU_IOCTL_* values for zero-change kernel migration */
@@ -521,48 +520,48 @@ static long gpu_ioctl_stream_capture_status(struct drm_device* dev, void* data, 
 }
 
 static long gpu_ioctl_graph_create(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_graph_create_args*>(data);
   if (!args) return -EFAULT;
-  return sim_graph_create(&args->graph_handle_out);
+  return hal_graph_create(self->hal_, &args->graph_handle_out);
 }
 
 static long gpu_ioctl_graph_destroy(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_graph_destroy_args*>(data);
   if (!args) return -EFAULT;
-  return sim_graph_destroy(args->graph_handle);
+  return hal_graph_destroy(self->hal_, args->graph_handle);
 }
 
 static long gpu_ioctl_graph_add_kernel_node(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_graph_add_kernel_node_args*>(data);
   if (!args) return -EFAULT;
   uint64_t bo = args->kernargs_bo_handle;  /* sim uses pointer; pass &bo */
-  return sim_graph_add_kernel_node(args->graph_handle, args->kernel_index,
-                                   args->grid_x, args->grid_y, args->grid_z,
-                                   args->block_x, args->block_y, args->block_z,
-                                   &bo);
+  return hal_graph_add_kernel_node(self->hal_, args->graph_handle, args->kernel_index,
+                                    args->grid_x, args->grid_y, args->grid_z,
+                                    args->block_x, args->block_y, args->block_z,
+                                    &bo);
 }
 
 static long gpu_ioctl_graph_add_memcpy_node(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_graph_add_memcpy_node_args*>(data);
   if (!args) return -EFAULT;
-  return sim_graph_add_memcpy_node(args->graph_handle, args->src_va, args->dst_va,
-                                   args->size, static_cast<int>(args->is_h2d));
+  return hal_graph_add_memcpy_node(self->hal_, args->graph_handle, args->src_va, args->dst_va,
+                                    args->size, static_cast<int>(args->is_h2d));
 }
 
 static long gpu_ioctl_graph_instantiate(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_graph_instantiate_args*>(data);
   if (!args) return -EFAULT;
-  return sim_graph_instantiate(args->graph_handle, &args->exec_handle_out);
+  return hal_graph_instantiate(self->hal_, args->graph_handle, &args->exec_handle_out);
 }
 
 static long gpu_ioctl_graph_launch(struct drm_device* dev, void* data, struct drm_file*) {
   /* ADR-043 D4: forward to GpgpuDevice::ioctl() so the same drv-side
-   * logic (sim_graph_launch lookup + getQueue + q->submit + doorbell)
+   * logic (hal_graph_launch lookup + getQueue + q->submit + doorbell)
    * handles both the table-dispatch path and the DRM path. This avoids
    * duplicating the fence lifecycle (ADR-040) across two code paths. */
   if (!data) return -EFAULT;
@@ -571,10 +570,10 @@ static long gpu_ioctl_graph_launch(struct drm_device* dev, void* data, struct dr
 }
 
 static long gpu_ioctl_graph_destroy_exec(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_graph_destroy_exec_args*>(data);
   if (!args) return -EFAULT;
-  return sim_graph_destroy_exec(args->exec_handle);
+  return hal_graph_destroy_exec(self->hal_, args->exec_handle);
 }
 
 static long gpu_ioctl_mem_pool_create(struct drm_device* dev, void* data, struct drm_file*) {
