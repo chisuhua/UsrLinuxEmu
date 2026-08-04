@@ -279,6 +279,7 @@ set(CATCH2_SIM_TESTS
     test_socket_skbuff_standalone.cpp
     # sim-stream-primitive-support — §5.1 Phase 3.1/3.2 sim primitives
     test_sim_stream_capture_standalone.cpp
+    test_stream_capture_hal_standalone.cpp
     test_sim_graph_standalone.cpp
     test_sim_graph_hal_standalone.cpp
     test_sim_mem_pool_standalone.cpp

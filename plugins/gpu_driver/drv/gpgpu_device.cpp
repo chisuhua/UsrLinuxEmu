@@ -13,7 +13,6 @@
 #include "drv/kfd_sim_bridge.h"
 #include "kernel/vfs.h"
 #include "sim/fence_id.h"
-#include "sim/stream_capture.h"
 #include "shared/gpu_events.h"
 #include "shared/gpu_ioctl.h"
 #include "shared/gpu_types.h"
@@ -882,25 +881,20 @@ long GpgpuDevice::handleRegisterGPU(void* argp) {
 long GpgpuDevice::handleStreamCaptureBegin(void* argp) {
   auto* args = static_cast<struct gpu_stream_capture_args*>(argp);
   if (!args) return -EFAULT;
-  return sim_stream_capture_begin(args->stream_id, args->mode);
+  return hal_stream_capture_begin(hal_, args->stream_id, args->mode);
 }
 
 long GpgpuDevice::handleStreamCaptureEnd(void* argp) {
   auto* args = static_cast<struct gpu_stream_capture_args*>(argp);
   if (!args) return -EFAULT;
   args->mode = 0;
-  return sim_stream_capture_end(args->stream_id, &args->graph_handle_out);
+  return hal_stream_capture_end(hal_, args->stream_id, &args->graph_handle_out);
 }
 
 long GpgpuDevice::handleStreamCaptureStatus(void* argp) {
   auto* args = static_cast<struct gpu_stream_capture_status_args*>(argp);
   if (!args) return -EFAULT;
-  sim_stream_capture_status_t local_status = SIM_STREAM_CAPTURE_NONE;
-  int rc = sim_stream_capture_status(args->stream_id, &local_status);
-  if (rc == 0) {
-    args->status_out = static_cast<u32>(local_status);
-  }
-  return rc;
+  return hal_stream_capture_status(hal_, args->stream_id, &args->status_out);
 }
 
 long GpgpuDevice::handleGraphCreate(void* argp) {
