@@ -15,6 +15,11 @@
 #include "../sim/fence_id.h"             // Stage 4.6 L2 foundation: fence_id_* fn-ptrs
 #include "../sim/hardware/method_codec.h" // Stage 4.6 L2 foundation: method_codec_encode fn-ptr
 
+// Stage 4.6 L2 foundation (ADR-072 §Decision 4) — Phase 2: 28 new fn-ptrs
+#include "../sim/graph.h"               // sim_graph_*
+#include "../sim/mem_pool.h"            // sim_mem_pool_*
+#include "../sim/stream_capture.h"      // sim_stream_capture_*
+
 /* ── 内部回调实现 ────────────────────────────────── */
 
 static int user_reg_read(void *ctx, uint64_t offset, uint64_t *out_val) {
@@ -333,6 +338,164 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   hal->heap_ptr = [](void* ctx, uint64_t gpu_va) -> void* {
     auto* hc = static_cast<struct hal_user_context*>(ctx);
     return hc->heap + (gpu_va - HAL_HEAP_BASE);
+  };
+
+  /* ── Stage 4.6 L2 foundation (ADR-072 §Decision 4) — Phase 2 ─── */
+
+  /* ── graph lambdas (7): delegate to sim_graph_* ──────────────── */
+  hal->graph_create = [](void*, uint64_t* out) -> int {
+    return sim_graph_create(out);
+  };
+  hal->graph_destroy = [](void*, uint64_t h) -> int {
+    return sim_graph_destroy(h);
+  };
+  hal->graph_add_kernel_node = [](void*, uint64_t g, uint32_t kidx,
+                                  uint32_t gx, uint32_t gy, uint32_t gz,
+                                  uint32_t bx, uint32_t by, uint32_t bz,
+                                  uint64_t* kernargs_bo) -> int {
+    return sim_graph_add_kernel_node(g, kidx, gx, gy, gz, bx, by, bz,
+                                    kernargs_bo);
+  };
+  hal->graph_add_memcpy_node = [](void*, uint64_t g, uint64_t src,
+                                  uint64_t dst, uint64_t size,
+                                  int is_h2d) -> int {
+    return sim_graph_add_memcpy_node(g, src, dst, size, is_h2d);
+  };
+  hal->graph_instantiate = [](void*, uint64_t g, uint64_t* out) -> int {
+    return sim_graph_instantiate(g, out);
+  };
+  hal->graph_launch = [](void*, uint64_t exec, uint32_t stream_id,
+                         uint64_t* gpfifo_out, uint32_t* count_out) -> int {
+    return sim_graph_launch(exec, stream_id, gpfifo_out, count_out);
+  };
+  hal->graph_destroy_exec = [](void*, uint64_t exec) -> int {
+    return sim_graph_destroy_exec(exec);
+  };
+
+  /* ── mem_pool lambdas (9): delegate to sim_mem_pool_* ─────────── */
+  hal->mem_pool_create = [](void*, const void* props, uint64_t* out) -> int {
+    /* Note: sim_mem_pool_create signature uses sim_mem_pool_props_t* which is
+     * a C++ struct in sim/mem_pool.h. For Phase 2 foundation we use const void*
+     * in HAL signature; real type cast happens in removal change. For now,
+     * we forward via opaque pointer (assumes caller knows). */
+    (void)props;
+    if (out) *out = 0;
+    return 0;  /* stub: real impl deferred to mem_pool removal change */
+  };
+  hal->mem_pool_destroy = [](void*, uint64_t h) -> int {
+    return sim_mem_pool_destroy(h);
+  };
+  hal->mem_pool_alloc = [](void*, uint64_t h, uint64_t size,
+                           uint64_t* out) -> int {
+    return sim_mem_pool_alloc(h, size, out);
+  };
+  hal->mem_pool_alloc_async = [](void*, uint64_t h, uint64_t size,
+                                 int64_t* out) -> int {
+    /* sim_mem_pool_alloc_async not yet implemented in sim/ — return no-fence */
+    (void)h; (void)size;
+    if (out) *out = 0;
+    return 0;
+  };
+  hal->mem_pool_free = [](void*, uint64_t h, uint64_t va) -> int {
+    /* sim_mem_pool_free doesn't exist as a separate function; sim/ uses
+     * sim_mem_pool_destroy for releasing the entire pool. Per-pool free
+     * is the responsibility of the mem_pool removal change. Stub for now. */
+    (void)h; (void)va;
+    return 0;
+  };
+  hal->mem_pool_free_async = [](void*, uint64_t h, uint64_t va,
+                                int64_t* out) -> int {
+    (void)h; (void)va;
+    if (out) *out = 0;
+    return 0;
+  };
+  hal->mem_pool_set_attr = [](void*, uint64_t h, uint32_t attr,
+                              const void* value, uint64_t value_size) -> int {
+    return sim_mem_pool_set_attr(h,
+        static_cast<sim_mem_pool_attr_t>(attr), value,
+        static_cast<size_t>(value_size));
+  };
+  hal->mem_pool_get_attr = [](void*, uint64_t h, uint32_t attr,
+                              void* value_out, uint64_t value_size) -> int {
+    return sim_mem_pool_get_attr(h,
+        static_cast<sim_mem_pool_attr_t>(attr), value_out,
+        static_cast<size_t>(value_size));
+  };
+  hal->mem_pool_trim = [](void*, uint64_t h, uint64_t min_bytes) -> int {
+    return sim_mem_pool_trim(h, min_bytes);
+  };
+
+  /* ── stream_capture lambdas (3): delegate to sim_stream_capture_* ── */
+  hal->stream_capture_begin = [](void*, uint64_t stream_id,
+                                 uint32_t mode) -> int {
+    return sim_stream_capture_begin(static_cast<uint32_t>(stream_id), mode);
+  };
+  hal->stream_capture_end = [](void*, uint64_t stream_id,
+                               uint64_t* out_graph) -> int {
+    return sim_stream_capture_end(static_cast<uint32_t>(stream_id), out_graph);
+  };
+  hal->stream_capture_status = [](void*, uint64_t stream_id,
+                                  uint32_t* out_status) -> int {
+    /* sim_stream_capture_status uses sim_stream_capture_status_t (C++ enum).
+     * For Phase 2 foundation, we pass-through as uint32_t* — the layout is
+     * compatible (single uint32_t field). Real typed cast happens in
+     * stream_capture removal change. */
+    return sim_stream_capture_status(static_cast<uint32_t>(stream_id),
+        reinterpret_cast<sim_stream_capture_status_t*>(out_status));
+  };
+
+  /* ── gpu_queue_emu lambdas (5): GpuQueueEmu class is C++. Until the
+   * drv/ removal change lands, these are stubs that return opaque
+   * handles but don't track instances in hal_user_context. The removal
+   * change will add instance management to hal_user_context. */
+  hal->queue_create = [](void*, uint32_t handle, uint32_t type,
+                         uint32_t priority, uint32_t ring_size,
+                         hal_queue_handle_t* out) -> int {
+    (void)handle; (void)type; (void)priority; (void)ring_size;
+    if (out) {
+      /* Monotonic opaque handle for foundation validation */
+      static std::atomic<uint64_t> next{0x6000};
+      *out = ++next;
+    }
+    return 0;
+  };
+  hal->queue_attach_shmem = [](void*, hal_queue_handle_t q,
+                               void* cpu_ptr, uint64_t size) -> int {
+    (void)q; (void)cpu_ptr; (void)size;
+    return -ENOSYS;  /* stub: real impl in queue_emu removal change */
+  };
+  hal->queue_submit = [](void*, hal_queue_handle_t q,
+                         uint64_t gpfifo_addr, uint32_t count,
+                         int64_t* out_fence) -> int {
+    (void)q; (void)gpfifo_addr; (void)count;
+    if (out_fence) *out_fence = 0;
+    return -ENOSYS;
+  };
+  hal->queue_destroy = [](void*, hal_queue_handle_t q) -> int {
+    (void)q;
+    return 0;
+  };
+  hal->queue_register_puller = [](void*, hal_queue_handle_t q,
+                                  hal_puller_handle_t puller) -> int {
+    (void)q; (void)puller;
+    return 0;
+  };
+
+  /* ── hardware_puller_emu lambdas (3): stubs for foundation. */
+  hal->puller_set_puller = [](void*, hal_puller_handle_t puller,
+                              uint64_t sim_puller_handle) -> int {
+    (void)puller; (void)sim_puller_handle;
+    return 0;
+  };
+  hal->puller_register_queue = [](void*, hal_puller_handle_t puller,
+                                  hal_queue_handle_t queue) -> int {
+    (void)puller; (void)queue;
+    return 0;
+  };
+  hal->puller_unregister_queue = [](void*, hal_puller_handle_t puller,
+                                    uint32_t queue_id) -> int {
+    (void)puller; (void)queue_id;
+    return 0;
   };
 }
 
