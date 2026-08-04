@@ -24,7 +24,6 @@
 #include "drv/kfd_sim_bridge.h"
 #include "kernel/uvm/mm_shim.h"
 #include "sim/stream_capture.h"
-#include "sim/mem_pool.h"
 
 /* DRM ioctl command numbers — mirror GPU_IOCTL_* values for zero-change kernel migration */
 #define DRM_IOCTL_GET_DEVICE_INFO GPU_IOCTL_GET_DEVICE_INFO
@@ -577,14 +576,13 @@ static long gpu_ioctl_graph_destroy_exec(struct drm_device* dev, void* data, str
 }
 
 static long gpu_ioctl_mem_pool_create(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_mem_pool_create_args*>(data);
   if (!args) return -EFAULT;
-  /* gpu_mem_pool_props and sim_mem_pool_props_t have identical field layout
-   * (u64 va_space_handle, u64 size, u64 va_base, u64 va_limit, u32 flags, u32 _pad);
-   * reinterpret_cast is safe. */
-  int rc = sim_mem_pool_create(reinterpret_cast<sim_mem_pool_props_t*>(&args->props),
-                               &args->pool_handle_out);
+  /* gpu_mem_pool_props layout is identical to the sim-layer pool properties
+   * struct (u64 va_space_handle, u64 size, u64 va_base, u64 va_limit,
+   * u32 flags, u32 _pad); the HAL user lambda casts the opaque pointer back. */
+  int rc = hal_mem_pool_create(self->hal_, &args->props, &args->pool_handle_out);
   if (rc == 0) {
     std::cout << "[GpgpuDevice] MEM_POOL_CREATE: handle=" << args->pool_handle_out
               << " size=" << args->props.size
@@ -595,73 +593,68 @@ static long gpu_ioctl_mem_pool_create(struct drm_device* dev, void* data, struct
 }
 
 static long gpu_ioctl_mem_pool_destroy(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_mem_pool_destroy_args*>(data);
   if (!args) return -EFAULT;
-  return sim_mem_pool_destroy(args->pool_handle);
+  return hal_mem_pool_destroy(self->hal_, args->pool_handle);
 }
 
 static long gpu_ioctl_mem_pool_alloc(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_mem_pool_alloc_args*>(data);
   if (!args) return -EFAULT;
-  return sim_mem_pool_alloc(args->pool_handle, args->size, &args->va_out);
+  return hal_mem_pool_alloc(self->hal_, args->pool_handle, args->size, &args->va_out);
 }
 
 static long gpu_ioctl_mem_pool_alloc_async(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_mem_pool_alloc_async_args*>(data);
   if (!args) return -EFAULT;
-  int64_t fence = sim_mem_pool_alloc_async(args->pool_handle, args->size,
-                                           args->stream_id, &args->va_out);
-  if (fence < 0)
-    return static_cast<long>(fence);
+  int rc = hal_mem_pool_alloc(self->hal_, args->pool_handle, args->size, &args->va_out);
+  if (rc != 0) return rc;
+  int64_t fence = 0;
+  rc = hal_mem_pool_alloc_async(self->hal_, args->pool_handle, args->size, &fence);
+  if (rc != 0) return rc;
   args->fence_id_out = fence;
   return 0;
 }
 
 static long gpu_ioctl_mem_pool_free_async(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_mem_pool_free_async_args*>(data);
   if (!args) return -EFAULT;
-  int64_t fence = sim_mem_pool_free_async(args->va, args->stream_id);
-  if (fence < 0)
-    return static_cast<long>(fence);
-  args->fence_id_out = fence;
-  return 0;
+  return hal_mem_pool_free_async(self->hal_, 0, args->va, &args->fence_id_out);
 }
 
 static long gpu_ioctl_mem_pool_set_attr(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_mem_pool_attr_args*>(data);
   if (!args) return -EFAULT;
   /* value blob in args->value[0..3]; size inferred from attr type. */
   size_t sz = 0;
-  switch (static_cast<sim_mem_pool_attr_t>(args->attr)) {
-    case SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD:               sz = 8; break;
-    case SIM_MEM_POOL_ATTR_REUSE_FOLLOW_EVENT_DEPENDENCIES: sz = 4; break;
+  switch (args->attr) {
+    case 1 /* SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD */:               sz = 8; break;
+    case 2 /* SIM_MEM_POOL_ATTR_REUSE_FOLLOW_EVENT_DEPENDENCIES */: sz = 4; break;
     default: return -ENOSYS;
   }
-  return sim_mem_pool_set_attr(args->pool_handle,
-                               static_cast<sim_mem_pool_attr_t>(args->attr),
+  return hal_mem_pool_set_attr(self->hal_, args->pool_handle, args->attr,
                                args->value, sz);
 }
 
 static long gpu_ioctl_mem_pool_get_attr(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_mem_pool_attr_args*>(data);
   if (!args) return -EFAULT;
   size_t sz = 0;
-  switch (static_cast<sim_mem_pool_attr_t>(args->attr)) {
-    case SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD:               sz = 8; break;
-    case SIM_MEM_POOL_ATTR_REUSE_FOLLOW_EVENT_DEPENDENCIES: sz = 4; break;
+  switch (args->attr) {
+    case 1 /* SIM_MEM_POOL_ATTR_RELEASE_THRESHOLD */:               sz = 8; break;
+    case 2 /* SIM_MEM_POOL_ATTR_REUSE_FOLLOW_EVENT_DEPENDENCIES */: sz = 4; break;
     default: return -ENOSYS;
   }
   /* Zero output first to avoid stale bytes leaking to userspace on failure. */
   std::memset(args->value, 0, sizeof(args->value));
-  int rc = sim_mem_pool_get_attr(args->pool_handle,
-                                 static_cast<sim_mem_pool_attr_t>(args->attr),
-                                 args->value, sz);
+  int rc = hal_mem_pool_get_attr(self->hal_, args->pool_handle, args->attr,
+                                  args->value, sz);
   if (rc == 0) {
     std::cout << "[GpgpuDevice] MEM_POOL_GET_ATTR: handle=" << args->pool_handle
               << " attr=" << args->attr << " size=" << sz << "\n";
@@ -670,19 +663,18 @@ static long gpu_ioctl_mem_pool_get_attr(struct drm_device* dev, void* data, stru
 }
 
 static long gpu_ioctl_mem_pool_trim(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_mem_pool_trim_args*>(data);
   if (!args) return -EFAULT;
-  return sim_mem_pool_trim(args->pool_handle, args->min_bytes);
+  return hal_mem_pool_trim(self->hal_, args->pool_handle, args->min_bytes);
 }
 
 static long gpu_ioctl_mem_pool_export(struct drm_device* dev, void* data, struct drm_file*) {
-  (void)dev;
+  auto* self = static_cast<GpgpuDevice*>(dev->dev_private);
   auto* args = static_cast<struct gpu_mem_pool_export_args*>(data);
   if (!args) return -EFAULT;
-  int rc = sim_mem_pool_export_shareable(args->pool_handle,
-                                          args->handle_type,
-                                          args->flags,
+  int rc = hal_mem_pool_export_shareable(self->hal_, args->pool_handle,
+                                          args->handle_type, args->flags,
                                           &args->fd_out);
   return rc;
 }

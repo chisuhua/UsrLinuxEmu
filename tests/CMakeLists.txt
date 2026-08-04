@@ -282,6 +282,7 @@ set(CATCH2_SIM_TESTS
     test_sim_graph_standalone.cpp
     test_sim_graph_hal_standalone.cpp
     test_sim_mem_pool_standalone.cpp
+    test_mem_pool_hal_standalone.cpp
     # sim-stream-primitive-support — §5.6 fence_id lifecycle
     test_fence_id_lifecycle_standalone.cpp
     # sim-stream-primitive-support — §5.3 KFD IOCTL dispatch verification (compile-time)
