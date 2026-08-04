@@ -1,10 +1,17 @@
 # Active Changes Index
 
-> **更新**: 2026-08-03
+> **更新**: 2026-08-04
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: **0 个活跃 change** + 91 个已完成/已归档（截至 2026-08-03；4 个 Stage 4 closeout + 1 B-class foundation + 3 B-class removals (fence-id, method-codec, hal-user) 都已 ship + archive；**Phase 1 B-class L2 fix COMPLETE**：L2 violations 12 → 8）
-> **Source**: 2026-08-03 INDEX 同步 — rebuild archive table from `openspec/changes/archive/`（91 dirs）+ 0 active changes
-> （2026-08-01 INDEX 漏登记 59 个 directory entries；本次同步覆盖 2026-06 早期维护窗口 → 2026-08-01 stage4.6 → 2026-08-03 stage4 closeout batch + B-class foundation + B-class removals #1-#3 = Phase 1 complete）
+> **总数**: **0 个活跃 change** + 92 个已完成/已归档（截至 2026-08-04；4 个 Stage 4 closeout + 1 B-class foundation + 3 B-class removals (fence-id, method-codec, hal-user) + **Phase 2 foundation**（27 fn-ptrs + wrappers + lambdas + mocks, 5 sim headers）都已 ship + archive；**Phase 1 B-class L2 fix COMPLETE**：L2 violations 12 → 8；**Phase 2 HAL foundation** ✅：27 fn-ptrs 预备就绪，等待 5 removal changes 逐步清理）
+> **Source**: 2026-08-04 INDEX 同步 — rebuild archive table from `openspec/changes/archive/`（92 dirs）+ 0 active changes
+
+---
+
+## ✅ 2026-08-04 归档 (Stage 4 L2 Phase 2 foundation, 1 change)
+
+| 归档 | 摘要 | 状态 |
+|------|------|------|
+| `2026-08-03-stage4-l2-foundation-phase2-hal` | **Phase 2 foundation**: 27 fn-ptrs + 27 wrappers + opaque handles（hal_queue_handle_t / hal_puller_handle_t）+ hal_user lambdas + hal_mock defaults。Append-only per ADR-023 Decision 4。L2 violations 仍 9（基础改动,drv/ 未触碰）。0 regression: 130/130 ctest PASS | ✅ archived |
 
 ---
 
