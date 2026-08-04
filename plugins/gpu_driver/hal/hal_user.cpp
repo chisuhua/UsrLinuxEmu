@@ -444,40 +444,66 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
         reinterpret_cast<sim_stream_capture_status_t*>(out_status));
   };
 
-  /* ── gpu_queue_emu lambdas (5): GpuQueueEmu class is C++. Until the
-   * drv/ removal change lands, these are stubs that return opaque
-   * handles but don't track instances in hal_user_context. The removal
-   * change will add instance management to hal_user_context. */
-  hal->queue_create = [](void*, uint32_t handle, uint32_t type,
+  /* ── gpu_queue_emu lambdas (5): real GpuQueueEmu instances owned by
+   * hal_user_context. drv/ sees only opaque hal_queue_handle_t. */
+  hal->queue_create = [](void* ctx, uint32_t handle, uint32_t type,
                          uint32_t priority, uint32_t ring_size,
                          hal_queue_handle_t* out) -> int {
-    (void)handle; (void)type; (void)priority; (void)ring_size;
-    if (out) {
-      /* Monotonic opaque handle for foundation validation */
-      static std::atomic<uint64_t> next{0x6000};
-      *out = ++next;
-    }
+    if (!out) return -EINVAL;
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::lock_guard<std::mutex> lock(hc->queue_lock);
+    auto instance = std::make_shared<GpuQueueEmu>(handle, type, priority,
+                                                  ring_size);
+    hal_queue_handle_t qh = hc->next_queue_handle++;
+    if (qh == 0) qh = hc->next_queue_handle++;  // skip 0 (NULL sentinel)
+    hc->queues[qh] = std::move(instance);
+    *out = qh;
     return 0;
   };
-  hal->queue_attach_shmem = [](void*, hal_queue_handle_t q,
+  hal->queue_attach_shmem = [](void* ctx, hal_queue_handle_t q,
                                void* cpu_ptr, uint64_t size) -> int {
-    (void)q; (void)cpu_ptr; (void)size;
-    return -ENOSYS;  /* stub: real impl in queue_emu removal change */
+    if (!cpu_ptr) return -EINVAL;
+    if (size == 0) return -EINVAL;
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::lock_guard<std::mutex> lock(hc->queue_lock);
+    auto it = hc->queues.find(q);
+    if (it == hc->queues.end()) return -EINVAL;
+    return it->second->attachSharedMemory(cpu_ptr, size);
   };
-  hal->queue_submit = [](void*, hal_queue_handle_t q,
+  hal->queue_submit = [](void* ctx, hal_queue_handle_t q,
                          uint64_t gpfifo_addr, uint32_t count,
                          int64_t* out_fence) -> int {
-    (void)q; (void)gpfifo_addr; (void)count;
-    if (out_fence) *out_fence = 0;
-    return -ENOSYS;
-  };
-  hal->queue_destroy = [](void*, hal_queue_handle_t q) -> int {
-    (void)q;
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::lock_guard<std::mutex> lock(hc->queue_lock);
+    auto it = hc->queues.find(q);
+    if (it == hc->queues.end()) return -EINVAL;
+    int64_t fence = sim_fence_id_alloc();
+    if (fence < 0) return -ENOMEM;
+    int ret = it->second->submit(gpfifo_addr, count,
+                                   static_cast<uint64_t>(fence));
+    if (ret != 0) return ret;
+    if (out_fence) *out_fence = fence;
     return 0;
   };
-  hal->queue_register_puller = [](void*, hal_queue_handle_t q,
+  hal->queue_destroy = [](void* ctx, hal_queue_handle_t q) -> int {
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::lock_guard<std::mutex> lock(hc->queue_lock);
+    auto it = hc->queues.find(q);
+    if (it == hc->queues.end()) return -EINVAL;
+    hc->queues.erase(it);
+    return 0;
+  };
+  hal->queue_register_puller = [](void* ctx, hal_queue_handle_t q,
                                   hal_puller_handle_t puller) -> int {
-    (void)q; (void)puller;
+    if (puller == 0) return -EINVAL;
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::lock_guard<std::mutex> lock(hc->queue_lock);
+    auto it = hc->queues.find(q);
+    if (it == hc->queues.end()) return -EINVAL;
+    /* Interim: hal_puller_handle_t is the raw HardwarePullerEmu pointer cast
+     * to opaque. The real opaque-puller-handle wire-up is in the
+     * removal-hardware-puller-emu change. */
+    it->second->setPuller(reinterpret_cast<HardwarePullerEmu*>(puller));
     return 0;
   };
 

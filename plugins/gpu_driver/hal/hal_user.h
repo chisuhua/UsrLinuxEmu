@@ -12,10 +12,14 @@
 #include <cstddef>
 #include <atomic>
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <unordered_map>
 #include "gpu_buddy.h"
 #include "gpu_hal.h"
+
+/* Stage 4.7.2: GpuQueueEmu instance storage for HAL opaque queue handles. */
+#include "../sim/gpu_queue_emu.h"
 
 /* Forward declaration - SemaphoreManager from sim layer (Stage 4.5) */
 class SemaphoreManager;
@@ -57,6 +61,11 @@ struct hal_user_context {
 
   /* Stage 4.5: SemaphoreManager for fence→sem migration */
   SemaphoreManager* sem_mgr = nullptr;
+
+  /* Stage 4.7.2: GpuQueueEmu instance storage for HAL opaque queue handles. */
+  std::unordered_map<hal_queue_handle_t, std::shared_ptr<GpuQueueEmu>> queues;
+  std::mutex queue_lock;
+  uint64_t next_queue_handle = 1;
 };
 
 void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx);

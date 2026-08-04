@@ -25,6 +25,19 @@ extern "C" {
 }
 
 #include "drv/gpgpu_device.h"
+#include "hal/hal_user.h"
+
+struct GpgpuDeviceWithHal {
+  struct gpu_hal_ops hal;
+  struct hal_user_context ctx;
+  GpgpuDevice dev;
+
+  GpgpuDeviceWithHal() : dev(&hal) {
+    std::memset(&hal, 0, sizeof(hal));
+    hal_user_init(&hal, &ctx);
+  }
+  ~GpgpuDeviceWithHal() { hal_user_destroy(&ctx); }
+};
 
 TEST_CASE("CREATE_VA_SPACE — IoctlEntry dispatch via GpgpuDevice::ioctl (Tier-2 §3.3)",
           "[handler][create_va_space][tier2][stub]")
@@ -91,17 +104,17 @@ TEST_CASE("REGISTER_GPU — IoctlEntry dispatch (Tier-2 §3.4)",
 TEST_CASE("CREATE_QUEUE — IoctlEntry dispatch (Tier-2 §3.5)",
           "[handler][create_queue][tier2][stub]")
 {
-  GpgpuDevice dev(nullptr);
+  GpgpuDeviceWithHal fixture;
   struct gpu_va_space_args va = {};
   va.page_size = 0;
-  REQUIRE(dev.ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &va) == 0);
+  REQUIRE(fixture.dev.ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &va) == 0);
 
   struct gpu_queue_args args = {};
   args.va_space_handle = va.va_space_handle;
   args.queue_type = 0;       /* COMPUTE */
   args.priority = 0;
   args.ring_buffer_size = 4096;
-  long ret = dev.ioctl(0, GPU_IOCTL_CREATE_QUEUE, &args);
+  long ret = fixture.dev.ioctl(0, GPU_IOCTL_CREATE_QUEUE, &args);
   CHECK(ret == 0);
   CHECK(args.queue_handle != 0);
 }
@@ -109,34 +122,36 @@ TEST_CASE("CREATE_QUEUE — IoctlEntry dispatch (Tier-2 §3.5)",
 TEST_CASE("CREATE_QUEUE — rejects invalid queue_type",
           "[handler][create_queue][tier2][stub]")
 {
-  GpgpuDevice dev(nullptr);
+  GpgpuDeviceWithHal fixture;
   struct gpu_va_space_args va = {};
   va.page_size = 0;
-  REQUIRE(dev.ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &va) == 0);
+  REQUIRE(fixture.dev.ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &va) == 0);
 
   struct gpu_queue_args args = {};
   args.va_space_handle = va.va_space_handle;
   args.queue_type = 99;  /* invalid (max is GRAPHICS=2) */
-  long ret = dev.ioctl(0, GPU_IOCTL_CREATE_QUEUE, &args);
+  args.priority = 0;
+  args.ring_buffer_size = 4096;
+  long ret = fixture.dev.ioctl(0, GPU_IOCTL_CREATE_QUEUE, &args);
   CHECK(ret == -22);  /* -EINVAL */
 }
 
 TEST_CASE("DESTROY_QUEUE — IoctlEntry dispatch (Tier-2 §3.5)",
           "[handler][destroy_queue][tier2][stub]")
 {
-  GpgpuDevice dev(nullptr);
+  GpgpuDeviceWithHal fixture;
   struct gpu_va_space_args va = {};
   va.page_size = 0;
-  REQUIRE(dev.ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &va) == 0);
+  REQUIRE(fixture.dev.ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &va) == 0);
 
   struct gpu_queue_args q = {};
   q.va_space_handle = va.va_space_handle;
   q.queue_type = 0;
   q.ring_buffer_size = 4096;
-  REQUIRE(dev.ioctl(0, GPU_IOCTL_CREATE_QUEUE, &q) == 0);
+  REQUIRE(fixture.dev.ioctl(0, GPU_IOCTL_CREATE_QUEUE, &q) == 0);
 
   gpu_queue_handle_t handle = q.queue_handle;
-  long ret = dev.ioctl(0, GPU_IOCTL_DESTROY_QUEUE, &handle);
+  long ret = fixture.dev.ioctl(0, GPU_IOCTL_DESTROY_QUEUE, &handle);
   CHECK(ret == 0);
 }
 
@@ -173,21 +188,21 @@ TEST_CASE("MAP_QUEUE_RING — rejects unknown queue_handle (IoctlEntry dispatch 
 TEST_CASE("MAP_QUEUE_RING happy path — Phase 2.5 segfault fix (Tier-2 §3.6)",
           "[handler][map_queue_ring][tier2][fix]")
 {
-  GpgpuDevice dev(nullptr);
+  GpgpuDeviceWithHal fixture;
   struct gpu_va_space_args va = {};
   va.page_size = 0;
-  REQUIRE(dev.ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &va) == 0);
+  REQUIRE(fixture.dev.ioctl(0, GPU_IOCTL_CREATE_VA_SPACE, &va) == 0);
 
   struct gpu_queue_args q = {};
   q.va_space_handle = va.va_space_handle;
   q.queue_type = 0;
   q.ring_buffer_size = 4096;
-  REQUIRE(dev.ioctl(0, GPU_IOCTL_CREATE_QUEUE, &q) == 0);
+  REQUIRE(fixture.dev.ioctl(0, GPU_IOCTL_CREATE_QUEUE, &q) == 0);
 
   struct gpu_queue_map_ring_args args = {};
   args.queue_handle = q.queue_handle;
   args.ring_addr = 0x10000;
-  long ret = dev.ioctl(0, GPU_IOCTL_MAP_QUEUE_RING, &args);
+  long ret = fixture.dev.ioctl(0, GPU_IOCTL_MAP_QUEUE_RING, &args);
   CHECK(ret == 0);
 }
 

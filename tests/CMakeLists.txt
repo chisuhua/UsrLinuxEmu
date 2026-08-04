@@ -288,6 +288,8 @@ set(CATCH2_SIM_TESTS
     # Issue #21 regression lock-in tests
     test_iommu_priv_contract_regression_standalone.cpp
     test_hardware_puller_emu_concurrent_regression_standalone.cpp
+    # Stage 4.6 L2 foundation: queue_emu removal (opaque hal_queue_handle_t)
+    test_gpu_queue_emu_hal_standalone.cpp
     # Phase 3.1+3.2 — test_gpu_plugin extended with 18 new IOCTL dispatch cases
     test_gpu_plugin.cpp
     # add-e2e (2026-08-02) — Tasks 1+2 E2E coverage of REGISTER_GPU + MAP_QUEUE_RING
