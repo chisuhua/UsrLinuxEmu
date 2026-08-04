@@ -6,13 +6,23 @@
 
 | 提案 | 优先级 | 来源 | 批准日期 | 批准人 |
 |------|--------|------|----------|--------|
-| [wire-mmu-fw-callback-ioctls-to-active-dispatch](improvements/wire-mmu-fw-callback-ioctls-to-active-dispatch.md) | P0 | IOCTL 端到端测试完备性审计 (2026-08-02) | 2026-08-02 | Arch Team |
-| [add-e2e-tests-for-register-gpu-and-map-queue-ring](improvements/add-e2e-tests-for-register-gpu-and-map-queue-ring.md) | P1 | IOCTL 端到端测试完备性审计 (2026-08-02) | 2026-08-02 | Arch Team |
-| [strengthen-semantic-assertions-for-destroy-va-space-and-query-queue](improvements/strengthen-semantic-assertions-for-destroy-va-space-and-query-queue.md) | P1 | IOCTL 端到端测试完备性审计 (2026-08-02) | 2026-08-02 | Arch Team |
-| [add-abi-dispatch-consistency-test](improvements/add-abi-dispatch-consistency-test.md) | P2 | IOCTL 端到端测试完备性审计 (2026-08-02) | 2026-08-02 | Arch Team |
 ---
+
+| [stage4-l2-foundation-removal-gpu-queue-emu](improvements/stage4-l2-foundation-removal-gpu-queue-emu.md) | P1 | 2026-08-04 | guide-arch |
+
+| [stage4-l2-foundation-removal-graph](improvements/stage4-l2-foundation-removal-graph.md) | P1 | 2026-08-04 | guide-arch |
+
+| [stage4-l2-foundation-removal-hardware-puller-emu](improvements/stage4-l2-foundation-removal-hardware-puller-emu.md) | P1 | 2026-08-04 | guide-arch |
+
+| [stage4-l2-foundation-removal-mem-pool](improvements/stage4-l2-foundation-removal-mem-pool.md) | P1 | 2026-08-04 | guide-arch |
+
+| [stage4-l2-foundation-removal-stream-capture](improvements/stage4-l2-foundation-removal-stream-capture.md) | P1 | 2026-08-04 | guide-arch |
 
 ## 已实施
 | [stage4-5-cp-phase6-preemption-engine-finish](improvements/stage4-5-cp-phase6-preemption-engine-finish.md) | P1 | 2026-07-30 |
 | [stage4-5-cp-phase6-preemption-timeline-sem](improvements/stage4-5-cp-phase6-preemption-timeline-sem.md) | P1 | 2026-07-30 |
 | [stage4-5-cp-phase6-predication-aql](improvements/stage4-5-cp-phase6-predication-aql.md) | P1 | 2026-07-31 |
+| [wire-mmu-fw-callback-ioctls-to-active-dispatch](improvements/wire-mmu-fw-callback-ioctls-to-active-dispatch.md) | P0 | 2026-08-04 |
+| [add-e2e-tests-for-register-gpu-and-map-queue-ring](improvements/add-e2e-tests-for-register-gpu-and-map-queue-ring.md) | P1 | 2026-08-04 |
+| [strengthen-semantic-assertions-for-destroy-va-space-and-query-queue](improvements/strengthen-semantic-assertions-for-destroy-va-space-and-query-queue.md) | P1 | 2026-08-04 |
+| [add-abi-dispatch-consistency-test](improvements/add-abi-dispatch-consistency-test.md) | P2 | 2026-08-04 |
