@@ -1,0 +1,5 @@
+phase: stage-4.7
+category: core-impl
+change_type: refactor (HAL 边界收尾)
+priority: P1
+parent_feature: ""
