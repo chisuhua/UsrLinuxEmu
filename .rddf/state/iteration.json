@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated_at": "2026-08-03T05:02:16.757142+00:00",
+  "updated_at": "2026-08-04T07:43:10.081824+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -132,6 +132,41 @@
         "wire-mmu-fw-callback-ioctls-to-active-dispatch"
       ],
       "archived_at": "2026-08-03T04:10:00+00:00"
+    },
+    {
+      "name": "stage4-l2-foundation-removal-gpu-queue-emu",
+      "status": "proposed",
+      "phase": "stage-4.7",
+      "category": "core-impl",
+      "added_at": "2026-08-04T14:52:32+0800"
+    },
+    {
+      "name": "stage4-l2-foundation-removal-graph",
+      "status": "proposed",
+      "phase": "stage-4.7",
+      "category": "core-impl",
+      "added_at": "2026-08-04T14:52:32+0800"
+    },
+    {
+      "name": "stage4-l2-foundation-removal-hardware-puller-emu",
+      "status": "proposed",
+      "phase": "stage-4.7",
+      "category": "core-impl",
+      "added_at": "2026-08-04T14:52:32+0800"
+    },
+    {
+      "name": "stage4-l2-foundation-removal-mem-pool",
+      "status": "proposed",
+      "phase": "stage-4.7",
+      "category": "core-impl",
+      "added_at": "2026-08-04T14:52:33+0800"
+    },
+    {
+      "name": "stage4-l2-foundation-removal-stream-capture",
+      "status": "proposed",
+      "phase": "stage-4.7",
+      "category": "core-impl",
+      "added_at": "2026-08-04T14:52:33+0800"
     }
   ]
 }
