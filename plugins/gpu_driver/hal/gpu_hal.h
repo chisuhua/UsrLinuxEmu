@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "shared/method_codec_types.h"  // ADR-072 §Decision 2 A-class: method_codec types in shared/
+#include "shared/gpu_hal_handles.h"     // ADR-072 §Decision 4 Phase 2: opaque hal_queue_handle_t, hal_puller_handle_t
 
 #ifdef __cplusplus
 extern "C" {
@@ -206,6 +207,136 @@ struct gpu_hal_ops {
    * @gpu_va  GPU virtual address (will be offset by HAL_HEAP_BASE internally)
    * @return host pointer (or nullptr if VA unmapped) */
   void* (*heap_ptr)(void *ctx, uint64_t gpu_va);
+
+  /* ── Stage 4.6 L2 foundation (ADR-072 §Decision 4) — Phase 2 ───
+   * Append-only per ADR-023 Decision 4. Enables drv/ migration off
+   * sim/graph.h, sim/mem_pool.h, sim/stream_capture.h,
+   * sim/gpu_queue_emu.h, sim/hardware/hardware_puller_emu.h direct
+   * includes (5 removal changes to follow). */
+
+  /* ── graph fn-ptrs (7) ──────────────────────────────────────── */
+
+  /* graph_create: create an empty graph.
+   * @out_handle [out] graph handle
+   * Returns 0 on success, negative errno on failure. */
+  int (*graph_create)(void *ctx, uint64_t *out_handle);
+
+  /* graph_destroy: release a graph handle. */
+  int (*graph_destroy)(void *ctx, uint64_t handle);
+
+  /* graph_add_kernel_node: append a kernel node to a graph.
+   * Full grid/block dims + kernargs BO handle per sim_graph_add_kernel_node. */
+  int (*graph_add_kernel_node)(void *ctx, uint64_t graph, uint32_t kernel_idx,
+                               uint32_t grid_x, uint32_t grid_y, uint32_t grid_z,
+                               uint32_t block_x, uint32_t block_y, uint32_t block_z,
+                               uint64_t *kernargs_bo);
+
+  /* graph_add_memcpy_node: append a memcpy node (src/dst VA + size + is_h2d). */
+  int (*graph_add_memcpy_node)(void *ctx, uint64_t graph,
+                               uint64_t src_va, uint64_t dst_va, uint64_t size,
+                               int is_h2d);
+
+  /* graph_instantiate: compile graph into an executable handle. */
+  int (*graph_instantiate)(void *ctx, uint64_t graph, uint64_t *out_exec);
+
+  /* graph_launch: enqueue an executable graph on a stream.
+   * Returns gpfifo base + entry count via out params (sim_graph_launch semantics). */
+  int (*graph_launch)(void *ctx, uint64_t exec, uint32_t stream_id,
+                      uint64_t *gpfifo_addr_out, uint32_t *entry_count_out);
+
+  /* graph_destroy_exec: release an executable graph handle. */
+  int (*graph_destroy_exec)(void *ctx, uint64_t exec);
+
+  /* ── mem_pool fn-ptrs (9) ────────────────────────────────────── */
+
+  /* mem_pool_create: allocate a memory pool with given properties.
+   * @props properties (size, base_addr, alignment, etc.) */
+  int (*mem_pool_create)(void *ctx, const void *props, uint64_t *out_handle);
+
+  /* mem_pool_destroy: release a pool. */
+  int (*mem_pool_destroy)(void *ctx, uint64_t handle);
+
+  /* mem_pool_alloc: synchronous allocate. */
+  int (*mem_pool_alloc)(void *ctx, uint64_t handle, uint64_t size,
+                        uint64_t *out_va);
+
+  /* mem_pool_alloc_async: async allocate, returns fence via out_fence. */
+  int (*mem_pool_alloc_async)(void *ctx, uint64_t handle, uint64_t size,
+                              int64_t *out_fence);
+
+  /* mem_pool_free: synchronous free. */
+  int (*mem_pool_free)(void *ctx, uint64_t handle, uint64_t va);
+
+  /* mem_pool_free_async: async free, returns fence via out_fence. */
+  int (*mem_pool_free_async)(void *ctx, uint64_t handle, uint64_t va,
+                             int64_t *out_fence);
+
+  /* mem_pool_set_attr: set pool attribute.
+   * Value is opaque void* + size (matches sim_mem_pool_set_attr). */
+  int (*mem_pool_set_attr)(void *ctx, uint64_t handle, uint32_t attr,
+                           const void *value, uint64_t value_size);
+
+  /* mem_pool_get_attr: get pool attribute.
+   * Value buffer is opaque void* + size (matches sim_mem_pool_get_attr). */
+  int (*mem_pool_get_attr)(void *ctx, uint64_t handle, uint32_t attr,
+                           void *value_out, uint64_t value_size);
+
+  /* mem_pool_trim: trim pool to minimum size (memory reclaim). */
+  int (*mem_pool_trim)(void *ctx, uint64_t handle, uint64_t min_bytes);
+
+  /* ── stream_capture fn-ptrs (3) ─────────────────────────────── */
+
+  /* stream_capture_begin: start recording ops on a stream. */
+  int (*stream_capture_begin)(void *ctx, uint64_t stream_id, uint32_t mode);
+
+  /* stream_capture_end: stop recording, return captured graph. */
+  int (*stream_capture_end)(void *ctx, uint64_t stream_id,
+                            uint64_t *out_graph);
+
+  /* stream_capture_status: query capture state. */
+  int (*stream_capture_status)(void *ctx, uint64_t stream_id,
+                               uint32_t *out_status);
+
+  /* ── gpu_queue_emu fn-ptrs (5) ────────────────────────────────
+   * GpuQueueEmu is a C++ class. We expose hal_queue_handle_t (uint64_t)
+   * which drv/ side casts back to shared_ptr<GpuQueueEmu>. This avoids
+   * leaking C++ types into the HAL interface (ADR-023 Decision 4). */
+
+  /* queue_create: create a queue, returns opaque handle. */
+  int (*queue_create)(void *ctx, uint32_t handle, uint32_t type,
+                      uint32_t priority, uint32_t ring_size,
+                      hal_queue_handle_t *out_q);
+
+  /* queue_attach_shmem: attach shared memory region to queue. */
+  int (*queue_attach_shmem)(void *ctx, hal_queue_handle_t q,
+                            void *cpu_ptr, uint64_t size);
+
+  /* queue_submit: submit GPFIFO entries, returns fence via out_fence. */
+  int (*queue_submit)(void *ctx, hal_queue_handle_t q,
+                      uint64_t gpfifo_addr, uint32_t count,
+                      int64_t *out_fence);
+
+  /* queue_destroy: release queue handle. */
+  int (*queue_destroy)(void *ctx, hal_queue_handle_t q);
+
+  /* queue_register_puller: register a hardware puller with the queue. */
+  int (*queue_register_puller)(void *ctx, hal_queue_handle_t q,
+                               hal_puller_handle_t puller);
+
+  /* ── hardware_puller_emu fn-ptrs (3) ──────────────────────────
+   * HardwarePullerEmu is a C++ class. Exposed via hal_puller_handle_t. */
+
+  /* puller_set_puller: configure which sim_puller this puller watches. */
+  int (*puller_set_puller)(void *ctx, hal_puller_handle_t puller,
+                           uint64_t sim_puller_handle);
+
+  /* puller_register_queue: register a queue with the puller. */
+  int (*puller_register_queue)(void *ctx, hal_puller_handle_t puller,
+                               hal_queue_handle_t queue);
+
+  /* puller_unregister_queue: unregister a queue. */
+  int (*puller_unregister_queue)(void *ctx, hal_puller_handle_t puller,
+                                 uint32_t queue_id);
 };
 
 /* ── inline 包装函数：零开销简化调用 ──────────────────────── */
@@ -368,6 +499,169 @@ static inline int hal_method_codec_encode(struct gpu_hal_ops *hal,
 
 static inline void* hal_heap_ptr(struct gpu_hal_ops *hal, uint64_t gpu_va) {
   return hal->heap_ptr(hal->ctx, gpu_va);
+}
+
+/* ── Stage 4.6 L2 foundation inline wrappers (Phase 2) ─────────── */
+
+/* ── graph inline wrappers (7) ────────────────────────────────── */
+
+static inline int hal_graph_create(struct gpu_hal_ops *hal, uint64_t *out) {
+  return hal->graph_create(hal->ctx, out);
+}
+
+static inline int hal_graph_destroy(struct gpu_hal_ops *hal, uint64_t h) {
+  return hal->graph_destroy(hal->ctx, h);
+}
+
+static inline int hal_graph_add_kernel_node(struct gpu_hal_ops *hal, uint64_t g,
+                                            uint32_t kidx,
+                                            uint32_t gx, uint32_t gy, uint32_t gz,
+                                            uint32_t bx, uint32_t by, uint32_t bz,
+                                            uint64_t *kernargs_bo) {
+  return hal->graph_add_kernel_node(hal->ctx, g, kidx, gx, gy, gz,
+                                    bx, by, bz, kernargs_bo);
+}
+
+static inline int hal_graph_add_memcpy_node(struct gpu_hal_ops *hal, uint64_t g,
+                                            uint64_t src, uint64_t dst,
+                                            uint64_t size, int is_h2d) {
+  return hal->graph_add_memcpy_node(hal->ctx, g, src, dst, size, is_h2d);
+}
+
+static inline int hal_graph_instantiate(struct gpu_hal_ops *hal, uint64_t g,
+                                        uint64_t *out_exec) {
+  return hal->graph_instantiate(hal->ctx, g, out_exec);
+}
+
+static inline int hal_graph_launch(struct gpu_hal_ops *hal, uint64_t exec,
+                                   uint32_t stream_id,
+                                   uint64_t *gpfifo_out, uint32_t *count_out) {
+  return hal->graph_launch(hal->ctx, exec, stream_id, gpfifo_out, count_out);
+}
+
+static inline int hal_graph_destroy_exec(struct gpu_hal_ops *hal, uint64_t exec) {
+  return hal->graph_destroy_exec(hal->ctx, exec);
+}
+
+/* ── mem_pool inline wrappers (9) ─────────────────────────────── */
+
+static inline int hal_mem_pool_create(struct gpu_hal_ops *hal,
+                                      const void *props,
+                                      uint64_t *out) {
+  return hal->mem_pool_create(hal->ctx, props, out);
+}
+
+static inline int hal_mem_pool_destroy(struct gpu_hal_ops *hal, uint64_t h) {
+  return hal->mem_pool_destroy(hal->ctx, h);
+}
+
+static inline int hal_mem_pool_alloc(struct gpu_hal_ops *hal, uint64_t h,
+                                     uint64_t size, uint64_t *out) {
+  return hal->mem_pool_alloc(hal->ctx, h, size, out);
+}
+
+static inline int hal_mem_pool_alloc_async(struct gpu_hal_ops *hal, uint64_t h,
+                                           uint64_t size, int64_t *out) {
+  return hal->mem_pool_alloc_async(hal->ctx, h, size, out);
+}
+
+static inline int hal_mem_pool_free(struct gpu_hal_ops *hal, uint64_t h,
+                                    uint64_t va) {
+  return hal->mem_pool_free(hal->ctx, h, va);
+}
+
+static inline int hal_mem_pool_free_async(struct gpu_hal_ops *hal, uint64_t h,
+                                           uint64_t va, int64_t *out) {
+  return hal->mem_pool_free_async(hal->ctx, h, va, out);
+}
+
+static inline int hal_mem_pool_set_attr(struct gpu_hal_ops *hal, uint64_t h,
+                                        uint32_t attr, const void *value,
+                                        uint64_t value_size) {
+  return hal->mem_pool_set_attr(hal->ctx, h, attr, value, value_size);
+}
+
+static inline int hal_mem_pool_get_attr(struct gpu_hal_ops *hal, uint64_t h,
+                                        uint32_t attr, void *value_out,
+                                        uint64_t value_size) {
+  return hal->mem_pool_get_attr(hal->ctx, h, attr, value_out, value_size);
+}
+
+static inline int hal_mem_pool_trim(struct gpu_hal_ops *hal, uint64_t h,
+                                    uint64_t min_bytes) {
+  return hal->mem_pool_trim(hal->ctx, h, min_bytes);
+}
+
+/* ── stream_capture inline wrappers (3) ───────────────────────── */
+
+static inline int hal_stream_capture_begin(struct gpu_hal_ops *hal,
+                                           uint64_t stream_id, uint32_t mode) {
+  return hal->stream_capture_begin(hal->ctx, stream_id, mode);
+}
+
+static inline int hal_stream_capture_end(struct gpu_hal_ops *hal,
+                                         uint64_t stream_id,
+                                         uint64_t *out_graph) {
+  return hal->stream_capture_end(hal->ctx, stream_id, out_graph);
+}
+
+static inline int hal_stream_capture_status(struct gpu_hal_ops *hal,
+                                            uint64_t stream_id,
+                                            uint32_t *out_status) {
+  return hal->stream_capture_status(hal->ctx, stream_id, out_status);
+}
+
+/* ── gpu_queue_emu inline wrappers (5) ────────────────────────── */
+
+static inline int hal_queue_create(struct gpu_hal_ops *hal, uint32_t handle,
+                                   uint32_t type, uint32_t priority,
+                                   uint32_t ring_size,
+                                   hal_queue_handle_t *out) {
+  return hal->queue_create(hal->ctx, handle, type, priority, ring_size, out);
+}
+
+static inline int hal_queue_attach_shmem(struct gpu_hal_ops *hal,
+                                         hal_queue_handle_t q,
+                                         void *cpu_ptr, uint64_t size) {
+  return hal->queue_attach_shmem(hal->ctx, q, cpu_ptr, size);
+}
+
+static inline int hal_queue_submit(struct gpu_hal_ops *hal,
+                                   hal_queue_handle_t q,
+                                   uint64_t gpfifo_addr, uint32_t count,
+                                   int64_t *out) {
+  return hal->queue_submit(hal->ctx, q, gpfifo_addr, count, out);
+}
+
+static inline int hal_queue_destroy(struct gpu_hal_ops *hal,
+                                    hal_queue_handle_t q) {
+  return hal->queue_destroy(hal->ctx, q);
+}
+
+static inline int hal_queue_register_puller(struct gpu_hal_ops *hal,
+                                            hal_queue_handle_t q,
+                                            hal_puller_handle_t puller) {
+  return hal->queue_register_puller(hal->ctx, q, puller);
+}
+
+/* ── hardware_puller_emu inline wrappers (3) ─────────────────── */
+
+static inline int hal_puller_set_puller(struct gpu_hal_ops *hal,
+                                        hal_puller_handle_t puller,
+                                        uint64_t sim_puller_handle) {
+  return hal->puller_set_puller(hal->ctx, puller, sim_puller_handle);
+}
+
+static inline int hal_puller_register_queue(struct gpu_hal_ops *hal,
+                                            hal_puller_handle_t puller,
+                                            hal_queue_handle_t queue) {
+  return hal->puller_register_queue(hal->ctx, puller, queue);
+}
+
+static inline int hal_puller_unregister_queue(struct gpu_hal_ops *hal,
+                                              hal_puller_handle_t puller,
+                                              uint32_t queue_id) {
+  return hal->puller_unregister_queue(hal->ctx, puller, queue_id);
 }
 
 #ifdef __cplusplus
