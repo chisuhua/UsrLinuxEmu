@@ -21,6 +21,9 @@
 /* Stage 4.7.2: GpuQueueEmu instance storage for HAL opaque queue handles. */
 #include "../sim/gpu_queue_emu.h"
 
+/* Stage 4.7.3: HardwarePullerEmu instance storage for HAL opaque puller handles. */
+#include "../sim/hardware/hardware_puller_emu.h"
+
 /* Forward declaration - SemaphoreManager from sim layer (Stage 4.5) */
 class SemaphoreManager;
 
@@ -66,6 +69,20 @@ struct hal_user_context {
   std::unordered_map<hal_queue_handle_t, std::shared_ptr<GpuQueueEmu>> queues;
   std::mutex queue_lock;
   uint64_t next_queue_handle = 1;
+
+  /* Stage 4.7.3: back-pointer to the gpu_hal_ops that owns this context. */
+  struct gpu_hal_ops* hal_ops = nullptr;
+
+  /* Stage 4.7.3: HardwarePullerEmu instance storage for HAL opaque puller handles. */
+  std::unordered_map<hal_puller_handle_t, std::shared_ptr<HardwarePullerEmu>> pullers;
+  std::mutex puller_lock;
+  uint64_t next_puller_handle = 1;
+
+  /* Cross-handle resolution: hal_queue_handle_t -> raw GpuQueueEmu*.
+   * Used by puller_register_queue to resolve a queue handle back to the
+   * underlying object without exposing shared_ptr semantics through the
+   * HAL C interface. */
+  std::unordered_map<hal_queue_handle_t, GpuQueueEmu*> queue_ptrs;
 };
 
 void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx);

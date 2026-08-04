@@ -130,7 +130,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 │                   设备驱动层 (Device Driver)                      │
 │   plugins/gpu_driver/                                             │
 │   • drv/         : GpgpuDevice (table ioctl via getIoctlTablePtr)│
-│   • hal/         : struct gpu_hal_ops (62 fn-ptrs)             │
+│   • hal/         : struct gpu_hal_ops (64 fn-ptrs)             │
 │                    + hal_user (mmap heap + buddy + fences)      │
 │                    + hal_mock                                    │
 │   • shared/      : gpu_ioctl.h, gpu_types.h, gpu_queue.h,       │
@@ -536,7 +536,7 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 - **真实 Linux kernel 环境**：driver → HAL → `hal_user.cpp` → 真实硬件
 - driver 代码本身**零修改**即可切换环境
 
-##### `gpu_hal_ops` 函数指针清单（62 fn-ptrs, post-stage4-7 B-class L2 Phase 2 foundation）
+##### `gpu_hal_ops` 函数指针清单（64 fn-ptrs, post-stage4-7 B-class L2 Phase 2 foundation）
 
 | 阶段 | 函数指针 | 用途 |
 |------|----------|------|
@@ -556,7 +556,7 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 | | `queue_create` / `queue_attach_shmem` / `queue_submit` / `queue_destroy` / `queue_register_puller` | GpuQueueEmu class（opaque hal_queue_handle_t） |
 | | `puller_set_puller` / `puller_register_queue` / `puller_unregister_queue` | HardwarePullerEmu class（opaque hal_puller_handle_t） |
 
-> **完整 fn-ptr 清单**（62 个）以 `plugins/gpu_driver/hal/gpu_hal.h` 为准。class 类型（`GpuQueueEmu` / `HardwarePullerEmu`）通过 opaque `uint64_t` handle 暴露（ADR-023 §Decision 4 C 兼容约束），drv/ 侧在后续 removal change 中 cast 还原。
+> **完整 fn-ptr 清单**（64 个）以 `plugins/gpu_driver/hal/gpu_hal.h` 为准。class 类型（`GpuQueueEmu` / `HardwarePullerEmu`）通过 opaque `uint64_t` handle 暴露（ADR-023 §Decision 4 C 兼容约束），drv/ 侧在后续 removal change 中 cast 还原。
 
 **Preemption spec addendum**: See
 [`openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md`](../../openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md)

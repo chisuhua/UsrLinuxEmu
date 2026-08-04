@@ -9,7 +9,6 @@
 #include "drv/gpgpu_device.h"
 #include "hal/hal_user.h"
 #include "sim/hardware/doorbell_emu.h"
-#include "sim/hardware/hardware_puller_emu.h"
 #include "sim/scheduler/global_scheduler.h"
 #include "sim/vram_store.h"
 #include "sim/dma_coherent_pool.h"
@@ -24,7 +23,7 @@ struct HalHolder {
   struct hal_user_context ctx;
   DoorbellEmu doorbell;
   GlobalScheduler scheduler;
-  std::shared_ptr<HardwarePullerEmu> puller;
+  hal_puller_handle_t puller_handle = 0;
 };
 static HalHolder* g_hal = nullptr;
 
@@ -48,9 +47,16 @@ static int plugin_init_internal() {
   hal_user_init(&hal_holder.hal, &hal_holder.ctx);
   g_hal = &hal_holder;
 
-  hal_holder.puller = std::make_shared<HardwarePullerEmu>(&hal_holder.hal,
-                                                          &hal_holder.doorbell,
-                                                          &hal_holder.scheduler);
+  // Create the puller through the HAL opaque-handle API.
+  // Stage 4.7.3: drv/ must not hold std::shared_ptr<HardwarePullerEmu>.
+  int puller_ret = hal_puller_create(&hal_holder.hal,
+                                     static_cast<void*>(&hal_holder.doorbell),
+                                     static_cast<void*>(&hal_holder.scheduler),
+                                     &hal_holder.puller_handle);
+  if (puller_ret != 0) {
+    std::cerr << "[GpuPlugin] Failed to create puller: " << puller_ret << "\n";
+    return puller_ret;
+  }
 
   // 注册内核到 GlobalScheduler (与 GpgpuDevice 保持一致)
   hal_holder.scheduler.registerKernel(0, "simple_kernel");
@@ -95,8 +101,6 @@ static int plugin_init_internal() {
     std::cerr << "[GpuPlugin] WARN: g_dma_pool.init() failed\n";
   }
 
-  hal_holder.puller->start();
-
   /* Phase C.2.1: bind mm_shim to bridge + GpgpuDevice before VFS registration.
    * PID 0 = "kernel/driver-internal" host process (no real client yet). */
   if (!g_mm_shim_inited) {
@@ -108,7 +112,7 @@ static int plugin_init_internal() {
   // E.2.4 L1↔L2 bridge: initialize sim bridge state (sim_pm_create + internal maps)
   kfd_sim_reset();
   auto device = std::make_shared<GpgpuDevice>(&hal_holder.hal);
-  device->setPuller(hal_holder.puller);
+  device->setPuller(hal_holder.puller_handle);
   device->set_mm_shim(&g_plugin_mm_shim);
   device->setHalContext(&hal_holder.ctx);
 
@@ -123,10 +127,10 @@ static int plugin_init_internal() {
 static void plugin_fini_internal() {
   std::cout << "[GpuPlugin] Shutting down...\n";
   if (g_hal) {
-    if (g_hal->puller) {
-      g_hal->puller->stop();
+    if (g_hal->puller_handle != 0) {
+      hal_puller_destroy(&g_hal->hal, g_hal->puller_handle);
+      g_hal->puller_handle = 0;
     }
-    g_hal->puller.reset();
     // C-12 B.1.1: KFD subsystem exit (must precede HAL destroy)
     kfd_module_exit();
     hal_user_destroy(&g_hal->ctx);

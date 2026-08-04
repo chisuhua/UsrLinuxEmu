@@ -19,6 +19,8 @@
 #include "../sim/graph.h"               // sim_graph_*
 #include "../sim/mem_pool.h"            // sim_mem_pool_*
 #include "../sim/stream_capture.h"      // sim_stream_capture_*
+#include "../sim/hardware/hardware_puller_emu.h" // Stage 4.7.3: puller_create impl
+#include "../sim/scheduler/global_scheduler.h"   // Stage 4.7.3: puller_create scheduler arg
 
 /* ── 内部回调实现 ────────────────────────────────── */
 
@@ -269,6 +271,7 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
 
   /* 挂载回调 */
   hal->ctx = ctx;
+  ctx->hal_ops = hal;
   hal->register_read = user_reg_read;
   hal->register_write = user_reg_write;
   hal->mem_read = user_mem_read;
@@ -457,11 +460,13 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
     hal_queue_handle_t qh = hc->next_queue_handle++;
     if (qh == 0) qh = hc->next_queue_handle++;  // skip 0 (NULL sentinel)
     hc->queues[qh] = std::move(instance);
+    /* Cross-handle resolution for puller_register_queue. */
+    hc->queue_ptrs[qh] = hc->queues[qh].get();
     *out = qh;
     return 0;
   };
   hal->queue_attach_shmem = [](void* ctx, hal_queue_handle_t q,
-                               void* cpu_ptr, uint64_t size) -> int {
+                                void* cpu_ptr, uint64_t size) -> int {
     if (!cpu_ptr) return -EINVAL;
     if (size == 0) return -EINVAL;
     auto* hc = static_cast<struct hal_user_context*>(ctx);
@@ -471,8 +476,8 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
     return it->second->attachSharedMemory(cpu_ptr, size);
   };
   hal->queue_submit = [](void* ctx, hal_queue_handle_t q,
-                         uint64_t gpfifo_addr, uint32_t count,
-                         int64_t* out_fence) -> int {
+                          uint64_t gpfifo_addr, uint32_t count,
+                          int64_t* out_fence) -> int {
     auto* hc = static_cast<struct hal_user_context*>(ctx);
     std::lock_guard<std::mutex> lock(hc->queue_lock);
     auto it = hc->queues.find(q);
@@ -480,7 +485,7 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
     int64_t fence = sim_fence_id_alloc();
     if (fence < 0) return -ENOMEM;
     int ret = it->second->submit(gpfifo_addr, count,
-                                   static_cast<uint64_t>(fence));
+                                    static_cast<uint64_t>(fence));
     if (ret != 0) return ret;
     if (out_fence) *out_fence = fence;
     return 0;
@@ -490,6 +495,7 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
     std::lock_guard<std::mutex> lock(hc->queue_lock);
     auto it = hc->queues.find(q);
     if (it == hc->queues.end()) return -EINVAL;
+    hc->queue_ptrs.erase(q);
     hc->queues.erase(it);
     return 0;
   };
@@ -497,30 +503,79 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
                                   hal_puller_handle_t puller) -> int {
     if (puller == 0) return -EINVAL;
     auto* hc = static_cast<struct hal_user_context*>(ctx);
-    std::lock_guard<std::mutex> lock(hc->queue_lock);
-    auto it = hc->queues.find(q);
-    if (it == hc->queues.end()) return -EINVAL;
-    /* Interim: hal_puller_handle_t is the raw HardwarePullerEmu pointer cast
-     * to opaque. The real opaque-puller-handle wire-up is in the
-     * removal-hardware-puller-emu change. */
-    it->second->setPuller(reinterpret_cast<HardwarePullerEmu*>(puller));
+    std::scoped_lock lock(hc->puller_lock, hc->queue_lock);
+    auto qit = hc->queue_ptrs.find(q);
+    if (qit == hc->queue_ptrs.end()) return -EINVAL;
+    auto pit = hc->pullers.find(puller);
+    if (pit == hc->pullers.end()) return -EINVAL;
+    qit->second->setPuller(pit->second.get());
     return 0;
   };
 
-  /* ── hardware_puller_emu lambdas (3): stubs for foundation. */
-  hal->puller_set_puller = [](void*, hal_puller_handle_t puller,
+  /* ── hardware_puller_emu lambdas (5): real HardwarePullerEmu instances owned by
+   * hal_user_context. drv/ sees only opaque hal_puller_handle_t. */
+  hal->puller_create = [](void* ctx, void* doorbell, void* scheduler,
+                          hal_puller_handle_t* out) -> int {
+    if (!ctx || !doorbell || !scheduler || !out) return -EINVAL;
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    auto* db = static_cast<DoorbellEmu*>(doorbell);
+    auto* sched = static_cast<GlobalScheduler*>(scheduler);
+    auto instance = std::make_shared<HardwarePullerEmu>(hc->hal_ops, db, sched);
+    std::lock_guard<std::mutex> lock(hc->puller_lock);
+    hal_puller_handle_t ph = hc->next_puller_handle++;
+    if (ph == 0) ph = hc->next_puller_handle++;  // skip 0 (NULL sentinel)
+    hc->pullers[ph] = std::move(instance);
+    *out = ph;
+    hc->pullers[ph]->start();
+    return 0;
+  };
+  hal->puller_destroy = [](void* ctx, hal_puller_handle_t puller) -> int {
+    if (puller == 0) return -EINVAL;
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::shared_ptr<HardwarePullerEmu> instance;
+    {
+      std::lock_guard<std::mutex> lock(hc->puller_lock);
+      auto it = hc->pullers.find(puller);
+      if (it == hc->pullers.end()) return -EINVAL;
+      instance = std::move(it->second);
+      hc->pullers.erase(it);
+    }
+    instance->stop();
+    return 0;
+  };
+  hal->puller_set_puller = [](void* ctx, hal_puller_handle_t puller,
                               uint64_t sim_puller_handle) -> int {
-    (void)puller; (void)sim_puller_handle;
+    (void)sim_puller_handle;
+    if (puller == 0) return -EINVAL;
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::lock_guard<std::mutex> lock(hc->puller_lock);
+    auto it = hc->pullers.find(puller);
+    if (it == hc->pullers.end()) return -EINVAL;
+    // HardwarePullerEmu does not expose a setPuller method; this fn-ptr
+    // is reserved for future nested-puller wiring and is currently a no-op.
+    (void)it;
     return 0;
   };
-  hal->puller_register_queue = [](void*, hal_puller_handle_t puller,
+  hal->puller_register_queue = [](void* ctx, hal_puller_handle_t puller,
                                   hal_queue_handle_t queue) -> int {
-    (void)puller; (void)queue;
+    if (puller == 0 || queue == 0) return -EINVAL;
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::scoped_lock lock(hc->puller_lock, hc->queue_lock);
+    auto pit = hc->pullers.find(puller);
+    if (pit == hc->pullers.end()) return -EINVAL;
+    auto qit = hc->queue_ptrs.find(queue);
+    if (qit == hc->queue_ptrs.end()) return -EINVAL;
+    pit->second->registerQueue(qit->second);
     return 0;
   };
-  hal->puller_unregister_queue = [](void*, hal_puller_handle_t puller,
+  hal->puller_unregister_queue = [](void* ctx, hal_puller_handle_t puller,
                                     uint32_t queue_id) -> int {
-    (void)puller; (void)queue_id;
+    if (puller == 0) return -EINVAL;
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::lock_guard<std::mutex> lock(hc->puller_lock);
+    auto it = hc->pullers.find(puller);
+    if (it == hc->pullers.end()) return -EINVAL;
+    it->second->unregisterQueue(queue_id);
     return 0;
   };
 }
