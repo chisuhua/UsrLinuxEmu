@@ -2,7 +2,6 @@
 
 #include <bitset>
 #include <map>
-#include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
@@ -14,8 +13,6 @@
 #include "linux_compat/drm/drm_device.h"
 
 struct gpu_hal_ops;
-
-class HardwarePullerEmu;
 
 class GpgpuDevice : public usr_linux_emu::FileOperations {
  public:
@@ -30,7 +27,7 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   explicit GpgpuDevice(struct gpu_hal_ops* hal);
   ~GpgpuDevice();
 
-  void setPuller(std::shared_ptr<HardwarePullerEmu> puller);
+  void setPuller(hal_puller_handle_t puller);
 
   long ioctl(int fd, unsigned long request, void* argp) override;
   int open(const char* path, int flags) override;
@@ -86,7 +83,7 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   };
   std::map<u32, BoInfo> bo_map_;
   std::map<std::string, u32> registered_kernels_;
-  std::shared_ptr<HardwarePullerEmu> puller_;
+  hal_puller_handle_t puller_ = 0;
 
   // ========== Queue 管理 ==========
 
@@ -122,7 +119,7 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
 
   // ========== 访问器（供 plugin.cpp 调用） ==========
 
-  std::shared_ptr<HardwarePullerEmu> puller() const { return puller_; }
+  hal_puller_handle_t puller() const { return puller_; }
 
  private:
   long handleGetDeviceInfo(void* argp);

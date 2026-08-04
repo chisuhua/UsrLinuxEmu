@@ -242,20 +242,21 @@ section_arch() {
         check_warn "archive/historical-plans-2026-06-15 has ${plans_n} files (Appendix B claims 8)"
     fi
 
-    # 1.5 HAL function pointer count (62 post-stage4-7 B-class L2 Phase 2 foundation)
+    # 1.5 HAL function pointer count (64 post-stage4-7.3 B-class L2 Phase 2 puller removal)
     # History: 22 baseline -> 29 (+8 for preempt/timeline sem, stage4-5) -> 33 (+4 for green/pdl, stage4-6)
     #          -> 35 (+2: fence_id_alloc int64_t + heap_ptr void*, counted via struct-member regex, stage4-6 L2 Phase 1)
     #          -> 62 (+27: graph/mem_pool/stream_capture/gpu_queue_emu/hardware_puller_emu, stage4-7 Phase 2 foundation)
+    #          -> 64 (+2: puller_create + puller_destroy, stage4-7.3 hardware_puller_emu removal)
     # Count = unique (*name) tokens inside the struct, excluding nested fn-ptr params (callback/handler).
-    subsection "1.5 struct gpu_hal_ops has 62 function pointers"
+    subsection "1.5 struct gpu_hal_ops has 64 function pointers"
     if [ -f "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" ]; then
         local hal_count
         hal_count=$(awk '/^struct gpu_hal_ops {/,/^};/' "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" \
           | grep -oE "\(\*[a-z_]+\)" | grep -vE "callback|handler" | sort -u | wc -l | tr -d ' ')
-        if [ "${hal_count}" -eq 62 ]; then
+        if [ "${hal_count}" -eq 64 ]; then
             check_pass "gpu_hal.h has ${hal_count} fn-ptrs (matches doc)"
         else
-            check_warn "gpu_hal.h has ${hal_count} fn-ptrs (doc claims 62)"
+            check_warn "gpu_hal.h has ${hal_count} fn-ptrs (doc claims 64)"
         fi
     else
         check_warn "plugins/gpu_driver/hal/gpu_hal.h not found"
@@ -269,7 +270,6 @@ section_arch() {
     #
     # Grandfathered includes (DO NOT ADD MORE without architectural review):
     #   - sim/graph.h                        (CUDA Graph runtime)
-    #   - sim/hardware/hardware_puller_emu.h (HardwarePullerEmu C++ class)
     #   - sim/hardware/method_codec.h        (method_codec_encode C-ABI)
     #   - sim/fence_id.h                     (sim_fence_id_alloc/check C-ABI)
     #   - sim/gpu_queue_emu.h                (GpuQueueEmu C++ class)
@@ -285,7 +285,6 @@ section_arch() {
     # Grandfather list (must match exactly when clean; shrinks when fixed).
     local -A grandfather
     grandfather["sim/graph.h"]=1
-    grandfather["sim/hardware/hardware_puller_emu.h"]=1
     grandfather["sim/hardware/method_codec.h"]=1
     grandfather["sim/fence_id.h"]=1
     grandfather["sim/gpu_queue_emu.h"]=1
@@ -309,9 +308,8 @@ section_arch() {
         for inc in "${new_includes[@]}"; do
             echo "      + ${inc}"
         done
-        echo "    Existing grandfathered (7):"
+        echo "    Existing grandfathered (6):"
         echo "      - sim/graph.h"
-        echo "      - sim/hardware/hardware_puller_emu.h"
         echo "      - sim/hardware/method_codec.h"
         echo "      - sim/fence_id.h"
         echo "      - sim/gpu_queue_emu.h"

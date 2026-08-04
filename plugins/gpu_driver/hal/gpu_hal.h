@@ -323,8 +323,19 @@ struct gpu_hal_ops {
   int (*queue_register_puller)(void *ctx, hal_queue_handle_t q,
                                hal_puller_handle_t puller);
 
-  /* ── hardware_puller_emu fn-ptrs (3) ──────────────────────────
+  /* ── hardware_puller_emu fn-ptrs (5) ──────────────────────────
    * HardwarePullerEmu is a C++ class. Exposed via hal_puller_handle_t. */
+
+  /* puller_create: construct a HardwarePullerEmu instance and return an
+   * opaque handle. @doorbell and @scheduler are opaque void* to keep the
+   * HAL interface C-compatible; the HAL implementation casts them back to
+   * DoorbellEmu* and GlobalScheduler*.
+   * Returns 0 on success, -EINVAL on invalid args, -ENOMEM on failure. */
+  int (*puller_create)(void *ctx, void *doorbell, void *scheduler,
+                       hal_puller_handle_t *out_puller);
+
+  /* puller_destroy: release a puller instance (stops its background thread). */
+  int (*puller_destroy)(void *ctx, hal_puller_handle_t puller);
 
   /* puller_set_puller: configure which sim_puller this puller watches. */
   int (*puller_set_puller)(void *ctx, hal_puller_handle_t puller,
@@ -336,7 +347,7 @@ struct gpu_hal_ops {
 
   /* puller_unregister_queue: unregister a queue. */
   int (*puller_unregister_queue)(void *ctx, hal_puller_handle_t puller,
-                                 uint32_t queue_id);
+                                  uint32_t queue_id);
 };
 
 /* ── inline 包装函数：零开销简化调用 ──────────────────────── */
@@ -644,7 +655,18 @@ static inline int hal_queue_register_puller(struct gpu_hal_ops *hal,
   return hal->queue_register_puller(hal->ctx, q, puller);
 }
 
-/* ── hardware_puller_emu inline wrappers (3) ─────────────────── */
+/* ── hardware_puller_emu inline wrappers (5) ─────────────────── */
+
+static inline int hal_puller_create(struct gpu_hal_ops *hal,
+                                    void *doorbell, void *scheduler,
+                                    hal_puller_handle_t *out_puller) {
+  return hal->puller_create(hal->ctx, doorbell, scheduler, out_puller);
+}
+
+static inline int hal_puller_destroy(struct gpu_hal_ops *hal,
+                                     hal_puller_handle_t puller) {
+  return hal->puller_destroy(hal->ctx, puller);
+}
 
 static inline int hal_puller_set_puller(struct gpu_hal_ops *hal,
                                         hal_puller_handle_t puller,

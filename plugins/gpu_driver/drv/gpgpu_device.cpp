@@ -13,7 +13,7 @@
 #include "drv/kfd_sim_bridge.h"
 #include "kernel/vfs.h"
 #include "sim/graph.h"
-#include "sim/hardware/hardware_puller_emu.h"
+#include "sim/fence_id.h"
 #include "sim/mem_pool.h"
 #include "sim/stream_capture.h"
 #include "shared/gpu_events.h"
@@ -60,8 +60,8 @@ GpgpuDevice::GpgpuDevice(struct gpu_hal_ops* hal)
 
 GpgpuDevice::~GpgpuDevice() = default;
 
-void GpgpuDevice::setPuller(std::shared_ptr<HardwarePullerEmu> puller) {
-  puller_ = std::move(puller);
+void GpgpuDevice::setPuller(hal_puller_handle_t puller) {
+  puller_ = puller;
 }
 
 u32 GpgpuDevice::HandleManager::allocate() {
@@ -355,7 +355,7 @@ long GpgpuDevice::handlePushbufferSubmitBatch(void* argp) {
     hal_method_codec_encode(hal_, &pkt, nullptr);
   }
 
-  if (puller_ && !has_fence) {
+  if (puller_ != 0 && !has_fence) {
     // S3.5: 即使在 puller path 中也创建 fence 并返回
     hal_queue_handle_t q = getQueue(effective_stream_id);
     if (q == 0) {
@@ -537,13 +537,10 @@ long GpgpuDevice::handleCreateQueue(void* argp) {
   // Attach queue to VA Space
   attachQueueToVASpace(args->va_space_handle, handle);
 
-  // Phase 2.5: register puller with the queue via HAL.
-  // Interim: the hal_puller_handle_t is the raw HardwarePullerEmu pointer
-  // cast to opaque; the real opaque-handle wire-up is in the
-  // removal-hardware-puller-emu change.
-  if (puller_) {
-    hal_queue_register_puller(hal_, queue_handle,
-        reinterpret_cast<hal_puller_handle_t>(puller_.get()));
+  // Phase 2.5: register puller with the queue via HAL. The puller handle is
+  // an opaque uint64_t managed by hal_user_context.
+  if (puller_ != 0) {
+    hal_queue_register_puller(hal_, queue_handle, puller_);
   }
 
   std::cout << "[GpgpuDevice] CREATE_QUEUE: handle=" << handle
@@ -578,9 +575,9 @@ long GpgpuDevice::handleDestroyQueue(void* argp) {
     }
   }
 
-  // Phase 2.5: 从 Puller 注销
-  if (puller_) {
-    puller_->unregisterQueue(static_cast<uint32_t>(handle));
+  // Phase 2.5: unregister queue from the puller via HAL.
+  if (puller_ != 0) {
+    hal_puller_unregister_queue(hal_, puller_, static_cast<uint32_t>(handle));
   }
 
   hal_queue_destroy(hal_, queue_handle);

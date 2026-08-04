@@ -449,7 +449,13 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
   hal->queue_register_puller = [](void*, hal_queue_handle_t,
                                   hal_puller_handle_t) -> int { return 0; };
 
-  /* ── hardware_puller_emu mocks (3) ───────────────────────────── */
+  /* ── hardware_puller_emu mocks (5) ───────────────────────────── */
+  hal->puller_create = [](void*, void*, void*, hal_puller_handle_t* out) -> int {
+    static std::atomic<uint64_t> next{0x7000};
+    if (out) *out = ++next;
+    return 0;  // mock: no real sim instance
+  };
+  hal->puller_destroy = [](void*, hal_puller_handle_t) -> int { return 0; };
   hal->puller_set_puller = [](void*, hal_puller_handle_t, uint64_t) -> int {
     return 0;
   };
