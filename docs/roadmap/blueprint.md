@@ -3,7 +3,7 @@
 > **性质**: 终态愿景描述（what "done" looks like）
 > **对比**: 与 [SSOT §1.10](../02_architecture/post-refactor-architecture.md) 互补 — SSOT 描述当前实现，本文描述成熟形态
 > **关联原则**: [ADR-036](../00_adr/adr-036-three-way-separation.md) (✅ Accepted)
-> **最后更新**: 2026-07-25
+> **最后更新**: 2026-08-04（HAL 46 fn-ptrs / Stage 4.7 B-class L2 Phase 2 启动）
 
 ---
 
@@ -66,7 +66,7 @@
 ### HAL 桥接层（成熟态）
 
 **能力清单**:
-- `struct gpu_hal_ops` 扩展到覆盖 KFD 所有硬件交互
+- `struct gpu_hal_ops` 扩展到覆盖 KFD 所有硬件交互（**当前 46 fn-ptrs，post Stage 4.7.1 foundation**）
 - `hal_user.cpp` 真机部署路径稳定
 - `hal_mock.cpp` 用户态模拟路径稳定
 - HAL 接口变更走 ADR 流程
@@ -74,6 +74,7 @@
 **验收**:
 - HAL 接口变更 100% 有 ADR 记录
 - 真机部署路径测试覆盖
+- L2 violations: 8 → 0（Stage 4.7.2 5 个 removal 完成时）
 
 ---
 
@@ -103,7 +104,7 @@
 | 5 | docs-audit 持续 PASS | Stage 3 | ✅ 43/43 PASS |
 | 6 | v1.0 release 完成 | Stage 3 | 🔄 3.1/3.4 进行中 |
 | 7 | 用户 quickstart ≤ 15 分钟 | Stage 3 | 🔄 3.4 文档完善进行中 |
-| 8 | GPU CP Phase 4-7 递进交付（不含 ADR-053/055 Deferred Never）| Stage 4 | 📋 规划中 |
+| 8 | GPU CP Phase 4-7 递进交付（不含 ADR-053/055 Deferred Never）| Stage 4 | 🔄 4.1-4.6 ✅ 已归档, 4.7 B-class L2 Phase 2 启动 |
 
 ---
 
@@ -127,6 +128,7 @@
 - [stage-1-kernel-emu.md](stage-1-kernel-emu.md) — 阶段 1（Linux 内核环境）
 - [stage-2-multi-device.md](stage-2-multi-device.md) — 阶段 2（多设备）
 - [stage-3-v1.0.md](stage-3-v1.0.md) — 阶段 3（v1.0 稳定）
+- [stage-4-bar-ioremap.md](stage-4-bar-ioremap.md) — 阶段 4（BAR + ioremap + GPU CP + B-class L2）
 
 ---
 
