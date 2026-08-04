@@ -1,34 +1,9 @@
 {
   "candidates": [
-    {
-      "name": "wire-mmu-fw-callback-ioctls-to-active-dispatch",
-      "phase": "stage-4.7",
-      "category": "core-impl",
-      "priority": "P0",
-      "source": "IOCTL 端到端测试完备性审计 (2026-08-02)"
-    },
-    {
-      "name": "add-e2e-tests-for-register-gpu-and-map-queue-ring",
-      "phase": "stage-4.7",
-      "category": "core-test",
-      "priority": "P1",
-      "source": "IOCTL 端到端测试完备性审计 (2026-08-02)"
-    },
-    {
-      "name": "strengthen-semantic-assertions-for-destroy-va-space-and-query-queue",
-      "phase": "stage-4.7",
-      "category": "core-test",
-      "priority": "P1",
-      "source": "IOCTL 端到端测试完备性审计 (2026-08-02)"
-    },
-    {
-      "name": "add-abi-dispatch-consistency-test",
-      "phase": "stage-4.7",
-      "category": "core-test",
-      "priority": "P2",
-      "source": "IOCTL 端到端测试完备性审计 (2026-08-02)"
-    }
-  ],
-  "roadmap_current_phase": "stage-4.7",
-  "fallback": true
+    "stage4-l2-foundation-removal-gpu-queue-emu",
+    "stage4-l2-foundation-removal-graph",
+    "stage4-l2-foundation-removal-hardware-puller-emu",
+    "stage4-l2-foundation-removal-mem-pool",
+    "stage4-l2-foundation-removal-stream-capture"
+  ]
 }
