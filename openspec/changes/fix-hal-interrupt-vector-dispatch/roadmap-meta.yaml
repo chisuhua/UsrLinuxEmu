@@ -1,0 +1,5 @@
+phase: stage-4.3
+category: core-impl
+change_type: bug-fix (vector 参数被丢弃)
+priority: P2
+parent_feature: ""

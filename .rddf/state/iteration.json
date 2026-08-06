@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updated_at": "2026-08-04T07:43:10.081824+00:00",
+  "updated_at": "2026-08-05T17:25:02.604921+00:00",
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -135,38 +135,111 @@
     },
     {
       "name": "stage4-l2-foundation-removal-gpu-queue-emu",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.7",
       "category": "core-impl",
-      "added_at": "2026-08-04T14:52:32+0800"
+      "priority": "P1",
+      "added_at": "2026-08-04T14:52:32+0800",
+      "tasks_total": 23,
+      "tasks_done": 0,
+      "plan_path": ".rddf/plans/stage4-l2-foundation-removal-gpu-queue-emu.md",
+      "archived_at": "2026-08-04T08:57:52+00:00"
     },
     {
       "name": "stage4-l2-foundation-removal-graph",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.7",
       "category": "core-impl",
-      "added_at": "2026-08-04T14:52:32+0800"
+      "priority": "P1",
+      "added_at": "2026-08-04T14:52:32+0800",
+      "tasks_total": 15,
+      "tasks_done": 15,
+      "plan_path": ".rddf/plans/stage4-l2-foundation-removal-graph.md",
+      "archived_at": "2026-08-04T07:19:20+00:00"
     },
     {
       "name": "stage4-l2-foundation-removal-hardware-puller-emu",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.7",
       "category": "core-impl",
-      "added_at": "2026-08-04T14:52:32+0800"
+      "priority": "P1",
+      "added_at": "2026-08-04T14:52:32+0800",
+      "tasks_total": 25,
+      "tasks_done": 25,
+      "plan_path": ".rddf/plans/stage4-l2-foundation-removal-hardware-puller-emu.md",
+      "archived_at": "2026-08-04T07:41:52+00:00"
     },
     {
       "name": "stage4-l2-foundation-removal-mem-pool",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.7",
       "category": "core-impl",
-      "added_at": "2026-08-04T14:52:33+0800"
+      "priority": "P1",
+      "added_at": "2026-08-04T14:52:33+0800",
+      "tasks_total": 18,
+      "tasks_done": 0,
+      "plan_path": ".rddf/plans/stage4-l2-foundation-removal-mem-pool.md",
+      "archived_at": "2026-08-04T16:03:48+00:00"
     },
     {
       "name": "stage4-l2-foundation-removal-stream-capture",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.7",
       "category": "core-impl",
-      "added_at": "2026-08-04T14:52:33+0800"
+      "priority": "P1",
+      "added_at": "2026-08-04T14:52:33+0800",
+      "tasks_total": 18,
+      "tasks_done": 18,
+      "plan_path": ".rddf/plans/stage4-l2-foundation-removal-stream-capture.md",
+      "archived_at": "2026-08-04T07:38:56+00:00"
+    },
+    {
+      "name": "fix-hal-user-missing-interrupt-wiring",
+      "status": "proposed",
+      "phase": "stage-4.3",
+      "category": "core-impl",
+      "added_at": "2026-08-06T00:57:41+0800",
+      "updated_at": "2026-08-05T17:25:02.604873+00:00"
+    },
+    {
+      "name": "implement-hal-preempt-resume-semaphore",
+      "status": "proposed",
+      "phase": "stage-4.5",
+      "category": "core-impl",
+      "added_at": "2026-08-06T00:57:41+0800",
+      "updated_at": "2026-08-05T17:25:02.604899+00:00"
+    },
+    {
+      "name": "implement-hal-green-context-and-pdl",
+      "status": "proposed",
+      "phase": "stage-4.6",
+      "category": "core-impl",
+      "added_at": "2026-08-06T00:57:42+0800",
+      "updated_at": "2026-08-05T17:25:02.604905+00:00"
+    },
+    {
+      "name": "complete-hal-mem-map-bo",
+      "status": "proposed",
+      "phase": "stage-4.1",
+      "category": "core-impl",
+      "added_at": "2026-08-06T00:57:42+0800",
+      "updated_at": "2026-08-05T17:25:02.604909+00:00"
+    },
+    {
+      "name": "fix-hal-interrupt-vector-dispatch",
+      "status": "proposed",
+      "phase": "stage-4.3",
+      "category": "core-impl",
+      "added_at": "2026-08-06T00:57:43+0800",
+      "updated_at": "2026-08-05T17:25:02.604913+00:00"
+    },
+    {
+      "name": "add-hal-puller-set-puller-nested-wiring",
+      "status": "proposed",
+      "phase": "stage-4.6",
+      "category": "core-impl",
+      "added_at": "2026-08-06T00:57:43+0800",
+      "updated_at": "2026-08-05T17:25:02.604917+00:00"
     }
   ]
 }
