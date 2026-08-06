@@ -824,6 +824,22 @@ target_include_directories(test_hal_semaphore_preempt_standalone PRIVATE
 add_test(NAME test_hal_semaphore_preempt_standalone COMMAND $<TARGET_FILE:test_hal_semaphore_preempt_standalone>)
 set_tests_properties(test_hal_semaphore_preempt_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+# fix-hal-interrupt-vector-dispatch: vector dispatch in interrupt_raise_ex
+add_executable(test_interrupt_vector_dispatch_standalone
+    test_interrupt_vector_dispatch_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_user.cpp
+)
+target_link_libraries(test_interrupt_vector_dispatch_standalone PRIVATE kernel gpu_hal gpu_sim)
+target_include_directories(test_interrupt_vector_dispatch_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME test_interrupt_vector_dispatch_standalone COMMAND $<TARGET_FILE:test_interrupt_vector_dispatch_standalone>)
+set_tests_properties(test_interrupt_vector_dispatch_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 # === Stage 4.3 CP Phase 5 Tests (ADR-042/044/048/054/057) ===
 # These tests will FAIL until the corresponding sim modules are implemented.
 # TDD flow: Write test → verify FAIL → implement → verify PASS.
