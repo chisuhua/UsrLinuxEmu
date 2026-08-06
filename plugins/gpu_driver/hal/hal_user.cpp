@@ -13,6 +13,7 @@
 
 #include "../sim/semaphore_manager.h"  // Stage 4.5: fence→sem migration
 #include "../sim/fence_id.h"             // Stage 4.6 L2 foundation: fence_id_* fn-ptrs
+#include "../sim/vram_store.h"           // Stage 4.1: g_vram_store for BAR2 mmap
 #include "../sim/hardware/method_codec.h" // Stage 4.6 L2 foundation: method_codec_encode fn-ptr
 
 // Stage 4.6 L2 foundation (ADR-072 §Decision 4) — Phase 2: 28 new fn-ptrs
@@ -266,8 +267,21 @@ static int user_event_notify(void *ctx, uint32_t event_id) {
 
 static int user_mem_map_bo(struct gpgpu_device* dev, uint64_t bo_offset,
                            size_t size, void** user_map) {
-  (void)dev; (void)bo_offset; (void)size; (void)user_map;
-  return -ENOSYS;
+  (void)dev;
+  if (!usr_linux_emu::g_vram_store.initialized) {
+    return -ENODEV;
+  }
+  if (usr_linux_emu::g_vram_store.pool_backing == nullptr) {
+    return -ENODEV;
+  }
+  if (bo_offset > usr_linux_emu::g_vram_store.vram_size) {
+    return -EINVAL;
+  }
+  if (bo_offset + size > usr_linux_emu::g_vram_store.vram_size) {
+    return -EINVAL;
+  }
+  *user_map = static_cast<uint8_t*>(usr_linux_emu::g_vram_store.pool_backing) + bo_offset;
+  return 0;
 }
 
 /* ── 公开初始化函数 ────────────────────────────────── */

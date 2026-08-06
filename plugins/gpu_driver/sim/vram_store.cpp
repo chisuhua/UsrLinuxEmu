@@ -29,6 +29,7 @@ GpuVramStore::~GpuVramStore() {
 }
 
 bool GpuVramStore::init(size_t vram_size_mb) {
+    std::lock_guard<std::mutex> lock(vram_lock_);
     vram_size = vram_size_mb * 1024 * 1024;
     pool_backing = mmap(nullptr, vram_size, PROT_READ | PROT_WRITE,
                         MAP_ANONYMOUS | MAP_SHARED, -1, 0);
