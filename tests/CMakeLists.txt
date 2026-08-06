@@ -295,6 +295,8 @@ set(CATCH2_SIM_TESTS
     test_gpu_queue_emu_hal_standalone.cpp
     # Stage 4.7.3: puller_emu removal (opaque hal_puller_handle_t)
     test_hardware_puller_emu_hal_standalone.cpp
+    # add-hal-puller-set-puller-nested-wiring Task 3: setSimPuller wiring unit test
+    test_puller_set_puller_standalone.cpp
     # Phase 3.1+3.2 — test_gpu_plugin extended with 18 new IOCTL dispatch cases
     test_gpu_plugin.cpp
     # add-e2e (2026-08-02) — Tasks 1+2 E2E coverage of REGISTER_GPU + MAP_QUEUE_RING

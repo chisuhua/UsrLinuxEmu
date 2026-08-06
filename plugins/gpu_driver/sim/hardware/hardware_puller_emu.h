@@ -92,6 +92,17 @@ class HardwarePullerEmu {
 
   int getInterruptCount() const;
 
+  /** Set the nested sim_puller handle (Stage 4.7, ADR-021).
+   *  Stores sim_puller_handle atomically; subsequent puller dispatch can use it
+   *  to route to the correct sim-level puller instance.
+   *  @return 0 on success */
+  int setSimPuller(uint64_t sim_puller_handle) noexcept;
+
+  /** Test-only accessor for sim_puller_handle_. */
+  uint64_t simPullerHandleForTest() const noexcept {
+    return sim_puller_handle_.load(std::memory_order_relaxed);
+  }
+
   void signalSemaphore(u64 addr, u32 value);
 
   // ========== Semaphore/Barrier Integration (Stage 4.4) ==========
@@ -280,4 +291,7 @@ class HardwarePullerEmu {
   // ========== PDL Nest Counter (Stage 4.6, ADR-056) ==========
   int pdl_nest_counter_{0};
   int last_pdl_error_{0};  // last PDL error code (0 = none); test-readable
+
+  // ========== Nested Puller Wiring (Stage 4.7, ADR-021) ==========
+  std::atomic<uint64_t> sim_puller_handle_{0};
 };

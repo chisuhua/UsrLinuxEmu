@@ -547,16 +547,12 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   };
   hal->puller_set_puller = [](void* ctx, hal_puller_handle_t puller,
                               uint64_t sim_puller_handle) -> int {
-    (void)sim_puller_handle;
     if (puller == 0) return -EINVAL;
     auto* hc = static_cast<struct hal_user_context*>(ctx);
     std::lock_guard<std::mutex> lock(hc->puller_lock);
     auto it = hc->pullers.find(puller);
     if (it == hc->pullers.end()) return -EINVAL;
-    // HardwarePullerEmu does not expose a setPuller method; this fn-ptr
-    // is reserved for future nested-puller wiring and is currently a no-op.
-    (void)it;
-    return 0;
+    return it->second->setSimPuller(sim_puller_handle);
   };
   hal->puller_register_queue = [](void* ctx, hal_puller_handle_t puller,
                                   hal_queue_handle_t queue) -> int {

@@ -444,6 +444,11 @@ int HardwarePullerEmu::getInterruptCount() const {
   return interrupt_count_.load();
 }
 
+int HardwarePullerEmu::setSimPuller(uint64_t sim_puller_handle) noexcept {
+  sim_puller_handle_.store(sim_puller_handle, std::memory_order_relaxed);
+  return 0;
+}
+
 void HardwarePullerEmu::signalSemaphore(u64 addr, u32 value) {
   std::lock_guard<std::mutex> lock(mutex_);
   if (addr == waiting_semaphore_va_ && value >= waiting_semaphore_value_) {
