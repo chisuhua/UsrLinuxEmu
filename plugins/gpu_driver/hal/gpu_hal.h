@@ -124,11 +124,12 @@ struct gpu_hal_ops {
   /* hal_sem_wait: register a waiter callback on a semaphore.
    * @handle: semaphore handle
    * @expected: minimum value to wait for
-   * @callback: function to call when condition met
-   * @user_data: opaque data passed to callback
+   * @callback: function(actual, user_data) called when condition met
+   * @user_data: opaque data passed to callback as second argument
    * Returns 0 on success, -EINVAL if handle invalid. */
   int (*hal_sem_wait)(void *ctx, uint64_t handle, uint64_t expected,
-                      void (*callback)(uint64_t user_data), uint64_t user_data);
+                      void (*callback)(uint64_t actual, uint64_t user_data),
+                      uint64_t user_data);
 
   /* hal_sem_query: read current semaphore value.
    * @handle: semaphore handle
@@ -454,7 +455,7 @@ static inline int hal_sem_signal(struct gpu_hal_ops *hal, uint64_t h,
 
 static inline int hal_sem_wait(struct gpu_hal_ops *hal, uint64_t h,
                                 uint64_t exp,
-                                void (*cb)(uint64_t), uint64_t ud) {
+                                void (*cb)(uint64_t, uint64_t), uint64_t ud) {
   return hal->hal_sem_wait(hal->ctx, h, exp, cb, ud);
 }
 

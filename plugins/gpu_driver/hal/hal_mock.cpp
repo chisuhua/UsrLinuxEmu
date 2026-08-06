@@ -313,7 +313,7 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
   };
   hal->hal_sem_signal = [](void*, uint64_t, uint64_t) -> int { return 0; };
   hal->hal_sem_wait = [](void*, uint64_t, uint64_t,
-                          void (*)(uint64_t), uint64_t) -> int { return 0; };
+                          void (*)(uint64_t, uint64_t), uint64_t) -> int { return 0; };
   hal->hal_sem_query = [](void*, uint64_t, uint64_t* out) -> int {
     *out = 0;
     return 0;
