@@ -1,6 +1,44 @@
 {
   "sessions": [
     {
+      "session_id": "rds_b25f4e877c52",
+      "kind": "stage_ship",
+      "owner_opencode_session_id": "my-eci-group-poc_4948",
+      "parent_session_id": null,
+      "goal": {
+        "intent": "guide-ship"
+      },
+      "state": "completed",
+      "attached_changes": [],
+      "context_pointer": null,
+      "started_at": "2026-08-05T09:13:59.211476+00:00",
+      "last_heartbeat": "2026-08-05T09:13:59.211476+00:00",
+      "ended_at": "2026-08-05T09:13:59.243994+00:00",
+      "end_reason": "ship-done",
+      "sub_phase": null,
+      "workflow_group": null
+    },
+    {
+      "session_id": "rds_5bd56500e886",
+      "kind": "stage_ship",
+      "owner_opencode_session_id": "my-eci-group-poc_5219",
+      "parent_session_id": "rds_3262c5aafd23",
+      "goal": {
+        "intent": "guide-ship",
+        "subject": "ship-phase",
+        "expected_outcome": "archive-all"
+      },
+      "state": "abandoned",
+      "attached_changes": [],
+      "context_pointer": null,
+      "started_at": "2026-08-04T07:57:46.277842+00:00",
+      "last_heartbeat": "2026-08-04T07:57:46.277842+00:00",
+      "ended_at": "2026-08-05T09:13:54.099880+00:00",
+      "end_reason": "user-abandoned",
+      "sub_phase": null,
+      "workflow_group": "13731c35-3fee-4222-895c-412115eea0aa"
+    },
+    {
       "session_id": "rds_3262c5aafd23",
       "kind": "stage_plan",
       "owner_opencode_session_id": "my-eci-group-poc_5219",
@@ -37,26 +75,6 @@
       "end_reason": "design-done",
       "sub_phase": null,
       "workflow_group": "26a7e4eb-9a0b-4fd4-9b66-de79e5a465a9"
-    },
-    {
-      "session_id": "rds_c22eda398e08",
-      "kind": "stage_ship",
-      "owner_opencode_session_id": "my-eci-group-poc_5362",
-      "parent_session_id": "rds_b19cf351e792",
-      "goal": {
-        "intent": "guide-ship",
-        "subject": "ship-phase",
-        "expected_outcome": "archive-all"
-      },
-      "state": "orphaned",
-      "attached_changes": [],
-      "context_pointer": null,
-      "started_at": "2026-08-04T04:07:42.400193+00:00",
-      "last_heartbeat": "2026-08-04T04:07:42.400193+00:00",
-      "ended_at": "2026-08-04T06:48:03.217668+00:00",
-      "end_reason": "heartbeat-timeout",
-      "sub_phase": null,
-      "workflow_group": "a09eb2a0-1dd4-4f5c-98ce-f9995942e9b1"
     },
     {
       "session_id": "rds_bfa12787b1fd",
@@ -185,26 +203,44 @@
       "end_reason": "ship-done"
     },
     {
-      "session_id": "rds_5bd56500e886",
-      "kind": "stage_ship",
-      "owner_opencode_session_id": "my-eci-group-poc_5219",
-      "parent_session_id": "rds_3262c5aafd23",
+      "session_id": "rds_783f2a37a2cb",
+      "kind": "stage_design",
+      "owner_opencode_session_id": "my-eci-group-poc_224475",
+      "parent_session_id": null,
       "goal": {
-        "intent": "guide-ship",
-        "subject": "ship-phase",
-        "expected_outcome": "archive-all"
+        "intent": "guide-design",
+        "subject": "design-phase",
+        "expected_outcome": "design-done"
       },
-      "state": "active",
+      "state": "completed",
+      "attached_changes": [],
+      "context_pointer": ".rddf/state/.design-handoff.json",
+      "started_at": "2026-08-05T16:16:44.820301+00:00",
+      "last_heartbeat": "2026-08-05T16:16:44.820301+00:00",
+      "ended_at": "2026-08-05T16:58:59.693823+00:00",
+      "end_reason": "design-done",
+      "sub_phase": null,
+      "workflow_group": "8b061940-f947-4ae0-aa6a-1920c15ffbec"
+    },
+    {
+      "session_id": "rds_4012d00b70a6",
+      "kind": "stage_plan",
+      "owner_opencode_session_id": "my-eci-group-poc_347054",
+      "parent_session_id": null,
+      "goal": {
+        "intent": "guide-plan"
+      },
+      "state": "completed",
       "attached_changes": [],
       "context_pointer": null,
-      "started_at": "2026-08-04T07:57:46.277842+00:00",
-      "last_heartbeat": "2026-08-04T07:57:46.277842+00:00",
-      "ended_at": null,
-      "end_reason": null,
+      "started_at": "2026-08-06T00:34:08.538458+00:00",
+      "last_heartbeat": "2026-08-06T00:34:08.538458+00:00",
+      "ended_at": "2026-08-06T00:34:08.583511+00:00",
+      "end_reason": "plan-done",
       "sub_phase": null,
-      "workflow_group": "13731c35-3fee-4222-895c-412115eea0aa"
+      "workflow_group": null
     }
   ],
-  "updated_at": "2026-08-04T07:57:46.277842+00:00",
+  "updated_at": "2026-08-06T00:34:08.583511+00:00",
   "version": 1
 }

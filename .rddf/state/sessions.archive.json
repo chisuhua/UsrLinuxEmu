@@ -336,7 +336,27 @@
       "last_heartbeat": "2026-07-30T07:24:14.693888+00:00",
       "ended_at": "2026-07-30T07:44:18.855690+00:00",
       "end_reason": "plan-done"
+    },
+    {
+      "session_id": "rds_c22eda398e08",
+      "kind": "stage_ship",
+      "owner_opencode_session_id": "my-eci-group-poc_5362",
+      "parent_session_id": "rds_b19cf351e792",
+      "goal": {
+        "intent": "guide-ship",
+        "subject": "ship-phase",
+        "expected_outcome": "archive-all"
+      },
+      "state": "orphaned",
+      "attached_changes": [],
+      "context_pointer": null,
+      "started_at": "2026-08-04T04:07:42.400193+00:00",
+      "last_heartbeat": "2026-08-04T04:07:42.400193+00:00",
+      "ended_at": "2026-08-04T06:48:03.217668+00:00",
+      "end_reason": "heartbeat-timeout",
+      "sub_phase": null,
+      "workflow_group": "a09eb2a0-1dd4-4f5c-98ce-f9995942e9b1"
     }
   ],
-  "updated_at": "2026-08-04T07:48:13.522558+00:00"
+  "updated_at": "2026-08-05T09:27:17.707590+00:00"
 }
