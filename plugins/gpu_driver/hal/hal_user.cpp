@@ -22,6 +22,7 @@
 #include "../sim/stream_capture.h"      // sim_stream_capture_*
 #include "../sim/hardware/hardware_puller_emu.h" // Stage 4.7.3: puller_create impl
 #include "../sim/scheduler/global_scheduler.h"   // Stage 4.7.3: puller_create scheduler arg
+#include "../sim/backdoor_preempt.h"             // Stage 4.7.3: backdoor_force_preempt/resume
 
 /* ── 内部回调实现 ────────────────────────────────── */
 
@@ -327,22 +328,48 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   hal->event_wait = user_event_wait;
   hal->event_notify = user_event_notify;
   hal->mem_map_bo = user_mem_map_bo;
-  /* Stage 4.5: preemption stubs (wired when SemaphoreManager available) */
-  hal->hal_preempt = [](void*, uint32_t) -> int { return 0; };
-  hal->hal_resume = [](void*, uint32_t) -> int { return 0; };
-  hal->hal_sem_create = [](void*, uint64_t init, uint64_t* out) -> int {
-    static uint64_t next_handle = 1;
-    *out = next_handle++;
+  hal->hal_preempt = [](void* ctx, uint32_t channel_id) -> int {
+    return backdoor_force_preempt(channel_id);
+  };
+  hal->hal_resume = [](void* ctx, uint32_t channel_id) -> int {
+    return backdoor_force_resume(channel_id);
+  };
+  hal->hal_sem_create = [](void* ctx, uint64_t init, uint64_t* out) -> int {
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    if (!hc->sem_mgr) return -ENODEV;
+    uint64_t h = hc->sem_mgr->create(init);
+    if (h == 0) return -ENOMEM;
+    *out = h;
     return 0;
   };
-  hal->hal_sem_signal = [](void*, uint64_t, uint64_t) -> int { return 0; };
-  hal->hal_sem_wait = [](void*, uint64_t, uint64_t,
-                          void (*)(uint64_t), uint64_t) -> int { return 0; };
-  hal->hal_sem_query = [](void*, uint64_t, uint64_t* out) -> int {
-    *out = 0;
+  hal->hal_sem_signal = [](void* ctx, uint64_t handle, uint64_t value) -> int {
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    if (!hc->sem_mgr) return -ENODEV;
+    return hc->sem_mgr->signal(handle, value);
+  };
+  hal->hal_sem_wait = [](void* ctx, uint64_t handle, uint64_t expected,
+                          void (*callback)(uint64_t, uint64_t),
+                          uint64_t user_data) -> int {
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    if (!hc->sem_mgr) return -ENODEV;
+    return hc->sem_mgr->wait(
+        handle, expected,
+        [callback, user_data](uint64_t actual) { callback(actual, user_data); },
+        user_data);
+  };
+  hal->hal_sem_query = [](void* ctx, uint64_t handle, uint64_t* out) -> int {
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    if (!hc->sem_mgr) return -ENODEV;
+    uint64_t val = hc->sem_mgr->query(handle);
+    if (val == UINT64_MAX) return -EINVAL;
+    *out = val;
     return 0;
   };
-  hal->hal_sem_destroy = [](void*, uint64_t) -> int { return 0; };
+  hal->hal_sem_destroy = [](void* ctx, uint64_t handle) -> int {
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    if (!hc->sem_mgr) return -ENODEV;
+    return hc->sem_mgr->destroy(handle);
+  };
   hal->hal_green_context_create = [](void*, uint64_t, uint64_t*) -> int {
     return -ENOSYS;
   };

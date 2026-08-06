@@ -17,7 +17,7 @@ SemaphoreManager::~SemaphoreManager() {
       sem.waiters.pop();
       lock.unlock();
       if (w.callback) {
-        w.callback(w.user_data);
+        w.callback(0);  // NOLINT: destroyed semaphore, pass 0 as sentinel
       }
       lock.lock();
     }
@@ -63,7 +63,7 @@ int SemaphoreManager::signal(uint64_t handle, uint64_t value) {
     auto w = std::move(ready.front());
     ready.pop();
     if (w.callback) {
-      w.callback(w.user_data);
+      w.callback(value);  // pass actual semaphore value
     }
   }
   return 0;
@@ -83,7 +83,7 @@ int SemaphoreManager::wait(uint64_t handle, uint64_t expected,
     // Condition already met; invoke callback immediately
     lock.unlock();
     if (callback) {
-      callback(user_data);
+      callback(cur);
     }
     return 0;
   }
