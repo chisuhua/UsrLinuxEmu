@@ -1,0 +1,5 @@
+phase: stage-4.6
+category: core-impl
+change_type: functional (HAL API 完备化 — 嵌套 puller 支持)
+priority: P2
+parent_feature: ""

@@ -1,9 +1,10 @@
 {
   "candidates": [
-    "stage4-l2-foundation-removal-gpu-queue-emu",
-    "stage4-l2-foundation-removal-graph",
-    "stage4-l2-foundation-removal-hardware-puller-emu",
-    "stage4-l2-foundation-removal-mem-pool",
-    "stage4-l2-foundation-removal-stream-capture"
+    "fix-hal-user-missing-interrupt-wiring",
+    "implement-hal-preempt-resume-semaphore",
+    "implement-hal-green-context-and-pdl",
+    "complete-hal-mem-map-bo",
+    "fix-hal-interrupt-vector-dispatch",
+    "add-hal-puller-set-puller-nested-wiring"
   ]
 }
