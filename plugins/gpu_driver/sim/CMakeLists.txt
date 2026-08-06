@@ -40,6 +40,9 @@ add_library(gpu_sim STATIC
     semaphore_manager.cpp
     # Stage 4.5 - Backdoor symbols for testing (ADR-057 D5)
     backdoor_preempt.cpp
+    # Stage 4.7.4 - Green Context + PDL minimal skeletons (ADR-056)
+    green_context.cpp
+    pdl.cpp
 )
 
 set_source_files_properties(

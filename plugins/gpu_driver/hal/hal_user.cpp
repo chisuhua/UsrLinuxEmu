@@ -22,6 +22,8 @@
 #include "../sim/stream_capture.h"      // sim_stream_capture_*
 #include "../sim/hardware/hardware_puller_emu.h" // Stage 4.7.3: puller_create impl
 #include "../sim/scheduler/global_scheduler.h"   // Stage 4.7.3: puller_create scheduler arg
+#include "../sim/green_context.h"                // Stage 4.7.4: green_context create/destroy
+#include "../sim/pdl.h"                           // Stage 4.7.4: PDL kernel launch
 #include "../sim/backdoor_preempt.h"             // Stage 4.7.3: backdoor_force_preempt/resume
 
 /* ── 内部回调实现 ────────────────────────────────── */
@@ -370,18 +372,40 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
     if (!hc->sem_mgr) return -ENODEV;
     return hc->sem_mgr->destroy(handle);
   };
-  hal->hal_green_context_create = [](void*, uint64_t, uint64_t*) -> int {
-    return -ENOSYS;
+  hal->hal_green_context_create = [](void* ctx, uint64_t tsg_id,
+                                     uint64_t* out_handle) -> int {
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    if (!out_handle) return -EINVAL;
+    GreenContext* gc = GreenContext::create(tsg_id);
+    if (!gc) return -ENOMEM;
+    std::lock_guard<std::mutex> lock(hc->green_context_lock);
+    uint64_t h = hc->next_green_context_handle++;
+    hc->green_context_handles[h] = gc;
+    *out_handle = h;
+    return 0;
   };
-  hal->hal_green_context_destroy = [](void*, uint64_t) -> int {
-    return -ENOSYS;
+  hal->hal_green_context_destroy = [](void* ctx, uint64_t handle) -> int {
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::unique_lock<std::mutex> lock(hc->green_context_lock);
+    auto it = hc->green_context_handles.find(handle);
+    if (it == hc->green_context_handles.end()) return -EINVAL;
+    GreenContext* gc = it->second;
+    hc->green_context_handles.erase(it);
+    lock.unlock();
+    return gc->destroy();
   };
-  hal->hal_pdl_launch = [](void*, uint64_t, uint64_t, uint32_t, uint32_t,
-                           uint64_t*) -> int {
-    return -ENOSYS;
+  hal->hal_pdl_launch = [](void*, uint64_t kernel_addr, uint64_t kernargs_va,
+                           uint32_t grid_x, uint32_t block_x,
+                           uint64_t* out_signal_handle) -> int {
+    PdlLauncher launcher;
+    return launcher.launch(kernel_addr, kernargs_va, grid_x, block_x,
+                            out_signal_handle);
   };
-  hal->hal_pdl_signal_completion = [](void*, uint64_t, uint64_t) -> int {
-    return -ENOSYS;
+  hal->hal_pdl_signal_completion = [](void* ctx, uint64_t handle,
+                                      uint64_t value) -> int {
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    if (!hc->sem_mgr) return -ENODEV;
+    return hc->sem_mgr->signal(handle, value);
   };
 
   /* ── Stage 4.6 L2 foundation (ADR-072 §Decision 4) — B-class fix (Phase 1) ─
