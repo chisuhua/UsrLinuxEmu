@@ -77,6 +77,11 @@ struct hal_user_context {
   /* Stage 4.7.3: back-pointer to the gpu_hal_ops that owns this context. */
   struct gpu_hal_ops* hal_ops = nullptr;
 
+  /* Stage 4.7.4: Green Context handles (ADR-056). */
+  std::unordered_map<uint64_t, class GreenContext*> green_context_handles;
+  std::mutex green_context_lock;
+  uint64_t next_green_context_handle = 1;
+
   /* Stage 4.7.3: HardwarePullerEmu instance storage for HAL opaque puller handles. */
   std::unordered_map<hal_puller_handle_t, std::shared_ptr<HardwarePullerEmu>> pullers;
   std::mutex puller_lock;
