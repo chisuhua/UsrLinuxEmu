@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <mutex>
 #include <sys/mman.h>
 
 namespace usr_linux_emu {
@@ -18,6 +19,7 @@ struct GpuVramStore {
     void*     pool_backing;
     PciBarSim bars[6];
     bool      initialized;
+    std::mutex vram_lock_;
 
     GpuVramStore();
     ~GpuVramStore();
