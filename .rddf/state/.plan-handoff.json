@@ -1,8 +1,8 @@
 {
-  "plan_complete_at": "2026-08-04T07:47:55.196376+00:00",
-  "active_changes": 5,
+  "plan_complete_at": "2026-08-06T00:33:59.977659+00:00",
+  "active_changes": 6,
   "all_artifacts_committed": true,
   "ship_started_at": null,
-  "current_change": "stage4-l2-foundation-removal-gpu-queue-emu",
+  "current_change": "fix-hal-user-missing-interrupt-wiring",
   "execution_mode_decisions": {}
 }
