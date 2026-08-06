@@ -140,6 +140,28 @@ static void user_interrupt_raise(void *ctx, uint32_t vector) {
   (void)vector;
 }
 
+static int user_interrupt_register(void *ctx, uint32_t vector,
+                                  void (*handler)(uint64_t user_data)) {
+  auto *hc = static_cast<struct hal_user_context *>(ctx);
+  if (vector >= 4) return -EINVAL;
+  hc->interrupt_handlers[vector] = handler;
+  hc->interrupt_handler_data[vector] = 0;
+  hc->interrupt_count.fetch_add(1, std::memory_order_relaxed);
+  return 0;
+}
+
+static void user_interrupt_raise_ex(void *ctx, uint32_t vector,
+                                   uint64_t user_data) {
+  auto *hc = static_cast<struct hal_user_context *>(ctx);
+  if (vector >= 4) return;
+  hc->interrupt_handler_data[vector] = user_data;
+  hc->interrupt_count.fetch_add(1, std::memory_order_relaxed);
+  auto handler = hc->interrupt_handlers[vector];
+  if (handler) {
+    handler(user_data);
+  }
+}
+
 static void user_time_wait(void *ctx, uint64_t us) {
   (void)ctx;
   std::this_thread::sleep_for(std::chrono::microseconds(us));
@@ -282,6 +304,8 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   hal->fence_read = user_fence_read;
   hal->doorbell_ring = user_doorbell_ring;
   hal->interrupt_raise = user_interrupt_raise;
+  hal->interrupt_register = user_interrupt_register;
+  hal->interrupt_raise_ex = user_interrupt_raise_ex;
   hal->time_wait = user_time_wait;
   hal->iommu_map = user_iommu_map;
   hal->iommu_unmap = user_iommu_unmap;

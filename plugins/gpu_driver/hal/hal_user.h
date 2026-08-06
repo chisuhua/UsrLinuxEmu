@@ -49,6 +49,10 @@ struct hal_user_context {
   std::atomic<uint64_t> doorbell_count{0};
   std::atomic<uint64_t> interrupt_count{0};
 
+  /* Interrupt handlers (4 vectors, Stage 4.7.3 fix-hal-user-missing-interrupt-wiring) */
+  void (*interrupt_handlers[4])(uint64_t user_data);
+  uint64_t interrupt_handler_data[4];
+
   /* Doorbell 回调（由仿真层设置，HAL 在 doorbell_ring 时调用） */
   void (*doorbell_ring_cb)(void* cb_ctx, uint32_t queue_id);
   void* doorbell_ring_cb_ctx;
