@@ -422,3 +422,38 @@ ADR-064 修订 1 引入了 HAL 边界禁止规则（决策 5），但只禁止 d
 | 任何 `reinterpret_cast` 到 HAL/sim 内部类型 | ❌ 禁止 |
 
 **豁免文件**：`plugin.cpp`（composition root）+ `drv/kfd_sim_bridge.cpp`（boundary file 自身）。
+
+---
+
+## 当前契约附录（2026-08-07）
+
+### 当前实现口径
+
+截至 2026-08-07，`struct gpu_hal_ops` 的 canonical source 是 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h)。当前契约包含 **64 个函数指针字段**。其中，`hal_heap_ptr` 是一个 `static inline` helper，通过 `heap_ptr` 函数指针提供 GPU VA 到主机指针的访问；因此，文档 shorthand 记为 **65 个 total callable entries**（64 个 fn-ptrs + 1 个 helper），不把 helper 计入结构体字段数量。
+
+当前 15 个接口组的契约计数如下。表中的组计数按 ADR-023 的文档 shorthand 记录，其中 `fence/method` 组列出 4 个 fn-ptr 与 `hal_heap_ptr` helper 1 项，memory pool 的 9 项为核心 memory-pool entries。Stage 4.7 的 `mem_pool_export_shareable` 是 memory-pool 组之外追加的 1 个 current-contract fn-ptr，因此总数为 64 个 fn-ptr；`hal_heap_ptr` 则使 total callable entries 为 65。
+
+| 接口组 | 数量 |
+|---|---:|
+| base | 11 |
+| IOMMU | 2 |
+| events | 3 |
+| `mem_map_bo` | 1 |
+| extended interrupts | 2 |
+| preemption | 2 |
+| semaphore | 5 |
+| green context | 2 |
+| PDL | 2 |
+| fence/method | 4 + heap helper 1 |
+| graph | 7 |
+| memory pool | 9 |
+| stream capture | 3 |
+| queue | 5 |
+| puller | 5 |
+| **合计** | **64 个 fn-ptrs + 1 个 helper** |
+
+其中 `fence/method` 行的 4 个函数指针字段是 fence-id 3 项与 method codec 1 项，另列 `hal_heap_ptr` 这一项 helper。按照文档 shorthand，15 个接口组覆盖 64 个 fn-ptr 字段，连同 `hal_heap_ptr` 后为 65 个 total callable entries。
+
+### Stage 4.7 治理说明
+
+Stage 4.7 保留 ADR-023 的 **append-only** 原则。HAL 接口扩展继续通过新增 fn-ptr 或对应 inline helper 实现，不修改既有函数签名和既有字段语义。未来接口增长仍须遵循本 ADR 的 spec-driven 治理，并在相关 ADR 或修订附录中记录新增接口的边界、分组、计数和兼容性影响。

@@ -2,7 +2,7 @@
 
 本文档目录包含 UsrLinuxEmu 项目中所有已通过和提议中的架构决策记录。
 
-> **最后更新**: 2026-07-25（ADR-069 BAR/ioremap 仿真架构 — Stage 4 前置 ADR）
+> **最后更新**: 2026-08-07（Stage 4 全部 ship + 归档后同步）
 > **维护者**: UsrLinuxEmu Architecture Team + TaskRunner owner
 > **治理规则**: 见 [ADR-035](adr-035-governance-policy.md)
 
@@ -47,7 +47,7 @@
 | [adr-035](adr-035-governance-policy.md) | **Architecture Governance Policy** | ✅ 已接受 | 2026-06-23 |
 | [adr-036](adr-036-three-way-separation.md) | **3 区分架构原则 (3-Way Architectural Separation)** | ✅ 已接受 | 2026-06-23 |
 | [adr-037](adr-037-render-node-permissions.md) | **VFS Device Permission Model (Render Node 权限分离)** | ✅ 已接受 | 2026-07-03 |
-| [adr-038](adr-038-network-stack-three-way-separation.md) | **网络栈 3 区分架构边界** | 🔄 Proposed (Stage 2 前置 ADR) | 2026-07-05 |
+| [adr-038](adr-038-network-stack-three-way-separation.md) | **网络栈 3 区分架构边界** | ✅ 已接受 (Stage 2 已交付，前置条件全部满足) | 2026-07-05 |
 | [adr-039](adr-039-mem-pool-export-ioctl.md) | **MEM_POOL_EXPORT IOCTL (0x68) for cuMemPoolExportToShareableHandle** | ✅ 已接受 | 2026-07-07 |
 | [adr-040](adr-040-puller-fence-completion.md) | **HardwarePullerEmu Fence Completion 回调机制**（Phase 4 前置 ADR）| ✅ Accepted | 2026-07-09 |
 | [adr-041](adr-041-graph-node-to-gpfifo-serialization.md) | **Graph Node → GPFIFO Entry 序列化**（Phase 4 前置 ADR）| ✅ Accepted | 2026-07-09 |
@@ -79,7 +79,10 @@
 | [adr-072](adr-072-portability-validation.md) | **驱动代码可移植性验证框架**（L1 静态分析 + L2 内核编译测试 + L3 docs-audit）| ✅ Accepted | 2026-07-25 |
 | [adr-073](adr-073-dma-coherent-emulation.md) | **DMA 一致性内存仿真架构**（独立 DMA 地址空间 + coherent/streaming 语义分离；依赖 ADR-069, ADR-064 条件 2/3）| ✅ Accepted | 2026-07-25 |
 | [adr-074](adr-074-archive-tasks-md-checkbox-hygiene.md) | **Archive Tasks.md Checkbox Hygiene Policy**（归档 checkbox 可同步以反映实施状态，与"archive spec 不修改"正交）| ✅ Accepted | 2026-07-31 |
+| [adr-075](adr-075-stage4-7-bclass-l2-foundation-removal.md) | **Stage 4.7 B-class L2 Foundation Removal 回顾记录**（1+N 模式：5 项移除 proposal 全部 ship + 归档；HAL 11→33→65 append-only；回顾性 ADR，不替代 ADR-023/072）| ✅ Accepted | 2026-08-07 |
 
+> **2026-08-07 变更（ADR-075 回顾记录）**：ADR-075 创建 — 回顾性记录 Stage 4.7 B-class L2 Foundation 5 项移除 proposal（gpu_queue_emu / graph / hardware_puller_emu / mem_pool / stream_capture）全部 ship + 归档的事实；明确此 ADR 不替代 ADR-023（HAL 契约）+ ADR-072（可移植性验证）的治理边界。状态分布：Accepted 57→**58**，总计 69→**70**。
+>
 > **2026-07-14 变更（C-12 命名修复 + HAL ops ADR 创建）**：ADR-061 + ADR-062 创建 — 原 tasks.md B.3.4.5 误用 `adr-060` 编号，与 `Linux 内核消息通知线程架构` 冲突。已修正：
 > - **ADR-061**（HAL IOMMU ops 扩展，237 行）：覆盖 C-12 tasks B.3.4 — `hal_iommu_map()` / `hal_iommu_unmap()` 2 个新 fn-ptr，遵循 ADR-023 Decision 4 spec-driven "追加不改" 原则
 > - **ADR-062**（HAL Event Signal ops 扩展，276 行）：覆盖 C-12 tasks B.4.4 — `hal_event_signal()` 1 个新 fn-ptr，**硬依赖 ADR-060 `kernel_workqueue`** 实现 events 异步分发
@@ -88,16 +91,26 @@
 > 
 > **2026-07-15 变更**：ADR-061（HAL IOMMU ops 扩展）+ ADR-062（HAL Event Signal ops 扩展）状态升 ✅ Accepted。fn-ptrs 已 commit 到 `struct gpu_hal_ops`（11→14），hal_user/hal_mock stub 实现已落地。C-12 Phase A.2 hard gate CLEARED；Phase B 可启动。
 
-## 状态分布总览（截至 2026-07-27）
+## 状态分布总览（截至 2026-08-07）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
-| ✅ 已接受 | 55 | 001-010, 015-024, 027, 031-037, 039-052, 054, 057, 059-065, 074 |
-| 📋 PROPOSED | 6 | 011-014, 038, 058, 069, 072-073 |
+| ✅ 已接受 | 58 | 001-010, 015-024, 027, 031-052, 054, 056-075（外加 058）|
+| 🔄 提议中 | 4 | 011-014 |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
-| **总计** | **69** | ADR-001 ~ ADR-074 |
+| **总计** | **70** | ADR-001 ~ ADR-075（含跳号 066/067/068/070/071） |
 
-> **2026-07-31 变更**：ADR-051（Predication 条件执行）+ ADR-052（AQL/PM4 Native 支持）状态升 ✅ Accepted。由 `stage4-5-cp-phase6-predication-aql` 实施完成。状态分布：Accepted 52->54，PROPOSED 9->7。ADR-052 PM4 parsing deferred to Phase 6.5 per ADR-052 D3。
+> **2026-08-07 修订（ADR-075）**：ADR-075（Stage 4.7 B-class L2 Foundation Removal 回顾记录）状态升 ✅ Accepted。1+N 模式：1 个回顾性 ADR + 5 个已归档移除 proposal（gpu_queue_emu / graph / hardware_puller_emu / mem_pool / stream_capture）。状态分布：Accepted 57→**58**，PROPOSED 保持 4。HAL append-only 治理（ADR-023 §D4）继续生效，HAL 64 fn-ptrs + 1 helper = 65 total callable entries 维持。
+>
+> **2026-08-07 修订**：ADR-038（网络栈 3 区分）从 🔄 Proposed 升 ✅ 已接受（Stage 2 已交付）；ADR-058（sim_mem_pool Real VA）从 📋 PROPOSED 升 ✅ Accepted；ADR-069（BAR/ioremap 仿真）、ADR-072（可移植性验证）、ADR-073（DMA 一致性）从 📋 PROPOSED 升 ✅ Accepted。状态分布：Accepted 55→**57**，PROPOSED 6→**4**。Stage 4 主线 ADR 全部 Accepted。
+>
+> **2026-08-06 修订**：6 份 HAL user wiring P0/P1/P2 改进设计 (`d875803`) + 计划 (`ed6c81a`) ship，HAL fn-ptrs 增长到 65 个（Stage 4.7 B-class L2 Phase 1+2 已 ship）。
+>
+> **2026-08-03 修订**：4.7 B-class L2 Foundation Phase 1 ship（fence_id + method_codec + heap inline wrappers）；4.6 closeout + 4.6 standalone test ship。
+>
+> **2026-08-01 修订**：ADR-056（Green Context / PDL）状态升 ✅ Accepted（Stage 4.6 实施完成）。
+>
+> **2026-07-31 变更**：ADR-051（Predication 条件执行）+ ADR-052（AQL/PM4 Native 支持）+ ADR-074（Archive Tasks.md Checkbox Hygiene）状态升 ✅ Accepted。由 `stage4-5-cp-phase6-predication-aql` 实施完成。状态分布：Accepted 52→54。ADR-052 PM4 parsing deferred to Phase 6.5 per ADR-052 D3。
 
 > **2026-07-30 变更**：ADR-045（优先级调度）+ ADR-046（抢占与上下文切换）+ ADR-047（Hardware Semaphore & Barrier）+ ADR-050（Indirect Buffer 命令链）状态升 ✅ Accepted。ADR-045/047/050 由 `stage4-4-gpu-cp-phase55` 实施完成，ADR-046 由本 change `stage4-5-cp-phase6-preemption-engine-finish` 实施完成。状态分布：Accepted 48→52，PROPOSED 12→8。
 
@@ -305,7 +318,7 @@ adr-001 (用户态模拟)
 
 ---
 
-**最后更新**: 2026-07-11（ADR-058 sim_mem_pool Real VA + ADR-059 KFD 多文件集成架构边界 + ADR-060 Linux 内核消息通知线程架构；C-12 启动需 ADR-059 + ADR-060 均 Accepted）
+**最后更新**: 2026-08-07（ADR-075 Stage 4.7 B-class L2 Foundation Removal 回顾记录加入；状态分布 58/4/7，总计 70）
 
 ## 编号 gap 治理（2026-06-16 → 2026-06-17）
 

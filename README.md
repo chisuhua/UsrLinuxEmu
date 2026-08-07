@@ -3,18 +3,19 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 [![Version](https://img.shields.io/badge/version-v1.0-blueviolet)]()
-[![Phase](https://img.shields.io/badge/phase-Stage%203%20%2F%20v1.0-success)]()
+[![Phase](https://img.shields.io/badge/phase-Stage%204%20%2F%20v1.0-success)]()
 [![Stage 1.4 Tier-1](https://img.shields.io/badge/Stage%201.4%20Tier--1-delivered-success)]()
 [![Stage 1.4 Tier-2](https://img.shields.io/badge/Stage%201.4%20Tier--2-delivered-success)]()
 [![Stage 2](https://img.shields.io/badge/Stage%202-delivered-success)]()
+[![Stage 4](https://img.shields.io/badge/Stage%204%20%284.1--4.7.2%29-delivered-success)]()
 [![IOCTL](https://img.shields.io/badge/ioctl-System%20C-blue)]()
-[![Tests](https://img.shields.io/badge/tests-Catch2-orange)]()
+[![Tests](https://img.shields.io/badge/tests-98%20binaries%20%2F%20Catch2-orange)]()
 
-> **最后验证**: 2026-07-22 (commit `HEAD` of version-policy-adr)
+> **最后验证**: 2026-08-07 (Stage 4 全部 ship + 归档后)
 >
 > **权威架构文档**: [AGENTS.md](AGENTS.md) + [docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md)
 >
-> 本 README 反映 Stage 2 多设备插件化完成后的状态。如发现与上述两文件冲突，以它们为准。
+> 本 README 反映 Stage 4（4.1~4.7.2 全部 ✅ ship + 归档，2026-07-26 ~ 2026-08-05）后的状态。如发现与上述两文件冲突，以它们为准。
 
 ## 项目目标
 
@@ -44,7 +45,7 @@ UsrLinuxEmu 是一个**用户态 Linux 内核模拟环境**，专为设备驱动
 - 🏗️ **驱动/仿真分离** - 清晰分层：`drv/` + `hal/` + `sim/` + `shared/`
 - 🔧 **Linux 兼容层** - `include/linux_compat/` 提供内核 API 的用户态实现
 - 📊 **统一日志 + 配置 + 服务注册** - 便于调试与扩展
-- 🧪 **Catch2 测试栈** - 30+ 独立测试覆盖 IOCTL / VA Space / Queue / Plugin 加载
+- 🧪 **Catch2 测试栈** - 98 个独立测试 binary 覆盖 IOCTL / VA Space / Queue / Plugin 加载 / CP 全链路 / HAL / BAR / DMA
 
 ### 支持的设备
 
@@ -150,7 +151,7 @@ UsrLinuxEmu/
 │
 ├── libgpu_core/               # 纯 C 库：buddy allocator（ADR-020 提取）
 │
-├── tests/                     # Catch2 测试（30+ 个 standalone 二进制）
+├── tests/                     # Catch2 测试（98 个 standalone 二进制 + 集成测试）
 │
 ├── tools/cli/                 # CLI 工具源码（构建产物 → build/bin/cli）
 │
@@ -345,7 +346,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 
 ## 开发状态
 
-当前阶段：**post-Phase 2**（2026-05-13 重构窗口完成）。详细时间轴见 [post-refactor-architecture.md §1.1](docs/02_architecture/post-refactor-architecture.md)。
+当前阶段：**Stage 4 ✅ Complete**（2026-08-05 全部 ship + 归档）。详细时间轴见 [post-refactor-architecture.md §1.1](docs/02_architecture/post-refactor-architecture.md)。
 
 > **架构演进路线**: 见 [roadmap.md](roadmap.md) — 从 MVP 到 Linux 内核环境模拟（4 阶段 + 蓝图）
 
@@ -405,7 +406,9 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 ### 后续计划
 
 - **Stage 2** ✅ 已达成 (2026-07-05, commit `fb75ed2`)：多设备插件化（网络 + 存储）已交付，**详见** [stage-2-multi-device.md](docs/roadmap/stage-2-multi-device.md)
-- **Stage 3**：v1.0 稳定（CI 全平台、文档完善、性能优化）
+- **Stage 3** ✅ 已达成 (2026-07-23)：v1.0 稳定（CUDA E2E ✅、sanitizer ✅、bridge ✅、perf ✅、errno 审计 ✅、文档 ✅、CI ubuntu ✅、Release ✅）
+- **Stage 4** ✅ 已达成 (2026-08-05)：真实 BAR + ioremap + GPU CP Phase 4-7 完整化 + B-class L2 违规清理（4.1~4.7.2 全部 ship + 归档，HAL 11→33→65 fn-ptrs append-only per ADR-023 §D4）。**详见** [stage-4-bar-ioremap.md](docs/roadmap/stage-4-bar-ioremap.md)
+- **Stage 5** 📋 Trigger-gated：multi-engine Puller (ADR-049 Phase 6+) + PM4 microcode (ADR-052 Phase 6.5)；等待触发条件
 - **后续子项目** ✅ COMPLETE (C-12, 2026-07-18)：完整 KFD 多文件集成（独立子项目，~50K 行 amdgpu driver 移植）。**Phase A ✅**（ADR-059/060/061/062 Accepted）；**Phase B ✅**（6 模块：kfd_module/process/pasid/dispatch/mmu/events 全部实施）；**Phase C ✅**（sim_pfh/sim_pm 真实化 + IOTLB + mm_shim wire-up）；**Phase D ✅**（FIXME 清理）；**Phase E ✅**（集成测试 + E2E + L1↔L2 bridge 跨仓）。详见 [openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/](openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/tasks.md)
 - 详见 [docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md) 与 [roadmap.md](roadmap.md)
 
