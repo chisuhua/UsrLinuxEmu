@@ -1,0 +1,5 @@
+phase: stage-3 (trigger-gated)
+category: arch-design
+change_type: functional (process isolation)
+priority: P2
+parent_feature: ""
