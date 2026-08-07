@@ -1,10 +1,10 @@
 # UsrLinuxEmu 项目文档
 
-> **最后验证**: 2026-06-19 (change `adr-governance-refresh-v2`)
+> **最后验证**: 2026-08-07（Stage 4 全部 ship + 归档后更新）
 >
 > **权威架构说明**: [docs/02_architecture/post-refactor-architecture.md](02_architecture/post-refactor-architecture.md)（SSOT）+ 顶层 [README.md](../README.md) + [AGENTS.md](../AGENTS.md)
 >
-> 本文档反映 Phase 1.5 / Phase 2 重构后的状态。如发现与上述 SSOT 冲突，以它们为准。
+> 本文档反映 Stage 4（4.1~4.7.2 全部 ✅ 归档）后的状态。如发现与上述 SSOT 冲突，以它们为准。
 
 欢迎来到 UsrLinuxEmu 文档中心。本文档集提供开发指南、API 参考、架构说明与决策记录。
 
@@ -74,7 +74,7 @@
 | [Doxygen API](06-reference/doxygen-api-index.md) | 自动生成的 Doxygen API 参考（HTML） |
 | [IOCTL 命令](06-reference/ioctl-commands.md) | System C IOCTL 命令参考 |
 | [术语表](06-reference/glossary.md) | 技术术语解释 |
-| [架构决策记录](00_adr/README.md) | 所有 ADR（001–031，含 022、025–031 占位/Deferred）|
+| [架构决策记录](00_adr/README.md) | 所有 ADR（001–075，含 066–068、070–071 跳号；backfill precheck 1 份无状态）|
 
 ### TaskRunner 集成
 
@@ -153,17 +153,19 @@
 | 高级主题 | 4 | 75% | 2026-06-16 |
 | 参考资料 | 4 | 80% | 2026-06-16 |
 | TaskRunner 集成 | 5 | 80% | 2026-06-16 |
-| ADR | 31 | 95% | 2026-06-19 |
+| ADR | 71 | 95% | 2026-08-07 |
 
-**总体进度**: 约 **85%** 完成（Phase 2 + P0 cleanup 后）
+**总体进度**: 约 **90%** 完成（Stage 4 全部 ✅ + Stage 1-3 已达成；Stage 5 trigger-gated by ADR-049/052）
 
 ### ADR 编号说明
 
-`docs/00_adr/` 当前收录 **31 份** ADR，编号范围 **001–031**：
+`docs/00_adr/` 当前收录 **71 份** ADR 文件（编号范围 **001–075**，含跳号 066/067/068/070/071；外加 1 份 `adr-045-047-050-backfill-precheck.md` 无状态 frontmatter）：
 
-- ✅ 已接受（22 个）：001–010、015–024、027、031
-- ⏸️ 显式 Deferred (Phase 3+)：025/026/028/029/030
-- 🔄 提议中：011/012/013/014（合法 backlog：多进程/性能/错误处理/日志）
+- ✅ **已接受（Accepted）**：~58 份（含 Stage 1-4 所有主线 ADR + KFD/C-12 子项目 ADR-059~063 + 回顾性 ADR-075）
+- ⏸️ **显式 Deferred**：8 份（ADR-025/026/028/029/030 等待 Phase 3；ADR-034 待 Phase 3；ADR-053 永不实现——无硬件队列限制；ADR-055 永不实现——无硬件 hang）
+- 🔄 **提议中**：4 份（ADR-011 多进程🔄 等待 Phase 3；ADR-012 性能、ADR-013 错误处理、ADR-014 日志增强——合法 backlog）
+
+**Stage 4 主线 ADR 全部 Accepted**：ADR-040/041/042/043/044/045/046/047/048/049/050/051/052/054/056/057/058/064/069/072/073/074（22 份）。
 
 详见 [ADR 索引](00_adr/README.md) 和重构后架构 §2.7。
 
@@ -192,6 +194,17 @@
 - **编码规范**：类名 `PascalCase`、函数/变量 `snake_case`、成员变量 `snake_case_` 后缀（详见 [代码风格](03-development/coding-style.md) 与 [AGENTS.md](../AGENTS.md)）
 
 ## 📝 变更日志
+
+### 2026-08-07 - Stage 4 完成 + ADR 数量同步
+**重大变更**: Stage 4（4.1~4.7.2）全部 ship + 归档后更新文档统计
+- ADR 数量：31 → **71 份**（编号 001~075，跳号 066/067/068/070/071）
+- 状态分布：~58 Accepted / 8 Deferred / 4 Proposed
+- Stage 4 主线 ADR（22 份）全部 Accepted
+- **ADR-075（Stage 4.7 B-class L2 Foundation Removal 回顾记录）**：回顾性 ADR 加入，记录 1+N 模式（1 个回顾 ADR + 5 个已归档移除 proposal）
+- ADR-011 状态从 "Deferred" 修正为 "🔄 提议中"（per ADR 现状）
+- ADR-023/072/073/074 4 份 Stage 4 关键 ADR 加入 Accepted 列表
+- 总体进度：85% → 90%（Stage 1-4 全部 ✅）
+- 新增 backfill precheck 文件说明
 
 ### 2026-06-16 - P0 文档清理 + SSOT 建立
 
@@ -232,6 +245,6 @@
 ---
 
 **文档维护者**: UsrLinuxEmu Team
-**最后验证**: 2026-06-19
-**对应 change**: `adr-governance-refresh-v2`
-**文档版本**: 3.1（ADR 治理刷新 v2）
+**最后验证**: 2026-08-07
+**对应 change**: `adr-governance-refresh-v3`（Stage 4 完成 + ADR 同步）
+**文档版本**: 3.3（Stage 4 完成 + ADR 71 份同步 + ADR-075 回顾记录）

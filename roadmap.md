@@ -7,7 +7,7 @@
 > **性质**: 架构层叙事，描述从当前 MVP 到终态蓝图的演进路径
 > **不绑定**: 本路线图不引用具体 OpenSpec change 编号。后续 OpenSpec change 根据本路线图派生
 > **同步关系**: 与 `docs/sync-plan.md` 互补（sync-plan 负责跨仓同步点，本路线图负责架构演进阶段）
-> **最后更新**: 2026-08-04（Stage 4.7 B-class L2 Phase 2 启动：foundation ✅ + 5 个 removal 待启动）
+> **最后更新**: 2026-08-07（Stage 4.7 B-class L2 Phase 2 全部 ship：foundation ✅ + 5 个 removal 已归档 2026-08-04~05）
 > **维护者**: UsrLinuxEmu Architecture Team
 
 ---
@@ -21,7 +21,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | ① | Linux 内核环境模拟 | `src/kernel/`, `include/kernel/`, `include/linux_compat/` | 提供 Linux 内核 API（VFS, 调度, IOMMU, mmu_notifier, DRM, PCIe, 中断）|
 | ② | 可移植的驱动代码实现 | `plugins/gpu_driver/drv/` | GPGPU 驱动逻辑（KFD 风格），用真实 Linux 内核 API 写，可编译进真实内核模块 |
 | ③ | 硬件模拟 | `plugins/gpu_driver/sim/` | 模拟真实 GPU 硬件（pushbuffer, 调度器, 寄存器, fence, 中断）|
-| HAL | **桥（bridge）** | `plugins/gpu_driver/hal/` | 14 个函数指针表（11 基础 + 3 C-12 扩展），② 与 ③ 之间的依赖反向注入点 |
+| HAL | **桥（bridge）** | `plugins/gpu_driver/hal/` | **65 个函数指针**（11 基础 + 22 Stage 4 扩展 + 32 Stage 4.7 B-class L2 Foundation Phase 1+2），append-only per [ADR-023 §D4](docs/00_adr/adr-023-hal-interface.md)；② 与 ③ 之间的依赖反向注入点 |
 
 **HAL 不是第 4 层**，HAL 是 ② 调 ③ 的桥接适配器。UsrLinuxEmu 通过 `hal_mock.cpp` 注入 sim，真机通过 `hal_user.cpp` 注入真实硬件。驱动代码本身零修改即可切换环境。
 
@@ -38,7 +38,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | **阶段 1** | ✅ 已达成 (2026-07-16) | Linux 内核环境模拟（DRM + UVM + IOMMU + ATS + PCIe BAR/中断）；C-12 KFD 多文件集成 81% 完成 + L1↔L2 bridge skeleton | [docs/roadmap/stage-1-kernel-emu.md](docs/roadmap/stage-1-kernel-emu.md) |
 | **阶段 2** | ✅ 已达成 (2026-07-05) | 多设备插件化（网络 + 存储）| [docs/roadmap/stage-2-multi-device.md](docs/roadmap/stage-2-multi-device.md) |
 | **阶段 3** | ✅ 已达成 (2026-07-23) | v1.0 稳定（CUDA E2E ✅、sanitizer ✅、bridge ✅、perf ✅、errno 审计 ✅、文档 ✅、CI ubuntu ✅、Release ✅）| [docs/roadmap/stage-3-v1.0.md](docs/roadmap/stage-3-v1.0.md) |
-| **阶段 4** | 🔄 进行中（4.1-4.7.1 ✅；4.7.2 B-class L2 5 个 removal 待启动）| 真实 BAR + ioremap 模拟 + GPU CP Phase 4-7 完整化 + B-class L2 违规清理；4.7.1 Phase 2 foundation 已 ship (HAL 46 fn-ptrs) | [docs/roadmap/stage-4-bar-ioremap.md](docs/roadmap/stage-4-bar-ioremap.md) |
+| **阶段 4** | ✅ 已完成（4.1-4.7.2 全部 ship + 归档，2026-07-26 ~ 2026-08-05）| 真实 BAR + ioremap 模拟 + GPU CP Phase 4-7 完整化 + B-class L2 违规清理；HAL 11 → 33 → 65 fn-ptrs (append-only per ADR-023 §D4)；5 个 removal 已 ship（drv/ 不再 #include sim/* headers）| [docs/roadmap/stage-4-bar-ioremap.md](docs/roadmap/stage-4-bar-ioremap.md) |
 | **阶段 5** | 📋 规划中（trigger-gated） | 真实多引擎 Puller + PM4 microcode 解析 + 4.6 closeout follow-up；triggered by ADR-049 Phase 6+ / ADR-052 Phase 6.5 条件（详见各 ADR）| [docs/roadmap/stage-5-multi-engine-pm4.md](docs/roadmap/stage-5-multi-engine-pm4.md)（占位，待 trigger 启动）|
 | **终态蓝图** | 📋 愿景 | 3 区分成熟形态，可移植驱动可在真实 Linux 内核中编译运行 | [docs/roadmap/blueprint.md](docs/roadmap/blueprint.md) |
 
@@ -61,11 +61,11 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 阶段 3 (v1.0 稳定)
    ↓
 阶段 4 (真实 BAR + ioremap + GPU CP 完整化 + B-class L2 Phase 2)
-   ├── 4.1 BAR + ioremap (✅)
-   ├── 4.2-4.6 GPU CP Phase 4-7 (✅)
+   ├── 4.1 BAR + ioremap (✅ 2026-07-26)
+   ├── 4.2-4.6 GPU CP Phase 4-7 (✅ 2026-07-27 ~ 08-01)
    └── 4.7 B-class L2 Phase 2:
-       ├── 4.7.1 Phase 2 foundation (✅ 46 fn-ptrs 已 ship)
-       └── 4.7.2 5 个 removal changes (🔄 待启动: graph → mem_pool → stream_capture → gpu_queue_emu → hardware_puller_emu)
+       ├── 4.7.1 Phase 1+2 foundation (✅ 2026-08-03~04, HAL 11→33→65)
+       └── 4.7.2 5 个 removal changes (✅ 2026-08-04~05 全部 ship + 归档)
    ↓
 阶段 5 (multi-engine Puller + PM4 microcode + 4.6 closeout follow-up；trigger-gated)
    ↓
@@ -81,7 +81,7 @@ Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时�
 - [ADR-049 §"Phase 6+ 触发条件"](docs/00_adr/adr-049-cross-engine-synchronization.md) — multi-engine Puller 真实并行（COMPUTE+COPY+GRAPHICS）
 - [ADR-052 §"Phase 6.5 触发条件"](docs/00_adr/adr-052-aql-pm4-native-support.md) — PM4 microcode 解析完整实现
 - [stage-4 §"Stage 4 整体验收"](docs/roadmap/stage-4-bar-ioremap.md) — ② 可移植性 (Linux 6.12 LTS L2) + BAR 性能 ≤20% 回归 CI gating
-- [stage-4-6 archive tasks 1.6/1.7/2.4/3.5/4.6/7.6/8.x/9.1](openspec/changes/archive/2026-08-01-stage4-6-cp-phase7-green-context-pdl/tasks.md) — 14 项残留 verify + inline HAL helpers + standalone tests (P2-A1+A2 + P3-A3 follow-up)
+- ~~[stage-4-6 archive tasks 1.6/1.7/2.4/3.5/4.6/7.6/8.x/9.1](openspec/changes/archive/2026-08-01-stage4-6-cp-phase7-green-context-pdl/tasks.md)~~ — **已交付**：`2026-08-03-stage4-6-green-context-pdl-closeout`（commit `43973ce`）+ `2026-08-03-stage4-6-green-context-pdl-tests-standalone`（commit `2eb86f1`）+ 6 份 HAL user wiring（design `d875803` → plan `ed6c81a` → 归档 `78fbb8d`）
 
 ---
 
@@ -108,11 +108,11 @@ Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时�
 ## 当前活跃 Changes
 
 > **来源**: [openspec/changes/INDEX.md](openspec/changes/INDEX.md)
-> **状态**: 截至 2026-08-04 — **0 个活跃 change** + 92 个已完成/已归档
+> **状态**: 截至 2026-08-07 — **0 个活跃 change** + 92+ 个已完成/已归档（Stage 4.7.2 5 个 removal 已 ship）
 
 | Change | 优先级 | 规模 | 当前进度 | 描述 |
 |--------|--------|------|---------|------|
-| (无活跃 change) | — | — | — | 92 个 change 已 ship + archive；下一波由 Stage 4.7.2 B-class L2 5 个 removal change 驱动 |
+| (无活跃 change) | — | — | — | 92+ 个 change 已 ship + archive；Stage 4.7.2 5 个 removal 已 ship + 归档（graph/mem_pool/stream_capture/gpu_queue_emu/hardware_puller_emu，2026-08-04~05） |
 
 ### 近期里程碑（2026-07）
 
@@ -136,20 +136,16 @@ Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时�
 
 ### 后续任务建议
 
-> **当前活跃方向（2026-08-04）**:
+> **当前活跃方向（2026-08-07）**:
 >
-> Stage 4.7 B-class L2 Phase 2 — **基础已 ship, 5 个 removal change 待启动**:
-> - `stage4-l2-foundation-removal-graph`（详见 [improvements/](improvements/)）— 建议第一刀，验证 foundation 端到端
-> - `stage4-l2-foundation-removal-mem-pool`（call site 最多: 27）
-> - `stage4-l2-foundation-removal-stream-capture`（最简单: 3 fn-ptrs）
-> - `stage4-l2-foundation-removal-gpu-queue-emu`（首个 class 集成）
-> - `stage4-l2-foundation-removal-hardware-puller-emu`（5 个收尾）
+> Stage 4 ✅ **全部完成**（4.1-4.7.2 全部 ship + 归档，2026-07-26 ~ 2026-08-05）：
+> - 4.7.1 Phase 1+2 foundation ✅（merge `489655a`）
+> - 4.7.2 5 个 removal ✅（graph `22c41af`→`e1ede1b`、mem_pool `dfe97e7`→`8e0eb21`、stream_capture `0ab7133`→`6749800`、gpu_queue_emu `f1070ec`→`b819b9f`、hardware_puller_emu `5929f50`→`e07a409`）
+> - L2: 8 → 1（仅 `sim/sim_event.h` 残留，kfd_events.c 范围外，需独立 proposal）
 >
-> 完成后 L2: 8 → 0。`sim/sim_event.h` (kfd_events.c) 范围外,需独立 proposal。
->
-> **其他活跃方向**:
-> - Stage 4.6 closeout follow-up: `stage4-6-green-context-pdl-tests-standalone` (10 测试, P3-A3)
-> - Stage 4.7.3 ADR-023 §D4 spec 同步: 把 46 个 fn-ptrs 列入 ADR 表格
+> **待启动 follow-up 项**:
+> - 4.7.3 ADR-023 §D4 spec 同步: 把 65 个 fn-ptrs 列入 ADR 表格（取代旧 46 数字）
+> - L2 残余 sim_event.h: 独立 proposal（不在 Stage 4 范围）
 >
 > **Trigger-gated**: Stage 5 (multi-engine + PM4 microcode) 等待 ADR-049/052 Phase 6+ 触发。
 >

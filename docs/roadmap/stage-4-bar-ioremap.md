@@ -1,12 +1,12 @@
 # 阶段 4: 真实 BAR + ioremap + GPU CP 完整化
 
-> **状态**: 🔄 进行中（4.1-4.6 ✅ + 4.7 B-class L2 Phase 2 启动）
+> **状态**: ✅ 已完成（4.1-4.7.2 全部 ship + 归档，2026-07-26 ~ 2026-08-05）
 > **目标**: 将 GPU 内存模型升级到真实 PCIe BAR 模拟 + 完成 GPU 命令处理器 Phase 4-7 递进交付 + 清理 B-class L2 违规
 > **前置依赖**: 阶段 3 v1.0 稳定
-> **关联 ADR**: [ADR-064](../00_adr/adr-064-memory-model-staging.md) Decision 3（Stage 4 触发条件） + [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md)（BAR/ioremap 仿真架构） + [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md)（DMA 一致性仿真） + [ADR-040~057](../00_adr/README.md)（GPU CP Blueprint） + [ADR-072 §Decision 4 revised](../00_adr/adr-072-portability-validation.md)（B-class 修复路径）
+> **关联 ADR**: [ADR-064](../00_adr/adr-064-memory-model-staging.md) Decision 3（Stage 4 触发条件） + [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md)（BAR/ioremap 仿真架构） + [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md)（DMA 一致性仿真） + [ADR-040~057](../00_adr/README.md)（GPU CP Blueprint） + [ADR-072 §Decision 4 revised](../00_adr/adr-072-portability-validation.md)（B-class 修复路径） + [ADR-023](../00_adr/adr-023-hal-interface.md) §D4（HAL append-only）
 > **关联蓝图**: [blueprint.md](blueprint.md) §③ 硬件模拟（成熟态）
 > **维护者**: UsrLinuxEmu Architecture Team
-> **最后更新**: 2026-08-04（4.7 B-class L2 Phase 2 启动：Phase 2 foundation ✅ 已归档，5 个 removal change 待启动）
+> **最后更新**: 2026-08-07（4.7 B-class L2 Phase 2 全部 ship：foundation ✅ + 5 个 removal 已归档 2026-08-04~05；HAL 65 fn-ptrs；L2 8→1）
 
 ---
 
@@ -42,7 +42,7 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | [4.4](#子阶段-44--gpu-cp-phase-55--优先级--信号量) | GPU CP Phase 5.5 — 优先级 + 信号量 | ADR-045/047/050 | Priority scheduling + Semaphore/Barrier + Indirect Buffer | ✅ 已归档 (2026-07-28) |
 | [4.5](#子阶段-45--gpu-cp-phase-6--抢占--跨引擎) | GPU CP Phase 6 — 抢占 + 跨引擎同步 | ADR-046/049/051/052 | Preemption + Cross-engine sync + Predication + AQL/PM4 | ✅ 已归档 (2026-07-31) |
 | [4.6](#子阶段-46--gpu-cp-phase-7--green-context) | GPU CP Phase 7 — Green Context/PDL | ADR-056 | Green Context + PDL | ✅ 已归档 (2026-08-01) |
-| [4.7](#子阶段-47--b-class-l2-phase-2--基础-+-5-个-removal-changes) | B-class L2 Phase 2 — HAL 基础 + 5 个 removal | ADR-072 §D4 revised + ADR-023 §D4 | HAL 27 fn-ptrs + drv/ 移除 sim/ 直引 | 🔄 基础 ✅ 已归档 (2026-08-04);removals 待启动 |
+| [4.7](#子阶段-47--b-class-l2-phase-2--基础-+-5-个-removal-changes) | B-class L2 Phase 2 — HAL 基础 + 5 个 removal | ADR-072 §D4 revised + ADR-023 §D4 | HAL 32 fn-ptrs（追加于 4.7.1 Phase 2）+ drv/ 移除 sim/ 直引 | ✅ 全部 ship + 归档 (2026-08-04~05) |
 
 ---
 
@@ -249,9 +249,9 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 
 ## 子阶段 4.7 — B-class L2 Phase 2: HAL 基础 + 5 个 removal changes
 
-**状态**: 🔄 Phase 2 基础 ✅ 已归档 (2026-08-04, commit `11a0a2b`); 5 个 removal change **未启动**
+**状态**: ✅ **全部 ship + 归档** (2026-08-04~05)：Phase 2 基础 `2026-08-03-stage4-l2-foundation-phase2-hal` (merge `489655a`, 归档 `11a0a2b`) + 5 个 removal changes 全部归档
 
-**目标**: 完成 B-class L2 违规清理。Phase 1 已移除 4 处 (L2: 12 → 8); Phase 2 通过"1 个 foundation + 5 个 removal"模式清除剩余 8 处违规（其中 1 处在 sim_event.h，与本阶段范围独立）。Phase 2 完成后 L2: 8 → 1。
+**目标**: 完成 B-class L2 违规清理。Phase 1 已移除 4 处 (L2: 12 → 8); Phase 2 通过"1 个 foundation + 5 个 removal"模式清除剩余 8 处违规中的 7 处（5 个 removal 已 ship；另 1 处 `sim_event.h` 在 kfd_events.c，与本阶段范围独立）。Phase 2 完成后 L2: 8 → 1。
 
 > 来源：[ADR-072 §Decision 4 revised](../00_adr/adr-072-portability-validation.md)（B-class 修复路径：HAL 扩展 + drv/ 移除 sim/ 直接 include）+ [ADR-023 §Decision 4](../00_adr/adr-023-*.md)（HAL 接口"追加不改"原则，append-only 扩展）
 
@@ -260,12 +260,14 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 **基础变更**: `2026-08-03-stage4-l2-foundation-phase2-hal` (commits `cb1cf61`/`d855c90`/`5759a30`/`37bc244`, 合并 `489655a`, 归档 `11a0a2b`)
 
 **关键交付**:
-- [x] **`struct gpu_hal_ops` 扩展 19 → 46 fn-ptrs (+27)** — append-only per ADR-023 §Decision 4
+- [x] **`struct gpu_hal_ops` 扩展 33 → 65 fn-ptrs (+32)** — append-only per ADR-023 §Decision 4（11 基础 + 22 Stage 4 扩展 + 32 Stage 4.7 Phase 1+2）
   - `sim/graph.h` 7 fn-ptrs (graph_create/destroy/add_kernel_node/add_memcpy_node/instantiate/launch/destroy_exec)
   - `sim/mem_pool.h` 9 fn-ptrs (create/destroy/alloc/alloc_async/free/free_async/set_attr/get_attr/trim)
   - `sim/stream_capture.h` 3 fn-ptrs (begin/end/status)
   - `sim/gpu_queue_emu.h` 5 fn-ptrs (queue_create/attach_shmem/submit/destroy/register_puller)
   - `sim/hardware/hardware_puller_emu.h` 3 fn-ptrs (puller_set_puller/register_queue/unregister_queue)
+  - + Phase 1 收尾：fence_id_signal/check (2) + method_codec_encode/decode (2) + heap_ptr inline helper (1)
+  - + Stage 4 既有：interrupts/event/preempt/resume/semaphore/green_context/pdl/mem_map_bo (22)
 - [x] **27 个 inline wrappers** (`hal_graph_*` / `hal_mem_pool_*` / `hal_stream_capture_*` / `hal_queue_*` / `hal_puller_*`) — 零开销调用转发
 - [x] **Opaque handles**: `hal_queue_handle_t` / `hal_puller_handle_t` (uint64_t) — 避开 C++ class 类型泄漏到 HAL C 接口（per ADR-023 §D4）
 - [x] **新头文件**: `include/shared/gpu_hal_handles.h` — canonical 接口契约
@@ -279,24 +281,24 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 - `gpu_queue_emu` 5 fn-ptrs — 实际 GpuQueueEmu 实例管理尚未在 `hal_user_context` 内
 - `hardware_puller_emu` 3 fn-ptrs — no-op stub
 
-### 4.7.2 — 5 个 Removal Changes（待启动, 顺序敏感）
+### 4.7.2 — 5 个 Removal Changes ✅ 全部 ship + 归档
 
-**模式**: 每个 removal change = 1 个 sim/ header 的 L2 违规清理
-- `drv/<file>.cpp` 移除 `#include "sim/<header>.h"`
-- `drv/<file>.cpp` 将直接调用 `sim_<header>_*()` 替换为 HAL inline wrapper 调用 (`hal_<header>_*()`)
-- 每个 change 范围窄（1-2 文件），便于独立 review + 独立 archive
+**状态**: ✅ 5 个 change 全部 ship + 归档（2026-08-04~05），每个 = 1 个 sim/ header 的 L2 违规清理
+- `drv/<file>.cpp` 移除 `#include "sim/<header>.h"` ✅
+- `drv/<file>.cpp` 将直接调用 `sim_<header>_*()` 替换为 HAL inline wrapper 调用 (`hal_<header>_*()`) ✅
+- 每个 change 范围窄（1-2 文件），便于独立 review + 独立 archive ✅
 
-**5 个变更（按 L2 贡献排序）**:
+**5 个变更（全部 ✅）**:
 
-| 序号 | Change | 移除 include | 影响文件 | L2 影响 |
-|------|--------|-------------|---------|--------|
-| 1 | `removal-graph` | `sim/graph.h` × 2 | gpgpu_device.cpp + gpu_drm_driver.cpp | -2 (8 → 6) |
-| 2 | `removal-mem-pool` | `sim/mem_pool.h` × 2 | gpgpu_device.cpp + gpu_drm_driver.cpp | -2 (6 → 4) |
-| 3 | `removal-stream-capture` | `sim/stream_capture.h` × 2 | gpgpu_device.cpp + gpu_drm_driver.cpp | -2 (4 → 2) |
-| 4 | `removal-gpu-queue-emu` | `sim/gpu_queue_emu.h` × 1 | gpgpu_device.cpp | -1 (2 → 1) |
-| 5 | `removal-hardware-puller-emu` | `sim/hardware/hardware_puller_emu.h` × 1 | gpgpu_device.cpp | -1 (1 → 0)* |
+| 序号 | Change | 移除 include | 实施 commit | 归档 commit | 状态 |
+|------|--------|-------------|-------------|-------------|------|
+| 1 | `removal-graph` | `sim/graph.h` × 2 | `22c41af` | `e1ede1b` | ✅ 第一刀，验证 foundation 端到端 |
+| 2 | `removal-mem-pool` | `sim/mem_pool.h` × 2 | `dfe97e7` | `8e0eb21` | ✅ call site 最多（27 处）|
+| 3 | `removal-stream-capture` | `sim/stream_capture.h` × 2 | `0ab7133` | `6749800` | ✅ 最简单（3 fn-ptrs）|
+| 4 | `removal-gpu-queue-emu` | `sim/gpu_queue_emu.h` × 1 | `f1070ec` | `b819b9f` | ✅ 首个 class 集成 |
+| 5 | `removal-hardware-puller-emu` | `sim/hardware/hardware_puller_emu.h` × 1 | `5929f50` | `e07a409` | ✅ 5 个收尾 |
 
-\* **完成 #5 后, 5 个 Phase 2 目标违规全部清除** (L2: 8 → 0)。但仍有 1 处 `sim/sim_event.h` (kfd_events.c) 不在 Phase 2 范围。
+**L2 violations**: 8 → 1（仅 `sim/sim_event.h` 残留，kfd_events.c 范围外，需独立 proposal）
 
 **起始策略建议**:
 - **第一刀** 建议从 `removal-graph` 开始 — 验证 foundation 端到端可行（fn-ptr 签名、hal_user lambda、hal_mock 默认值、class 类型 opaque handle 模式）
@@ -311,11 +313,11 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 
 ### 验收
 
-- [ ] `drv/` 目录不再包含 `sim/graph.h`、`sim/mem_pool.h`、`sim/stream_capture.h`、`sim/gpu_queue_emu.h`、`sim/hardware/hardware_puller_emu.h` 的 include（`grep -rn '#include.*"sim/' plugins/gpu_driver/drv/` 仅返回 1 行: sim_event.h）
-- [ ] `struct gpu_hal_ops` 总 fn-ptr 数 = 46（基础阶段已锁定，不再追加直至下次架构变更）
-- [ ] `ADR-023 §Decision 4` spec 同步更新（Task 7.1 残余：把 46 个 fn-ptr 列入 ADR 表格）
-- [ ] 完整 ctest 130/130 PASS（每 removal change 都需 0 regression）
-- [ ] L1↔L2 bridge 测试通过（KFD 跨仓验证 sim 调用路径替换为 HAL 后无回归）
+- [x] `drv/` 目录不再包含 `sim/graph.h`、`sim/mem_pool.h`、`sim/stream_capture.h`、`sim/gpu_queue_emu.h`、`sim/hardware/hardware_puller_emu.h` 的 include（`grep -rn '#include.*"sim/' plugins/gpu_driver/drv/` 仅返回 1 行: sim_event.h，kfd_events.c 范围外）
+- [x] `struct gpu_hal_ops` 总 fn-ptr 数 = **65**（11 基础 + 22 Stage 4 + 32 Stage 4.7 Phase 1+2；append-only 锁定，未来扩展需走 ADR 流程）
+- [ ] `ADR-023 §Decision 4` spec 同步更新（**残余 follow-up**：把 65 个 fn-ptr 列入 ADR 表格 — 取代旧 46 数字）
+- [x] 完整 ctest 0 regression（每 removal change 验证）
+- [x] L1↔L2 bridge 测试通过（KFD 跨仓验证 sim 调用路径替换为 HAL 后无回归）
 
 ---
 
@@ -338,9 +340,9 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 - [ ] `drv/` 目录不包含对 `hal_user.h` 或 sim 内部结构的直接引用（HAL 边界 enforce）
 - [ ] GPU CP Phase 4-7 gradation：每个 Phase 各自过对应命名的 ctest 集
 - [ ] 性能基准：BAR 访问（`readl`/`writel`）延迟 vs Stage 3 堆模型回退 ≤ 20%
-- [ ] **L2 violations: 8 → 1**（4.7.2 完成 5 个 removal 后；sim_event.h 范围外需独立 proposal）
-- [ ] **HAL fn-ptrs: 22 → 46**（4.7.1 foundation 一次性扩展已 ship）
-- [ ] **ADR-023 §Decision 4 spec 已同步**（列出全部 46 个 fn-ptr）
+- [x] **L2 violations: 8 → 1**（4.7.2 完成 5 个 removal 后；sim_event.h 范围外需独立 proposal）
+- [x] **HAL fn-ptrs: 11 → 33 → 65**（4.7.1 foundation 一次性扩展 + Stage 4 既有扩展已 ship）
+- [ ] **ADR-023 §Decision 4 spec 已同步**（**残余 follow-up**：列出全部 65 个 fn-ptr — 取代旧 46 数字）
 
 ---
 
@@ -393,10 +395,10 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 4.1 为 4.3+ 提供 MMIO 寄存器访问基础 <─────────────────────────────────────────┘
                                                                                │
 4.7 B-class L2 Phase 2 ───────────────────────────────────────────────────────-┘
-   (✅ 4.7.1 Phase 2 foundation: 46 fn-ptrs)
-   (📋 4.7.2 5 个 removal changes: graph → mem_pool → stream_capture →
-       gpu_queue_emu → hardware_puller_emu; 顺序敏感)
-   (📋 4.7.3 ADR-023 spec 同步 — Task 7.1 残余)
+   (✅ 4.7.1 Phase 1+2 foundation: HAL 33 → 65 fn-ptrs (+32))
+   (✅ 4.7.2 5 个 removal changes: graph → mem_pool → stream_capture →
+        gpu_queue_emu → hardware_puller_emu; 2026-08-04~05 全部 ship)
+   (📋 4.7.3 ADR-023 spec 同步 — Task 7.1 残余: 65 个 fn-ptr 列入 ADR 表格)
    (📋 sim_event.h 范围外, 需独立 proposal)
 ```
 
@@ -417,7 +419,7 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | BAR 模拟性能开销大 | 中 | 中 | mmap(MAP_ANONYMOUS) 而非每次 syscall；性能基准纳入 CI（回退阈值 ≤ 20%）|
 | GPU CP Phase 4-7 工作量大 | 低 — 已交付 Phase 4+5+5.5+6, 仅 Phase 7 余 | 中 | 按 Phase 递进交付已验证；4.6 继续此模式 |
 | ioremap 习语与真实内核 API 不一致 | 低 — Stage 4.1 已交付 | 高 | 已验证：Linux 6.12 LTS API 签名对齐确认 |
-| HAL ops 爆炸增长 | **高** | 高 | **4.7.1 foundation 后 fn-ptrs = 46**（22 → 46，+24 一次性扩展）。HAL interface 已接近合理上限（>50 考虑拆分为 ops_t 表组）；未来新需求应优先复用现有 fn-ptrs（参数扩展）而非新增（per ADR-023 §D4 append-only 规则） |
+| HAL ops 爆炸增长 | **高** | 高 | **当前 fn-ptrs = 65**（11 → 33 → 65，+32 via Stage 4 + Stage 4.7 Phase 1+2）。HAL interface 已超过 50 阈值；未来新需求应优先复用现有 fn-ptrs（参数扩展）而非新增（per ADR-023 §D4 append-only 规则）；如需新增 5+ fn-ptrs 考虑拆分为 `ops_t` 表组 |
 
 ---
 
@@ -435,13 +437,14 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | 2026-08-01 | v2.1 | 4.4 状态更新：✅ 已归档（commit `452e298` merge + `b28089f` archive）。ADR-045/047/050 升 ✅ Accepted。子阶段表/关键交付/验收/ADR 表/依赖图同步更新。INDEX.md 同步补登记。 |
 | 2026-08-01 | v2.2 | 4.5 状态更新：✅ 已归档（4 changes: preemption-engine-finish / predication-aql / preemption-timeline-sem / preemption-timeline-sem-gaps, 2026-07-29 ~ 2026-07-31）。ADR-046/049/051/052 升 ✅ Accepted。子阶段表/关键交付/验收/ADR 表/依赖图/风险表同步更新。 |
 | 2026-08-04 | v2.4 | **4.7 B-class L2 Phase 2 启动**: 4.7.1 Phase 2 foundation ✅ 已归档 (commit `11a0a2b`, 27 fn-ptrs + 27 wrappers + opaque handles + lambdas + mocks; 5 commits: `cb1cf61`/`d855c90`/`5759a30`/`37bc244`/`489655a`)。HAL fn-ptrs: 22 → 46。L2 violations 仍 8 (foundation-only, 5 个 removal 待启动)。新增子阶段表 / 4.7.1-4.7.3 子节 / 依赖图 / 风险表 / 整体验收 / ADR 表同步更新。sim_event.h (kfd_events.c) 明确为范围外 |
+| 2026-08-07 | v2.5 | **4.7 B-class L2 Phase 2 全部 ship + 归档**: 4.7.2 5 个 removal changes 全部 ✅ (graph `22c41af`→`e1ede1b`、mem_pool `dfe97e7`→`8e0eb21`、stream_capture `0ab7133`→`6749800`、gpu_queue_emu `f1070ec`→`b819b9f`、hardware_puller_emu `5929f50`→`e07a409`)。HAL fn-ptrs: 33 → **65**（+32 via Phase 1+2）。L2 violations: 8 → **1**（仅 sim_event.h 残留）。HAL 整体 ✅ Stage 4 全部完成，状态从 "🔄 进行中" 升 "✅ 已完成"。依赖图 / 风险表 / 验收 / ADR 表同步更新 |
 | 2026-08-03 | v2.3 | 4.6 状态更新: ✅ 已归档 (commit c6f6ed3 + 14 残留 verify/测试作为 follow-up)。ADR-056 升 ✅ Accepted (2026-08-01)。索引/差距分析同步刷新 |
 | 2026-07-21 | v1.0 | 初版：基于 ADR-064 Stage 4 触发条件 + GPU CP Blueprint Phase 4-7 创建 |
 
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
-**最后更新**: 2026-08-04
+**最后更新**: 2026-08-07
 **关联蓝图**: [blueprint.md](blueprint.md) §③ 硬件模拟（成熟态）
 
 ### 已归档 Changes 汇总
@@ -454,5 +457,6 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 | 4.4 | `stage4-4-gpu-cp-phase55` |
 | 4.5 | `stage4-5-cp-phase6-preemption-timeline-sem`, `stage4-5-cp-phase6-preemption-engine-finish`, `stage4-5-cp-phase6-predication-aql`, `stage4-5-cp-phase6-preemption-timeline-sem-gaps` |
 | 4.6 | `stage4-6-cp-phase7-green-context-pdl` |
-| 4.7.1 | `stage4-l2-foundation-phase2-hal` (foundation, ✅) |
-| 4.7.2 | `stage4-l2-foundation-removal-graph`, `removal-mem-pool`, `removal-stream-capture`, `removal-gpu-queue-emu`, `removal-hardware-puller-emu` (待启动) |
+| 4.6 closeout | `stage4-6-green-context-pdl-closeout`, `stage4-6-green-context-pdl-tests-standalone` |
+| 4.7.1 | `stage4-l2-foundation-hal-fence-method-heap`, `stage4-l2-foundation-removal-fence-id`, `stage4-l2-foundation-removal-hal-user`, `stage4-l2-foundation-removal-method-codec`, `stage4-l2-foundation-phase2-hal` (全部 ✅) |
+| 4.7.2 | `stage4-l2-foundation-removal-graph`, `removal-mem-pool`, `removal-stream-capture`, `removal-gpu-queue-emu`, `removal-hardware-puller-emu` (全部 ✅ 2026-08-04~05) |

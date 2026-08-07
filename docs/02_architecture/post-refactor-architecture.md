@@ -1,10 +1,12 @@
 # UsrLinuxEmu 重构后架构与文档同步方案
 
-> **SSOT** | 最后验证: 2026-06-17 | 对应代码 commit: `374d463`
+> **SSOT** | 最后验证: 2026-08-07（HAL 65 fn-ptrs / Stage 4 完成修订）| 对应代码 commit: `78fbb8d` (HEAD)
 >
 > **作者**: UsrLinuxEmu Architecture Team
-> **状态**: ✅ Approved（v0.1.7）
+> **状态**: ✅ Approved（v0.1.7，2026-08-07 修订 HAL 契约）
 > **作用**: 在 2026-05 ~ 06 期间完成 Phase 1.5 / Phase 2 重大重构后，建立**重构后架构**与**docs 现状**之间的对账，并给出 32 项修复建议
+>
+> **2026-08-07 增量修订**: HAL ops 契约从 64 → **65 fn-ptrs**（Stage 4.7 B-class L2 Phase 1+2，详见 §1.10.2）；删除 Stage 1.4 KFD 7-ops 附表（已被 ADR-061/062 替换为 +5 ops）
 >
 > **历史审计报告**：[`docs/02_architecture/audit-reports/`](audit-reports/)（含 v0.1.6 首次深度审计，25 项偏差：🔴 1 / 🟠 4 / 🟡 14 / 🟢 6）
 
@@ -536,35 +538,43 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 - **真实 Linux kernel 环境**：driver → HAL → `hal_user.cpp` → 真实硬件
 - driver 代码本身**零修改**即可切换环境
 
-##### `gpu_hal_ops` 函数指针清单（64 fn-ptrs, post-stage4-7 B-class L2 Phase 2 foundation）
+##### `gpu_hal_ops` 函数指针清单（65 个，append-only per ADR-023 §D4；2026-08-07 修订）
+
+> **维护**: 函数指针列表见 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h) — 本表为分组摘要。
 
 | 阶段 | 函数指针 | 用途 |
 |------|----------|------|
-| Phase 1.5 (14 ops) | `alloc_bo` / `free_bo` / `map_bo` / `unmap_bo` | BO 内存分配/映射 |
-| | `create_va_space` / `destroy_va_space` | VA Space 管理 |
-| | `create_queue` / `destroy_queue` | Queue 管理 |
-| | `submit_batch` / `wait_fence` | Pushbuffer 提交 + fence 同步 |
-| | `fence_create` / `get_device_info` | fence 创建 + 设备信息查询 |
-| | `doorbell_ring` / `register_irq` | doorbell + 中断注册 |
-| stage4-5 v1 (+8 ops) | `hal_preempt` | 触发 mid-batch preemption |
-| | `hal_resume` | 恢复 preempted channel |
-| | `hal_sem_create` / `hal_sem_signal` / `hal_sem_wait` / `hal_sem_query` / `hal_sem_destroy` | timeline semaphore 生命周期 |
-| | `interrupt_register` | 注册中断回调 |
-| stage4-7 Phase 2 foundation (+27 ops) | `graph_create` / `graph_destroy` / `graph_add_kernel_node` / `graph_add_memcpy_node` / `graph_instantiate` / `graph_launch` / `graph_destroy_exec` | CUDA Graph 生命周期（sim/graph.h） |
-| | `mem_pool_create` / `mem_pool_destroy` / `mem_pool_alloc` / `mem_pool_alloc_async` / `mem_pool_free` / `mem_pool_free_async` / `mem_pool_set_attr` / `mem_pool_get_attr` / `mem_pool_trim` | sim_mem_pool 生命周期（sim/mem_pool.h） |
-| | `stream_capture_begin` / `stream_capture_end` / `stream_capture_status` | CUDA stream capture（sim/stream_capture.h） |
-| | `queue_create` / `queue_attach_shmem` / `queue_submit` / `queue_destroy` / `queue_register_puller` | GpuQueueEmu class（opaque hal_queue_handle_t） |
-| | `puller_set_puller` / `puller_register_queue` / `puller_unregister_queue` | HardwarePullerEmu class（opaque hal_puller_handle_t） |
+| **Phase 1.5 基线（11 ops）** | `register_read` / `register_write` | MMIO 寄存器读写 |
+| | `mem_read` / `mem_write` / `mem_alloc` / `mem_free` | 设备内存 DMA + 分配 |
+| | `fence_create` / `fence_read` | fence 创建/状态读取 |
+| | `doorbell_ring` / `interrupt_raise` / `time_wait` | 弹射式操作 |
+| **Stage 1.4 Tier-2（+2 ops，ADR-061）** | `iommu_map` / `iommu_unmap` | KFD mmu_notifier invalidation |
+| **C-12 KFD（+3 ops，ADR-062）** | `event_signal` / `event_wait` / `event_notify` | KFD event 异步分发 |
+| **Stage 4.1 BAR mmap（+1 op，ADR-069）** | `mem_map_bo` | BAR2 VRAM mmap 路径 |
+| **Stage 4.3 Interrupt Model（+2 ops，ADR-048 D4/D7）** | `interrupt_register` / `interrupt_raise_ex` | 中断 handler 注册 + user_data payload |
+| **Stage 4.5 Preemption（+2 ops，ADR-046）** | `hal_preempt` / `hal_resume` | 抢占/恢复 preempted channel |
+| **Stage 4.5 Timeline Semaphore（+5 ops，ADR-049）** | `hal_sem_create` / `hal_sem_signal` / `hal_sem_wait` / `hal_sem_query` / `hal_sem_destroy` | timeline semaphore 生命周期 |
+| **Stage 4.6 Green Context（+2 ops，ADR-056）** | `hal_green_context_create` / `hal_green_context_destroy` | Green Context 生命周期 |
+| **Stage 4.6 PDL（+2 ops，ADR-056）** | `hal_pdl_launch` / `hal_pdl_signal_completion` | PDL kernel launch + completion signal |
+| **Stage 4.7 Phase 1 fence/method/heap（+4 ops + 1 helper）** | `fence_id_signal` / `fence_id_check` | sim 层 fence_id 抽象 |
+| | `method_codec_encode` / `method_codec_decode` | method packet 序列化 |
+| | `hal_heap_ptr` (static inline helper，非 fn-ptr) | opaque handle → heap 指针还原 |
+| **Stage 4.7 Phase 2 Foundation（+27 ops，5 headers × N）** | `graph_create` / `graph_destroy` / `graph_add_kernel_node` / `graph_add_memcpy_node` / `graph_instantiate` / `graph_launch` / `graph_destroy_exec` (7) | CUDA Graph 生命周期（sim/graph.h） |
+| | `mem_pool_create` / `mem_pool_destroy` / `mem_pool_alloc` / `mem_pool_alloc_async` / `mem_pool_free` / `mem_pool_free_async` / `mem_pool_set_attr` / `mem_pool_get_attr` / `mem_pool_export_shareable` (9) | sim_mem_pool 生命周期（sim/mem_pool.h） |
+| | `stream_capture_begin` / `stream_capture_end` / `stream_capture_status` (3) | CUDA stream capture（sim/stream_capture.h） |
+| | `queue_create` / `queue_attach_shmem` / `queue_submit` / `queue_destroy` / `queue_register_puller` (5) | GpuQueueEmu class（opaque hal_queue_handle_t） |
+| | `puller_create` / `puller_destroy` / `puller_set_puller` / `puller_register_queue` / `puller_unregister_queue` (5) | HardwarePullerEmu class（opaque hal_puller_handle_t） |
+| **总计** | **65（64 fn-ptrs + 1 inline helper）** | append-only per ADR-023 §D4 |
 
-> **完整 fn-ptr 清单**（65 个）以 `plugins/gpu_driver/hal/gpu_hal.h` 为准。class 类型（`GpuQueueEmu` / `HardwarePullerEmu`）通过 opaque `uint64_t` handle 暴露（ADR-023 §Decision 4 C 兼容约束），drv/ 侧在后续 removal change 中 cast 还原。
+> **完整 fn-ptr 清单**（64 fn-ptrs + 1 inline helper）以 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h) 为准（**canonical 权威源**）。class 类型（`GpuQueueEmu` / `HardwarePullerEmu`）通过 opaque `uint64_t` handle 暴露（ADR-023 §Decision 4 C 兼容约束），drv/ 侧通过 `hal_*` inline wrapper 调用（无需 cast，stage4-l2-foundation-removal-* 已 ship，2026-08-04~05）。
+>
+> **演进路径**: 11（Phase 1.5）→ 14（Stage 1.4 Tier-2 + C-12）→ 33（Stage 4.1-4.6：interrupt/preempt/semaphore/GC/PDL/mem_map_bo）→ **65**（Stage 4.7 B-class L2 Phase 1+2）。HAL interface 已超过 50 阈值，未来新需求应优先复用现有 fn-ptrs（参数扩展）而非新增（per ADR-023 §D4 append-only 规则）。
 
 **Preemption spec addendum**: See
 [`openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md`](../../openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md)
 for IB jump_stack defer behavior (NOT save/restore — clarifies `archive/2026-07-30-stage4-5-cp-phase6-preemption-engine-finish/specs/preemption-engine-finish/spec.md` canonical).
-| C-12 KFD (+7 ops) | `register_mmu_cb` / `register_firmware_cb` | KFD mmu/firmware 回调 |
-| | `register_gpu` | KFD GPU 注册 |
-| | `map_queue_ring` / `query_queue` | KFD queue 映射/查询 |
-| | `mmu_notifier_register` / `iommu_flush_iotlb` | mmu_notifier + IOTLB flush |
+
+> **修订说明（2026-08-07）**: 删除此前的"Stage 1.4 KFD 7 ops"附表（`register_mmu_cb` / `register_firmware_cb` / `register_gpu` / `map_queue_ring` / `query_queue` / `mmu_notifier_register` / `iommu_flush_iotlb`），这些是 Stage 1.4 Tier-1 设计初稿的命名，已被 ADR-061/062 替换为 `iommu_map/unmap` (2 ops) + `event_signal/wait/notify` (3 ops)。Tier-2 升级实际交付的是 KFD runtime penetration（Stage 1.4 Tier-2, 2026-07-05），HAL ops 增量仅 +5（包含在"总计 65"中），并非 7。
 
 #### 1.10.3 与 ROADMAP 的关系
 

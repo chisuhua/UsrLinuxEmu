@@ -34,7 +34,7 @@ UsrLinuxEmu 是**用户态 Linux 内核模拟环境**，让驱动开发者在**�
 - 🎮 **完整 GPU 支持** —— GPGPU 驱动 + 硬件仿真 + **VA Space** + **Queue** + **Ring Buffer** + Doorbell + Fence + Hardware Puller 状态机 + GlobalScheduler。
 - 🏗️ **驱动 / 仿真分离** —— `drv/`（可移植到真实内核）、`hal/`（接口契约）、`sim/`（仅用户态）、`shared/`（与 TaskRunner 共享的 ABI）。
 - 🔧 **Linux 兼容层** —— `include/linux_compat/` 提供 `u8/u32/u64`、`_IOR/_IOW/_IOWR`、`ERR_PTR`、DRM 子集等用户态实现。
-- 🧪 **Catch2 测试栈** —— `tests/catch_amalgamated.{hpp,cpp}` vendored 单文件，30+ 个独立测试二进制覆盖 IOCTL / VA Space / Queue / 插件加载。
+- 🧪 **Catch2 测试栈** —— `tests/catch_amalgamated.{hpp,cpp}` vendored 单文件，**98 个独立测试 binary** 覆盖 IOCTL / VA Space / Queue / 插件加载 / CP 全链路 / HAL / BAR / DMA / 抢占 / 信号量 / Green Context / PDL。
 - 📊 **统一日志 / 配置 / 服务注册** —— 框架级组件（`Logger`、`ServiceRegistry`、`ConfigManager`、`WaitQueue`、`PollWatcher`）跨设备复用。
 
 ---
