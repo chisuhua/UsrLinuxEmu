@@ -245,8 +245,28 @@
       "end_reason": "design-done",
       "sub_phase": null,
       "workflow_group": "9883cfa8-0c8b-4feb-926d-6589b64c099d"
+    },
+    {
+      "session_id": "rds_efe5fb35c964",
+      "kind": "stage_plan",
+      "owner_opencode_session_id": "my-eci-group-poc_1319561",
+      "parent_session_id": "rds_71b9a240ec1d",
+      "goal": {
+        "intent": "guide-plan",
+        "subject": "plan-phase",
+        "expected_outcome": "plan-done"
+      },
+      "state": "completed",
+      "attached_changes": [],
+      "context_pointer": ".rddf/state/.plan-handoff.json",
+      "started_at": "2026-08-07T14:05:12.329549+00:00",
+      "last_heartbeat": "2026-08-07T14:05:12.329549+00:00",
+      "ended_at": "2026-08-07T14:11:54.315148+00:00",
+      "end_reason": "plan-done",
+      "sub_phase": null,
+      "workflow_group": "41f3de43-5298-4f0e-a3a0-7c67c5a35299"
     }
   ],
-  "updated_at": "2026-08-07T13:51:55.547562+00:00",
+  "updated_at": "2026-08-07T14:11:54.315148+00:00",
   "version": 1
 }

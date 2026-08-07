@@ -1,8 +1,8 @@
 {
-  "plan_complete_at": "2026-08-06T00:33:59.977659+00:00",
+  "plan_complete_at": "2026-08-07T14:11:46.203929+00:00",
   "active_changes": 6,
   "all_artifacts_committed": true,
-  "ship_started_at": "2026-08-06T01:23:13.952878+00:00",
-  "current_change": "fix-hal-user-missing-interrupt-wiring",
+  "ship_started_at": null,
+  "current_change": "add-multi-engine-puller-instances",
   "execution_mode_decisions": {}
 }
