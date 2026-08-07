@@ -239,6 +239,48 @@
       "category": "core-impl",
       "added_at": "2026-08-06T00:57:43+0800",
       "archived_at": "2026-08-06T15:50:00+08:00"
+    },
+    {
+      "name": "add-multi-engine-puller-instances",
+      "status": "planned",
+      "phase": "stage-5",
+      "category": "core-impl",
+      "added_at": "2026-08-07T21:41:50+0800"
+    },
+    {
+      "name": "complete-event-page-writeback",
+      "status": "planned",
+      "phase": "stage-1.4",
+      "category": "core-impl",
+      "added_at": "2026-08-07T21:46:23+0800"
+    },
+    {
+      "name": "complete-mmu-notifier-callback",
+      "status": "planned",
+      "phase": "stage-1.3",
+      "category": "core-impl",
+      "added_at": "2026-08-07T21:48:25+0800"
+    },
+    {
+      "name": "complete-msi-x-vector-routing",
+      "status": "planned",
+      "phase": "stage-1.4",
+      "category": "core-impl",
+      "added_at": "2026-08-07T21:48:51+0800"
+    },
+    {
+      "name": "implement-multiprocess-phase1-isolation",
+      "status": "planned",
+      "phase": "stage-3 (trigger-gated)",
+      "category": "arch-design",
+      "added_at": "2026-08-07T21:49:08+0800"
+    },
+    {
+      "name": "implement-pm4-microcode-parsing",
+      "status": "planned",
+      "phase": "stage-5",
+      "category": "core-impl",
+      "added_at": "2026-08-07T21:49:34+0800"
     }
   ],
   "updated_at": "2026-08-06T16:15:13+08:00"
