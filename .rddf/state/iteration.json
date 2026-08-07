@@ -1,6 +1,5 @@
 {
-  "version": 4,
-  "updated_at": "2026-08-05T17:25:02.604921+00:00",
+  "version": 5,
   "current_phase": "stage-4.5",
   "changes": [
     {
@@ -195,51 +194,52 @@
     },
     {
       "name": "fix-hal-user-missing-interrupt-wiring",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.3",
       "category": "core-impl",
       "added_at": "2026-08-06T00:57:41+0800",
-      "updated_at": "2026-08-05T17:25:02.604873+00:00"
+      "archived_at": "2026-08-06T15:50:00+08:00"
     },
     {
       "name": "implement-hal-preempt-resume-semaphore",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.5",
       "category": "core-impl",
       "added_at": "2026-08-06T00:57:41+0800",
-      "updated_at": "2026-08-05T17:25:02.604899+00:00"
+      "archived_at": "2026-08-06T15:50:00+08:00"
     },
     {
       "name": "implement-hal-green-context-and-pdl",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.6",
       "category": "core-impl",
       "added_at": "2026-08-06T00:57:42+0800",
-      "updated_at": "2026-08-05T17:25:02.604905+00:00"
+      "archived_at": "2026-08-06T15:50:00+08:00"
     },
     {
       "name": "complete-hal-mem-map-bo",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.1",
       "category": "core-impl",
       "added_at": "2026-08-06T00:57:42+0800",
-      "updated_at": "2026-08-05T17:25:02.604909+00:00"
+      "archived_at": "2026-08-06T15:50:00+08:00"
     },
     {
       "name": "fix-hal-interrupt-vector-dispatch",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.3",
       "category": "core-impl",
       "added_at": "2026-08-06T00:57:43+0800",
-      "updated_at": "2026-08-05T17:25:02.604913+00:00"
+      "archived_at": "2026-08-06T15:50:00+08:00"
     },
     {
       "name": "add-hal-puller-set-puller-nested-wiring",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-4.6",
       "category": "core-impl",
       "added_at": "2026-08-06T00:57:43+0800",
-      "updated_at": "2026-08-05T17:25:02.604917+00:00"
+      "archived_at": "2026-08-06T15:50:00+08:00"
     }
-  ]
+  ],
+  "updated_at": "2026-08-06T16:15:13+08:00"
 }
