@@ -1,8 +1,12 @@
 {
   "plan_complete_at": "2026-08-07T14:11:46.203929+00:00",
-  "active_changes": 6,
+  "active_changes": 5,
   "all_artifacts_committed": true,
   "ship_started_at": null,
   "current_change": "add-multi-engine-puller-instances",
-  "execution_mode_decisions": {}
+  "execution_mode_decisions": {},
+  "archived_at": "2026-08-07T21:13:57.113046+00:00",
+  "archived_changes": [
+    "add-multi-engine-puller-instances"
+  ]
 }
