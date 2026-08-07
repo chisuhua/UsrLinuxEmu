@@ -1,14 +1,14 @@
 {
-  "design_complete_at": "2026-08-05T16:58:42.615894+00:00",
+  "design_complete_at": "2026-08-07T13:51:46.839927+00:00",
   "proposals_reviewed": 6,
   "all_proposals_have_decision": true,
   "version": 2,
   "changes_pre_created": [
-    "fix-hal-user-missing-interrupt-wiring",
-    "implement-hal-preempt-resume-semaphore",
-    "implement-hal-green-context-and-pdl",
-    "complete-hal-mem-map-bo",
-    "fix-hal-interrupt-vector-dispatch",
-    "add-hal-puller-set-puller-nested-wiring"
+    "add-multi-engine-puller-instances",
+    "complete-event-page-writeback",
+    "complete-mmu-notifier-callback",
+    "complete-msi-x-vector-routing",
+    "implement-multiprocess-phase1-isolation",
+    "implement-pm4-microcode-parsing"
   ]
 }

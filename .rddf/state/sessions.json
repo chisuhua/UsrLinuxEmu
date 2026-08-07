@@ -236,17 +236,17 @@
         "subject": "design-phase",
         "expected_outcome": "design-done"
       },
-      "state": "active",
+      "state": "completed",
       "attached_changes": [],
       "context_pointer": ".rddf/state/.design-handoff.json",
       "started_at": "2026-08-07T11:19:26.616584+00:00",
       "last_heartbeat": "2026-08-07T11:19:26.616584+00:00",
-      "ended_at": null,
-      "end_reason": null,
+      "ended_at": "2026-08-07T13:51:55.547562+00:00",
+      "end_reason": "design-done",
       "sub_phase": null,
       "workflow_group": "9883cfa8-0c8b-4feb-926d-6589b64c099d"
     }
   ],
-  "updated_at": "2026-08-07T11:19:26.616584+00:00",
+  "updated_at": "2026-08-07T13:51:55.547562+00:00",
   "version": 1
 }
