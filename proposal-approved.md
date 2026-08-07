@@ -25,6 +25,18 @@
 
 | [add-hal-puller-set-puller-nested-wiring](improvements/add-hal-puller-set-puller-nested-wiring.md) | P2 | 2026-08-05 | guide-arch |
 
+| [add-multi-engine-puller-instances](improvements/add-multi-engine-puller-instances.md) | P1 | 2026-08-07 | guide-arch |
+
+| [complete-event-page-writeback](improvements/complete-event-page-writeback.md) | P1 | 2026-08-07 | guide-arch |
+
+| [complete-mmu-notifier-callback](improvements/complete-mmu-notifier-callback.md) | P2 | 2026-08-07 | guide-arch |
+
+| [complete-msi-x-vector-routing](improvements/complete-msi-x-vector-routing.md) | P1 | 2026-08-07 | guide-arch |
+
+| [implement-multiprocess-phase1-isolation](improvements/implement-multiprocess-phase1-isolation.md) | P2 | 2026-08-07 | guide-arch |
+
+| [implement-pm4-microcode-parsing](improvements/implement-pm4-microcode-parsing.md) | P1 | 2026-08-07 | guide-arch |
+
 ## 已实施
 | [stage4-5-cp-phase6-preemption-engine-finish](improvements/stage4-5-cp-phase6-preemption-engine-finish.md) | P1 | 2026-07-30 |
 | [stage4-5-cp-phase6-preemption-timeline-sem](improvements/stage4-5-cp-phase6-preemption-timeline-sem.md) | P1 | 2026-07-30 |
