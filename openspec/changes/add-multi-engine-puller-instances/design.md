@@ -3,32 +3,57 @@
 
 # Design: add-multi-engine-puller-instances
 
-## Overview
+## Scope (what this change delivers)
 
-本 change 的设计来源于 `improvements/add-multi-engine-puller-instances.md`，详细架构依据 + 范围 + 关键场景 + 验收标准见该文件。
+This change delivers **registry infrastructure only**, not runtime engine dispatch:
 
-## Architecture
+1. `GPU_QUEUE_GRAPHICS = 2` enum value in `gpu_queue_type` (placeholder for
+   future queue creation — no GPU opcode routes to it yet).
+2. `GlobalScheduler::registerPullerForEngine()` / `getPullerForEngine()` —
+   a registry API that maps `EngineType` → `HardwarePullerEmu*`. The map is
+   populated only by tests; production code does not register or consult it.
+3. `GlobalScheduler::allocFenceId(EngineType)` — allocates fence IDs from
+   three independent sub-spaces (COMPUTE / COPY / FIRMWARE) carved out of
+   `SIM_FENCE_ID_BASE`..`SIM_FENCE_ID_MAX`.
+4. `tests/test_multi_engine_puller.cpp` — 12 standalone test cases covering
+   the registry API, the fence allocator, and the `GPU_QUEUE_GRAPHICS` enum.
 
-基于 `proposal.md` 中的决策，本 change 涉及的关键架构原则：
+## Out of scope (NOT delivered — separate change required)
 
-- **HAL 接口契约**（[ADR-023](docs/00_adr/adr-023-hal-interface.md) §D4）: append-only，所有变更必须保持 `struct gpu_hal_ops` 签名不变
-- **3 区分架构**（[ADR-036](docs/00_adr/adr-036-three-way-separation.md)）: 驱动/仿真分离
-- **Linux 兼容策略**（[ADR-027](docs/00_adr/adr-027-linux-compat-strategy.md) §spec-driven）: 仅在 demonstrably requires 时扩展
+- Runtime dispatch from `GpuQueueEmu::submit()` to `getPullerForEngine()`
+- Three engine-specific `HardwarePullerEmu` subclasses (Compute/Copy/Graphics)
+- New GPU opcode (`GPU_OP_GRAPHICS` or `GPU_OP_3D`)
+- `test_cross_engine_sync_standalone.cpp` (cross-engine signal/wait)
 
-## Implementation Approach
+These require a new GPU opcode and dispatch wiring — see tasks.md §5.
 
-1. 阅读 `improvements/add-multi-engine-puller-instances.md` 中的「范围」节，确认 in-scope 文件列表
-2. 实现关键场景（GIVEN/WHEN/THEN）
-3. 添加单元测试 + 集成测试（per 提案的「验收标准」节）
-4. 验证 ctest 全部 PASS
+## Architecture constraints honoured
 
-## Testing Strategy
+- **HAL interface contract** ([ADR-023](docs/00_adr/adr-023-hal-interface.md) §D4):
+  `struct gpu_hal_ops` is untouched. The new methods are on `GlobalScheduler`,
+  not on the HAL.
+- **3-way separation** ([ADR-036](docs/00_adr/adr-036-three-way-separation.md)):
+  the registry lives in `sim/scheduler/`, hardware-specific work stays in
+  `sim/hardware/`.
+- **Linux compat policy** ([ADR-027](docs/00_adr/adr-027-linux-compat-strategy.md)
+  §spec-driven): no new Linux-compat headers added.
 
-- 单元测试覆盖所有新函数 + 边界条件
-- 集成测试：CTX 调用链 + 端到端场景
-- 回归测试：make test 全 PASS，无新增 regression
+## Testing strategy
 
-## Risk & Mitigation
+- Unit tests for the registry API (`registerPullerForEngine`, `getPullerForEngine`)
+  and the per-engine fence allocator (`allocFenceId`).
+- Compile-time check that `GPU_QUEUE_GRAPHICS = 2` is accessible.
+- Regression: existing `test_global_scheduler` and `test_hardware_puller_emu`
+  continue to pass; the current full `ctest` result is 140/141 PASS because the unrelated `test_hal_thread_safety_standalone` segfaults.
 
-- 主要风险：修改可能影响 HAL 接口契约
-- 缓解：所有 fn-ptrs 保持 append-only
+## Risk & mitigation
+
+- Risk: callers might assume `getPullerForEngine()` returns non-null at
+  runtime. Mitigation: the map is empty at startup, and there is no
+  production caller that consults it — this is documented in
+  `tasks.md` §"Implementation Scope".
+- Risk: `allocFenceId()` could collide with `sim_fence_id_alloc()`. Mitigation:
+  both allocate from `SIM_FENCE_ID_BASE`-rooted spaces; `allocFenceId` partitions
+  the space into thirds, while `sim_fence_id_alloc` uses the same base with a
+  global counter. Consumers of either must agree on the space — current callers
+  use one or the other, not both.
