@@ -49,6 +49,7 @@ struct gpu_ring_header {
 enum gpu_queue_type {
   GPU_QUEUE_COMPUTE = 0,  /* 计算队列 */
   GPU_QUEUE_COPY = 1,     /* 拷贝队列 (SDMA) */
+  GPU_QUEUE_GRAPHICS = 2, /* 图形队列 (Stage 5 multi-engine) */
 };
 
 /**

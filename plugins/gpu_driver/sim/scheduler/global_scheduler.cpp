@@ -1,6 +1,7 @@
 #include "scheduler/global_scheduler.h"
 
 #include <vector>
+#include "fence_id.h"
 
 GlobalScheduler::GlobalScheduler() = default;
 
@@ -159,4 +160,36 @@ WorkItem GlobalScheduler::extract_oldest_low_or_normal() {
   }
 
   return oldest;
+}
+
+void GlobalScheduler::registerPullerForEngine(EngineType engine, HardwarePullerEmu* puller) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  engine_pullers_[engine] = puller;
+}
+
+HardwarePullerEmu* GlobalScheduler::getPullerForEngine(EngineType engine) const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto it = engine_pullers_.find(engine);
+  if (it != engine_pullers_.end()) {
+    return it->second;
+  }
+  return nullptr;
+}
+
+uint64_t GlobalScheduler::allocFenceId(EngineType engine) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  uint64_t base = SIM_FENCE_ID_BASE;
+  switch (engine) {
+    case EngineType::COMPUTE:
+      base += 0ULL * (SIM_FENCE_ID_MAX / 3);
+      break;
+    case EngineType::COPY:
+      base += 1ULL * (SIM_FENCE_ID_MAX / 3);
+      break;
+    case EngineType::FIRMWARE:
+      base += 2ULL * (SIM_FENCE_ID_MAX / 3);
+      break;
+  }
+  uint64_t fence_id = base + engine_fence_counters_[engine]++;
+  return fence_id;
 }

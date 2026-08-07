@@ -11,6 +11,8 @@
 #include "gpu_hal.h"
 #include "scheduler/translator/gpfifo_translator.h"
 
+class HardwarePullerEmu;
+
 enum class EngineType {
   COMPUTE,
   COPY,
@@ -72,6 +74,29 @@ class GlobalScheduler {
   void restore_priority(int channel_id);
   bool has_inherited_priority(int channel_id) const;
 
+  // ========== Multi-engine Puller Registry (Stage 5) ==========
+
+  /** Register a puller instance for a specific engine type.
+   *  @param engine The engine type
+   *  @param puller Pointer to the HardwarePullerEmu instance (must outlive this scheduler)
+   */
+  void registerPullerForEngine(EngineType engine, HardwarePullerEmu* puller);
+
+  /** Get the puller instance for a specific engine type.
+   *  @param engine The engine type
+   *  @return Pointer to the registered HardwarePullerEmu, or nullptr if not registered
+   */
+  HardwarePullerEmu* getPullerForEngine(EngineType engine) const;
+
+  // ========== Per-engine Fence Registry (Stage 5, ADR-049) ==========
+
+  /** Allocate a fence ID for a specific engine type.
+   *  Each engine maintains its own independent fence_id space.
+   *  @param engine The engine type
+   *  @return A unique fence_id for the given engine (>= SIM_FENCE_ID_BASE)
+   */
+  uint64_t allocFenceId(EngineType engine);
+
  private:
   ::usr_linux_emu::GpfifoToLaunchParamsTranslator translator_;
   EngineDispatchFn dispatch_fn_;
@@ -81,6 +106,13 @@ class GlobalScheduler {
 
   int starvation_cycle_counter_{0};
   std::unordered_map<int, int> inherited_priorities_;
+
+  // ========== Multi-engine Puller Registry (Stage 5) ==========
+  std::unordered_map<EngineType, HardwarePullerEmu*> engine_pullers_;
+
+  // ========== Per-engine Fence Registry (Stage 5, ADR-049) ==========
+  // Each engine has its own fence_id space to avoid conflicts
+  std::unordered_map<EngineType, uint64_t> engine_fence_counters_;
 
   bool should_force_low_priority(const WorkItem& item) const;
   WorkItem extract_oldest_low_or_normal();
