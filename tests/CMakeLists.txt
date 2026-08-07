@@ -236,6 +236,7 @@ set(SIM_TESTS
     test_global_scheduler.cpp
     test_gpfifo_translator.cpp
     test_gpu_callback_integration.cpp
+    test_multi_engine_puller.cpp
 )
 
 foreach(src ${STANDALONE_TESTS})
