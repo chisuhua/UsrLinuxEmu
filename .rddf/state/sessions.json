@@ -225,8 +225,28 @@
       "end_reason": "ship-done",
       "sub_phase": null,
       "workflow_group": "2a78dc41-9006-4e9d-9fa2-0257650e8661"
+    },
+    {
+      "session_id": "rds_71b9a240ec1d",
+      "kind": "stage_design",
+      "owner_opencode_session_id": "my-eci-group-poc_1319561",
+      "parent_session_id": null,
+      "goal": {
+        "intent": "guide-design",
+        "subject": "design-phase",
+        "expected_outcome": "design-done"
+      },
+      "state": "active",
+      "attached_changes": [],
+      "context_pointer": ".rddf/state/.design-handoff.json",
+      "started_at": "2026-08-07T11:19:26.616584+00:00",
+      "last_heartbeat": "2026-08-07T11:19:26.616584+00:00",
+      "ended_at": null,
+      "end_reason": null,
+      "sub_phase": null,
+      "workflow_group": "9883cfa8-0c8b-4feb-926d-6589b64c099d"
     }
   ],
-  "updated_at": "2026-08-07T09:55:38.651087+00:00",
+  "updated_at": "2026-08-07T11:19:26.616584+00:00",
   "version": 1
 }
