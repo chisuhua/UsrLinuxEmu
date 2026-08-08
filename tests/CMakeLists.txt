@@ -517,7 +517,7 @@ set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
     PROPERTIES LANGUAGE C
 )
-target_link_libraries(test_hal_event_signal_standalone PRIVATE kernel gpu_sim)
+target_link_libraries(test_hal_event_signal_standalone PRIVATE kernel gpu_hal gpu_sim)
 target_include_directories(test_hal_event_signal_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/kernel

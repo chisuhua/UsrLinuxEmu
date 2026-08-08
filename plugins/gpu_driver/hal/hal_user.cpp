@@ -140,8 +140,11 @@ static void user_doorbell_ring(void *ctx, uint32_t queue_id) {
 static void user_interrupt_raise(void *ctx, uint32_t vector) {
   auto *hc = static_cast<struct hal_user_context *>(ctx);
   hc->interrupt_count.fetch_add(1, std::memory_order_relaxed);
-  // TODO(vector-dispatch): MSI-X vector routing for per-IH handlers
-  (void)vector;
+  if (vector >= 4) return;
+  auto handler = hc->interrupt_handlers[vector];
+  if (handler) {
+    handler(0);  /* legacy signature has no user_data */
+  }
 }
 
 static int user_interrupt_register(void *ctx, uint32_t vector,
