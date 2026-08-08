@@ -200,17 +200,37 @@
       "goal": {
         "intent": "guide-ship"
       },
-      "state": "active",
+      "state": "orphaned",
       "attached_changes": [],
       "context_pointer": null,
       "started_at": "2026-08-08T01:20:30.772944+00:00",
       "last_heartbeat": "2026-08-08T01:20:30.831609+00:00",
+      "ended_at": "2026-08-08T16:01:23.723754+00:00",
+      "end_reason": "heartbeat-timeout",
+      "sub_phase": null,
+      "workflow_group": null
+    },
+    {
+      "session_id": "rds_309f368e299b",
+      "kind": "stage_ship",
+      "owner_opencode_session_id": "my-eci-group-poc_7423",
+      "parent_session_id": "rds_efe5fb35c964",
+      "goal": {
+        "intent": "guide-ship",
+        "subject": "ship-phase",
+        "expected_outcome": "archive-all"
+      },
+      "state": "active",
+      "attached_changes": [],
+      "context_pointer": null,
+      "started_at": "2026-08-08T16:01:23.808085+00:00",
+      "last_heartbeat": "2026-08-08T16:01:23.808085+00:00",
       "ended_at": null,
       "end_reason": null,
       "sub_phase": null,
-      "workflow_group": null
+      "workflow_group": "3675835f-cc96-4f12-bead-e1623cf08872"
     }
   ],
-  "updated_at": "2026-08-08T01:20:30.831609+00:00",
+  "updated_at": "2026-08-08T16:01:23.808085+00:00",
   "version": 1
 }
