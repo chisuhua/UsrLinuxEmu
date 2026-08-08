@@ -5,29 +5,29 @@
 
 ## 1. 准备 (Setup)
 
-- [ ] 阅读 `improvements/complete-mmu-notifier-callback.md` 中的「范围」和「验收标准」
-- [ ] 确认目标文件路径与依赖关系
-- [ ] 关联 `openspec/changes/complete-mmu-notifier-callback/proposal.md` 中的架构依据
+- [x] 阅读 `improvements/complete-mmu-notifier-callback.md` 中的「范围」和「验收标准」
+- [x] 确认目标文件路径与依赖关系
+- [x] 关联 `openspec/changes/complete-mmu-notifier-callback/proposal.md` 中的架构依据
 
 ## 2. 实现 (Implementation)
 
-- [ ] 修改 in-scope 文件（按 `improvements/complete-mmu-notifier-callback.md` §范围）
-- [ ] 实现关键场景 1（按 `improvements/complete-mmu-notifier-callback.md` §关键场景）
-- [ ] 实现关键场景 2
-- [ ] 实现关键场景 3
+- [x] 修改 in-scope 文件（按 `improvements/complete-mmu-notifier-callback.md` §范围）
+- [x] 实现关键场景 1（按 `improvements/complete-mmu-notifier-callback.md` §关键场景）
+- [x] 实现关键场景 2
+- [x] 实现关键场景 3
 
 ## 3. 测试 (Testing)
 
-- [ ] 添加单元测试（按 §验收标准）
-- [ ] 添加集成测试
-- [ ] 验证 ctest 全部 PASS
+- [x] 添加单元测试（按 §验收标准）
+- [x] 添加集成测试
+- [x] 验证 ctest 全部 PASS
 
 ## 4. 验证 (Verification)
 
-- [ ] `make -j4` 编译无 warning
-- [ ] lsp_diagnostics 通过（无 error）
-- [ ] 提案中「验收标准」100% 完成
+- [x] `make -j4` 编译无 warning
+- [x] lsp_diagnostics 通过（无 error）
+- [x] 提案中「验收标准」100% 完成
 
 ## 5. 提交 (Commit)
 
-- [ ] git add + git commit（单一 commit, scope 与 complete-mmu-notifier-callback 对齐）
+- [x] git add + git commit（单一 commit, scope 与 complete-mmu-notifier-callback 对齐）

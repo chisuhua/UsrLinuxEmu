@@ -51,6 +51,8 @@ int iommu_invalidate_register_notifier_internal(struct iommu_domain *d,
 		return ret;
 	}
 
+	state->notifier_list.push_back(mnp);
+
 	/* Stage 2.1.2: propagate mm_shim (PID + VMA context) to the
 	 * notifier's priv so user callbacks can read it via mn->priv. */
 	if (state->mm_shim) {
@@ -68,6 +70,17 @@ int iommu_invalidate_unregister_notifier_internal(struct iommu_domain *d,
 {
 	if (!d || !mnp)
 		return IOMMU_ERR_EINVAL;
+
+	auto* state = usr_linux_emu::iommu_domain_priv(d);
+	if (state) {
+		auto& list = state->notifier_list;
+		for (auto it = list.begin(); it != list.end(); ++it) {
+			if (*it == mnp) {
+				list.erase(it);
+				break;
+			}
+		}
+	}
 
 	mmu_notifier_unregister(mnp);
 

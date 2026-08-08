@@ -56,6 +56,12 @@ struct iommu_domain_state {
 	struct mm_struct* mm = nullptr;
 	::us_mm_shim* mm_shim = nullptr;
 	struct sim_page_migration* sim_pm = nullptr;
+
+	/* Per-domain list of registered mmu_notifiers (append-only).
+	 * Populated by register_notifier; walked by iommu_unmap to dispatch
+	 * invalidate_range_start/end callbacks. Mirrors Linux kernel's per-mm
+	 * notifier list semantics but scoped to the IOMMU domain. */
+	std::vector<struct mmu_notifier*> notifier_list;
 };
 
 /*
