@@ -253,31 +253,47 @@
     },
     {
       "name": "complete-event-page-writeback",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-1.4",
       "category": "core-impl",
-      "added_at": "2026-08-07T21:46:23+0800"
+      "added_at": "2026-08-07T21:46:23+0800",
+      "archived_at": "2026-08-08T01:18:40+00:00",
+      "archive_commit_sha": "ae8f5d86124cc95667b4fcbce33e501a4f5719bd",
+      "tasks_done": 14,
+      "plan_path": ".rddf/plans/complete-event-page-writeback.md"
     },
     {
       "name": "complete-mmu-notifier-callback",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-1.3",
       "category": "core-impl",
-      "added_at": "2026-08-07T21:48:25+0800"
+      "added_at": "2026-08-07T21:48:25+0800",
+      "archived_at": "2026-08-08T02:00:51+00:00",
+      "archive_commit_sha": "c512f1423f95cbb8911a9d168d02e302e3227686",
+      "tasks_done": 14,
+      "plan_path": ".rddf/plans/complete-mmu-notifier-callback.md"
     },
     {
       "name": "complete-msi-x-vector-routing",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-1.4",
       "category": "core-impl",
-      "added_at": "2026-08-07T21:48:51+0800"
+      "added_at": "2026-08-07T21:48:51+0800",
+      "archived_at": "2026-08-08T14:31:57+00:00",
+      "archive_commit_sha": "54dd2d1654004c709663543c5214d5ac4deb1122",
+      "tasks_done": 14,
+      "plan_path": ".rddf/plans/complete-msi-x-vector-routing.md"
     },
     {
       "name": "implement-multiprocess-phase1-isolation",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-3 (trigger-gated)",
       "category": "arch-design",
-      "added_at": "2026-08-07T21:49:08+0800"
+      "added_at": "2026-08-07T21:49:08+0800",
+      "archived_at": "2026-08-08T15:07:49+00:00",
+      "archive_commit_sha": "d2e5baf73ec57b69a01e7f03a722d6a15fe16bab",
+      "tasks_done": 13,
+      "plan_path": ".rddf/plans/implement-multiprocess-phase1-isolation.md"
     },
     {
       "name": "implement-pm4-microcode-parsing",
@@ -291,5 +307,5 @@
       "plan_path": ".rddf/plans/implement-pm4-microcode-parsing.md"
     }
   ],
-  "updated_at": "2026-08-08T15:40:17.353998+00:00"
+  "updated_at": "2026-08-09T00:04:59+00:00"
 }
