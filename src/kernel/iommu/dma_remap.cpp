@@ -109,6 +109,21 @@ long iommu_unmap(struct iommu_domain *domain,
 	if (domain->ops && domain->ops->flush_iotlb)
 		domain->ops->flush_iotlb(domain, iova, size, &flushed);
 
+	auto* st = usr_linux_emu::iommu_domain_priv(domain);
+	if (st) {
+		struct mm_struct* cb_mm = st->mm;
+		for (auto* mnp : st->notifier_list) {
+			if (mnp && mnp->ops) {
+				if (mnp->ops->invalidate_range_start)
+					mnp->ops->invalidate_range_start(mnp, cb_mm, iova, iova + size);
+			}
+		}
+		for (auto* mnp : st->notifier_list) {
+			if (mnp && mnp->ops && mnp->ops->invalidate_range_end)
+				mnp->ops->invalidate_range_end(mnp, cb_mm, iova, iova + size);
+		}
+	}
+
 	return (long)size;
 }
 

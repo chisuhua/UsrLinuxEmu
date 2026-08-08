@@ -73,6 +73,16 @@ struct mmu_notifier_ops {
    */
   void (*release)(struct mmu_notifier *mn,
                   struct mm_struct *mm);
+
+  /* Optional: called before/after clearing young bits on ptes */
+  int (*clear_flush_young)(struct mmu_notifier *mn,
+                            struct mm_struct *mm,
+                            unsigned long start,
+                            unsigned long end);
+  int (*clear_young)(struct mmu_notifier *mn,
+                     struct mm_struct *mm,
+                     unsigned long start,
+                     unsigned long end);
 };
 
 /*
