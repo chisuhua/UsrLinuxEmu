@@ -40,7 +40,7 @@ bool GpfifoToLaunchParamsTranslator::translate(const gpu_gpfifo_entry& entry) {
     case FORMAT_AQL:
       return parseAqlPacket(entry);
     case FORMAT_PM4:
-      return false;
+      return parsePm4Packet(entry);
     default:
       return false;
   }
@@ -95,6 +95,45 @@ bool GpfifoToLaunchParamsTranslator::parseAqlPacket(
   uint64_t signal_handle = entry.payload[4];
   if (signal_handle != 0 && signal_hook_) {
     signal_hook_(signal_handle, 1);
+  }
+
+  return true;
+}
+
+bool GpfifoToLaunchParamsTranslator::parsePm4Packet(
+    const gpu_gpfifo_entry& entry) {
+  if (entry.payload[0] == 0) {
+    return false;
+  }
+
+  uint32_t header = static_cast<uint32_t>(entry.payload[0]);
+  uint32_t method_addr, subchannel, data_count;
+  bool inc;
+  unpackPm4Header(header, method_addr, subchannel, data_count, inc);
+
+  if (subchannel >= kMaxSubchannels) {
+    return false;
+  }
+  if (data_count > 6) {
+    return false;
+  }
+
+  uint32_t current_addr = pm4_next_addr_[subchannel];
+  if (inc && current_addr != 0) {
+    method_addr = current_addr;
+  }
+
+  if (launch_cb_) {
+    for (uint32_t i = 0; i < data_count; i++) {
+      uint64_t data = entry.payload[1 + i];
+      launch_cb_("pm4_method", subchannel, method_addr + i, data, 0, 0, 0, 0);
+    }
+  }
+
+  if (inc) {
+    pm4_next_addr_[subchannel] = method_addr + data_count;
+  } else {
+    pm4_next_addr_[subchannel] = 0;
   }
 
   return true;

@@ -518,6 +518,25 @@ target_include_directories(test_multiprocess_isolation_standalone PRIVATE
 add_test(NAME test_multiprocess_isolation_standalone COMMAND test_multiprocess_isolation_standalone)
 set_tests_properties(test_multiprocess_isolation_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+# implement-pm4-microcode-parsing — PM4 microcode parser test
+add_executable(test_pm4_parse_standalone
+    test_pm4_parse_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_pm4_parse_standalone PRIVATE kernel gpu_sim)
+target_include_directories(test_pm4_parse_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler/translator
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_test(NAME test_pm4_parse_standalone COMMAND test_pm4_parse_standalone)
+set_tests_properties(test_pm4_parse_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 # C-12 B.4.4 + B.3.4 — HAL event_signal async integration test
 # Links: kfd_events.c (Agent A), sim_event.c, hal_mock.cpp
 add_executable(test_hal_event_signal_standalone

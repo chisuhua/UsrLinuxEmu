@@ -53,6 +53,25 @@ class GpfifoToLaunchParamsTranslator {
   /** @brief AQL packet parser (ADR-052). */
   bool parseAqlPacket(const gpu_gpfifo_entry& entry);
 
+  /** @brief PM4 packet parser (ADR-052 §D3). */
+  bool parsePm4Packet(const gpu_gpfifo_entry& entry);
+
+  /** @brief Per-subchannel next_method_addr for INC continuation across packets. */
+  static constexpr uint32_t kMaxSubchannels = 8;
+  uint32_t pm4_next_addr_[kMaxSubchannels] = {0};
+
+  /** @brief Extract PM4 header fields from a 32-bit header word (ADR-052 §D3). */
+  static inline void unpackPm4Header(uint32_t header,
+                                     uint32_t& method_addr,
+                                     uint32_t& subchannel,
+                                     uint32_t& data_count,
+                                     bool& inc) {
+    inc         = (header & 1u) != 0;
+    method_addr = (header >> 1) & 0x7FFFu;
+    subchannel  = (header >> 16) & 0xFu;
+    data_count  = (header >> 20) & 0xFu;
+  }
+
   LaunchParamsCallback launch_cb_;
   CompletionSignalHook signal_hook_;
   std::map<uint32_t, std::string> kernel_names_;
