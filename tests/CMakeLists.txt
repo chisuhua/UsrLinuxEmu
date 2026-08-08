@@ -482,6 +482,27 @@ target_compile_options(test_sim_event_standalone PRIVATE -Wno-implicit-function-
 add_test(NAME test_sim_event_standalone COMMAND test_sim_event_standalone)
 set_tests_properties(test_sim_event_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+# complete-event-page-writeback — sim event page standalone test
+add_executable(test_sim_event_page_standalone
+    test_sim_event_page_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
+)
+set_source_files_properties(
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
+    PROPERTIES LANGUAGE C
+)
+target_link_libraries(test_sim_event_page_standalone PRIVATE kernel)
+target_include_directories(test_sim_event_page_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_options(test_sim_event_page_standalone PRIVATE -Wno-implicit-function-declaration)
+add_test(NAME test_sim_event_page_standalone COMMAND test_sim_event_page_standalone)
+set_tests_properties(test_sim_event_page_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 # C-12 B.4.4 + B.3.4 — HAL event_signal async integration test
 # Links: kfd_events.c (Agent A), sim_event.c, hal_mock.cpp
 add_executable(test_hal_event_signal_standalone
