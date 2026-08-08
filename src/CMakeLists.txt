@@ -56,7 +56,10 @@ add_library(kernel SHARED
     kernel/thread/kernel_thread_base.cpp
     kernel/thread/kernel_workqueue.cpp
 
+    # implement-multiprocess-phase1-isolation — Phase 1 per-process isolation registry
+    kernel/process/isolated_device.cpp
 )
+add_subdirectory(kernel/process)
 
 # 添加 UsrLinuxEmu 头文件路径
 include_directories(${PROJECT_SOURCE_DIR}/include)
