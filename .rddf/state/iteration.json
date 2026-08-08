@@ -281,11 +281,15 @@
     },
     {
       "name": "implement-pm4-microcode-parsing",
-      "status": "proposed",
+      "status": "archived",
       "phase": "stage-5",
       "category": "core-impl",
-      "added_at": "2026-08-07T21:49:34+0800"
+      "added_at": "2026-08-07T21:49:34+0800",
+      "archived_at": "2026-08-08T15:40:17.331616+00:00",
+      "archive_commit_sha": "32b063c1c5753ba375b5f70f641f55c00b7c0402",
+      "tasks_done": 13,
+      "plan_path": ".rddf/plans/implement-pm4-microcode-parsing.md"
     }
   ],
-  "updated_at": "2026-08-07T21:13:56.927432+00:00"
+  "updated_at": "2026-08-08T15:40:17.353998+00:00"
 }
