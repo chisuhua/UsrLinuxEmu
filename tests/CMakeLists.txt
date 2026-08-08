@@ -504,6 +504,20 @@ target_compile_options(test_sim_event_page_standalone PRIVATE -Wno-implicit-func
 add_test(NAME test_sim_event_page_standalone COMMAND test_sim_event_page_standalone)
 set_tests_properties(test_sim_event_page_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+# implement-multiprocess-phase1-isolation — multiprocess isolation test
+add_executable(test_multiprocess_isolation_standalone
+    test_multiprocess_isolation_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_multiprocess_isolation_standalone PRIVATE kernel)
+target_include_directories(test_multiprocess_isolation_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_test(NAME test_multiprocess_isolation_standalone COMMAND test_multiprocess_isolation_standalone)
+set_tests_properties(test_multiprocess_isolation_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 # C-12 B.4.4 + B.3.4 — HAL event_signal async integration test
 # Links: kfd_events.c (Agent A), sim_event.c, hal_mock.cpp
 add_executable(test_hal_event_signal_standalone
