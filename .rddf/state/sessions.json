@@ -220,17 +220,17 @@
         "subject": "ship-phase",
         "expected_outcome": "archive-all"
       },
-      "state": "active",
+      "state": "completed",
       "attached_changes": [],
       "context_pointer": null,
       "started_at": "2026-08-08T16:01:23.808085+00:00",
       "last_heartbeat": "2026-08-08T16:01:23.808085+00:00",
-      "ended_at": null,
-      "end_reason": null,
+      "ended_at": "2026-08-08T16:43:36.786893+00:00",
+      "end_reason": "ship-done",
       "sub_phase": null,
       "workflow_group": "3675835f-cc96-4f12-bead-e1623cf08872"
     }
   ],
-  "updated_at": "2026-08-08T16:01:23.808085+00:00",
+  "updated_at": "2026-08-08T16:43:36.786893+00:00",
   "version": 1
 }
