@@ -191,8 +191,26 @@
       "end_reason": "plan-done",
       "sub_phase": null,
       "workflow_group": null
+    },
+    {
+      "session_id": "rds_5a10bfd0e5e7",
+      "kind": "stage_ship",
+      "owner_opencode_session_id": "my-eci-group-poc_5487",
+      "parent_session_id": null,
+      "goal": {
+        "intent": "guide-ship"
+      },
+      "state": "active",
+      "attached_changes": [],
+      "context_pointer": null,
+      "started_at": "2026-08-08T01:20:30.772944+00:00",
+      "last_heartbeat": "2026-08-08T01:20:30.831609+00:00",
+      "ended_at": null,
+      "end_reason": null,
+      "sub_phase": null,
+      "workflow_group": null
     }
   ],
-  "updated_at": "2026-08-07T21:15:27.790237+00:00",
+  "updated_at": "2026-08-08T01:20:30.831609+00:00",
   "version": 1
 }
