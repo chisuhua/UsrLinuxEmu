@@ -10,9 +10,11 @@
 #include <catch_amalgamated.hpp>
 #include <thread>
 #include <chrono>
+#include <atomic>
 #include "kernel/thread/kernel_workqueue.h"
 #include "hal/gpu_hal.h"
 #include "hal/hal_mock.h"
+#include "hal/hal_user.h"
 #include "sim/sim_event.h"
 
 /* Forward declarations for Agent A's kfd_events.c — resolved at link time */
@@ -94,4 +96,85 @@ TEST_CASE("hal_event_signal zero events mask rejected", "[hal_event][b44]") {
 
   hal_mock_destroy(&state);
   kfd_events_exit();
+}
+
+/* ── MSI-X vector routing tests (ADR-062 §HAL Event Signal) ─────────────── */
+
+static std::atomic<uint32_t> g_called_mask(0);
+
+static void handler_0(uint64_t) { g_called_mask.fetch_or(1u << 0, std::memory_order_relaxed); }
+static void handler_1(uint64_t) { g_called_mask.fetch_or(1u << 1, std::memory_order_relaxed); }
+static void handler_2(uint64_t) { g_called_mask.fetch_or(1u << 2, std::memory_order_relaxed); }
+static void handler_3(uint64_t) { g_called_mask.fetch_or(1u << 3, std::memory_order_relaxed); }
+
+TEST_CASE("user_interrupt_raise dispatches vector-0 handler only", "[hal_event][vector-routing]") {
+  struct gpu_hal_ops hal{};
+  struct hal_user_context ctx{};
+  hal_user_init(&hal, &ctx);
+
+  hal.interrupt_register(hal.ctx, 0, handler_0);
+  hal.interrupt_register(hal.ctx, 1, handler_1);
+  hal.interrupt_register(hal.ctx, 2, handler_2);
+  hal.interrupt_register(hal.ctx, 3, handler_3);
+
+  g_called_mask.store(0, std::memory_order_relaxed);
+  hal_interrupt_raise(&hal, 0);
+
+  REQUIRE(g_called_mask.load(std::memory_order_relaxed) == (1u << 0));
+
+  hal_user_destroy(&ctx);
+}
+
+TEST_CASE("user_interrupt_raise dispatches vector-1 handler only", "[hal_event][vector-routing]") {
+  struct gpu_hal_ops hal{};
+  struct hal_user_context ctx{};
+  hal_user_init(&hal, &ctx);
+
+  hal.interrupt_register(hal.ctx, 0, handler_0);
+  hal.interrupt_register(hal.ctx, 1, handler_1);
+  hal.interrupt_register(hal.ctx, 2, handler_2);
+  hal.interrupt_register(hal.ctx, 3, handler_3);
+
+  g_called_mask.store(0, std::memory_order_relaxed);
+  hal_interrupt_raise(&hal, 1);
+
+  REQUIRE(g_called_mask.load(std::memory_order_relaxed) == (1u << 1));
+
+  hal_user_destroy(&ctx);
+}
+
+TEST_CASE("user_interrupt_raise dispatches vector-2 handler only", "[hal_event][vector-routing]") {
+  struct gpu_hal_ops hal{};
+  struct hal_user_context ctx{};
+  hal_user_init(&hal, &ctx);
+
+  hal.interrupt_register(hal.ctx, 0, handler_0);
+  hal.interrupt_register(hal.ctx, 1, handler_1);
+  hal.interrupt_register(hal.ctx, 2, handler_2);
+  hal.interrupt_register(hal.ctx, 3, handler_3);
+
+  g_called_mask.store(0, std::memory_order_relaxed);
+  hal_interrupt_raise(&hal, 2);
+
+  REQUIRE(g_called_mask.load(std::memory_order_relaxed) == (1u << 2));
+
+  hal_user_destroy(&ctx);
+}
+
+TEST_CASE("user_interrupt_raise dispatches vector-3 handler only", "[hal_event][vector-routing]") {
+  struct gpu_hal_ops hal{};
+  struct hal_user_context ctx{};
+  hal_user_init(&hal, &ctx);
+
+  hal.interrupt_register(hal.ctx, 0, handler_0);
+  hal.interrupt_register(hal.ctx, 1, handler_1);
+  hal.interrupt_register(hal.ctx, 2, handler_2);
+  hal.interrupt_register(hal.ctx, 3, handler_3);
+
+  g_called_mask.store(0, std::memory_order_relaxed);
+  hal_interrupt_raise(&hal, 3);
+
+  REQUIRE(g_called_mask.load(std::memory_order_relaxed) == (1u << 3));
+
+  hal_user_destroy(&ctx);
 }
