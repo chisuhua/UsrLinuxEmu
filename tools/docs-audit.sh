@@ -22,6 +22,7 @@
 #   stage2     Stage 2 multi-device plugin path existence (net_driver + storage_driver)
 #   doxygen    Doxygen API doc generation (docs/Doxyfile → docs/api/, exit code check)
 #   version-ssot Version SSOT consistency (CMake VERSION vs README badge/footer)
+#   cross-ref  Roadmap/ADR cross-reference (roadmap 152 stale ref, adr-076 §R3/status, approved 5-col)
 #
 # Exit codes:
 #   0 - All checks passed (or only warnings in non-strict mode)
@@ -65,6 +66,7 @@ RUN_SYNC=0
 RUN_STAGE2=0
 RUN_DOXYGEN=0
 RUN_VERSION_SSOT=0
+RUN_CROSS_REF=0
 
 # ---------------------------------------------------------------------------
 # Output helpers
@@ -166,7 +168,7 @@ parse_args() {
 
     case "${RUN_SECTION}" in
         all)
-            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1; RUN_SYNC=1; RUN_STAGE2=1; RUN_DOXYGEN=1; RUN_VERSION_SSOT=1
+            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1; RUN_SYNC=1; RUN_STAGE2=1; RUN_DOXYGEN=1; RUN_VERSION_SSOT=1; RUN_CROSS_REF=1
             ;;
         arch)       RUN_ARCH=1 ;;
         ioctl)      RUN_IOCTL=1 ;;
@@ -176,9 +178,10 @@ parse_args() {
         sync)       RUN_SYNC=1 ;;
         doxygen)    RUN_DOXYGEN=1 ;;
         version-ssot) RUN_VERSION_SSOT=1 ;;
+        cross-ref)  RUN_CROSS_REF=1 ;;
         *)
             echo "ERROR: unknown section: ${RUN_SECTION}" >&2
-            echo "Valid sections: all, arch, ioctl, adr, doc-health, build, sync, stage2, doxygen, version-ssot" >&2
+            echo "Valid sections: all, arch, ioctl, adr, doc-health, build, sync, stage2, doxygen, version-ssot, cross-ref" >&2
             exit 2
             ;;
     esac
@@ -876,6 +879,7 @@ main() {
     [ "${RUN_STAGE2}" -eq 1 ] && section_stage2
     [ "${RUN_DOXYGEN}" -eq 1 ] && section_doxygen
     [ "${RUN_VERSION_SSOT}" -eq 1 ] && section_version_ssot
+    [ "${RUN_CROSS_REF}" -eq 1 ] && section_cross_ref
 
     print_summary
     exit "${EXIT_CODE}"
@@ -931,6 +935,55 @@ section_doxygen() {
     # Doxygen not installed — not a failure in non-strict; warn in strict
     check_warn "Doxygen not installed (install: apt install doxygen)"
   fi
+}
+
+# ---------------------------------------------------------------------------
+# Section 10: Roadmap/ADR cross-reference checks
+# (added 2026-08-10 by 2026-08-10-roadmap-unified-index; guards 4 doc
+# inconsistencies found during the roadmap Unified Index design review)
+# ---------------------------------------------------------------------------
+
+section_cross_ref() {
+    section "10. Roadmap/ADR Cross-Reference Checks"
+
+    subsection "10.1 roadmap.md has no stale '5 个新增 entry' reference"
+    if grep -nE "5 个新增 entry" "${REPO_ROOT}/roadmap.md" 2>/dev/null; then
+        check_fail "roadmap.md:152 contains stale '5 个新增 entry' reference"
+    else
+        check_pass "roadmap.md has no stale '5 个新增 entry' reference"
+    fi
+
+    subsection "10.2 adr-076 uses the current §R5.1 cross-repo reference"
+    local adr076="${REPO_ROOT}/docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md"
+    if grep -nE "ADR-035 §R3 cross-repo" "${adr076}" 2>/dev/null; then
+        check_fail "adr-076 still references non-existent 'ADR-035 §R3 cross-repo 协议' (use §R5.1 instead)"
+    else
+        check_pass "adr-076 does not reference the non-existent ADR-035 §R3 cross-repo protocol"
+    fi
+
+    subsection "10.3 adr-076 status uses the canonical Proposed symbol"
+    if grep -nE "📋 PROPOSED" "${adr076}" 2>/dev/null; then
+        check_fail "adr-076 status uses 📋 PROPOSED, must use 🔄 Proposed per adr-035 §R2.1"
+    else
+        check_pass "adr-076 status does not use the stale 📋 PROPOSED symbol"
+    fi
+
+    subsection "10.4 proposal-approved.md table rows have exactly 5 columns"
+    local approved="${REPO_ROOT}/proposal-approved.md"
+    local bad_rows=""
+    local row
+    while IFS= read -r row; do
+        [ -z "${row}" ] && continue
+        if [ "$(printf '%s\n' "${row}" | awk -F'|' '{print NF-2}')" -ne 5 ]; then
+            bad_rows="${bad_rows}${row}\n"
+        fi
+    done < <(grep -E '^\| .* \|' "${approved}" 2>/dev/null || true)
+    if [ -n "${bad_rows}" ]; then
+        check_fail "proposal-approved.md has table rows with != 5 columns:"
+        printf '%b' "${bad_rows}" | sed 's/^/      /'
+    else
+        check_pass "proposal-approved.md header and body rows have exactly 5 columns"
+    fi
 }
 
 main "$@"
