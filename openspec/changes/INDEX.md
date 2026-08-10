@@ -1,9 +1,17 @@
 # Active Changes Index
 
-> **更新**: 2026-08-04
+> **更新**: 2026-08-10
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: **0 个活跃 change** + 92 个已完成/已归档（截至 2026-08-04；4 个 Stage 4 closeout + 1 B-class foundation + 3 B-class removals (fence-id, method-codec, hal-user) + **Phase 2 foundation**（27 fn-ptrs + wrappers + lambdas + mocks, 5 sim headers）都已 ship + archive；**Phase 1 B-class L2 fix COMPLETE**：L2 violations 12 → 8；**Phase 2 HAL foundation** ✅：27 fn-ptrs 预备就绪，等待 5 removal changes 逐步清理）
-> **Source**: 2026-08-04 INDEX 同步 — rebuild archive table from `openspec/changes/archive/`（92 dirs）+ 0 active changes
+> **总数**: **0 个活跃 change** + 93 个已完成/已归档（截至 2026-08-10）
+> **Source**: 2026-08-10 INDEX 同步 — 新增 2026-08-10-roadmap-unified-index 归档登记
+
+---
+
+## ✅ 2026-08-10 归档 (Roadmap Unified Index, 1 change)
+
+| 归档 | 摘要 | 状态 |
+|------|------|------|
+| `2026-08-10-roadmap-unified-index` | roadmap.md 升级 Unified Index（派生建议 / 跨仓评审中 ADRs / 在途 + 已归档 changes 段）+ stage-0~5 docs 4 象限模板 + 4 inconsistencies 修复（A roadmap:152 假引用 / B proposal-approved B 事故追溯 / C adr-076 7 处 §R3→§R5.1 / D 状态符号 📋→🔄）+ ci-docs-audit 4 项新检查（10.1-10.4）| ✅ archived |
 
 ---
 

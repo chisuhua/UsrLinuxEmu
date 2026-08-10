@@ -6,3 +6,4 @@
 
 | 提案 | 优先级 | 来源 | 状态 | 添加时间 |
 |------|--------|------|------|----------|
+| [2026-08-10-roadmap-unified-index](improvements/2026-08-10-roadmap-unified-index.md) | P1 | spec:2026-08-10-roadmap-driven-workflow-design | 🔄 Proposed | 2026-08-10 |

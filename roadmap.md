@@ -7,7 +7,7 @@
 > **性质**: 架构层叙事，描述从当前 MVP 到终态蓝图的演进路径
 > **不绑定**: 本路线图不引用具体 OpenSpec change 编号。后续 OpenSpec change 根据本路线图派生
 > **同步关系**: 与 `docs/sync-plan.md` 互补（sync-plan 负责跨仓同步点，本路线图负责架构演进阶段）
-> **最后更新**: 2026-08-07（Stage 4.7 B-class L2 Phase 2 全部 ship：foundation ✅ + 5 个 removal 已归档 2026-08-04~05）
+> **最后更新**: 2026-08-10（Unified Index 升级：新增 派生建议 / 跨仓评审中 ADRs / 已归档 changes 段；152 行假引用修复）
 > **维护者**: UsrLinuxEmu Architecture Team
 
 ---
@@ -74,6 +74,27 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 
 ---
 
+## 派生建议
+
+> 基于 ADR trigger conditions 列出可派发的 candidate improvements。读者读 roadmap 时可一眼看到"哪些 ADR 触发后可派发哪些 improvement"。具体派发由 `add-improve` skill 引导。
+
+| ADR | Trigger 条件 | 候选 improvement | 状态 |
+|-----|--------------|------------------|------|
+| [ADR-049](docs/00_adr/adr-049-cross-engine-synchronization.md) | Phase 6+ multi-engine Puller 真实并行 | add-multi-engine-puller-real-parallel | ⏸️ trigger 未满足 |
+| [ADR-052](docs/00_adr/adr-052-aql-pm4-native-support.md) | Phase 6.5 PM4 microcode 解析完整实现 | implement-pm4-microcode-full | ⏸️ trigger 未满足 |
+| [ADR-023](docs/00_adr/adr-023-hal-interface.md) §D4 | 4.7.3 spec 同步：65 fn-ptrs 列入 ADR 表格（取代旧 46 数字） | sync-adr-023-hal-fnp-tr-table | ✅ 可派发（Stage 4 follow-up） |
+| — | L2 残余 `sim/sim_event.h` 清理（独立 proposal，不在 Stage 4 范围） | cleanup-sim-event-h-l2-residual | ✅ 可派发（独立 proposal） |
+
+## 跨仓评审中 ADRs
+
+> 待 owner + consumer 双评审的 cross-repo consumer-side ADR 临时占位段。ADR 升 Accepted 后：从本段移除 + 加入对应 stage-X doc 4 象限"对应 ADRs"表 + 创建 improvement + 加入 proposal-suggestions.md。
+
+| ADR | 标题 | 状态 | 评审方 | 链接 |
+|-----|------|------|--------|------|
+| adr-076 | GPGPU Kernel Module IOCTL（HAL Extension for PTX-EMU Image Executor 集成） | 🔄 Proposed | UsrLinuxEmu owner + TaskRunner owner | [adr-076](docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md) |
+
+---
+
 ## Stage 5 触发条件（占位文档）
 
 Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时启动。当前各 deferred 触发详见：
@@ -108,11 +129,23 @@ Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时�
 ## 当前活跃 Changes
 
 > **来源**: [openspec/changes/INDEX.md](openspec/changes/INDEX.md)
-> **状态**: 截至 2026-08-07 — **0 个活跃 change** + 92+ 个已完成/已归档（Stage 4.7.2 5 个 removal 已 ship）
+> **状态**: 截至 2026-08-10 — **1 个活跃 change**（self-referential roadmap 改造）+ 92+ 个已完成/已归档
 
 | Change | 优先级 | 规模 | 当前进度 | 描述 |
 |--------|--------|------|---------|------|
-| (无活跃 change) | — | — | — | 92+ 个 change 已 ship + archive；Stage 4.7.2 5 个 removal 已 ship + 归档（graph/mem_pool/stream_capture/gpu_queue_emu/hardware_puller_emu，2026-08-04~05） |
+| [2026-08-10-roadmap-unified-index](openspec/changes/2026-08-10-roadmap-unified-index/) | P1 | 中 | 实施中 | Roadmap Unified Index 升级 + 4 inconsistencies 修复（self-referential rdd-workflow 示范） |
+
+### 已归档 OpenSpec changes（最近 5 个）
+
+| Change | 归档日期 | 主题 |
+|--------|----------|------|
+| [2026-08-08-implement-pm4-microcode-parsing](openspec/changes/archive/2026-08-08-implement-pm4-microcode-parsing/) | 2026-08-08 | PM4 microcode 解析（替换 FORMAT_PM4 stub） |
+| [2026-08-08-implement-multiprocess-phase1-isolation](openspec/changes/archive/2026-08-08-implement-multiprocess-phase1-isolation/) | 2026-08-08 | 多进程隔离 Phase 1（registry + context skeleton） |
+| [2026-08-08-complete-msi-x-vector-routing](openspec/changes/archive/2026-08-08-complete-msi-x-vector-routing/) | 2026-08-08 | MSI-X vector routing（per-vector handler dispatch） |
+| [2026-08-08-complete-mmu-notifier-callback](openspec/changes/archive/2026-08-08-complete-mmu-notifier-callback/) | 2026-08-08 | mmu_notifier callback 集成（per-domain notifier list） |
+| [2026-08-08-complete-event-page-writeback](openspec/changes/archive/2026-08-08-complete-event-page-writeback/) | 2026-08-08 | event page writeback（per-process 4KB event pages） |
+
+> 完整归档列表：见 [openspec/changes/archive/](openspec/changes/archive/)。重新生成 top-5：`for d in $(ls openspec/changes/archive/); do echo "$(git log -1 --format=%cs -- openspec/changes/archive/$d) $d"; done | sort -r | head -5`
 
 ### 近期里程碑（2026-07）
 
@@ -149,7 +182,7 @@ Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时�
 >
 > **Trigger-gated**: Stage 5 (multi-engine + PM4 microcode) 等待 ADR-049/052 Phase 6+ 触发。
 >
-> **已批准改进提案**: 见 [proposal-suggestions.md](proposal-suggestions.md)（含 5 个新增 entry: 2026-08-04 提交）
+> **改进提案入口**: 见 [proposal-suggestions.md](proposal-suggestions.md)（待审批）/ [proposal-approved.md](proposal-approved.md)（已批准）/ [openspec/changes/INDEX.md](openspec/changes/INDEX.md)（在途 changes）
 
 ```
 1. Stage 3.4 文档完善 (Doxygen API 参考 + docs-audit 持续 PASS)

@@ -135,6 +135,30 @@
 
 ---
 
+## 4 象限
+
+### 象限 1: 对应 ADRs
+
+见上文 [涉及 ADR](#涉及-adr)（v1.0 稳定阶段，关联 [ADR-065](../00_adr/adr-065-version-policy.md) 版本策略等）。
+
+### 象限 2: 活跃 improvements (待派发)
+
+无（Stage 3 已达成；新候选统一挂 [roadmap 派生建议](../../roadmap.md#派生建议)）。
+
+### 象限 3: 在途 changes
+
+无。
+
+> 数据源：[openspec/changes/INDEX.md](../../openspec/changes/INDEX.md)
+
+### 象限 4: 已归档 changes
+
+v1.0 发布相关归档（`v1-0-release-prep` / `version-policy-adr` 等）见 [openspec/changes/archive/](../../openspec/changes/archive/)。
+
+## 触发条件
+
+✅ 已达成（2026-07-23：CUDA E2E ✅、sanitizer ✅、bridge ✅、perf ✅、errno 审计 ✅、文档 ✅、CI ubuntu ✅、Release ✅）。
+
 ## 当前进展（2026-07-21）
 
 **Stage 3 进行中**：

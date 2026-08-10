@@ -78,6 +78,30 @@
 
 ---
 
+## 4 象限
+
+### 象限 1: 对应 ADRs
+
+见上文 [涉及 ADR（核心决策）](#涉及-adr核心决策)（ADR-001~009 核心架构决策，全部 ✅ Accepted）。
+
+### 象限 2: 活跃 improvements (待派发)
+
+无（Stage 0 已达成；新候选统一挂 [roadmap 派生建议](../../roadmap.md#派生建议)）。
+
+### 象限 3: 在途 changes
+
+无。
+
+> 数据源：[openspec/changes/INDEX.md](../../openspec/changes/INDEX.md)
+
+### 象限 4: 已归档 changes
+
+早期 change 归档（pre-Stage-1）见 [openspec/changes/archive/](../../openspec/changes/archive/)。
+
+## 触发条件
+
+无（初始 MVP 阶段）— ✅ 已达成。
+
 ## 下一步
 
 进入 [阶段 1: Linux 内核环境模拟](stage-1-kernel-emu.md)

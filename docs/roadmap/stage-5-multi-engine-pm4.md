@@ -76,6 +76,46 @@ Stage 5 占位文档不涵盖以下内容：
 
 **本占位文档不授权 Stage 5 实现，不表示 Stage 5 已启动，也不构成实现计划。** 在 ADR-049/ADR-052 触发条件满足、证据记录完成并经过单独设计与变更审批前，Stage 5 仅保持 `📋 规划中（trigger-gated）` 状态。
 
+## Cross-Repo 集成评审中
+
+| ADR | 标题 | 状态 | 备注 |
+|-----|------|------|------|
+| adr-076 | GPGPU Kernel Module IOCTL（PTX-EMU Image Executor HAL Backend） | 🔄 Proposed | **不属本 stage scope**（属 cross-repo 集成；命名仅因 adr-076 建议 change 名 `stage5-ptxemu-...` 临时撞 scope） |
+
+> **scope 说明**：Stage 5 严格限定为 ADR-049 Phase 6+ / ADR-052 Phase 6.5 触发的 multi-engine Puller + PM4 microcode 解析工作。cross-repo 集成（如 adr-076 PTX-EMU HAL backend）**不属本 stage**，挂在 [roadmap "跨仓评审中 ADRs"](../../roadmap.md#跨仓评审中-adrs) 段单独跟踪。
+
+## 4 象限
+
+### 象限 1: 对应 ADRs
+
+| ADR | 标题 | 状态 | 触发阶段 |
+|-----|------|------|----------|
+| [ADR-049](../00_adr/adr-049-cross-engine-synchronization.md) | 跨引擎同步 | ✅ Accepted（Phase 6+ 待触发） | Stage 5 |
+| [ADR-052](../00_adr/adr-052-aql-pm4-native-support.md) | AQL / PM4 Native 支持 | ✅ Accepted（Phase 6.5 待触发） | Stage 5 |
+
+### 象限 2: 活跃 improvements (待派发)
+
+| Improvement | 来源 | 优先级 | 状态 |
+|-------------|------|--------|------|
+| add-multi-engine-puller-real-parallel | [roadmap 派生建议](../../roadmap.md#派生建议)（ADR-049 Phase 6+） | — | ⏸️ trigger 未满足 |
+| implement-pm4-microcode-full | [roadmap 派生建议](../../roadmap.md#派生建议)（ADR-052 Phase 6.5） | — | ⏸️ trigger 未满足 |
+
+> 数据源：[proposal-suggestions.md](../../proposal-suggestions.md)
+
+### 象限 3: 在途 changes
+
+无（Stage 5 未启动；本占位文档不授权实现）。
+
+> 数据源：[openspec/changes/INDEX.md](../../openspec/changes/INDEX.md)
+
+### 象限 4: 已归档 changes
+
+无（Stage 5 未启动）。Stage 4 及更早的归档见 [openspec/changes/archive/](../../openspec/changes/archive/)。
+
+## 触发条件
+
+见上文 [进入条件](#进入条件)（ADR-049 Phase 6+ / ADR-052 Phase 6.5；满足前不得将 Stage 5 标记为 started）。
+
 ## 关联文档
 
 - [ADR-049：跨引擎同步](../00_adr/adr-049-cross-engine-synchronization.md)
