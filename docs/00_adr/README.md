@@ -80,7 +80,10 @@
 | [adr-073](adr-073-dma-coherent-emulation.md) | **DMA 一致性内存仿真架构**（独立 DMA 地址空间 + coherent/streaming 语义分离；依赖 ADR-069, ADR-064 条件 2/3）| ✅ Accepted | 2026-07-25 |
 | [adr-074](adr-074-archive-tasks-md-checkbox-hygiene.md) | **Archive Tasks.md Checkbox Hygiene Policy**（归档 checkbox 可同步以反映实施状态，与"archive spec 不修改"正交）| ✅ Accepted | 2026-07-31 |
 | [adr-075](adr-075-stage4-7-bclass-l2-foundation-removal.md) | **Stage 4.7 B-class L2 Foundation Removal 回顾记录**（1+N 模式：5 项移除 proposal 全部 ship + 归档；HAL 11→33→65 append-only；回顾性 ADR，不替代 ADR-023/072）| ✅ Accepted | 2026-08-07 |
+| [adr-076](adr-076-gpgpu-kernel-module-ioctl.md) | **GPGPU Kernel Module IOCTL（PTX-EMU Image Executor HAL Backend）**（HAL 65→68 fn-ptrs append-only + GPU_IOCTL_LOAD/LAUNCH/UNLOAD_KERNEL_MODULE 0x27/0x28/0x29 + `hal_user.cpp` dlsym `libptxemu_device.so`；canonical source for PTX-EMU ADR-0029 §D8 跨仓协作；TaskRunner tadr-307 consumer-side 对偶）| 🔄 Proposed | 2026-08-09 |
 
+> **2026-08-09 变更（ADR-076 跨仓协作契约）**：ADR-076 创建 — PTX-EMU ADR-0029 §D8 跨仓评审修订触发的 UsrLinuxEmu canonical ADR：3 个新 System C ioctl（0x27/0x28/0x29）+ 3 个新 HAL fn-ptrs（#66/#67/#68 append-only）+ `hal_user.cpp` dlsym `libptxemu_device.so` + 跨仓 commit 顺序协议（canonical in §Migration）。TaskRunner [tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) 作为 consumer-side 对偶文档。状态分布：Accepted 58，PROPOSED 4→**5**，总计 70→**71**。
+>
 > **2026-08-07 变更（ADR-075 回顾记录）**：ADR-075 创建 — 回顾性记录 Stage 4.7 B-class L2 Foundation 5 项移除 proposal（gpu_queue_emu / graph / hardware_puller_emu / mem_pool / stream_capture）全部 ship + 归档的事实；明确此 ADR 不替代 ADR-023（HAL 契约）+ ADR-072（可移植性验证）的治理边界。状态分布：Accepted 57→**58**，总计 69→**70**。
 >
 > **2026-07-14 变更（C-12 命名修复 + HAL ops ADR 创建）**：ADR-061 + ADR-062 创建 — 原 tasks.md B.3.4.5 误用 `adr-060` 编号，与 `Linux 内核消息通知线程架构` 冲突。已修正：
@@ -91,14 +94,16 @@
 > 
 > **2026-07-15 变更**：ADR-061（HAL IOMMU ops 扩展）+ ADR-062（HAL Event Signal ops 扩展）状态升 ✅ Accepted。fn-ptrs 已 commit 到 `struct gpu_hal_ops`（11→14），hal_user/hal_mock stub 实现已落地。C-12 Phase A.2 hard gate CLEARED；Phase B 可启动。
 
-## 状态分布总览（截至 2026-08-07）
+## 状态分布总览（截至 2026-08-09）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
 | ✅ 已接受 | 58 | 001-010, 015-024, 027, 031-052, 054, 056-075（外加 058）|
-| 🔄 提议中 | 4 | 011-014 |
+| 🔄 提议中 | 5 | 011-014, **076** |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
-| **总计** | **70** | ADR-001 ~ ADR-075（含跳号 066/067/068/070/071） |
+| **总计** | **71** | ADR-001 ~ ADR-076（含跳号 066/067/068/070/071） |
+
+> **2026-08-09 修订（ADR-076）**：ADR-076（GPGPU Kernel Module IOCTL — PTX-EMU Image Executor HAL Backend）状态 🔄 Proposed。canonical source for PTX-EMU ADR-0029 §D8 跨仓协作；TaskRunner [tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) consumer-side 对偶。状态分布：PROPOSED 4→**5**，总计 70→**71**。HAL append-only 治理（ADR-023 §D4）继续生效，HAL 65→68 fn-ptrs（追加 kernel_module_load/execute/unload）。
 
 > **2026-08-07 修订（ADR-075）**：ADR-075（Stage 4.7 B-class L2 Foundation Removal 回顾记录）状态升 ✅ Accepted。1+N 模式：1 个回顾性 ADR + 5 个已归档移除 proposal（gpu_queue_emu / graph / hardware_puller_emu / mem_pool / stream_capture）。状态分布：Accepted 57→**58**，PROPOSED 保持 4。HAL append-only 治理（ADR-023 §D4）继续生效，HAL 64 fn-ptrs + 1 helper = 65 total callable entries 维持。
 >
@@ -318,7 +323,7 @@ adr-001 (用户态模拟)
 
 ---
 
-**最后更新**: 2026-08-07（ADR-075 Stage 4.7 B-class L2 Foundation Removal 回顾记录加入；状态分布 58/4/7，总计 70）
+**最后更新**: 2026-08-09（ADR-076 GPGPU Kernel Module IOCTL — PTX-EMU Image Executor HAL Backend 跨仓协作契约 canonical source；状态分布 58/5/7，总计 71）
 
 ## 编号 gap 治理（2026-06-16 → 2026-06-17）
 
@@ -415,6 +420,7 @@ TaskRunner 独立 ADR 体系（`TADR-NNN` 编号），与本仓 ADR-NNN 区分�
 | [tadr-303](../external/TaskRunner/docs/shared/adr/tadr-303-error-handling.md) | Error Handling 基础 (H-5 新增, Result\<T\> + ErrorCode) | — |
 | [tadr-304](../external/TaskRunner/docs/shared/adr/tadr-304-error-handling-strategy.md) | Error Handling 策略层 (H-5.1 新增, Linux errno 语义, 扩展自 tadr-303) | tadr-303 |
 | [tadr-305](../external/TaskRunner/docs/shared/adr/tadr-305-mempool-export-shareable.md) | IGpuDriver::memPoolExportShareable 契约 (Phase 4 新增 47 方法) | tadr-301, [ADR-039](adr-039-mem-pool-export-ioctl.md) |
+| [tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) | **IGpuDriver Kernel Module Extension**（PTX-EMU Image Executor HAL Backend 集成；新增 3 个纯虚方法 #48-#50 load/launch/unload_kernel_module + cu_module.cpp::cuModuleLoadData 替换 NOT_IMPLEMENTED + cu_launch.cpp fast-path；consumer-side 对偶 UsrLinuxEmu [adr-076](adr-076-gpgpu-kernel-module-ioctl.md)）| tadr-301, [adr-076](adr-076-gpgpu-kernel-module-ioctl.md), PTX-EMU ADR-0029 §D8 |
 
 #### 向后兼容 redirect 文件（DEPRECATED）
 
