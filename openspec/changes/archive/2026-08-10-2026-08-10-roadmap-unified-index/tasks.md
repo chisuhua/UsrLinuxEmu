@@ -14,4 +14,4 @@
 - [x] Task 9: proposal-approved fix + B trace
 - [x] Task 10: adr-076 C+D fixes
 - [x] Task 11: Final verification (4 audits + 98 binaries)
-- [ ] Task 12: Archive change
+- [x] Task 12: Archive change
