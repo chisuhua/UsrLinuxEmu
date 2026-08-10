@@ -41,6 +41,8 @@ Each file `docs/roadmap/stage-{0,1,2,3,4,5}-*.md` SHALL follow a 4-quadrant temp
 
 ### Requirement: Inconsistency Fixes
 
+The 4 pre-existing documentation inconsistencies (A: roadmap.md:152 stale reference, B: proposal-approved.md mis-marked stage-5 items, C: adr-076 §R3 mis-references, D: adr-076 status symbol) SHALL be corrected such that the 4 corresponding `docs-audit.sh --section cross-ref` checks pass.
+
 #### Scenario: roadmap.md:152 REPLACE applied
 
 - **WHEN** `roadmap.md` is read
