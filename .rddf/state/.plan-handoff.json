@@ -1,13 +1,28 @@
 {
-  "plan_complete_at": "2026-08-07T14:11:46.203929+00:00",
-  "active_changes": 4,
+  "plan_complete_at": "2026-08-10T09:34:09.391191+00:00",
+  "active_changes": 0,
   "all_artifacts_committed": true,
-  "ship_started_at": "2026-08-08T15:15:50.236532+00:00",
-  "current_change": "add-multi-engine-puller-instances",
+  "ship_started_at": null,
+  "current_change": "",
   "execution_mode_decisions": {},
-  "archived_at": "2026-08-08T15:40:17.605391+00:00",
+  "cycle_type": "recovery-no-new-work",
+  "cycle_summary": "No new proposals to process. 11/11 approved proposals already implemented and archived. 2026-08-10-roadmap-unified-index already shipped via separate cycle (commit 1c5c06c merge, 526c927 archive). Cleaned up untracked plan-side skeleton dir + iteration.json stale planned state.",
+  "archived_at": "2026-08-10T09:34:09+00:00",
   "archived_changes": [
-    "add-multi-engine-puller-instances",
-    "implement-pm4-microcode-parsing"
-  ]
+    "2026-08-10-roadmap-unified-index"
+  ],
+  "proposals_swept": {
+    "total": 11,
+    "all_implemented": true,
+    "source": "sweep_implemented_proposals at plan_intake"
+  },
+  "previous_handoff": {
+    "plan_complete_at": "2026-08-07T14:11:46.203929+00:00",
+    "archived_at": "2026-08-08T15:40:17.605391+00:00",
+    "archived_changes": [
+      "add-multi-engine-puller-instances",
+      "implement-pm4-microcode-parsing"
+    ],
+    "note": "previous cycle was last successful plan-done before this recovery"
+  }
 }

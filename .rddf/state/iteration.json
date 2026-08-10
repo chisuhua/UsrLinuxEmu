@@ -305,6 +305,18 @@
       "archive_commit_sha": "32b063c1c5753ba375b5f70f641f55c00b7c0402",
       "tasks_done": 13,
       "plan_path": ".rddf/plans/implement-pm4-microcode-parsing.md"
+    },
+    {
+      "name": "2026-08-10-roadmap-unified-index",
+      "status": "archived",
+      "phase": "default",
+      "category": "general",
+      "added_at": "2026-08-10T15:56:59+0800",
+      "archived_at": "2026-08-10T15:40:17+00:00",
+      "last_deps_at": "2026-08-10T15:56:59+0800",
+      "archived_via": "manual-cycle-bypassing-plan-done",
+      "archive_commit": "526c927",
+      "notes": "Implemented via separate cycle (feat/roadmap-unified-index branch), merged 1c5c06c, archived 526c927. plan-side skeleton dir cleaned up 2026-08-10."
     }
   ],
   "updated_at": "2026-08-09T00:04:59+00:00"

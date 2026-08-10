@@ -6,21 +6,23 @@
 
 | 提案 | 优先级 | 来源 | 批准日期 | 批准人 |
 |------|--------|------|----------|--------|
-| [fix-hal-user-missing-interrupt-wiring](improvements/fix-hal-user-missing-interrupt-wiring.md) | P0 | guide-arch 架构评审 | 2026-08-05 | guide-arch |
-| [implement-hal-preempt-resume-semaphore](improvements/implement-hal-preempt-resume-semaphore.md) | P1 | guide-arch 架构评审 | 2026-08-05 | guide-arch |
-| [implement-hal-green-context-and-pdl](improvements/implement-hal-green-context-and-pdl.md) | P1 | guide-arch 架构评审 | 2026-08-05 | guide-arch |
-| [complete-hal-mem-map-bo](improvements/complete-hal-mem-map-bo.md) | P2 | guide-arch 架构评审 | 2026-08-05 | guide-arch |
-| [fix-hal-interrupt-vector-dispatch](improvements/fix-hal-interrupt-vector-dispatch.md) | P2 | guide-arch 架构评审 | 2026-08-05 | guide-arch |
-| [add-hal-puller-set-puller-nested-wiring](improvements/add-hal-puller-set-puller-nested-wiring.md) | P2 | guide-arch 架构评审 | 2026-08-05 | guide-arch |
-| [complete-event-page-writeback](improvements/complete-event-page-writeback.md) | P1 | guide-arch 架构评审 | 2026-08-07 | guide-arch |
-| [complete-mmu-notifier-callback](improvements/complete-mmu-notifier-callback.md) | P2 | guide-arch 架构评审 | 2026-08-07 | guide-arch |
-| [complete-msi-x-vector-routing](improvements/complete-msi-x-vector-routing.md) | P1 | guide-arch 架构评审 | 2026-08-07 | guide-arch |
-| [implement-multiprocess-phase1-isolation](improvements/implement-multiprocess-phase1-isolation.md) | P2 | guide-arch 架构评审 | 2026-08-07 | guide-arch |
 
+| [2026-08-10-roadmap-unified-index](improvements/2026-08-10-roadmap-unified-index.md) | P1 | spec:2026-08-10-roadmap-driven-workflow-design | 2026-08-10 | guide-design |
 ## 已实施
 
 | 提案 | 优先级 | 来源 | 批准日期 | 批准人 |
 |------|--------|------|----------|--------|
+| [implement-multiprocess-phase1-isolation](improvements/implement-multiprocess-phase1-isolation.md) | P2 | 2026-08-10 |
+| [complete-msi-x-vector-routing](improvements/complete-msi-x-vector-routing.md) | P1 | 2026-08-10 |
+| [complete-mmu-notifier-callback](improvements/complete-mmu-notifier-callback.md) | P2 | 2026-08-10 |
+| [complete-event-page-writeback](improvements/complete-event-page-writeback.md) | P1 | 2026-08-10 |
+| [add-hal-puller-set-puller-nested-wiring](improvements/add-hal-puller-set-puller-nested-wiring.md) | P2 | 2026-08-10 |
+| [fix-hal-interrupt-vector-dispatch](improvements/fix-hal-interrupt-vector-dispatch.md) | P2 | 2026-08-10 |
+| [complete-hal-mem-map-bo](improvements/complete-hal-mem-map-bo.md) | P2 | 2026-08-10 |
+| [implement-hal-green-context-and-pdl](improvements/implement-hal-green-context-and-pdl.md) | P1 | 2026-08-10 |
+| [implement-hal-preempt-resume-semaphore](improvements/implement-hal-preempt-resume-semaphore.md) | P1 | 2026-08-10 |
+| [fix-hal-user-missing-interrupt-wiring](improvements/fix-hal-user-missing-interrupt-wiring.md) | P0 | 2026-08-10 |
+| [2026-08-10-roadmap-unified-index](improvements/2026-08-10-roadmap-unified-index.md) | P1 | 2026-08-10 |
 | [implement-pm4-microcode-parsing](improvements/implement-pm4-microcode-parsing.md) | P1 | ADR-052 Phase 6.5（见文末追溯） | 2026-08-08 | guide-arch |
 | [add-multi-engine-puller-instances](improvements/add-multi-engine-puller-instances.md) | P1 | stage-4 gap 分析（见文末追溯） | 2026-08-08 | guide-arch |
 | [stage4-5-cp-phase6-preemption-engine-finish](improvements/stage4-5-cp-phase6-preemption-engine-finish.md) | P1 | stage-4.5 蓝图 | 2026-07-30 | guide-arch |
