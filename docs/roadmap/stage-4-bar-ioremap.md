@@ -46,6 +46,51 @@ ADR-064 Decision 3 定义了 Stage 4 启动的 5 个触发条件。同时，ADR-
 
 ---
 
+## 4 象限
+
+### 象限 1: 对应 ADRs
+
+| ADR | 标题 | 状态 | 触发子阶段 |
+|-----|------|------|-----------|
+| [ADR-064](../00_adr/adr-064-memory-model-staging.md) | GPU 内存模型保真度分阶段策略 | ✅ Accepted | Stage 4 触发源 |
+| [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md) | 真实 PCIe BAR + ioremap 仿真架构 | ✅ Accepted | 4.1 |
+| [ADR-072](../00_adr/adr-072-portability-validation.md) | 驱动代码可移植性验证框架 | ✅ Accepted | 4.1 / 4.7 |
+| [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md) | DMA 一致性内存仿真架构 | ✅ Accepted | 4.1 |
+| ADR-040/041/043/058 | Puller fence + Graph→GPFIFO + CP 边界 + mem_pool Real VA | ✅ Accepted | 4.2 |
+| ADR-042/044/048/054/057 | Method encoding + HyperQueue + 中断 + MQD/HQD + Profiling | ✅ Accepted | 4.3 |
+| ADR-045/047/050 | 优先级 + Semaphore/Barrier + Indirect Buffer | ✅ Accepted | 4.4 |
+| ADR-046/049/051/052 | Preemption + Cross-engine + Predication + AQL/PM4 | ✅ Accepted | 4.5 |
+| ADR-056 | Green Context/PDL | ✅ Accepted | 4.6 |
+| [ADR-023](../00_adr/adr-023-hal-interface.md) §D4 | HAL append-only 扩展治理 | ✅ Accepted | 4.7 |
+| [ADR-075](../00_adr/adr-075-stage4-7-bclass-l2-foundation-removal.md) | Stage 4.7 B-class L2 Foundation Removal 回顾记录 | ✅ Accepted | 4.7 回顾 |
+
+### 象限 2: 活跃 improvements (待派发)
+
+| Improvement | 来源 | 优先级 | 状态 |
+|-------------|------|--------|------|
+| sync-adr-023-hal-fnp-tr-table | 4.7.3 follow-up（[roadmap 派生建议](../../roadmap.md#派生建议)） | P2 | ✅ 可派发 |
+| cleanup-sim-event-h-l2-residual | 4.7.3 follow-up（独立 proposal，不在 Stage 4 范围） | P2 | ✅ 可派发 |
+
+> 数据源：[proposal-suggestions.md](../../proposal-suggestions.md)
+
+### 象限 3: 在途 changes
+
+无（stage-4 范围已全部 ship + 归档）。
+
+> 数据源：[openspec/changes/INDEX.md](../../openspec/changes/INDEX.md)
+
+### 象限 4: 已归档 changes
+
+见本文末尾 [已归档 Changes 汇总](#已归档-changes-汇总)（按子阶段分组维护，不重列）。
+
+> 数据源：[openspec/changes/archive/](../../openspec/changes/archive/)
+
+## 触发条件
+
+- [ADR-064](../00_adr/adr-064-memory-model-staging.md) §"Stage 4 触发条件" — ✅ 已触发并完成（2026-07-26 ~ 2026-08-05 全部 ship + 归档）
+
+---
+
 ## 子阶段 4.1 — 真实 BAR + ioremap 模拟
 
 **目标**: 从简化堆模型升级到真实 PCIe BAR 模拟，使驱动代码可以使用 `ioremap`/`readl`/`writel` 习语。
