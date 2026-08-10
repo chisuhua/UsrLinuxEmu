@@ -955,7 +955,9 @@ section_cross_ref() {
 
     subsection "10.2 adr-076 uses the current §R5.1 cross-repo reference"
     local adr076="${REPO_ROOT}/docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md"
-    if grep -nE "ADR-035 §R3 cross-repo" "${adr076}" 2>/dev/null; then
+    # adr-035 §R3 is plans/ 双层归档 — never a valid cross-repo citation;
+    # any §R3 occurrence in adr-076 is stale (must be §R5.1).
+    if grep -nE "§R3" "${adr076}" 2>/dev/null; then
         check_fail "adr-076 still references non-existent 'ADR-035 §R3 cross-repo 协议' (use §R5.1 instead)"
     else
         check_pass "adr-076 does not reference the non-existent ADR-035 §R3 cross-repo protocol"
