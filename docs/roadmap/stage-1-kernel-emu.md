@@ -334,3 +334,29 @@ UsrLinuxEmu 的核心目标（见 [ADR-001](../00_adr/adr-001-user-mode-emulatio
 
 **维护者**: UsrLinuxEmu Architecture Team
 **最后更新**: 2026-06-24
+
+---
+
+## 4 象限
+
+### 象限 1: 对应 ADRs
+
+见上文 [4. 涉及 ADR](#4-涉及-adr)（ADR-011~021 + C-12 ADR-059~063）。
+
+### 象限 2: 活跃 improvements (待派发)
+
+无（Stage 1 已达成；新候选统一挂 [roadmap 派生建议](../../roadmap.md#派生建议)）。
+
+### 象限 3: 在途 changes
+
+无。
+
+> 数据源：[openspec/changes/INDEX.md](../../openspec/changes/INDEX.md)
+
+### 象限 4: 已归档 changes
+
+C-12 KFD 多文件集成等 Stage 1 归档见 [openspec/changes/archive/](../../openspec/changes/archive/)（含 `2026-07-16-2026-08-15-stage1-4-kfd-multi-file-integration`）。
+
+## 触发条件
+
+✅ 已达成（2026-07-16）。

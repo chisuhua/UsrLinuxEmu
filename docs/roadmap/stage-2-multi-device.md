@@ -95,6 +95,30 @@
 
 ---
 
+## 4 象限
+
+### 象限 1: 对应 ADRs
+
+见上文 [涉及 ADR](#涉及-adr)（[ADR-038](../00_adr/adr-038-network-stack-three-way-separation.md) 网络栈 3 区分边界，✅ Accepted）。
+
+### 象限 2: 活跃 improvements (待派发)
+
+无（Stage 2 已达成；新候选统一挂 [roadmap 派生建议](../../roadmap.md#派生建议)）。
+
+### 象限 3: 在途 changes
+
+无。
+
+> 数据源：[openspec/changes/INDEX.md](../../openspec/changes/INDEX.md)
+
+### 象限 4: 已归档 changes
+
+Stage 2 归档（net_driver / storage_driver / vfio_bridge / mm_shim 等）见 [openspec/changes/archive/](../../openspec/changes/archive/)。
+
+## 触发条件
+
+✅ 已达成（2026-07-05，commit `fb75ed2`，76/76 ctest PASS）。
+
 ## 下一步
 
 [阶段 3: v1.0 稳定](stage-3-v1.0.md)
