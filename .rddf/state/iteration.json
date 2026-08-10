@@ -314,9 +314,7 @@
       "added_at": "2026-08-10T15:56:59+0800",
       "archived_at": "2026-08-10T15:40:17+00:00",
       "last_deps_at": "2026-08-10T15:56:59+0800",
-      "archived_via": "manual-cycle-bypassing-plan-done",
-      "archive_commit": "526c927",
-      "notes": "Implemented via separate cycle (feat/roadmap-unified-index branch), merged 1c5c06c, archived 526c927. plan-side skeleton dir cleaned up 2026-08-10."
+      "archive_commit_sha": "526c927"
     }
   ],
   "updated_at": "2026-08-09T00:04:59+00:00"
