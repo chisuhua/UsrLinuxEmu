@@ -323,7 +323,7 @@
       "category": "core-impl",
       "added_at": "2026-08-13T02:32:58+0800",
       "archived_at": "2026-08-13T15:30:00+0800",
-      "archive_commit_sha": "pending (see archive commit SHA)"
+      "archive_commit_sha": "99a7efcfe26c83556053633c1e1debf8895c0687"
     }
   ],
   "updated_at": "2026-08-09T00:04:59+00:00"
