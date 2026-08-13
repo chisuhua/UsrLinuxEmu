@@ -1,15 +1,42 @@
 {
-  "version": "1",
-  "arch_complete_at": "2026-07-29T03:57:18+00:00",
-  "adr_count": 68,
+  "version": 2,
+  "arch_complete_at": "2026-08-13T00:00:00+00:00",
+  "adr_count": 71,
   "adr_dir": "docs/00_adr",
   "adr_pattern": "adr-*.md",
   "completed_adr_ids": [],
   "roadmap_exists": true,
   "roadmap_path": "roadmap.md",
-  "current_phase": "stage-4",
+  "current_phase": "stage-4 (post-closeout; awaiting trigger for stage-5 / cross-repo integration)",
   "architecture_dir": "docs/architecture",
-  "gap_analysis_count": 1,
-  "approved_proposals": ["stage4-1-bar-ioremap", "stage4-5-cp-phase6-preemption-timeline-sem"],
-  "notes": "arch-done: ADR 68 ✅  |  roadmap ✅  |  gap-analysis 1 ✅  |  approved 2 ✅  |  updated 2026-07-29"
+  "gap_analysis_count": 2,
+  "approved_proposals": [
+    "stage4-1-bar-ioremap",
+    "stage4-5-cp-phase6-preemption-timeline-sem",
+    "2026-08-10-roadmap-unified-index"
+  ],
+  "adr_under_review": [
+    {
+      "adr_id": "adr-076",
+      "title": "GPGPU Kernel Module IOCTL (HAL Extension for PTX-EMU Image Executor)",
+      "status": "Proposed",
+      "ptxemu_hard_gate": "CLEARED",
+      "ptxemu_gate_evidence": {
+        "libptxemu_device_so": "/workspace/project/PTX-EMU/build/lib/libptxemu_device.so",
+        "cpptlm_module_h": "/workspace/project/PTX-EMU/include/cudart/cpptlm_module.h",
+        "tag": "v0.1.0",
+        "phase_0_gates": "5/5 PASS",
+        "phase_1_gates": "perf 0.183x (margin 81%); governance diff=0; test_cpptlm_module coverage PASS"
+      },
+      "taskrunner_soft_gate": "PROPOSED (not blocking)",
+      "taskrunner_tadr": "external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md",
+      "canonical_change_suggested": "openspec/changes/2026-08-15-stage5-ptxemu-kernel-module-hal-extension/",
+      "roadmap_derived_improvement": "add-ptxemu-kernel-module-hal-extension",
+      "gap_analysis": "docs/architecture/adr-076-ptxemu-hal-backend-gap-analysis.md",
+      "ready_for_design_phase": true,
+      "audit_date": "2026-08-13",
+      "audit_by": "Sisyphus (arch-side audit)"
+    }
+  ],
+  "notes": "arch-done: ADR 71 ✅ | roadmap ✅ | gap-analysis 2 ✅ (1: stage4; 2: adr-076) | approved 3 ✅. adr-076 PTX-EMU HARD gate CLEARED 2026-08-13 (libptxemu_device.so + cpptlm_module.h + tag v0.1.0). TaskRunner tadr-307 SOFT gate remains PROPOSED but does not block UsrLinuxEmu HAL extension per ADR-076 §Acceptance gate 2. Design phase ready: add-ptxemu-kernel-module-hal-extension. Stage 5 explicitly excludes ADR-076 (per stage-5-multi-engine-pm4.md §scope). Cross-repo integration tracked independently under roadmap 'cross-repo reviewing ADRs' section."
 }
