@@ -8,6 +8,8 @@
 |------|--------|------|----------|--------|
 
 | [2026-08-10-roadmap-unified-index](improvements/2026-08-10-roadmap-unified-index.md) | P1 | spec:2026-08-10-roadmap-driven-workflow-design | 2026-08-10 | guide-design |
+| [add-ptxemu-kernel-module-hal-extension](.rddf/improvements/add-ptxemu-kernel-module-hal-extension.md) | P1 | 2026-08-12 | guide-arch |
+
 ## 已实施
 
 | 提案 | 优先级 | 来源 | 批准日期 | 批准人 |
