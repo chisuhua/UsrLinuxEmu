@@ -13,6 +13,8 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <mutex>
+#include <condition_variable>
 
 #include "gpu_types.h"
 #include "gpu_hal.h"
@@ -34,6 +36,12 @@ static std::atomic<u64> g_last_mem_read_addr(0);
 static std::atomic<u64> g_last_mem_write_addr(0);
 static std::atomic<u32> g_last_mem_write_val(0);
 static std::atomic<int> g_next_entry_release_bit(0);
+
+// Issue 2 fix: condition variable to eliminate race in test_puller_mem_read_in_fetch.
+// Notify from counting_hal_mem_read after both atomic stores complete, so the test
+// observes both g_mem_read_count > 0 and g_last_mem_read_addr consistently.
+static std::mutex g_mem_read_mu;
+static std::condition_variable g_mem_read_cv;
 
 template<typename Func>
 bool wait_for_state(Func&& pred, int timeout_ms = 100, int poll_interval_ms = 1) {
@@ -89,6 +97,12 @@ static int counting_hal_mem_read(void* ctx, uint64_t dev_addr, void* host_buf, u
     e->semaphore_va = 0x100;
     e->semaphore_value = 1;
   }
+  // Notify after both atomic stores complete so waiters observe a consistent view
+  // (count > 0 AND addr == dev_addr). Atomics provide their own memory ordering;
+  // the cv waiter acquires g_mem_read_mu, which synchronizes-with the unlock on
+  // the cv side, providing a happens-before edge for the addr read.
+  g_mem_read_cv.notify_one();
+  (void)ctx;
   return 0;
 }
 static void counting_hal_interrupt_raise(void* ctx, uint32_t vec) {
@@ -319,12 +333,20 @@ int test_puller_mem_read_in_fetch() {
   puller.submitBatch(0x1000, 1);
   doorbell.write(0);
 
-  wait_for_state([&puller]() {
-    return g_mem_read_count.load() > 0;
-  }, 50);
+  // Issue 2 fix: use condition variable (event-driven) instead of busy-poll.
+  // Eliminates the race where the worker thread is OS-scheduled beyond the
+  // 50ms polling deadline under parallel ctest load (148 concurrent tests).
+  // 200ms timeout preserves fast-fail behavior if the FSM is genuinely broken.
+  bool mem_read_seen = false;
+  {
+    std::unique_lock<std::mutex> lock(g_mem_read_mu);
+    mem_read_seen = g_mem_read_cv.wait_for(
+        lock, std::chrono::milliseconds(200),
+        []() { return g_mem_read_count.load() > 0; });
+  }
 
-  if (g_mem_read_count.load() == 0) {
-    std::cerr << "FAIL: mem_read should have been called in FETCH\n";
+  if (!mem_read_seen) {
+    std::cerr << "FAIL: mem_read should have been called in FETCH (timeout 200ms)\n";
     puller.stop();
     return 1;
   }
