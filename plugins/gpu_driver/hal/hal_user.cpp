@@ -308,6 +308,8 @@ void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx) {
   memset(&ctx->buddy, 0, sizeof(ctx->buddy));
   memset(ctx->fence_signaled, 0, sizeof(ctx->fence_signaled));
   memset(ctx->event_signaled, 0, sizeof(ctx->event_signaled));
+  memset(ctx->interrupt_handlers, 0, sizeof(ctx->interrupt_handlers));
+  memset(ctx->interrupt_handler_data, 0, sizeof(ctx->interrupt_handler_data));
   ctx->heap = nullptr;
   ctx->buddy_initialized = false;
   ctx->fence_counter = 0;
