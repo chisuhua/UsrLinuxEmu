@@ -86,6 +86,8 @@ build-tsan/
 .rddf/state/deps-analysis.json.lock
 .rddf/state/.deps-ai-result.json
 .rddf/state/openspec-validate.json
+.rddf/state/.doctor-report.json
+.rddf/state/.how-leakage-hits.json
 build_worktree/
 
 # External symlinks (rddf-workflow skill pack + codegraph index)
