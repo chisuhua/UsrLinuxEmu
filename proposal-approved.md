@@ -7,38 +7,38 @@
 | 提案 | 优先级 | 来源 | 批准日期 | 批准人 |
 |------|--------|------|----------|--------|
 
-| [2026-08-10-roadmap-unified-index](improvements/2026-08-10-roadmap-unified-index.md) | P1 | spec:2026-08-10-roadmap-driven-workflow-design | 2026-08-10 | guide-design |
+| [2026-08-10-roadmap-unified-index](.rddf/improvements/2026-08-10-roadmap-unified-index.md) | P1 | spec:2026-08-10-roadmap-driven-workflow-design | 2026-08-10 | guide-design |
 | [add-ptxemu-kernel-module-hal-extension](.rddf/improvements/add-ptxemu-kernel-module-hal-extension.md) | P1 | 2026-08-12 | guide-arch |
 
 ## 已实施
 
 | 提案 | 优先级 | 来源 | 批准日期 | 批准人 |
 |------|--------|------|----------|--------|
-| [implement-multiprocess-phase1-isolation](improvements/implement-multiprocess-phase1-isolation.md) | P2 | 2026-08-10 |
-| [complete-msi-x-vector-routing](improvements/complete-msi-x-vector-routing.md) | P1 | 2026-08-10 |
-| [complete-mmu-notifier-callback](improvements/complete-mmu-notifier-callback.md) | P2 | 2026-08-10 |
-| [complete-event-page-writeback](improvements/complete-event-page-writeback.md) | P1 | 2026-08-10 |
-| [add-hal-puller-set-puller-nested-wiring](improvements/add-hal-puller-set-puller-nested-wiring.md) | P2 | 2026-08-10 |
-| [fix-hal-interrupt-vector-dispatch](improvements/fix-hal-interrupt-vector-dispatch.md) | P2 | 2026-08-10 |
-| [complete-hal-mem-map-bo](improvements/complete-hal-mem-map-bo.md) | P2 | 2026-08-10 |
-| [implement-hal-green-context-and-pdl](improvements/implement-hal-green-context-and-pdl.md) | P1 | 2026-08-10 |
-| [implement-hal-preempt-resume-semaphore](improvements/implement-hal-preempt-resume-semaphore.md) | P1 | 2026-08-10 |
-| [fix-hal-user-missing-interrupt-wiring](improvements/fix-hal-user-missing-interrupt-wiring.md) | P0 | 2026-08-10 |
-| [2026-08-10-roadmap-unified-index](improvements/2026-08-10-roadmap-unified-index.md) | P1 | 2026-08-10 |
-| [implement-pm4-microcode-parsing](improvements/implement-pm4-microcode-parsing.md) | P1 | ADR-052 Phase 6.5（见文末追溯） | 2026-08-08 | guide-arch |
-| [add-multi-engine-puller-instances](improvements/add-multi-engine-puller-instances.md) | P1 | stage-4 gap 分析（见文末追溯） | 2026-08-08 | guide-arch |
-| [stage4-5-cp-phase6-preemption-engine-finish](improvements/stage4-5-cp-phase6-preemption-engine-finish.md) | P1 | stage-4.5 蓝图 | 2026-07-30 | guide-arch |
-| [stage4-5-cp-phase6-preemption-timeline-sem](improvements/stage4-5-cp-phase6-preemption-timeline-sem.md) | P1 | stage-4.5 蓝图 | 2026-07-30 | guide-arch |
-| [stage4-5-cp-phase6-predication-aql](improvements/stage4-5-cp-phase6-predication-aql.md) | P1 | stage-4.5 蓝图 | 2026-07-31 | guide-arch |
-| [wire-mmu-fw-callback-ioctls-to-active-dispatch](improvements/wire-mmu-fw-callback-ioctls-to-active-dispatch.md) | P0 | guide-arch 架构评审 | 2026-08-04 | guide-arch |
-| [add-e2e-tests-for-register-gpu-and-map-queue-ring](improvements/add-e2e-tests-for-register-gpu-and-map-queue-ring.md) | P1 | guide-arch 架构评审 | 2026-08-04 | guide-arch |
-| [strengthen-semantic-assertions-for-destroy-va-space-and-query-queue](improvements/strengthen-semantic-assertions-for-destroy-va-space-and-query-queue.md) | P1 | guide-arch 架构评审 | 2026-08-04 | guide-arch |
-| [add-abi-dispatch-consistency-test](improvements/add-abi-dispatch-consistency-test.md) | P2 | guide-arch 架构评审 | 2026-08-04 | guide-arch |
-| [stage4-l2-foundation-removal-gpu-queue-emu](improvements/stage4-l2-foundation-removal-gpu-queue-emu.md) | P1 | stage-4.7 B-class L2 | 2026-08-05 | guide-arch |
-| [stage4-l2-foundation-removal-graph](improvements/stage4-l2-foundation-removal-graph.md) | P1 | stage-4.7 B-class L2 | 2026-08-05 | guide-arch |
-| [stage4-l2-foundation-removal-hardware-puller-emu](improvements/stage4-l2-foundation-removal-hardware-puller-emu.md) | P1 | stage-4.7 B-class L2 | 2026-08-05 | guide-arch |
-| [stage4-l2-foundation-removal-mem-pool](improvements/stage4-l2-foundation-removal-mem-pool.md) | P1 | stage-4.7 B-class L2 | 2026-08-05 | guide-arch |
-| [stage4-l2-foundation-removal-stream-capture](improvements/stage4-l2-foundation-removal-stream-capture.md) | P1 | stage-4.7 B-class L2 | 2026-08-05 | guide-arch |
+| [implement-multiprocess-phase1-isolation](.rddf/improvements/implement-multiprocess-phase1-isolation.md) | P2 | code scan (commit c57d864) — ADR-011 resource isolation | 2026-08-10 |
+| [complete-msi-x-vector-routing](.rddf/improvements/complete-msi-x-vector-routing.md) | P1 | code scan (commit c57d864) — hal_user.cpp:143 TODO (vector ignored) | 2026-08-10 |
+| [complete-mmu-notifier-callback](.rddf/improvements/complete-mmu-notifier-callback.md) | P2 | code scan (commit c57d864) — iommu_domain.h:96 TODO (register_notifier stub) | 2026-08-10 |
+| [complete-event-page-writeback](.rddf/improvements/complete-event-page-writeback.md) | P1 | code scan (commit c57d864) — sim_event.c:22 TODO (event page stub) | 2026-08-10 |
+| [add-hal-puller-set-puller-nested-wiring](.rddf/improvements/add-hal-puller-set-puller-nested-wiring.md) | P2 | stage-4.6 API completeness (commit d875803) | 2026-08-10 |
+| [fix-hal-interrupt-vector-dispatch](.rddf/improvements/fix-hal-interrupt-vector-dispatch.md) | P2 | stage-4.3 (commit d875803, depends on P0 fix-hal-user-missing-interrupt-wiring) | 2026-08-10 |
+| [complete-hal-mem-map-bo](.rddf/improvements/complete-hal-mem-map-bo.md) | P2 | stage-4.1 BAR2 VRAM mmap (commit d875803) | 2026-08-10 |
+| [implement-hal-green-context-and-pdl](.rddf/improvements/implement-hal-green-context-and-pdl.md) | P1 | stage-4.6 ADR-056 (commit d875803) | 2026-08-10 |
+| [implement-hal-preempt-resume-semaphore](.rddf/improvements/implement-hal-preempt-resume-semaphore.md) | P1 | stage-4.5 ADR-046/049 (commit d875803) | 2026-08-10 |
+| [fix-hal-user-missing-interrupt-wiring](.rddf/improvements/fix-hal-user-missing-interrupt-wiring.md) | P0 | stage-4.3 active SIGSEGV bug (commit d875803) | 2026-08-10 |
+| [2026-08-10-roadmap-unified-index](.rddf/improvements/2026-08-10-roadmap-unified-index.md) | P1 | self-referential roadmap index (commit 233df87) | 2026-08-10 |
+| [implement-pm4-microcode-parsing](.rddf/improvements/implement-pm4-microcode-parsing.md) | P1 | ADR-052 Phase 6.5（见文末追溯） | 2026-08-08 | guide-arch |
+| [add-multi-engine-puller-instances](.rddf/improvements/add-multi-engine-puller-instances.md) | P1 | stage-4 gap 分析（见文末追溯） | 2026-08-08 | guide-arch |
+| [stage4-5-cp-phase6-preemption-engine-finish](.rddf/improvements/stage4-5-cp-phase6-preemption-engine-finish.md) | P1 | stage-4.5 蓝图 | 2026-07-30 | guide-arch |
+| [stage4-5-cp-phase6-preemption-timeline-sem](.rddf/improvements/stage4-5-cp-phase6-preemption-timeline-sem.md) | P1 | stage-4.5 蓝图 | 2026-07-30 | guide-arch |
+| [stage4-5-cp-phase6-predication-aql](.rddf/improvements/stage4-5-cp-phase6-predication-aql.md) | P1 | stage-4.5 蓝图 | 2026-07-31 | guide-arch |
+| [wire-mmu-fw-callback-ioctls-to-active-dispatch](.rddf/improvements/wire-mmu-fw-callback-ioctls-to-active-dispatch.md) | P0 | guide-arch 架构评审 | 2026-08-04 | guide-arch |
+| [add-e2e-tests-for-register-gpu-and-map-queue-ring](.rddf/improvements/add-e2e-tests-for-register-gpu-and-map-queue-ring.md) | P1 | guide-arch 架构评审 | 2026-08-04 | guide-arch |
+| [strengthen-semantic-assertions-for-destroy-va-space-and-query-queue](.rddf/improvements/strengthen-semantic-assertions-for-destroy-va-space-and-query-queue.md) | P1 | guide-arch 架构评审 | 2026-08-04 | guide-arch |
+| [add-abi-dispatch-consistency-test](.rddf/improvements/add-abi-dispatch-consistency-test.md) | P2 | guide-arch 架构评审 | 2026-08-04 | guide-arch |
+| [stage4-l2-foundation-removal-gpu-queue-emu](.rddf/improvements/stage4-l2-foundation-removal-gpu-queue-emu.md) | P1 | stage-4.7 B-class L2 | 2026-08-05 | guide-arch |
+| [stage4-l2-foundation-removal-graph](.rddf/improvements/stage4-l2-foundation-removal-graph.md) | P1 | stage-4.7 B-class L2 | 2026-08-05 | guide-arch |
+| [stage4-l2-foundation-removal-hardware-puller-emu](.rddf/improvements/stage4-l2-foundation-removal-hardware-puller-emu.md) | P1 | stage-4.7 B-class L2 | 2026-08-05 | guide-arch |
+| [stage4-l2-foundation-removal-mem-pool](.rddf/improvements/stage4-l2-foundation-removal-mem-pool.md) | P1 | stage-4.7 B-class L2 | 2026-08-05 | guide-arch |
+| [stage4-l2-foundation-removal-stream-capture](.rddf/improvements/stage4-l2-foundation-removal-stream-capture.md) | P1 | stage-4.7 B-class L2 | 2026-08-05 | guide-arch |
 
 ## B 治理事故追溯结论（2026-08-10）
 
