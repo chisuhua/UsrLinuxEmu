@@ -7,7 +7,7 @@
 > **性质**: 架构层叙事，描述从当前 MVP 到终态蓝图的演进路径
 > **不绑定**: 本路线图不引用具体 OpenSpec change 编号。后续 OpenSpec change 根据本路线图派生
 > **同步关系**: 与 `docs/sync-plan.md` 互补（sync-plan 负责跨仓同步点，本路线图负责架构演进阶段）
-> **最后更新**: 2026-08-10（Unified Index 升级：新增 派生建议 / 跨仓评审中 ADRs / 已归档 changes 段；152 行假引用修复）
+> **最后更新**: 2026-08-13（adr-076 PTX-EMU HARD gate ✅ cleared 2026-08-13 audit；派生建议表新增 `add-ptxemu-kernel-module-hal-extension`；跨仓评审中 ADRs 状态更新）
 > **维护者**: UsrLinuxEmu Architecture Team
 
 ---
@@ -84,6 +84,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | [ADR-052](docs/00_adr/adr-052-aql-pm4-native-support.md) | Phase 6.5 PM4 microcode 解析完整实现 | implement-pm4-microcode-full | ⏸️ trigger 未满足 |
 | [ADR-023](docs/00_adr/adr-023-hal-interface.md) §D4 | 4.7.3 spec 同步：65 fn-ptrs 列入 ADR 表格（取代旧 46 数字） | sync-adr-023-hal-fnp-tr-table | ✅ 可派发（Stage 4 follow-up） |
 | — | L2 残余 `sim/sim_event.h` 清理（独立 proposal，不在 Stage 4 范围） | cleanup-sim-event-h-l2-residual | ✅ 可派发（独立 proposal） |
+| [ADR-076](docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md) | PTX-EMU HARD gate ✅ CLEARED（`libptxemu_device.so` + `cpptlm_module.h` shipped + tag v0.1.0 发布，2026-08-13 audit）；HAL 65 → 68 append-only + 3 ioctls (0x27/0x28/0x29) + `hal_user.cpp` dlsym PTX-EMU | add-ptxemu-kernel-module-hal-extension | ✅ **可派发**（PTX-EMU gate 满足；TaskRunner tadr-307 SOFT gate 独立推进） |
 
 ## 跨仓评审中 ADRs
 
@@ -91,7 +92,9 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 
 | ADR | 标题 | 状态 | 评审方 | 链接 |
 |-----|------|------|--------|------|
-| adr-076 | GPGPU Kernel Module IOCTL（HAL Extension for PTX-EMU Image Executor 集成） | 🔄 Proposed | UsrLinuxEmu owner + TaskRunner owner | [adr-076](docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md) |
+| adr-076 | GPGPU Kernel Module IOCTL（HAL Extension for PTX-EMU Image Executor 集成） | 🔄 Proposed（**PTX-EMU HARD gate ✅ cleared 2026-08-13**；TaskRunner tadr-307 SOFT gate pending — 不阻塞 UsrLinuxEmu HAL extension） | UsrLinuxEmu owner ✅ PTX-EMU owner ✅ + TaskRunner owner ⏳ | [adr-076](docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md) |
+
+> **2026-08-13 更新**：经 arch-side 审计（详见 [docs/architecture/adr-076-ptxemu-hal-backend-gap-analysis.md](docs/architecture/adr-076-ptxemu-hal-backend-gap-analysis.md)），PTX-EMU 仓 `libptxemu_device.so` + `cpptlm_module.h` 已 ship + tag `v0.1.0` 已发布 + Phase 0+1 全部 5+3 gates PASS。**PTX-EMU HARD gate CLEARED**。TaskRunner tadr-307 (PROPOSED) SOFT gate 不阻塞 UsrLinuxEmu HAL extension 启动。已加入"派生建议"表，标记 ✅ 可派发。
 
 ---
 
