@@ -1,8 +1,11 @@
 /*
  * gpu_hal.h — 硬件抽象层接口
  *
- * 定义 drv/ 与 sim/ 之间的 10 个 HAL 函数指针。
+ * 定义 drv/ 与 sim/ 之间的 65 + 3 = 68 个 HAL 函数指针。
  * 移植到内核时替换实现函数，接口不变。
+ *
+ * 追加规则（ADR-023 Decision 4）：现存 65 个 fn-ptr 签名零修改；
+ * 新增的 3 个（kernel_module_load/execute/unload，#66/#67/#68）append 到末尾。
  *
  * C/C++ 双语言兼容：C 编译用于内核模块，C++ 编译用于用户态仿真。
  * 移植替换：stdint.h → linux/types.h (u64/u32)
@@ -355,6 +358,33 @@ struct gpu_hal_ops {
   /* puller_unregister_queue: unregister a queue. */
   int (*puller_unregister_queue)(void *ctx, hal_puller_handle_t puller,
                                   uint32_t queue_id);
+
+  /* ── ADR-076: PTX-EMU kernel module extension (#66/#67/#68) ──
+   * Append-only per ADR-023 Decision 4. Implements load/execute/unload
+   * of pre-compiled kernel modules via PTX-EMU libptxemu_device.so.
+   * ABI surface and version floor are documented in adr-076 §D4.
+   * All three take pre-validated drv/-side args structs (see
+   * plugins/gpu_driver/shared/gpu_ioctl.h) and return Linux-style
+   * negative errno on failure, 0 on success. */
+
+  /* kernel_module_load: validate + load + capture kernel name.
+   * @args: gpu_load_kernel_module_args*; populated out_module_handle/kernel_name on success.
+   * Returns 0 on success, -EINVAL on bounds check or rollback path,
+   * -ENOSYS if libptxemu_device.so cannot be loaded, -EPROTO if ABI
+   * version check fails. */
+  int (*kernel_module_load)(void *ctx, void *args);
+
+  /* kernel_module_execute: launch a previously loaded kernel.
+   * @args: gpu_launch_kernel_module_args*; populated launch_status on return.
+   * Returns 0 on success, -EINVAL on validation, mapped negative
+   * errno for cudaError_t != 0 returns. */
+  int (*kernel_module_execute)(void *ctx, void *args);
+
+  /* kernel_module_unload: release a previously loaded kernel.
+   * @args: gpu_unload_kernel_module_args*; populated unload_status on return.
+   * Returns 0 on success, -EINVAL on invalid handle,
+   * mapped errno for cudaError_t != 0. */
+  int (*kernel_module_unload)(void *ctx, void *args);
 };
 
 /* ── inline 包装函数：零开销简化调用 ──────────────────────── */
@@ -697,6 +727,18 @@ static inline int hal_puller_unregister_queue(struct gpu_hal_ops *hal,
                                               hal_puller_handle_t puller,
                                               uint32_t queue_id) {
   return hal->puller_unregister_queue(hal->ctx, puller, queue_id);
+}
+
+/* ── ADR-076 inline wrappers (kernel module load/execute/unload) ──
+ * Append-only per ADR-023 Decision 4. */
+static inline int hal_kernel_module_load(struct gpu_hal_ops *hal, void *args) {
+  return hal->kernel_module_load(hal->ctx, args);
+}
+static inline int hal_kernel_module_execute(struct gpu_hal_ops *hal, void *args) {
+  return hal->kernel_module_execute(hal->ctx, args);
+}
+static inline int hal_kernel_module_unload(struct gpu_hal_ops *hal, void *args) {
+  return hal->kernel_module_unload(hal->ctx, args);
 }
 
 #ifdef __cplusplus

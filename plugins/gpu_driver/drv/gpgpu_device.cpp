@@ -127,6 +127,9 @@ const GpgpuDevice::IoctlEntry* GpgpuDevice::getIoctlTablePtr() {
       {GPU_IOCTL_REGISTER_FIRMWARE_CB, "REGISTER_FIRMWARE_CB", &GpgpuDevice::handleRegisterFirmwareCB},
       {GPU_IOCTL_MAP_MEMORY, "MAP_MEMORY", &GpgpuDevice::handleMapMemory},
       {GPU_IOCTL_UNMAP_MEMORY, "UNMAP_MEMORY", &GpgpuDevice::handleUnmapMemory},
+      {GPU_IOCTL_LOAD_KERNEL_MODULE, "LOAD_KERNEL_MODULE", &GpgpuDevice::handleLoadKernelModule},
+      {GPU_IOCTL_LAUNCH_KERNEL_MODULE, "LAUNCH_KERNEL_MODULE", &GpgpuDevice::handleLaunchKernelModule},
+      {GPU_IOCTL_UNLOAD_KERNEL_MODULE, "UNLOAD_KERNEL_MODULE", &GpgpuDevice::handleUnloadKernelModule},
   };
   return kTable;
 }
@@ -1102,5 +1105,32 @@ long GpgpuDevice::handleRegisterFirmwareCB(void* argp) {
   auto* args = static_cast<struct gpu_firmware_cb_args*>(argp);
   if (!args) return -EFAULT;
   return kfd_sim_register_firmware_cb(args);
+}
+
+long GpgpuDevice::handleLoadKernelModule(void* argp) {
+  if (!argp) return -EINVAL;
+  auto* a = reinterpret_cast<gpu_load_kernel_module_args*>(argp);
+  if (a->image_size == 0 || a->image_size > MAX_KERNEL_IMAGE_SIZE) return -EINVAL;
+  if (!hal_) return -ENOSYS;
+  return hal_kernel_module_load(hal_, argp);
+}
+
+long GpgpuDevice::handleLaunchKernelModule(void* argp) {
+  if (!argp) return -EINVAL;
+  auto* a = reinterpret_cast<gpu_launch_kernel_module_args*>(argp);
+  if (a->module_handle == 0) return -EINVAL;
+  if (a->args_count > 4096) return -EINVAL;
+  if (a->grid_x == 0 || a->grid_y == 0 || a->grid_z == 0) return -EINVAL;
+  if (a->block_x == 0 || a->block_y == 0 || a->block_z == 0) return -EINVAL;
+  if (!hal_) return -ENOSYS;
+  return hal_kernel_module_execute(hal_, argp);
+}
+
+long GpgpuDevice::handleUnloadKernelModule(void* argp) {
+  if (!argp) return -EINVAL;
+  auto* a = reinterpret_cast<gpu_unload_kernel_module_args*>(argp);
+  if (a->module_handle == 0) return -EINVAL;
+  if (!hal_) return -ENOSYS;
+  return hal_kernel_module_unload(hal_, argp);
 }
 

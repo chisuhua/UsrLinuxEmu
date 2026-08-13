@@ -30,7 +30,7 @@ add_subdirectory(hal)
 # sim/ 总是编译（gpu_sim 提供 doorbell/puller/scheduler 仿真）
 add_subdirectory(sim)
 
-target_link_libraries(gpu_driver_plugin PRIVATE kernel gpu_hal gpu_core gpu_drv gpu_sim)
+target_link_libraries(gpu_driver_plugin PRIVATE kernel gpu_hal gpu_core gpu_drv gpu_sim ${CMAKE_DL_LIBS})
 
 set_target_properties(gpu_driver_plugin PROPERTIES
     PREFIX ""

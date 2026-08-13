@@ -7,6 +7,7 @@
 #include "hal_mock.h"
 #include <atomic>
 #include <cerrno>
+#include <cstdio>
 #include <cstring>
 #include <condition_variable>
 #include <mutex>
@@ -14,6 +15,7 @@
 #include <thread>
 #include <pthread.h>
 #include "kernel/thread/kernel_workqueue.h"
+#include "shared/gpu_ioctl.h"
 #include "sim/vram_store.h"
 
 /* Forward declarations for C-12 B.3.4 + B.4.4 integration (Agent A's kfd_events + sim layer)
@@ -468,6 +470,31 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
                                   hal_queue_handle_t) -> int { return 0; };
   hal->puller_unregister_queue = [](void*, hal_puller_handle_t,
                                     uint32_t) -> int { return 0; };
+
+  /* ── ADR-076: PTX-EMU kernel module extension mocks (#66/#67/#68) ──
+   * Mock impls: test-friendly defaults. ADR-023 Decision 4: append-only. */
+
+  /* kernel_module_load: deterministic mock returning a fake handle. */
+  hal->kernel_module_load = [](void*, void* args) -> int {
+    auto* a = static_cast<gpu_load_kernel_module_args*>(args);
+    static std::atomic<uint64_t> next{0x9000};
+    a->out_module_handle = ++next;
+    std::snprintf(a->kernel_name, sizeof(a->kernel_name),
+                  "mock_kernel_%lu", (unsigned long)a->out_module_handle);
+    return 0;
+  };
+
+  hal->kernel_module_execute = [](void*, void* args) -> int {
+    auto* a = static_cast<gpu_launch_kernel_module_args*>(args);
+    a->launch_status = 0;
+    return 0;
+  };
+
+  hal->kernel_module_unload = [](void*, void* args) -> int {
+    auto* a = static_cast<gpu_unload_kernel_module_args*>(args);
+    a->unload_status = 0;
+    return 0;
+  };
 }
 
 void hal_mock_destroy(struct hal_mock_state *state) {

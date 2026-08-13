@@ -22,7 +22,9 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   // C-12 E.2.4 (L1↔L2 bridge): +4 KFD ioctls (MAP/UNMAP_MEMORY, GET_PROCESS_APERTURE, UPDATE_QUEUE).
   // openspec/2026-08-02-wire-mmu-fw-callback-ioctls-to-active-dispatch:
   //   +2 KFD callback ioctls (REGISTER_MMU_EVENT_CB, REGISTER_FIRMWARE_CB).
-  static constexpr size_t kNumIoctls = 38;
+  // add-ptxemu-kernel-module-hal-extension (ADR-076):
+  //   +3 kernel-module ioctls (LOAD/LAUNCH/UNLOAD_KERNEL_MODULE).
+  static constexpr size_t kNumIoctls = 41;
 
   explicit GpgpuDevice(struct gpu_hal_ops* hal);
   ~GpgpuDevice();
@@ -160,6 +162,10 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   long handleUpdateQueue(void* argp);
   long handleRegisterMMUCB(void* argp);
   long handleRegisterFirmwareCB(void* argp);
+
+  long handleLoadKernelModule(void* argp);
+  long handleLaunchKernelModule(void* argp);
+  long handleUnloadKernelModule(void* argp);
 
   struct IoctlEntry {
     unsigned long request;
