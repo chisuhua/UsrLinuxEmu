@@ -167,6 +167,10 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   long handleLaunchKernelModule(void* argp);
   long handleUnloadKernelModule(void* argp);
 
+ public:
+  /* IoctlEntry + getIoctlTablePtr are exposed for test coverage
+   * (test_ioctl_table_coverage_standalone) and dispatch verification.
+   * Read-only contract surface; no security implications. */
   struct IoctlEntry {
     unsigned long request;
     const char* name;
@@ -174,6 +178,8 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   };
 
   static const IoctlEntry* getIoctlTablePtr();
+
+ private:
 
   /** Queue 句柄 → HAL opaque queue handle 映射 */
   std::unordered_map<uint64_t, hal_queue_handle_t> queues_;

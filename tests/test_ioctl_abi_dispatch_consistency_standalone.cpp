@@ -33,8 +33,13 @@ extern "C" {
 #include "drv/gpgpu_device.h"
 
 // Sorted by request value. Generated against the current gpu_ioctl.h
-// (post wire-muw — kNumIoctls 36→38 includes 0x02/0x03).
-static const std::array<uint32_t, 38> kAbiIoctlRequests = {{
+// (post wire-muw — kNumIoctls 36→38 includes 0x02/0x03;
+//  post ADR-076 — 38→41 includes 0x27/0x28/0x29 kernel_module).
+// The 3 ADR-076 entries use _IOWR() macro + sizeof() so any future
+// struct-layout change is reflected automatically.
+// Array type is `unsigned long` (matching GpgpuDevice::IoctlEntry::request)
+// so that the sign-extended form of the _IOWR macro fits without truncation.
+static const std::array<unsigned long, 41> kAbiIoctlRequests = {{
     0x40044711UL, /*   1 - FREE_BO (0x11, _IOW u32) */
     0x40084731UL, /*   2 - DESTROY_VA_SPACE (0x31, _IOW handle) */
     0x40084741UL, /*   3 - DESTROY_QUEUE (0x41, _IOW handle) */
@@ -73,13 +78,21 @@ static const std::array<uint32_t, 38> kAbiIoctlRequests = {{
     0xc0344747UL, /*  36 - UNMAP_MEMORY (0x47, _IOWR args) */
     0xc0484746UL, /*  37 - MAP_MEMORY (0x46, _IOWR args) */
     0xc0504740UL, /*  38 - CREATE_QUEUE (0x40, _IOWR args) */
+    /* ADR-076: 3 new kernel_module ioctls (0x27-0x29).
+     * _IOWR returns int; converting to unsigned long performs a
+     * bitwise zero-extension (per C++ standard, even for negative
+     * int values). The kTable entry uses the same implicit conversion,
+     * so the array values match without manual sign-extension. */
+    static_cast<unsigned long>(GPU_IOCTL_LOAD_KERNEL_MODULE),
+    static_cast<unsigned long>(GPU_IOCTL_LAUNCH_KERNEL_MODULE),
+    static_cast<unsigned long>(GPU_IOCTL_UNLOAD_KERNEL_MODULE),
 }};
 
 TEST_CASE("ioctl ABI dispatch completeness (kNumIoctls + dispatchCount consistency)",
           "[add-abi][consistency][drift-detection]")
 {
   GpgpuDevice dev(nullptr);
-  REQUIRE(dev.dispatchCount() == 38);
+  REQUIRE(dev.dispatchCount() == 41);
 
   // Sanity: ABI list size matches kNumIoctls
   REQUIRE(kAbiIoctlRequests.size() == dev.dispatchCount());
@@ -90,9 +103,9 @@ TEST_CASE("ioctl ABI <-> dispatch table: each declared request is dispatched",
 {
   GpgpuDevice dev(nullptr);
 
-  SECTION("all 38 declared ioctls reach a handler (return -EFAULT on null arg)")
+  SECTION("all 41 declared ioctls reach a handler (return -EFAULT on null arg)")
   {
-    for (uint32_t req : kAbiIoctlRequests) {
+    for (unsigned long req : kAbiIoctlRequests) {
       long ret = dev.ioctl(0, req, nullptr);
       // Recognized handler returns -EFAULT (-14); unrecognized falls
       // through to -EINVAL (-22). Anything else indicates drift.

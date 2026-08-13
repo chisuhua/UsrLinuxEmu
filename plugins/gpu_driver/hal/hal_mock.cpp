@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstring>
 #include <condition_variable>
+#include <map>
 #include <mutex>
 #include <functional>
 #include <thread>
@@ -267,6 +268,55 @@ static int mock_mem_map_bo(struct gpgpu_device* dev, uint64_t bo_offset,
     return 0;
 }
 
+/* ── ADR-076 test-only injection state (kernel_module contract) ──
+ * Linked into test binaries; production plugin builds do not use this. */
+
+#define KERNEL_NAME_FAIL_INJECTION 0x10001  /* sentinel: trigger rollback */
+
+namespace {
+std::mutex g_mock_ptxemu_mutex;
+std::map<uint64_t, int> g_mock_ptxemu_error_inject;
+std::map<uint64_t, int> g_mock_ptxemu_unload_counts;
+
+/* Test-only replica of cuda_error_to_errno (defined in hal_user.cpp's
+ * anonymous namespace, internal linkage). The 6 canonical mappings
+ * below are documented at docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md
+ * §D5 — keep these two tables in sync. */
+int mock_cuda_error_to_errno(int cuda_error) {
+  switch (cuda_error) {
+    case 0: return 0;
+    case 2: return -ENOMEM;            /* CUDA_ERROR_OUT_OF_MEMORY */
+    case 11: return -EINVAL;           /* CUDA_ERROR_INVALID_VALUE */
+    case 400: return -EINVAL;          /* CUDA_ERROR_INVALID_HANDLE */
+    case 719: return -EIO;             /* CUDA_ERROR_LAUNCH_FAILED */
+    case 700: return -EAGAIN;          /* CUDA_ERROR_ILLEGAL_STATE */
+    default: return -EINVAL;
+  }
+}
+}  /* anonymous namespace */
+
+extern "C" void hal_mock_inject_ptxemu_error(uint64_t handle, int cuda_error) {
+  std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
+  g_mock_ptxemu_error_inject[handle] = cuda_error;
+}
+
+extern "C" void hal_mock_clear_ptxemu_errors(void) {
+  std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
+  g_mock_ptxemu_error_inject.clear();
+  g_mock_ptxemu_unload_counts.clear();
+}
+
+extern "C" int hal_mock_get_ptxemu_unload_call_count(uint64_t handle) {
+  std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
+  auto it = g_mock_ptxemu_unload_counts.find(handle);
+  return (it != g_mock_ptxemu_unload_counts.end()) ? it->second : 0;
+}
+
+extern "C" void hal_mock_reset_ptxemu_unload_counter(uint64_t handle) {
+  std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
+  g_mock_ptxemu_unload_counts.erase(handle);
+}
+
 /* ── 公开初始化函数 ────────────────────────────────── */
 
 void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
@@ -472,15 +522,34 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
                                     uint32_t) -> int { return 0; };
 
   /* ── ADR-076: PTX-EMU kernel module extension mocks (#66/#67/#68) ──
-   * Mock impls: test-friendly defaults. ADR-023 Decision 4: append-only. */
+   * Mock impls: test-friendly defaults. ADR-023 Decision 4: append-only.
+   * Bodies consult g_mock_ptxemu_error_inject / g_mock_ptxemu_unload_counts
+   * (defined below) so tests can inject specific cudaError_t codes and
+   * observe rollback call counts. Default behavior (empty maps) is
+   * success-on-all-paths, identical to the pre-injection mock. */
 
-  /* kernel_module_load: deterministic mock returning a fake handle. */
+  /* kernel_module_load: deterministic mock returning a fake handle.
+   * If an error is injected for the next-to-be-allocated handle, the
+   * rollback path is simulated (mock image_unload call counter +1). */
   hal->kernel_module_load = [](void*, void* args) -> int {
     auto* a = static_cast<gpu_load_kernel_module_args*>(args);
     static std::atomic<uint64_t> next{0x9000};
-    a->out_module_handle = ++next;
+    uint64_t h = ++next;
+    a->out_module_handle = h;
     std::snprintf(a->kernel_name, sizeof(a->kernel_name),
-                  "mock_kernel_%lu", (unsigned long)a->out_module_handle);
+                  "mock_kernel_%lu", (unsigned long)h);
+
+    int inject = 0;
+    {
+      std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
+      auto it = g_mock_ptxemu_error_inject.find(h);
+      if (it != g_mock_ptxemu_error_inject.end()) inject = it->second;
+    }
+    if (inject == KERNEL_NAME_FAIL_INJECTION) {
+      std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
+      g_mock_ptxemu_unload_counts[h]++;
+      return -EINVAL;
+    }
     return 0;
   };
 
@@ -492,8 +561,16 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
 
   hal->kernel_module_unload = [](void*, void* args) -> int {
     auto* a = static_cast<gpu_unload_kernel_module_args*>(args);
-    a->unload_status = 0;
-    return 0;
+    int inject = 0;
+    {
+      std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
+      auto it = g_mock_ptxemu_error_inject.find(a->module_handle);
+      if (it != g_mock_ptxemu_error_inject.end()) inject = it->second;
+    }
+    std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
+    g_mock_ptxemu_unload_counts[a->module_handle]++;
+    a->unload_status = inject;
+    return mock_cuda_error_to_errno(inject);
   };
 }
 

@@ -1108,7 +1108,7 @@ long GpgpuDevice::handleRegisterFirmwareCB(void* argp) {
 }
 
 long GpgpuDevice::handleLoadKernelModule(void* argp) {
-  if (!argp) return -EINVAL;
+  if (!argp) return -EFAULT;
   auto* a = reinterpret_cast<gpu_load_kernel_module_args*>(argp);
   if (a->image_size == 0 || a->image_size > MAX_KERNEL_IMAGE_SIZE) return -EINVAL;
   if (!hal_) return -ENOSYS;
@@ -1116,7 +1116,7 @@ long GpgpuDevice::handleLoadKernelModule(void* argp) {
 }
 
 long GpgpuDevice::handleLaunchKernelModule(void* argp) {
-  if (!argp) return -EINVAL;
+  if (!argp) return -EFAULT;
   auto* a = reinterpret_cast<gpu_launch_kernel_module_args*>(argp);
   if (a->module_handle == 0) return -EINVAL;
   if (a->args_count > 4096) return -EINVAL;
@@ -1127,7 +1127,7 @@ long GpgpuDevice::handleLaunchKernelModule(void* argp) {
 }
 
 long GpgpuDevice::handleUnloadKernelModule(void* argp) {
-  if (!argp) return -EINVAL;
+  if (!argp) return -EFAULT;
   auto* a = reinterpret_cast<gpu_unload_kernel_module_args*>(argp);
   if (a->module_handle == 0) return -EINVAL;
   if (!hal_) return -ENOSYS;
