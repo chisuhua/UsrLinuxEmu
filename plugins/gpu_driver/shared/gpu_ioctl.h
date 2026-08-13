@@ -719,3 +719,38 @@ struct gpu_mem_pool_export_args {
   s32 fd_out;        /* OUT: POSIX FD (>= 0) or -1 */
   u32 _pad;          /* alignment padding */
 };
+
+/* ===== ADR-076: PTX-EMU kernel module ioctls (0x27-0x29) =====
+ * These ioctl codes fill the gap between 0x20 GPU_IOCTL_GET_DEVICE_INFO
+ * and 0x30 GPU_IOCTL_CREATE_VA_SPACE. They are append-only per ADR-023
+ * §Decision 4 and the canonical mirror lives in
+ * openspec/changes/add-ptxemu-kernel-module-hal-extension/specs/hal-kernel-module-extension/spec.md.
+ */
+#define MAX_KERNEL_IMAGE_SIZE (64ULL * 1024 * 1024)
+
+struct gpu_load_kernel_module_args {
+  const void* image_ptr;        /* input: PTXIR bytes; user guarantees readable */
+  u64 image_size;               /* input: must be in [1, MAX_KERNEL_IMAGE_SIZE] */
+  u64 out_module_handle;        /* OUT: opaque handle; non-zero on success */
+  char kernel_name[256];        /* OUT: kernel name from PTX-EMU */
+  u32 _pad;                     /* alignment */
+};
+
+struct gpu_launch_kernel_module_args {
+  u64 module_handle;            /* input: from load */
+  u32 grid_x, grid_y, grid_z;   /* input: > 0 */
+  u32 block_x, block_y, block_z;/* input: > 0 */
+  const void* args_ptr;         /* input: kernargs; user guarantees readable */
+  u32 args_count;               /* input: must be <= 4096 */
+  u32 shared_mem;               /* input: dynamic shared memory bytes */
+  s32 launch_status;            /* OUT: cudaError_t from PTX-EMU (0 = success) */
+};
+
+struct gpu_unload_kernel_module_args {
+  u64 module_handle;            /* input: from load */
+  s32 unload_status;            /* OUT: cudaError_t from PTX-EMU (0 = success) */
+};
+
+#define GPU_IOCTL_LOAD_KERNEL_MODULE    _IOWR(GPU_IOCTL_BASE, 0x27, struct gpu_load_kernel_module_args)
+#define GPU_IOCTL_LAUNCH_KERNEL_MODULE  _IOWR(GPU_IOCTL_BASE, 0x28, struct gpu_launch_kernel_module_args)
+#define GPU_IOCTL_UNLOAD_KERNEL_MODULE  _IOWR(GPU_IOCTL_BASE, 0x29, struct gpu_unload_kernel_module_args)

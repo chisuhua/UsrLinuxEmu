@@ -22,7 +22,9 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   // C-12 E.2.4 (L1↔L2 bridge): +4 KFD ioctls (MAP/UNMAP_MEMORY, GET_PROCESS_APERTURE, UPDATE_QUEUE).
   // openspec/2026-08-02-wire-mmu-fw-callback-ioctls-to-active-dispatch:
   //   +2 KFD callback ioctls (REGISTER_MMU_EVENT_CB, REGISTER_FIRMWARE_CB).
-  static constexpr size_t kNumIoctls = 38;
+  // add-ptxemu-kernel-module-hal-extension (ADR-076):
+  //   +3 kernel-module ioctls (LOAD/LAUNCH/UNLOAD_KERNEL_MODULE).
+  static constexpr size_t kNumIoctls = 41;
 
   explicit GpgpuDevice(struct gpu_hal_ops* hal);
   ~GpgpuDevice();
@@ -161,6 +163,14 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   long handleRegisterMMUCB(void* argp);
   long handleRegisterFirmwareCB(void* argp);
 
+  long handleLoadKernelModule(void* argp);
+  long handleLaunchKernelModule(void* argp);
+  long handleUnloadKernelModule(void* argp);
+
+ public:
+  /* IoctlEntry + getIoctlTablePtr are exposed for test coverage
+   * (test_ioctl_table_coverage_standalone) and dispatch verification.
+   * Read-only contract surface; no security implications. */
   struct IoctlEntry {
     unsigned long request;
     const char* name;
@@ -168,6 +178,8 @@ class GpgpuDevice : public usr_linux_emu::FileOperations {
   };
 
   static const IoctlEntry* getIoctlTablePtr();
+
+ private:
 
   /** Queue 句柄 → HAL opaque queue handle 映射 */
   std::unordered_map<uint64_t, hal_queue_handle_t> queues_;

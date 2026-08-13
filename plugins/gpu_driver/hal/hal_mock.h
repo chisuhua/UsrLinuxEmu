@@ -81,3 +81,15 @@ struct hal_mock_state {
 
 void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state);
 void hal_mock_destroy(struct hal_mock_state *state);
+
+/* ── ADR-076 test-only injection API (kernel_module contract) ──────
+ * These symbols are declared extern "C" so test binaries can link them
+ * without pulling C++ namespace pollution. Production plugin builds do
+ * not use these. The 4 functions map directly to mock-side state
+ * mutation (see hal_mock.cpp for storage + locking). */
+extern "C" {
+  void hal_mock_inject_ptxemu_error(uint64_t handle, int cuda_error);
+  void hal_mock_clear_ptxemu_errors(void);
+  int  hal_mock_get_ptxemu_unload_call_count(uint64_t handle);
+  void hal_mock_reset_ptxemu_unload_counter(uint64_t handle);
+}

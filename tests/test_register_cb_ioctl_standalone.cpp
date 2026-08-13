@@ -3,7 +3,7 @@
  *
  * End-to-end coverage for the 0x02 (REGISTER_MMU_EVENT_CB) and 0x03
  * (REGISTER_FIRMWARE_CB) ioctls now wired into GpgpuDevice's active
- * dispatch table (kNumIoctls 36→38).
+ * dispatch table (kNumIoctls 36→38→41; 38→41 adds 3 kernel_module ioctls).
  *
  * Per openspec/2026-08-02-wire-mmu-fw-callback-ioctls-to-active-dispatch:
  *   - Dispatch table routes 0x02/0x03 to handleRegisterMMUCB /
@@ -11,7 +11,7 @@
  *   - Handlers forward to kfd_sim_register_mmu_cb / kfd_sim_register_firmware_cb
  *     (Tier-2 §3.1/§3.2 penetration; persistent registry, register-only).
  *   - argp==nullptr returns -EFAULT (matches 0x40-0x47 KFD handler convention).
- *   - dispatchCount() == 38 (kNumIoctls invariant).
+ *   - dispatchCount() == 41 (kNumIoctls invariant; post ADR-076).
  *   - 0xDEADBEEF unhandled request returns -EINVAL (fallback preserved).
  *
  * Regression-locks: PR #20 mode (DRM table updated but active table stale)
@@ -85,11 +85,11 @@ TEST_CASE("REGISTER_FIRMWARE_CB rejects nullptr with -EFAULT",
   REQUIRE(!kfd_sim_firmware_cb_is_registered());
 }
 
-TEST_CASE("dispatchCount() reflects kNumIoctls=38 (post wire-muw)",
+TEST_CASE("dispatchCount() reflects kNumIoctls=41 (post ADR-076)",
           "[handler][wire-muw][invariant]")
 {
   GpgpuDevice dev(nullptr);
-  REQUIRE(dev.dispatchCount() == 38);
+  REQUIRE(dev.dispatchCount() == 41);
 }
 
 TEST_CASE("Unhandled 0xDEADBEEF request returns -EINVAL (fallback preserved)",

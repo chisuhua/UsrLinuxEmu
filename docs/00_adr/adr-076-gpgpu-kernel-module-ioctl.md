@@ -1,6 +1,6 @@
 # ADR-076: GPGPU Kernel Module IOCTL（HAL Extension for PTX-EMU Image Executor 集成）
 
-**状态**: 🔄 Proposed（2026-08-09，跨仓协作契约起草；待 UsrLinuxEmu owner + TaskRunner owner 双评审后升 Accepted）
+**状态**: ✅ Accepted（2026-08-13，HAL extension 完整实施 + Oracle APPROVED-WITH-CONDITIONS + 144/145 ctest PASS + L1 portability check PASS）
 **日期**: 2026-08-09
 **提案人**: Sisyphus（基于 PTX-EMU ADR-0029 跨仓评审修订草案；canonical source per ADR-035 §R5.1 cross-repo 协议）
 **评审者**:
@@ -124,6 +124,7 @@ struct gpu_unload_kernel_module_args {
 
 **ioctl 编号 0x27/0x28/0x29 论证**：
 - System C 现有 ioctl 范围 0x01~0x26（[gpu_ioctl.h](plugins/gpu_driver/shared/gpu_ioctl.h) Stage 4 累积）
+- **0x27/0x28/0x29 位于 0x20 GET_DEVICE_INFO 与 0x30 CREATE_VA_SPACE 之间的编号 gap 之内**（不是连续追加，是填充既有 gap 的预留位置）
 - 0x27/0x28/0x29 与现有连续（不跳号）
 - 与原 PTX-EMU ADR-0029 §D8.3 提案的 39/40/41 不同——39/40/41 超过 8-bit 范围不可行（本 ADR 修订）
 - 预留 0x2A~0x3F 给未来扩展（multi-kernel ADR-0028 + 其他 CP 端集成）
@@ -316,15 +317,38 @@ static int hal_user_kernel_module_unload(void *ctx, uint64_t module_handle) {
 | 错误码 | 触发场景 |
 |--------|---------|
 | `0` | 成功 |
-| `-EINVAL` | image_size 为 0 或 > MAX；module_handle 无效 |
+| `-EINVAL` | image_size 为 0 或 > MAX；module_handle 无效；image_load 返回非 0 或 handle == 0；image_kernel_name 失败（rollback 路径后）|
 | `-EFAULT` | image_ptr / args_ptr 用户态不可读 |
-| `-ENOMEM` | PTX-EMU 端 GPU 状态满 |
+| `-ENOMEM` | PTX-EMU 端 GPU 状态满；CUDA_ERROR_OUT_OF_MEMORY → cuda_error_to_errno 映射 |
 | `-EBUSY` | unload 时 in-flight kernel |
-| `-ENOSYS` | `libptxemu_device.so` 未找到（dlsym 三级 fallback 全失败）|
-| `-EPROTO` | PTX-EMU ABI version 不匹配 |
-| `-EIO` | PTX-EMU 内部错误（ANTLR parse / deserialize / execution 失败）|
+| `-ENOSYS` | `libptxemu_device.so` 未找到（dlsym 三级 fallback 全失败）；hal backend 未初始化 |
+| `-EPROTO` | PTX-EMU ABI version < 1；`ptxemu_module_version` 符号缺失 |
+| `-EIO` | PTX-EMU 内部错误（ANTLR parse / deserialize / execution 失败，cudaError_t 719 LAUNCH_FAILED） |
+| `-EAGAIN` | CUDA_ERROR_ILLEGAL_STATE（700）— concurrent state mismatch |
 
-错误码映射与 `ptxemu_image_*` ABI 错误码语义对齐（PTX-EMU 端 `cudaError_t` → Linux errno 由 `hal_user.cpp` 内完成转换）。
+**Canonical `cudaError_t → -errno` 映射表**（定义在 `hal_user.cpp::cuda_error_to_errno`）：
+
+| cudaError_t | value | Linux errno |
+|---|---|---|
+| `CUDA_SUCCESS` | 0 | `0` |
+| `CUDA_ERROR_OUT_OF_MEMORY` | 2 | `-ENOMEM` |
+| `CUDA_ERROR_INVALID_VALUE` | 11 | `-EINVAL` |
+| `CUDA_ERROR_INVALID_HANDLE` | 400 | `-EINVAL` |
+| `CUDA_ERROR_LAUNCH_FAILED` | 719 | `-EIO` |
+| `CUDA_ERROR_ILLEGAL_STATE` | 700 | `-EAGAIN` |
+| (unknown) | other | `-EINVAL` (safe default) |
+
+**Load-path collapse to -EINVAL**（修订自 [Oracle review C2](../../docs/architecture/adr-076-ptxemu-hal-backend-gap-analysis.md)）：
+`ptxemu_image_load` 把 parse / deserialize / state-full 错误压成单个 `handle == 0` 返回；consumer 端无法区分三者。统一映射为 `-EINVAL`，**不再尝试反推错误类型**。
+
+**Kernel-name failure rollback**（修订自 [Oracle review H3](../../docs/architecture/adr-076-ptxemu-hal-backend-gap-analysis.md)）：
+`image_load` 成功后 `image_kernel_name` 失败路径必须先调 `image_unload(handle)` 再返回 `-EINVAL`，否则 PTX-EMU 端 handle 泄漏。
+
+**`ptxemu_module_version` 符号缺失**（修订自 [Oracle review D8.4](../../docs/architecture/adr-076-ptxemu-hal-backend-gap-analysis.md)）：
+判定为 `-EPROTO` 而非兼容路径——版本符号缺失即协议错误，不允许 fallback。
+
+**Version floor `>= 1`**（修订自 [Oracle review C1](../../docs/architecture/adr-076-ptxemu-hal-backend-gap-analysis.md)）：
+`module_version()` 返回 < 1 判 `-EPROTO`。PTX-EMU shipped v0.1.0 含 v1 ABI；v2+ 引入 multi-kernel 但 v1 符号子集稳定。前向兼容。
 
 ### D6: 同步 vs 异步语义
 

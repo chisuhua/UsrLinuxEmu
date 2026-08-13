@@ -1147,3 +1147,64 @@ set_tests_properties(test_concurrent_preempt_standalone PROPERTIES WORKING_DIREC
 add_catch_sim_test(test_aql_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_aql_standalone.cpp
 )
+
+# ADR-076 follow-up: 3 Catch2 test binaries locking the kernel_module contract.
+# All use the mock backend; no real libptxemu_device.so required at test time.
+
+add_executable(test_hal_kernel_module_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_hal_kernel_module_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_mock.cpp
+)
+# kernel listed a second time after the static archives so its symbols
+# can resolve the static-archive references to iommu_map (page_migration.cpp)
+# — without this, the link fails with --unresolved-symbols=ignore-in-shared-libs
+# because the linker pulls page_migration.cpp.o in via hal_mock.cpp's
+# sim_pm_create reference before encountering libkernel.so.
+target_link_libraries(test_hal_kernel_module_standalone PRIVATE kernel gpu_hal gpu_sim gpu_drv kernel)
+target_include_directories(test_hal_kernel_module_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/kernel
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_test(NAME test_hal_kernel_module_standalone COMMAND test_hal_kernel_module_standalone)
+set_tests_properties(test_hal_kernel_module_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(test_ioctl_table_coverage_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_ioctl_table_coverage_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+)
+target_link_libraries(test_ioctl_table_coverage_standalone PRIVATE kernel gpu_hal gpu_drv)
+target_include_directories(test_ioctl_table_coverage_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_test(NAME test_ioctl_table_coverage_standalone COMMAND test_ioctl_table_coverage_standalone)
+set_tests_properties(test_ioctl_table_coverage_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(test_hal_init_completeness_standalone
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_hal_init_completeness_standalone.cpp
+    ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_mock.cpp
+)
+target_link_libraries(test_hal_init_completeness_standalone PRIVATE kernel gpu_hal gpu_sim kernel)
+target_include_directories(test_hal_init_completeness_standalone PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include/kernel
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
+    ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_test(NAME test_hal_init_completeness_standalone COMMAND test_hal_init_completeness_standalone)
+set_tests_properties(test_hal_init_completeness_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
