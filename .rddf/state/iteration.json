@@ -315,6 +315,15 @@
       "archived_at": "2026-08-10T15:40:17+00:00",
       "last_deps_at": "2026-08-10T15:56:59+0800",
       "archive_commit_sha": "526c927"
+    },
+    {
+      "name": "add-ptxemu-kernel-module-hal-extension",
+      "status": "archived",
+      "phase": "cross-repo（独立于 Stage 5 multi-engine/PM4）",
+      "category": "core-impl",
+      "added_at": "2026-08-13T02:32:58+0800",
+      "archived_at": "2026-08-13T15:30:00+0800",
+      "archive_commit_sha": "pending (see archive commit SHA)"
     }
   ],
   "updated_at": "2026-08-09T00:04:59+00:00"

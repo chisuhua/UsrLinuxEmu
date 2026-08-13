@@ -1,0 +1,5 @@
+phase: cross-repo（独立于 Stage 5 multi-engine/PM4）
+category: core-impl
+change_type: functional（ADR-076 完整实施；HAL append-only per ADR-023 §D4）
+priority: P1
+parent_feature: ""
