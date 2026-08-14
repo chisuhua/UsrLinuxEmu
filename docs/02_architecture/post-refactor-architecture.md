@@ -1,12 +1,12 @@
 # UsrLinuxEmu 重构后架构与文档同步方案
 
-> **SSOT** | 最后验证: 2026-08-07（HAL 65 fn-ptrs / Stage 4 完成修订）| 对应代码 commit: `78fbb8d` (HEAD)
+> **SSOT** | 最后验证: 2026-08-14（HAL 68 fn-ptrs / Stage 4 完成修订）| 对应代码 commit: `HEAD`
 >
 > **作者**: UsrLinuxEmu Architecture Team
 > **状态**: ✅ Approved（v0.1.7，2026-08-07 修订 HAL 契约）
 > **作用**: 在 2026-05 ~ 06 期间完成 Phase 1.5 / Phase 2 重大重构后，建立**重构后架构**与**docs 现状**之间的对账，并给出 32 项修复建议
 >
-> **2026-08-07 增量修订**: HAL ops 契约从 64 → **65 fn-ptrs**（Stage 4.7 B-class L2 Phase 1+2，详见 §1.10.2）；删除 Stage 1.4 KFD 7-ops 附表（已被 ADR-061/062 替换为 +5 ops）
+> **2026-08-14 增量修订**: HAL ops 契约从 65 → **68 fn-ptrs**（ADR-076 追加 kernel_module_load/execute/unload；详见 §1.10.2）；Stage 4.7 B-class L2 Phase 1+2 已完成
 >
 > **历史审计报告**：[`docs/02_architecture/audit-reports/`](audit-reports/)（含 v0.1.6 首次深度审计，25 项偏差：🔴 1 / 🟠 4 / 🟡 14 / 🟢 6）
 
@@ -73,6 +73,8 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 | [ADR-036](../00_adr/adr-036-three-way-separation.md) | 3 区分架构原则 | ✅ Accepted | 2026-06-23 |
 | [ROADMAP](../roadmap/README.md) | 架构演进路线图（4 阶段 + 蓝图，从 MVP 到终态）| 🔄 进行中 | 2026-06-23 |
 | **本文**（post-refactor-architecture.md）| **重构后架构 SSOT + docs 同步方案** | ✅ Approved（v0.1.7）| — |
+| [scale-up-fabric-architecture.md](scale-up-fabric-architecture.md) | Scale-up Fabric 局部架构 SSOT（节点内 L1 Switch + 统一 PA + UVM/PGAS）| 📋 Draft v0.2 | 2026-08-14 |
+| [multi-process-gpu-simulator-integration.md](multi-process-gpu-simulator-integration.md) | Multi-Process GPU Simulator 跨仓集成 SSOT（4 仓 vision × UsrLinuxEmu 局部 SSOT）| 📋 Draft v0.1 | 2026-08-14 |
 
 ### 阅读对象
 
@@ -132,7 +134,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 │                   设备驱动层 (Device Driver)                      │
 │   plugins/gpu_driver/                                             │
 │   • drv/         : GpgpuDevice (table ioctl via getIoctlTablePtr)│
-│   • hal/         : struct gpu_hal_ops (65 fn-ptrs)             │
+   │   • hal/         : struct gpu_hal_ops (68 fn-ptrs)             │
 │                    + hal_user (mmap heap + buddy + fences)      │
 │                    + hal_mock                                    │
 │   • shared/      : gpu_ioctl.h, gpu_types.h, gpu_queue.h,       │
@@ -538,7 +540,7 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 - **真实 Linux kernel 环境**：driver → HAL → `hal_user.cpp` → 真实硬件
 - driver 代码本身**零修改**即可切换环境
 
-##### `gpu_hal_ops` 函数指针清单（65 个，append-only per ADR-023 §D4；2026-08-07 修订）
+##### `gpu_hal_ops` 函数指针清单（68 个，append-only per ADR-023 §D4；2026-08-14 修订）
 
 > **维护**: 函数指针列表见 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h) — 本表为分组摘要。
 
@@ -564,11 +566,12 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 | | `stream_capture_begin` / `stream_capture_end` / `stream_capture_status` (3) | CUDA stream capture（sim/stream_capture.h） |
 | | `queue_create` / `queue_attach_shmem` / `queue_submit` / `queue_destroy` / `queue_register_puller` (5) | GpuQueueEmu class（opaque hal_queue_handle_t） |
 | | `puller_create` / `puller_destroy` / `puller_set_puller` / `puller_register_queue` / `puller_unregister_queue` (5) | HardwarePullerEmu class（opaque hal_puller_handle_t） |
-| **总计** | **65（64 fn-ptrs + 1 inline helper）** | append-only per ADR-023 §D4 |
+| **ADR-076 PTX-EMU（+3 ops）** | `kernel_module_load` / `kernel_module_execute` / `kernel_module_unload` (3) | PTX-EMU kernel module 加载/执行/卸载 |
+| **总计** | **68（67 fn-ptrs + 1 inline helper）** | append-only per ADR-023 §D4 |
 
-> **完整 fn-ptr 清单**（64 fn-ptrs + 1 inline helper）以 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h) 为准（**canonical 权威源**）。class 类型（`GpuQueueEmu` / `HardwarePullerEmu`）通过 opaque `uint64_t` handle 暴露（ADR-023 §Decision 4 C 兼容约束），drv/ 侧通过 `hal_*` inline wrapper 调用（无需 cast，stage4-l2-foundation-removal-* 已 ship，2026-08-04~05）。
+> **完整 fn-ptr 清单**（67 fn-ptrs + 1 inline helper）以 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h) 为准（**canonical 权威源**）。class 类型（`GpuQueueEmu` / `HardwarePullerEmu`）通过 opaque `uint64_t` handle 暴露（ADR-023 §Decision 4 C 兼容约束），drv/ 侧通过 `hal_*` inline wrapper 调用（无需 cast，stage4-l2-foundation-removal-* 已 ship，2026-08-04~05）。
 >
-> **演进路径**: 11（Phase 1.5）→ 14（Stage 1.4 Tier-2 + C-12）→ 33（Stage 4.1-4.6：interrupt/preempt/semaphore/GC/PDL/mem_map_bo）→ **65**（Stage 4.7 B-class L2 Phase 1+2）。HAL interface 已超过 50 阈值，未来新需求应优先复用现有 fn-ptrs（参数扩展）而非新增（per ADR-023 §D4 append-only 规则）。
+> **演进路径**: 11（Phase 1.5）→ 14（Stage 1.4 Tier-2 + C-12）→ 33（Stage 4.1-4.6：interrupt/preempt/semaphore/GC/PDL/mem_map_bo）→ 65（Stage 4.7 B-class L2 Phase 1+2）→ **68**（ADR-076 PTX-EMU kernel module ops）。HAL interface 已超过 50 阈值，未来新需求应优先复用现有 fn-ptrs（参数扩展）而非新增（per ADR-023 §D4 append-only 规则）。
 
 **Preemption spec addendum**: See
 [`openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md`](../../openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md)

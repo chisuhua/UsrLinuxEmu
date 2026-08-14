@@ -20,7 +20,7 @@
 | [adr-008](adr-008-linux-api-compat.md) | 提供 Linux 内核 API 兼容层 | ✅ 已接受 | 2026-01 |
 | [adr-009](adr-009-singleton-pattern.md) | 采用单例模式实现核心服务 | ✅ 已接受 | 2026-01 |
 | [adr-010](adr-010-gtest-migration.md) | 测试框架选型 — Catch2（最终采用）vs GTest | ✅ 已接受 | 2026-02 |
-| [adr-011](adr-011-multiprocess-support.md) | 多进程支持方案 | 🔄 提议中 | 2026-03 |
+| [adr-011](adr-011-multiprocess-support.md) | 多进程支持方案 | 🚫 Superseded by ADR-087 | 2026-03 |
 | [adr-012](adr-012-performance-optimization.md) | 性能优化策略 | 🔄 提议中 | 2026-03 |
 | [adr-013](adr-013-error-handling-strategy.md) | 错误处理策略 | 🔄 提议中 | 2026-03 |
 | [adr-014](adr-014-logging-enhancement.md) | 日志系统增强 | 🔄 提议中 | 2026-03 |
@@ -81,6 +81,7 @@
 | [adr-074](adr-074-archive-tasks-md-checkbox-hygiene.md) | **Archive Tasks.md Checkbox Hygiene Policy**（归档 checkbox 可同步以反映实施状态，与"archive spec 不修改"正交）| ✅ Accepted | 2026-07-31 |
 | [adr-075](adr-075-stage4-7-bclass-l2-foundation-removal.md) | **Stage 4.7 B-class L2 Foundation Removal 回顾记录**（1+N 模式：5 项移除 proposal 全部 ship + 归档；HAL 11→33→65 append-only；回顾性 ADR，不替代 ADR-023/072）| ✅ Accepted | 2026-08-07 |
 | [adr-076](adr-076-gpgpu-kernel-module-ioctl.md) | **GPGPU Kernel Module IOCTL（PTX-EMU Image Executor HAL Backend）**（HAL 65→68 fn-ptrs append-only + GPU_IOCTL_LOAD/LAUNCH/UNLOAD_KERNEL_MODULE 0x27/0x28/0x29 + `hal_user.cpp` dlsym `libptxemu_device.so`；canonical source for PTX-EMU ADR-0029 §D8 跨仓协作；TaskRunner tadr-307 consumer-side 对偶）| ✅ Accepted | 2026-08-13 |
+| [adr-087](adr-087-multi-process-device-fabric-seam.md) | **Multi-Process Device & Fabric Seam ADR**（节点内统一 PA + L1 Switch 独立 CPU 进程 + CppLink 协议 + 4-owner 评审）| 🔄 Proposed v0.2（2026-08-14，Oracle 评审修复 F1-F11；pre-circulation）| 2026-08-14 |
 
 > **2026-08-13 变更（ADR-076 Accepted 升档）**：ADR-076（GPGPU Kernel Module IOCTL — PTX-EMU Image Executor HAL Backend）从 🔄 Proposed 升 ✅ Accepted。HAL extension 完整实施 + Oracle APPROVED-WITH-CONDITIONS + 144/145 ctest PASS + L1 portability check PASS。状态分布：Accepted 58→**59**，PROPOSED 5→**4**，总计 71 维持。HAL append-only 治理（ADR-023 §D4）继续生效，HAL 65→68 fn-ptrs 已 ship。TaskRunner [tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) consumer-side 集成保持 SOFT gate 独立 track。
 >
@@ -96,14 +97,15 @@
 > 
 > **2026-07-15 变更**：ADR-061（HAL IOMMU ops 扩展）+ ADR-062（HAL Event Signal ops 扩展）状态升 ✅ Accepted。fn-ptrs 已 commit 到 `struct gpu_hal_ops`（11→14），hal_user/hal_mock stub 实现已落地。C-12 Phase A.2 hard gate CLEARED；Phase B 可启动。
 
-## 状态分布总览（截至 2026-08-09）
+## 状态分布总览（截至 2026-08-14）
 
 | 状态 | 数量 | ADR 列表 |
 |------|----:|----------|
 | ✅ 已接受 | 58 | 001-010, 015-024, 027, 031-052, 054, 056-075（外加 058）|
-| 🔄 提议中 | 5 | 011-014, **076** |
+| 🔄 提议中 | 5 | 012-014, 076, **087 v0.2** |
 | ⏸️ Deferred | 7 | 025, 026, 028-030, 053, 055 |
-| **总计** | **71** | ADR-001 ~ ADR-076（含跳号 066/067/068/070/071） |
+| 🚫 Superseded | 1 | **011** (Superseded by ADR-087) |
+| **总计** | **72** | ADR-001 ~ ADR-087（含跳号 066/067/068/070/071） |
 
 > **2026-08-09 修订（ADR-076）**：ADR-076（GPGPU Kernel Module IOCTL — PTX-EMU Image Executor HAL Backend）状态 🔄 Proposed。canonical source for PTX-EMU ADR-0029 §D8 跨仓协作；TaskRunner [tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) consumer-side 对偶。状态分布：PROPOSED 4→**5**，总计 70→**71**。HAL append-only 治理（ADR-023 §D4）继续生效，HAL 65→68 fn-ptrs（追加 kernel_module_load/execute/unload）。
 
@@ -325,7 +327,7 @@ adr-001 (用户态模拟)
 
 ---
 
-**最后更新**: 2026-08-09（ADR-076 GPGPU Kernel Module IOCTL — PTX-EMU Image Executor HAL Backend 跨仓协作契约 canonical source；状态分布 58/5/7，总计 71）
+**最后更新**: 2026-08-14（ADR-087 v0.2 起草 + Accepted（Multi-Process Device & Fabric Seam）；ADR-011 改为 🚫 Superseded by ADR-087；状态分布 58/5/7/1，总计 72）
 
 ## 编号 gap 治理（2026-06-16 → 2026-06-17）
 

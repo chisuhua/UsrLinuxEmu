@@ -1,25 +1,7 @@
 # AGENTS.md - UsrLinuxEmu 开发指南
 
-**Generated:** 2026-07-25 | **Commit:** `HEAD` | **Branch:** `main`
-**Graph:** 4172 nodes, 24185 edges, 11 communities | **Tests:** 92+ Catch2 binaries
-
-## ⚠️ Session 边界防护（2026-07-21）
-
-> **本项目根目录: `/workspace/project/UsrLinuxEmu`**
-> **禁止路径前缀**: `/work/crmeb_pro`、`/workspace/PTX-EMU`、`/workspace/AgentForge` 等任何非本项目路径
-
-每次 session 启动时，AI 助手必须立即执行：
-```bash
-pwd                              # 确认在 /workspace/project/UsrLinuxEmu
-test -f AGENTS.md && echo OK     # 确认本文件存在
-ls plugins/ tests/ docs/ openspec/ 2>/dev/null | wc -l   # 期望 ≥ 4
-```
-
-任何 Write/Edit/Bash 命令的目标路径**必须**在项目边界内：
-- ✅ `src/`、`plugins/`、`tests/`、`docs/`、`openspec/`、`.rddf/`、`CMakeLists.txt`、`build.sh`、`AGENTS.md`
-- ❌ 任何 `/work/crmeb_pro/*`、`/workspace/<其他项目>/*`、`绝对路径在项目外`
-
-**违反此规则的工作必须立即停止并报告用户。**
+**Generated:** 2026-08-14 | **Commit:** `HEAD` | **Branch:** `main`
+**Graph:** 4287 nodes, 28136 edges, 11 communities | **Tests:** 98 Catch2 binaries
 
 ## 项目概述
 
@@ -145,7 +127,7 @@ TaskRunner 应使用 System C 接口。
 | `VFS::instance()` | 单例 | `include/kernel/vfs.h` | 设备注册/打开/查找 — Meyers singleton |
 | `ModuleLoader` | 静态类 | `include/kernel/module_loader.h` | `dlopen` + `dlsym("mod")` 插件发现 |
 | `GpgpuDevice` | 类 | `plugins/gpu_driver/drv/gpgpu_device.cpp` | 中心枢纽 — 38 ioctl handler 表驱动派发 |
-| `gpu_hal_ops` | 结构体 | `plugins/gpu_driver/hal/gpu_hal.h` | HAL 接口契约 — 14 函数指针 |
+| `gpu_hal_ops` | 结构体 | `plugins/gpu_driver/hal/gpu_hal.h` | HAL 接口契约 — 68 函数指针 |
 | `HardwarePullerEmu` | 类 | `plugins/gpu_driver/sim/hardware/` | FSM 状态机 — IDLE→FETCH→DECODE→DISPATCH→... |
 | `ServiceRegistry` | 单例 | `include/kernel/service_registry.h` | 跨模块服务注册/查找 |
 | `gpu_ioctl.h` | 头文件 | `plugins/gpu_driver/shared/` | System C 39 个 IOCTL 契约（TaskRunner 共享） |
