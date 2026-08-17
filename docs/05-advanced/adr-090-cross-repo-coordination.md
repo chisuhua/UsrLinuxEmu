@@ -264,7 +264,7 @@ Week 0 ────────── Week 2 ────────── Week
 
 | Gate | 端 | Draft Anchor | Issue / PR | Owner | Status | Opened Date | Closed/Patched | Notes |
 |------|-----|--------------|------------|-------|--------|-------------|----------------|-------|
-| #2 | CppTLM | annex §C | [#18](https://github.com/chisuhua/CppTLM/issues/18) | _CppTLM maintainer_ | 🟡 v2 Patch Posted | 2026-08-17 | 2026-08-17 | handoff spec v5.0 + SM executor submodule 集成 — **critical path**, 仍 OPEN 等 owner ack |
+| #2 | CppTLM | annex §C | [#19](https://github.com/chisuhua/CppTLM/issues/19) | _CppTLM maintainer_ | 🟡 v2 Patch Posted (tracking #19) | 2026-08-17 | 2026-08-17 23:32:59 UTC (issue) / 23:37:03 UTC (alignment comment) | handoff spec v3.0 + DGpuBar/Doorbell/SQ-CQ 最小完备集 + git submodule — **critical path**, #19 由 owner 自建对齐 ADR-090 v2 |
 | #3 | PTX-EMU | annex §A | [#12](https://github.com/chisuhua/PTX-EMU/issues/12) | _PTX-EMU owner_ | 🚫 Closed (superseded by v2) | 2026-08-17 | 2026-08-17 16:58:50 UTC | ADR-0029 §D8 amendment — **CLOSED**, v1 RFC 4 项硬 BLOCKERS 无法 patch, 关闭保留历史 |
 | #4 | TaskRunner | annex §B | [#10](https://github.com/chisuhua/TaskRunner/issues/10) | _TaskRunner owner_ | 🚫 Closed (superseded by v2) | 2026-08-17 | 2026-08-17 16:59:09 UTC | tadr-308 + cu_module.cpp / cu_launch.cpp 改造 — **CLOSED**, v1 RFC 5 项 BLOCKERS 无法 patch, 关闭保留历史 |
 
@@ -293,18 +293,31 @@ Week 0 ────────── Week 2 ────────── Week
 
 投递时建议搭配 PR/issue 描述,模板见 §E.2 / §E.3 / §E.4 (按端复用)。
 
-### E.1a v2 重启投递记录 (2026-08-17 16:58-17:00 UTC)
+### E.1a v2 重启投递记录 (2026-08-17 16:58-23:37 UTC)
 
+**第一波 (16:58-17:00 UTC) — UsrLinuxEmu Architecture Team 主动投递**:
 - ✅ PTX-EMU #12 关闭 + v2 close comment: https://github.com/chisuhua/PTX-EMU/issues/12#issuecomment-5317969588
   - 关闭理由: v1 RFC 含 4 项硬 BLOCKERS(F1 5 函数假设错 / F2 §D8 scope 错 / F3 ADR-0029 status 错 / F4 D1 已 ship 冲突),patch 不可挽回可信度
   - 关闭 comment 链接 ADR-090 v2 commit `0e67d41` + Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy` + 等待 HSK-6 公告 ack
 - ✅ TaskRunner #10 关闭 + v2 close comment: https://github.com/chisuhua/TaskRunner/issues/10#issuecomment-5317969901
   - 关闭理由: v1 RFC 含 5 项 BLOCKERS(F3 路径错 / F4 删除清单虚构 / F6 接口 diff 错 / F7 PTXIR 解析错 / F11/F12 文件缺失)
   - 关闭 comment 提供 tadr-308 待创建文档路径 + `IGpuDriver` 接口修订草案 diff
-- ✅ CppTLM #18 v2 patch 就地更新 (issue 仍 OPEN): https://github.com/chisuhua/CppTLM/issues/18#issuecomment-5317970852
+- ✅ CppTLM #18 v2 patch 就地更新: https://github.com/chisuhua/CppTLM/issues/18#issuecomment-5317970852
   - patch 内容: v2 ↔ #18 反馈 15 维度映射表(角色反转 / 桥接代码删除两阶段 / ptx_emu_driver_shim.cc / 4 测试文件 / G-D4 / HSK 协议 / namespace tlm / v2.1→v3.0 / SmExecutor / git submodule / CompletionRing / dGPU 最小集 / ANTLR4 / P0-P4 / layered fallback 废除)
   - 3 项关键反转: HSK-6 归属修正(PTX-EMU 发起) / ANTLR4 风险修正(vendored in-tree) / patch 就地而非新 RFC
-  - 等 CppTLM owner ack → Gate #2 ✅ → ADR-090 v2 升 ✅ Accepted
+
+**第二波 (23:32-23:37 UTC) — CppTLM owner 主动跟进**:
+- ✅ CppTLM owner 自建 #19 "[RFC] v3.0 — dGPU Board Submodule + SmExecutor Integration (BREAKING)": https://github.com/chisuhua/CppTLM/issues/19
+  - 内容: 完整 v3.0 RFC(角色反转声明 + `ISmExecutor` 3 ABI + dGPU 最小完备集 + 两阶段删除 + G-D4 迁移 + 4 测试处置 + git submodule + ANTLR4 spike + 9 周双轨时间线 + 风险 R1-R8)
+  - 与 ADR-090 v2 高度对齐(15 个映射项见 #19 alignment comment)
+- ✅ CppTLM owner 关闭 #18 (closes at 2026-08-17T23:32:53Z)
+- ✅ UsrLinuxEmu Architecture Team 在 #19 贴 alignment comment: https://github.com/chisuhua/CppTLM/issues/19#issuecomment-5321503096
+  - 内容: #19 ↔ ADR-090 v2 15 维度映射表 + 双向 Gate 状态 + ack 后 UsrLinuxEmu 侧动作 + 期望 ack 形式
+  - 关键修正: HSK-6 由 PTX-EMU 发起(基于 `cpptlm_bridge.h:14-16` 自述)
+- 🚫 CppTLM #20 (我误建冗余 tracking issue) — 关闭: https://github.com/chisuhua/CppTLM/issues/20
+  - 原因: #19 已存在为 owner 自建 v3.0 RFC, 正是用户想要的"待 Gate #2 ack"跟踪 issue
+
+**当前 Gate #2 跟踪载体 = #19**(owner 自建 v3.0 RFC, UsrLinuxEmu 已贴 alignment comment 等 owner ack)
 
 ### E.1a 投递记录 (2026-08-17)
 
