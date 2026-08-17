@@ -67,6 +67,7 @@ RUN_STAGE2=0
 RUN_DOXYGEN=0
 RUN_VERSION_SSOT=0
 RUN_CROSS_REF=0
+RUN_CROSS_DOC=0
 
 # ---------------------------------------------------------------------------
 # Output helpers
@@ -168,7 +169,7 @@ parse_args() {
 
     case "${RUN_SECTION}" in
         all)
-            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1; RUN_SYNC=1; RUN_STAGE2=1; RUN_DOXYGEN=1; RUN_VERSION_SSOT=1; RUN_CROSS_REF=1
+            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1; RUN_SYNC=1; RUN_STAGE2=1; RUN_DOXYGEN=1; RUN_VERSION_SSOT=1; RUN_CROSS_REF=1; RUN_CROSS_DOC=1
             ;;
         arch)       RUN_ARCH=1 ;;
         ioctl)      RUN_IOCTL=1 ;;
@@ -179,9 +180,10 @@ parse_args() {
         doxygen)    RUN_DOXYGEN=1 ;;
         version-ssot) RUN_VERSION_SSOT=1 ;;
         cross-ref)  RUN_CROSS_REF=1 ;;
+        cross-doc)  RUN_CROSS_DOC=1 ;;
         *)
             echo "ERROR: unknown section: ${RUN_SECTION}" >&2
-            echo "Valid sections: all, arch, ioctl, adr, doc-health, build, sync, stage2, doxygen, version-ssot, cross-ref" >&2
+            echo "Valid sections: all, arch, ioctl, adr, doc-health, build, sync, stage2, doxygen, version-ssot, cross-ref, cross-doc" >&2
             exit 2
             ;;
     esac
@@ -881,6 +883,7 @@ main() {
     [ "${RUN_DOXYGEN}" -eq 1 ] && section_doxygen
     [ "${RUN_VERSION_SSOT}" -eq 1 ] && section_version_ssot
     [ "${RUN_CROSS_REF}" -eq 1 ] && section_cross_ref
+    [ "${RUN_CROSS_DOC}" -eq 1 ] && section_cross_doc
 
     print_summary
     exit "${EXIT_CODE}"
@@ -986,6 +989,136 @@ section_cross_ref() {
         printf '%b' "${bad_rows}" | sed 's/^/      /'
     else
         check_pass "proposal-approved.md header and body rows have exactly 5 columns"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Section 11: Cross-document consistency (added 2026-08-16)
+# Validates that ABI counts, version strings, HAL fn-ptr counts and module
+# names are consistent across the ADR-088 / Handoff Spec / Gap Analysis
+# document trio. Catches the kind of drift found by the 2026-08-16
+# doc-review where Handoff claimed 31 ABI while ADR-088 had 23 ABI.
+# ---------------------------------------------------------------------------
+
+section_cross_doc() {
+    section "11. Cross-Document Consistency (ADR-088 ↔ Handoff ↔ Gap Analysis)"
+
+    local adr_088="${REPO_ROOT}/docs/00_adr/adr-088-dgpu-complete-simulation.md"
+    local handoff="${REPO_ROOT}/docs/05-advanced/cpptlm-v4-implementation-handoff.md"
+    local gap_analysis="${REPO_ROOT}/docs/architecture/cpptlm-emu-integration-gap-analysis.md"
+
+    # 11.1 All three documents exist
+    subsection "11.1 ADR-088 + Handoff + Gap Analysis all exist"
+    local all_exist=1
+    [ -f "${adr_088}" ] || { check_fail "adr-088-dgpu-complete-simulation.md missing"; all_exist=0; }
+    [ -f "${handoff}" ] || { check_fail "cpptlm-v4-implementation-handoff.md missing"; all_exist=0; }
+    [ -f "${gap_analysis}" ] || { check_fail "cpptlm-emu-integration-gap-analysis.md missing"; all_exist=0; }
+    if [ "${all_exist}" -eq 1 ]; then
+        check_pass "All 3 documents present"
+    else
+        return
+    fi
+
+    # 11.2 ADR-088 declares 23 ABI (canonical)
+    subsection "11.2 ADR-088 §D5 declares 23 ABI"
+    if grep -qE "\\*\\*23 ABI\\*\\*|23 ABI 总计" "${adr_088}" 2>/dev/null; then
+        check_pass "adr-088 contains '23 ABI' declaration"
+    else
+        check_fail "adr-088 missing '23 ABI' declaration (canonical: ADR-088 §D5)"
+    fi
+
+    # 11.3 Handoff Spec declares 23 ABI
+    subsection "11.3 Handoff Spec declares 23 ABI (not 31/48/57/72)"
+    if grep -qE "\\*\\*23 ABI\\*\\*" "${handoff}" 2>/dev/null; then
+        check_pass "Handoff Spec contains '23 ABI' declaration"
+    else
+        check_fail "Handoff Spec missing '23 ABI' declaration (canonical: ADR-088 §D5)"
+    fi
+    # Check for forbidden old ABI counts
+    local old_abi_hits
+    old_abi_hits=$(grep -cE "\\*\\*31 ABI\\*\\*|\\*\\*48 forward\\*\\*|\\*\\*57 ABI\\*\\*|\\*\\*72 入口\\*\\*" "${handoff}" 2>/dev/null | head -1 | tr -d '[:space:]')
+    old_abi_hits="${old_abi_hits:-0}"
+    if [ "${old_abi_hits}" = "0" ]; then
+        check_pass "Handoff Spec has no forbidden old ABI counts (31/48/57/72)"
+    else
+        check_fail "Handoff Spec has ${old_abi_hits} forbidden old ABI count declarations"
+    fi
+
+    # 11.4 Gap Analysis has 🚨 outdated banner
+    subsection "11.4 Gap Analysis has 🚨 outdated banner"
+    if grep -qE "🚨.*已过时|🚨.*过时" "${gap_analysis}" 2>/dev/null; then
+        check_pass "Gap Analysis marked as outdated with 🚨 banner"
+    else
+        check_fail "Gap Analysis missing 🚨 outdated banner (must be added per doc-review)"
+    fi
+
+    # 11.5 Version string consistency: ADR-088 + Handoff both use v1.0-dgpu-v0
+    subsection "11.5 Version string 'v1.0-dgpu-v0' consistent across ADR-088 + Handoff"
+    if grep -qE "v1\.0-dgpu-v0" "${adr_088}" 2>/dev/null && \
+       grep -qE "v1\.0-dgpu-v0" "${handoff}" 2>/dev/null; then
+        check_pass "Both ADR-088 and Handoff reference version 'v1.0-dgpu-v0'"
+    else
+        check_fail "Version string 'v1.0-dgpu-v0' missing in one or both docs"
+    fi
+
+    # 11.6 No forbidden old version strings in current context
+    # (historical comparisons are allowed; only flag current/as-of-now declarations)
+    subsection "11.6 No current-context forbidden version strings"
+    local forbidden_versions=("v4.0-dgpu-v0" "v2.0-amdgpu" "v2.0-nouveau")
+    local bad_hits=0
+    # Historical-context keywords to exclude (v3.0 / 已删除 / 已移出 / 删除 / 不需要 / ❌ / 🚨 / 历史 / Deprecated / 废弃)
+    # blockquote (^>) lines are Gap Analysis 🚨 banner — historical context.
+    # Multi-file grep output: `file:line:content` — need `file:line:> |` to match blockquote.
+    local hist_excl='(v3\.0|已删除|已移出|删除|不需要|❌|🚨|历史|Deprecated|deprecated|废弃|v5 关联|^[^:]+:[^:]+:\s*>)'
+    for ver in "${forbidden_versions[@]}"; do
+        # Count non-historical mentions in current-context (lines starting with # or |)
+        local hits
+        hits=$(grep -nE "^\s*(#|\|).*${ver}" "${handoff}" "${gap_analysis}" 2>/dev/null \
+            | grep -vE "${hist_excl}" \
+            | wc -l | tr -d ' ')
+        if [ "${hits}" -gt 0 ]; then
+            check_fail "Forbidden version '${ver}' appears in current-context (${hits} times)"
+            bad_hits=$((bad_hits + 1))
+        fi
+    done
+    if [ "${bad_hits}" -eq 0 ]; then
+        check_pass "No current-context forbidden version strings (v4.0-dgpu-v0 / v2.0-amdgpu / v2.0-nouveau)"
+    fi
+
+    # 11.7 No forbidden old CppTLM module names in current scope
+    subsection "11.7 No forbidden CppTLM module names in current scope"
+    local forbidden_modules=("cpptlm_iommu_domain" "cpptlm_cxl_memdev")
+    local bad_modules=0
+    for mod in "${forbidden_modules[@]}"; do
+        # Search Handoff + Gap Analysis; skip lines matching historical/removed context.
+        local hits
+        hits=$(grep -nE "${mod}" "${handoff}" "${gap_analysis}" 2>/dev/null \
+            | grep -vE "${hist_excl}" \
+            | wc -l | tr -d ' ')
+        if [ "${hits}" -gt 0 ]; then
+            check_fail "Forbidden CppTLM module '${mod}' in current scope (${hits} times)"
+            bad_modules=$((bad_modules + 1))
+        fi
+    done
+    if [ "${bad_modules}" -eq 0 ]; then
+        check_pass "No forbidden CppTLM modules in current scope (cpptlm_iommu_domain / cpptlm_cxl_memdev)"
+    fi
+
+    # 11.8 HAL fn-ptr count consistency: 68
+    subsection "11.8 HAL fn-ptr count '68' consistent across ADR-088 + Handoff"
+    if grep -qE "\\b68 fn-ptr\\b|68 fn-ptrs|HAL 68" "${adr_088}" 2>/dev/null && \
+       grep -qE "\\b68 fn-ptr\\b|68 fn-ptrs|HAL 68" "${handoff}" 2>/dev/null; then
+        check_pass "Both ADR-088 and Handoff reference HAL 68 fn-ptrs"
+    else
+        check_warn "HAL 68 fn-ptr reference missing in one or both docs (may be in summary form)"
+    fi
+
+    # 11.9 Handoff Spec v4.0+ marker present
+    subsection "11.9 Handoff Spec is v4.0+ (post-redesign)"
+    if grep -qE "v4\.0|文档版本.*4\.|## 0\..*v4\.0" "${handoff}" 2>/dev/null; then
+        check_pass "Handoff Spec has v4.0+ marker (post-redesign)"
+    else
+        check_fail "Handoff Spec missing v4.0+ marker (still claims v3.0 31 ABI)"
     fi
 }
 
