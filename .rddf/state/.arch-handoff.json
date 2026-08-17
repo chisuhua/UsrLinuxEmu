@@ -1,15 +1,15 @@
 {
-  "version": 2,
-  "arch_complete_at": "2026-08-13T00:00:00+00:00",
-  "adr_count": 71,
+  "version": 4,
+  "arch_complete_at": "2026-08-14T01:00:00+00:00",
+  "adr_count": 73,
   "adr_dir": "docs/00_adr",
   "adr_pattern": "adr-*.md",
   "completed_adr_ids": [],
   "roadmap_exists": true,
   "roadmap_path": "roadmap.md",
-  "current_phase": "stage-4 (post-closeout; awaiting trigger for stage-5 / cross-repo integration)",
+  "current_phase": "stage-4 (post-closeout; awaiting trigger for stage-5 / stage-5.5 v2 / cross-repo integration)",
   "architecture_dir": "docs/architecture",
-  "gap_analysis_count": 2,
+  "gap_analysis_count": 3,
   "approved_proposals": [
     "stage4-1-bar-ioremap",
     "stage4-5-cp-phase6-preemption-timeline-sem",
@@ -36,7 +36,110 @@
       "ready_for_design_phase": true,
       "audit_date": "2026-08-13",
       "audit_by": "Sisyphus (arch-side audit)"
+    },
+    {
+      "adr_id": "adr-088",
+      "adr_version": "v2",
+      "title": "CppTLM-based Realistic APU SoC Emulation via HAL In-place Replacement",
+      "status": "Proposed v2",
+      "created_date": "2026-08-14",
+      "last_modified": "2026-08-14T01:00:00+00:00",
+      "oracle_sessions": [
+        {
+          "session_id": "ses_fffbcb1d5ffeZzJVDbbys5UXn2",
+          "phase": "v1 architecture review",
+          "verdict": "REJECTED-original-pattern + PROVIDED-correction"
+        }
+      ],
+      "kernel_research_sessions": [
+        {
+          "topic": "amdgpu HAL hardware interactions",
+          "agent": "librarian",
+          "result": "5 CRITICAL gaps identified (SMU/PSP/Golden/KFD Signal/HQD)"
+        },
+        {
+          "topic": "amdgpu IOMMU/SVM/HMM address translation",
+          "agent": "librarian",
+          "result": "5 fatal gaps identified (IH-based retry fault / mmu_interval_notifier / eviction fence / HMM devm_memremap / 3 mmap modes)"
+        },
+        {
+          "topic": "nouveau kernel driver HAL",
+          "agent": "librarian",
+          "result": "5 nouveau-specific gaps identified (PRAMIN / BAR1-2 inversion / Fence 3 gen / MMU fault buffer / PFIFO IB-mode)"
+        }
+      ],
+      "v2_changes_summary": {
+        "c_abi_count_v1": 28,
+        "c_abi_count_v2_dgpu_amdgpu": 43,
+        "c_abi_count_v2_nouveau": 56,
+        "c_abi_count_v2_combined_max": 56,
+        "new_gaps_v2": 15,
+        "new_cpptlm_modules_v2": 3,
+        "new_forward_fn_ptrs_v2_dgpu_amdgpu": 14,
+        "new_callback_fn_ptrs_v2": 3,
+        "workload_v1_weeks": "16-21",
+        "workload_v2_weeks": "24-32",
+        "rationale": "3 Linux kernel deep research (amdgpu HAL + amdgpu IOMMU/SVM/HMM + nouveau) revealed v1 28 C ABI only covers 26% of real driver interaction needs"
+      },
+      "architecture_summary": {
+        "form": "dGPU-first (not APU); nouveau as v2 extension (separate ABI sub-set)",
+        "integration_mode": "dlopen libcpptlm_emulator.so",
+        "hal_pattern": "single hal_user.cpp in-place replacement (NO sibling hal_emu.cpp)",
+        "c_abi_count": "55-57 (43 amdgpu + 14 nouveau - 1 shared; + 1 register)",
+        "c_abi_breakdown_dgpu_amdgpu": "34 drv→sim forward + 8 sim→drv callback + 1 register = 43",
+        "c_abi_breakdown_nouveau": "44 drv→sim forward + 11 sim→drv callback + 1 register = 56",
+        "version_handshake": "cpptlm_emulator_get_version() returns 'v2.0-amdgpu' or 'v2.0-nouveau'",
+        "env_trigger_dgpu": "USR_LINUX_EMU_USE_CPPTLM=1 + USR_LINUX_EMU_CPPTLM_ARCH=amdgpu + USR_LINUX_EMU_CPPTLM_TOPO=.../dgpu_v0.json",
+        "env_trigger_nouveau": "USR_LINUX_EMU_USE_CPPTLM=1 + USR_LINUX_EMU_CPPTLM_ARCH=nouveau + USR_LINUX_EMU_CPPTLM_TOPO=.../nouveau_v0.json",
+        "drv_modification": "ZERO (per ADR-036/072)",
+        "sync_mode": "mixed sync MMIO + async fence/intr (via ADR-060 kernel_workqueue)"
+      },
+      "v2_new_gaps_by_severity": {
+        "critical": [
+          "3.11 SMU mailbox / SMC messages (DPM/PG/reset path)",
+          "3.12 PSP firmware loading (early boot; SMU dependency)",
+          "3.13 IH-based retry fault (AMD does NOT use ATS/PRI; HMM/SVM depends)"
+        ],
+        "high": [
+          "3.14 KFD signal page (ROCm userspace main comm channel)",
+          "3.15 HQD context save/restore (preemptive KFD multi-process)",
+          "3.16 mmu_interval_notifier (not standard mmu_notifier)",
+          "3.17 Golden registers batch load (silent startup errors)",
+          "3.18 HMM devm_memremap_pages + migrate_to_ram dual callback",
+          "3.19 Doorbell + MMIO Remap + CWSR three mmap modes"
+        ],
+        "medium": [
+          "3.20 Per-VM PT update (SDMA path)",
+          "3.21 Eviction fence (BO migration tracking)",
+          "3.22 PRAMIN 1MB sliding window (nouveau-specific)",
+          "3.23 BAR1 = 256MB GART/VRAM (nouveau-specific; address space inversion)",
+          "3.24 Nouveau Fence 3 generations (NV06E → NV906F → NVC36F)",
+          "3.25 MMU fault buffer (Hopper+ replayable faults)",
+          "3.26 PFIFO IB-mode push (NV50+) + USERD MMIO write"
+        ]
+      },
+      "cpptlm_modules_to_implement_v2": {
+        "v1_base_5": [
+          "PciHostTLM (io-pci.md blueprint)",
+          "PciDeviceTLM (Config Space 256B + MSI-X capability)",
+          "PCIBridgeTLM (BAR0/1/2/5 routing + 100-500 cycle latency)",
+          "DmaDeviceTLM (io-dma.md blueprint)",
+          "ComputeUnitTLM (full implementation per gpu-compute-unit.md)"
+        ],
+        "v2_additional_3": [
+          "HMM/migrate_to_ram (kfd_migrate.c:603-637 devm_memremap_pages + folio_free + migrate_to_ram)",
+          "PRAMIN/BAR1_window (nouveau: BAR0+0x700000 1MB sliding window; BAR1=256MB VRAM)",
+          "MMU fault buffer (tu102_fault_buffer_notify + NVKM_FAULT_BUFFER_EVENT_PENDING; Hopper+ replayable)"
+        ]
+      },
+      "workload_estimate": "24-32 weeks (8 sub-stages E.0-E.7; E.0-E.6 mandatory + E.7 nouveau optional)",
+      "companion_gap_analysis": "docs/architecture/cpptlm-emu-integration-gap-analysis.md (updated to §3.11-3.27 v2; 15 new gaps)",
+      "roadmap_stage": "stage-5.5 v2 (revised 2026-08-14)",
+      "roadmap_derived_improvement": "add-cpptlm-emu-bridge-integration",
+      "ready_for_design_phase": true,
+      "audit_date": "2026-08-14",
+      "audit_by": "Oracle (ses_fffbcb1d5ffeZzJVDbbys5UXn2 v1 + 3 librarian sessions v2) + Sisyphus (arch-side)"
     }
   ],
-  "notes": "arch-done: ADR 71 ✅ | roadmap ✅ | gap-analysis 2 ✅ (1: stage4; 2: adr-076) | approved 3 ✅. adr-076 PTX-EMU HARD gate CLEARED 2026-08-13 (libptxemu_device.so + cpptlm_module.h + tag v0.1.0). TaskRunner tadr-307 SOFT gate remains PROPOSED but does not block UsrLinuxEmu HAL extension per ADR-076 §Acceptance gate 2. Design phase ready: add-ptxemu-kernel-module-hal-extension. Stage 5 explicitly excludes ADR-076 (per stage-5-multi-engine-pm4.md §scope). Cross-repo integration tracked independently under roadmap 'cross-repo reviewing ADRs' section."
+  "notes": "arch-done: ADR 73 (72 prior + adr-088 v2) | roadmap ✅ (stage 5.5 v2 updated; 24-32 weeks) | gap-analysis 3 (1: stage4; 2: adr-076; 3: adr-088 cpptlm-emu v2 §3.11-3.27) | approved 3 ✅. **2026-08-14 v1**: adr-088 (CppTLM EMU bridge) created — Oracle session ses_fffbcb1d5ffeZzJVDbbys5UXn2 reviewed in-place hal_user.cpp replacement pattern with 28 C ABI (20 forward + 8 callback); dGPU-first; drv/ zero modification; Stage 5.5 added (16-21 weeks). **2026-08-14 v2**: adr-088 extended based on 3 Linux kernel deep research (amdgpu HAL patterns + amdgpu IOMMU/SVM/HMM + nouveau) — C ABI 28→55-57 (dGPU amdgpu 43 + nouveau 14); 15 new gaps identified (CRITICAL: SMU/PSP/retry fault; HIGH: KFD Signal/HQD/mmu_interval_notifier/Golden/HMM/3×mmap; MEDIUM: PT update/Eviction/PRAMIN/BAR1/Fence3/FaultBuf/IBPush); workload 16-21→24-32 weeks; added E.3.5 (3 new CppTLM modules) + E.7 (nouveau optional). HAL 68 fn-ptrs still unchanged (in-place replacement does not modify HAL interface contract). Compiles with adr-076 PTX-EMU proposal (independent HAL extension path; tadr-307 SOFT gate non-blocking). Cross-repo integration tracked under roadmap 'cross-repo reviewing ADRs' section. SSOT post-refactor-architecture.md §1.10.4 v2 synchronized. ADR README index updated. Companion ADR-089 (nouveau HAL Backend) deferred for separate approval when E.7 starts."
 }

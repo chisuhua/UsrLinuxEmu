@@ -40,6 +40,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | **阶段 3** | ✅ 已达成 (2026-07-23) | v1.0 稳定（CUDA E2E ✅、sanitizer ✅、bridge ✅、perf ✅、errno 审计 ✅、文档 ✅、CI ubuntu ✅、Release ✅）| [docs/roadmap/stage-3-v1.0.md](docs/roadmap/stage-3-v1.0.md) |
 | **阶段 4** | ✅ 已完成（4.1-4.7.2 全部 ship + 归档，2026-07-26 ~ 2026-08-05）| 真实 BAR + ioremap 模拟 + GPU CP Phase 4-7 完整化 + B-class L2 违规清理；HAL 11 → 33 → 65 fn-ptrs (append-only per ADR-023 §D4)；5 个 removal 已 ship（drv/ 不再 #include sim/* headers）| [docs/roadmap/stage-4-bar-ioremap.md](docs/roadmap/stage-4-bar-ioremap.md) |
 | **阶段 5** | 📋 规划中（trigger-gated） | 真实多引擎 Puller + PM4 microcode 解析 + 4.6 closeout follow-up；triggered by ADR-049 Phase 6+ / ADR-052 Phase 6.5 条件（详见各 ADR）| [docs/roadmap/stage-5-multi-engine-pm4.md](docs/roadmap/stage-5-multi-engine-pm4.md)（占位，待 trigger 启动）|
+| **阶段 5.5** | ✅ Accepted (2026-08-15) | **CppTLM dGPU 参考设计集成**（完整硬件子系统仿真） — 通过 dlopen `libcpptlm_emulator.so` 把 dGPU 板卡仿真（**23 个 C ABI**：BAR MMIO + PCIe Config Space + MSI-X + 多板卡枚举 + backdoor + DMA translate cb）委托给 CppTLM；系统 IOMMU + CXL.mem 由 UsrLinuxEmu `src/system_hw/` 功能级仿真；dGPU-first；drv/ 零修改；**5 阶段**（**约 24-32 周**，跨团队并行）| [docs/00_adr/adr-088-dgpu-complete-simulation.md](docs/00_adr/adr-088-dgpu-complete-simulation.md) + [docs/architecture/cpptlm-emu-integration-gap-analysis.md](docs/architecture/cpptlm-emu-integration-gap-analysis.md) |
 | **终态蓝图** | 📋 愿景 | 3 区分成熟形态，可移植驱动可在真实 Linux 内核中编译运行 | [docs/roadmap/blueprint.md](docs/roadmap/blueprint.md) |
 
 ---
@@ -85,6 +86,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | [ADR-023](docs/00_adr/adr-023-hal-interface.md) §D4 | 4.7.3 spec 同步：65 fn-ptrs 列入 ADR 表格（取代旧 46 数字） | sync-adr-023-hal-fnp-tr-table | ✅ 可派发（Stage 4 follow-up） |
 | — | L2 残余 `sim/sim_event.h` 清理（独立 proposal，不在 Stage 4 范围） | cleanup-sim-event-h-l2-residual | ✅ 可派发（独立 proposal） |
 | [ADR-076](docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md) | PTX-EMU HARD gate ✅ CLEARED（`libptxemu_device.so` + `cpptlm_module.h` shipped + tag v0.1.0 发布，2026-08-13 audit）；HAL 65 → 68 append-only + 3 ioctls (0x27/0x28/0x29) + `hal_user.cpp` dlsym PTX-EMU | add-ptxemu-kernel-module-hal-extension | ✅ **可派发**（PTX-EMU gate 满足；TaskRunner tadr-307 SOFT gate 独立推进） |
+| [ADR-088](docs/00_adr/adr-088-dgpu-complete-simulation.md) | dGPU 参考设计 — 完整硬件子系统仿真（CppTLM 仅仿真 dGPU 板卡，**23 个 C ABI**；系统 IOMMU + CXL.mem 由 `src/system_hw/` 功能级仿真；仿真拓扑与真硬件一致）；HAL in-place 替换模式；drv/ 零修改；5 阶段（**约 24-32 周**）| add-cpptlm-emu-bridge-integration | ✅ **Accepted**（2026-08-15 Oracle 二次评审通过；2026-08-16 范围收窄：CppTLM 仅 dGPU 板卡） |
 
 ## 跨仓评审中 ADRs
 

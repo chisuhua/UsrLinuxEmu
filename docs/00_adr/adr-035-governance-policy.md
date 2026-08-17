@@ -72,6 +72,16 @@ H-4 governance cleanup 提炼治理规则为正式 ADR。
 
 **R2.3 状态变更必须记录**：修订记录（revision history）section 必须记录变更日期与原因。
 
+**R2.4 多版本 ADR 单文件整合规则**（2026-08-16 增补，per ADR-088 整合先例 + Oracle session `ses_ff8324a95ffe2rUluKO2L6058O` 建议）：
+
+当通过**删除早期版本文件**的方式把多版本 ADR（如 v3/v4/v5 分立文件）整合为单一权威文件时，必须满足：
+
+- 整合后的 ADR 修订记录必须**列出已删除文件名 + 删除日期**，并明确"内容以本文件为唯一权威来源"
+- ADR 编号一经分配不再改变；整合后文件名建议使用 `adr-XXX-<topic>.md` 主题命名（去掉版本后缀）
+- README 索引的状态分布表必须同步更新（已删除的版本文件不再计入 Superseded 计数）
+- 整合决策的来源必须文档化（如"用户决策：单文件保留最新版本"）
+- 满足上述条件时，允许 Superseded 链接链断裂——修订记录 + README 变更注记联合构成替代溯源
+
 ### Rule 3 — plans/ 目录结构（双层归档）
 
 **R3.1 TaskRunner 本地归档**（`external/TaskRunner/plans/archive/`）:

@@ -571,13 +571,117 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 
 > **完整 fn-ptr 清单**（67 fn-ptrs + 1 inline helper）以 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h) 为准（**canonical 权威源**）。class 类型（`GpuQueueEmu` / `HardwarePullerEmu`）通过 opaque `uint64_t` handle 暴露（ADR-023 §Decision 4 C 兼容约束），drv/ 侧通过 `hal_*` inline wrapper 调用（无需 cast，stage4-l2-foundation-removal-* 已 ship，2026-08-04~05）。
 >
-> **演进路径**: 11（Phase 1.5）→ 14（Stage 1.4 Tier-2 + C-12）→ 33（Stage 4.1-4.6：interrupt/preempt/semaphore/GC/PDL/mem_map_bo）→ 65（Stage 4.7 B-class L2 Phase 1+2）→ **68**（ADR-076 PTX-EMU kernel module ops）。HAL interface 已超过 50 阈值，未来新需求应优先复用现有 fn-ptrs（参数扩展）而非新增（per ADR-023 §D4 append-only 规则）。
+> **演进路径**（**v3 修订 2026-08-15** — 中间步骤数字精核）：
+>
+> | 阶段 | fn-ptr 增量 | 累计 fn-ptrs | 累计含 helper |
+> |------|------------:|-------------:|--------------:|
+> | Phase 1.5 baseline | +11 | 11 | 11 |
+> | Stage 1.4 Tier-2 + C-12（ADR-061 +062）| **+5**（iommu_map/unmap + event_signal/wait/notify）| 16 | 16 |
+> | Stage 4.1 BAR mmap（ADR-069）| +1 | 17 | 17 |
+> | Stage 4.3 Interrupt Model（ADR-048）| +2 | 19 | 19 |
+> | Stage 4.5 Preemption（ADR-046）| +2 | 21 | 21 |
+> | Stage 4.5 Timeline Semaphore（ADR-049）| +5（create/signal/wait/query/destroy）| 26 | 26 |
+> | Stage 4.6 Green Context + PDL（ADR-056）| +4（GC×2 + PDL×2）| 30 | 30 |
+> | Stage 4.7 B-class L2 Phase 1（fence_id + method_codec + heap helper）| +3 + 1 + 1 helper | 34 | **35** |
+> | Stage 4.7 B-class L2 Phase 2（graph + mem_pool + stream_capture + queue + puller）| **+30**（graph×7 + mem_pool×10 + stream_capture×3 + queue×5 + puller×5 = 30）（**v4 修订 2026-08-15 Oracle 二次评审修复**：原 v3 标"+34"算式有误，7+10+3+5+5+1=31 但标+34 实际应为 +30）| 65 | 66 |
+> | ADR-076 PTX-EMU HAL Backend（kernel_module_load/execute/unload）| +3 | **68** | **69** |
+> | **修正后的总计** | **68 fn-ptrs**（**v4 修订 2026-08-15 Oracle 二次评审修复**：原 v3 措辞 "67 fn-ptrs + 1 inline helper" 不严谨——`heap_ptr` 实际是 struct fn-ptr（line 213），struct 下方有 47+ inline wrappers 而非 1 个。已实测 `struct gpu_hal_ops` 含 **68 个 fn-ptr 成员**，与 file header "65+3=68" 一致）| **68** | — |
+>
+> **修订说明（2026-08-15）**：v0.1.7 之前描述 "11 → 14 → 33 → 65 → 68" 中间步骤数字有偏差：
+> - "11 → 14 (+3)" 误写为 +3，**实际为 +5**（ADR-061 + ADR-062 各贡献 fn-ptrs）
+> - "14 → 33 (+19)" 误写为 +19，**实际为 +14**（Stage 4.1-4.6 累积）
+> - "33 → 65 (+32)" 误写为 +32，**实际为 +34**（Stage 4.7 Phase 1+2 累积：3 + 1 + 7 + 10 + 3 + 5 + 5 = 34）
+> - 最终总数 68（67 fn-ptrs + 1 helper）与代码实证一致 ✓
+>
+> **每个新增 fn-ptr 的 ADR 追踪**：见附录 C `HAL fn-ptr 完整追踪表`（待添加）。HAL interface 已超过 50 阈值，未来新需求应优先复用现有 fn-ptrs（参数扩展）而非新增（per ADR-023 §D4 append-only 规则）。
 
 **Preemption spec addendum**: See
 [`openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md`](../../openspec/changes/stage4-5-cp-phase6-preemption-timeline-sem-gaps/specs/preemption-spec-correction/spec.md)
 for IB jump_stack defer behavior (NOT save/restore — clarifies `archive/2026-07-30-stage4-5-cp-phase6-preemption-engine-finish/specs/preemption-engine-finish/spec.md` canonical).
 
 > **修订说明（2026-08-07）**: 删除此前的"Stage 1.4 KFD 7 ops"附表（`register_mmu_cb` / `register_firmware_cb` / `register_gpu` / `map_queue_ring` / `query_queue` / `mmu_notifier_register` / `iommu_flush_iotlb`），这些是 Stage 1.4 Tier-1 设计初稿的命名，已被 ADR-061/062 替换为 `iommu_map/unmap` (2 ops) + `event_signal/wait/notify` (3 ops)。Tier-2 升级实际交付的是 KFD runtime penetration（Stage 1.4 Tier-2, 2026-07-05），HAL ops 增量仅 +5（包含在"总计 65"中），并非 7。
+
+#### 1.10.4 Stage 5.5 CppTLM dGPU 参考设计集成（完整硬件子系统仿真）
+
+> **状态**: ✅ Accepted（[ADR-088](../00_adr/adr-088-dgpu-complete-simulation.md)，2026-08-15 Oracle 二次评审通过；2026-08-16 范围收窄修订：CppTLM 仅仿真 dGPU 板卡）
+> **触发**: Stage 5（multi-engine Puller + PM4 microcode）之外，用户追加目标——**不是仿真 NVIDIA/AMD 真实硬件**，而是**作为参考设计实现 dGPU**，让真实 GPU driver 的开发模式可移植到 UsrLinuxEmu
+> **目标**: 把 ③ 硬件仿真层从 UsrLinuxEmu 内部 `sim/*` 状态机**演进**为 CppTLM `cpptlm_regs/` 提供的**完整寄存器模型**（~45 个自设计 dGPU v0 寄存器），**drv/ 真正"零修改"可移植到真硬件**
+> **关键架构决策**：
+> - **仿真层级**：**L3 寄存器级**（MMIO 读写，与真硬件交互模式 100% 一致）
+> - **责任拆分（按真实硬件拓扑）**：**CppTLM 仅仿真 dGPU 板卡**（BAR MMIO + PCIe Config Space + MSI-X + 多板卡枚举 + backdoor + DMA translate cb，**23 ABI**）；**系统级硬件**（系统 IOMMU + CXL.mem）由 UsrLinuxEmu **`src/system_hw/`** 功能级仿真（不需时钟精确；复用 `src/kernel/iommu/` 框架）
+> - **寄存器数据源**：单一真相源在 CppTLM `cpptlm_regs/` 子模块
+> - **工作量**：约 **24-32 周**（CppTLM 5-7 周 ∥ UsrLinuxEmu 13-17 周，可并行）
+
+**核心模式（Oracle 评审批准）**：单 HAL impl in-place 替换（**NOT** 创建独立 `hal_emu.cpp`）
+
+```
+                  ┌─────────────────────────────────────┐
+                  │  drv/ (② portable driver code)      │
+                  │  - GPU_IOCTL_* 派发表                 │
+                  │  - BO/VA Space/Queue/Fence 管理      │
+                  │  - 零修改（per ADR-036/072）           │
+                  └─────────────────┬───────────────────┘
+                                    │  struct gpu_hal_ops（68 fn-ptrs）
+                                    ▼
+                  ┌─────────────────────────────────────┐
+                  │  hal/hal_user.cpp (单 impl in-place)   │
+                  │  ┌──────────────────────────────┐    │
+                  │  │ if (use_cpptlm_backend) {    │    │
+                  │  │   cpptlm_emulator_*(...)     │    │
+                  │  │   (dGPU 板卡 23 ABI)          │    │
+                  │  │ } else {                    │    │
+                  │  │   原 sim/* 路径              │    │
+                  │  │ }                            │    │
+                  │  └──────────────────────────────┘    │
+                  └─────────────────┬───────────────────┘
+                                    │
+                   mode A (default): sim/* 路径（current）
+                   mode B (USR_LINUX_EMU_USE_CPPTLM=1):
+                                    │ dlopen
+                                    ▼
+                   ┌─────────────────────────────────────┐
+                   │  libcpptlm_emulator.so (CppTLM)      │
+                   │  - dGPU 板卡仿真（23 ABI）             │
+                   │  - BAR MMIO + PCIe Config Space      │
+                   │  - MSI-X pending bitmap              │
+                   │  - 多板卡枚举 + backdoor              │
+                   │  - DMA translate cb（→系统 IOMMU）     │
+                   └─────────────────┬───────────────────┘
+                                     │ cpptlm_dma_translate_cb（IOVA→PA）
+                                     ▼
+                   ┌─────────────────────────────────────┐
+                   │  UsrLinuxEmu src/system_hw/           │
+                   │  - iommu/（系统 IOMMU：DMA 重映射 +    │
+                   │    page table walker + fault 注入）    │
+                   │  - cxl_memdev/（CXL.mem 设备仿真）     │
+                   │  功能级保真（不需时钟精确）              │
+                   └─────────────────────────────────────┘
+```
+
+**5 实施阶段（约 24-32 周）**：
+
+| 阶段 | 周 | Owner | 交付物 |
+|------|---:|-------|--------|
+| **阶段 1** PCIe 基础 + 多板卡 + backdoor | 3-4 | CppTLM team | `cpptlm_pcie_device` + Config Space + 多板卡 + backdoor（+8 ABI）|
+| **阶段 2a** MSI-X + DMA translate cb | 2-3 | CppTLM team | `cpptlm_msix_table` + DMA 回调注册路径（+4 ABI，CppTLM 冻结于 23）|
+| **阶段 2b** 系统 IOMMU sim（∥ 2a）| 3-4 | UsrLinuxEmu | `src/system_hw/iommu/`（5 内部函数，复用 `src/kernel/iommu/` 框架）|
+| **阶段 3** CXL.mem sim | 2-3 | UsrLinuxEmu | `src/system_hw/cxl_memdev/`（4 内部函数）|
+| **阶段 4** HAL 改造 + linux_compat/ 重构 + 总集成 | 8-10 | UsrLinuxEmu | linux_compat/ 桥接层 ~3000 行 + 98 Catch2 测试 0 regression |
+| **阶段 5** 文档同步 | 1 | 双方 | SSOT/README/handoff spec 同步 |
+
+**关键 ADR 依赖**：ADR-023 (HAL append-only) | ADR-036 (3 区分，drv/ 零修改) | ADR-060 (kernel_workqueue async dispatch) | ADR-061 (IOMMU ops 基础) | ADR-069 (BAR backing pattern reuse) | ADR-072 (L1/L2/L3 portability verification) | ADR-076 (PTX-EMU dlopen reference pattern)
+
+**与现有 ADR-076 关系**：
+- ADR-076 PTX-EMU 是**独立**的 HAL extension（3 个 kernel_module_* fn-ptr，dlsym `libptxemu_device.so`）
+- ADR-088 CppTLM EMU 是**另**一个独立的 dGPU 板卡仿真后端（**23 个 C ABI**，dlopen `libcpptlm_emulator.so`；HAL 68 fn-ptrs 通过 in-place 替换接入，本身不新增 HAL fn-ptr——per ADR-088 §C2 + D6.1）
+- 两者**共存**：`hal_user.cpp` 可同时配置 PTX-EMU backend + CppTLM backend，由 env var 决定（per ADR-088 §C2 共存关系）
+- **ADR-076 后续演进**：ADR-076 已 ship 实施（✅ Accepted，144/145 ctest PASS）；ADR-088 升 Accepted 后演进推迟已退出，演进路线图 (a)(b) 已确定维持、(c) ⏳ 待 TaskRunner owner 启动 / (d) ⏳ 待文档化。详见 [ADR-076 §演进路线图](../00_adr/adr-076-gpgpu-kernel-module-ioctl.md)。**演进推迟不等于撤销**：已 ship 的实施产物（3 个 ioctl 0x27/0x28/0x29 + 3 个 HAL fn-ptr #66/#67/#68 + 144 ctest）全部有效。
+
+**Stage 5.5 vs Stage 5 (trigger-gated) 关系**：
+- Stage 5（multi-engine Puller + PM4 microcode）：per ADR-049/052 Phase 6+/6.5 触发条件
+- Stage 5.5（CppTLM EMU）：目标不同——Stage 5 关注内部 sim/* 完善，Stage 5.5 关注外部 CppTLM 通过寄存器模型接管 dGPU 板卡仿真
+
+详见 [ADR-088](../00_adr/adr-088-dgpu-complete-simulation.md) + [docs/architecture/cpptlm-emu-integration-gap-analysis.md](../architecture/cpptlm-emu-integration-gap-analysis.md)（早期方案分析，历史参考）
 
 #### 1.10.3 与 ROADMAP 的关系
 
