@@ -250,5 +250,206 @@ Week 0 ────────── Week 2 ────────── Week
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team
-**最后更新**: 2026-08-17
+**最后更新**: 2026-08-17 (新增 §E 跟踪表 + §E.0 投递计划 + 状态符号约定)
 **下次评审**: ADR-090 升 Accepted 后, 启动 PTX-EMU + TaskRunner + CppTLM 三方 ack 流程
+**当前阶段**: 三方 RFC 投递准备就绪 (Plan A, critical path = CppTLM)
+
+---
+
+## E. 跨仓 Ack 跟踪表
+
+由 UsrLinuxEmu Architecture Team 维护。每收到一方 ack 后更新对应行。
+
+**投递方案**: 方案 A — 三仓并行开 RFC issue (GitHub Issue), CppTLM 优先 push (critical path, v5.0 BREAKING 流程主开关)。详见顶部决策摘要。
+
+| Gate | 端 | Draft Anchor | Issue / PR | Owner | Status | Opened Date | Closed/Patched | Notes |
+|------|-----|--------------|------------|-------|--------|-------------|----------------|-------|
+| #2 | CppTLM | annex §C | [#18](https://github.com/chisuhua/CppTLM/issues/18) | _CppTLM maintainer_ | 🟡 v2 Patch Posted | 2026-08-17 | 2026-08-17 | handoff spec v5.0 + SM executor submodule 集成 — **critical path**, 仍 OPEN 等 owner ack |
+| #3 | PTX-EMU | annex §A | [#12](https://github.com/chisuhua/PTX-EMU/issues/12) | _PTX-EMU owner_ | 🚫 Closed (superseded by v2) | 2026-08-17 | 2026-08-17 16:58:50 UTC | ADR-0029 §D8 amendment — **CLOSED**, v1 RFC 4 项硬 BLOCKERS 无法 patch, 关闭保留历史 |
+| #4 | TaskRunner | annex §B | [#10](https://github.com/chisuhua/TaskRunner/issues/10) | _TaskRunner owner_ | 🚫 Closed (superseded by v2) | 2026-08-17 | 2026-08-17 16:59:09 UTC | tadr-308 + cu_module.cpp / cu_launch.cpp 改造 — **CLOSED**, v1 RFC 5 项 BLOCKERS 无法 patch, 关闭保留历史 |
+
+**状态符号**:
+- `🟡 v2 Patch Posted` — v2 patch 已就地推送到 issue, 等待 owner ack
+- `🚫 Closed (superseded by v2)` — issue 已关闭, v1 RFC 已被 v2 取代, 历史保留
+- `🟢 Approved` — 对方 issue 评论 / label 显示 ack
+- `✅ Acked` — 对方 PR 已 merge 或显式 ack + Synced Date 已填
+
+**Ack 收齐判定**: #2 row ✅ Acked (含 Ack Date) → 由 UsrLinuxEmu Architecture Team 触发 ADR-090 状态升级 (见 §F)。#3 / #4 已关闭但仍作为 v2 修订依据被引用, 不阻塞 ADR-090 升级。
+
+### E.0 投递计划 (Plan A)
+
+- **Day 0 (2026-08-17)**: 三仓开 RFC issue, 投递 cover letter (见 §E.2 / §E.3 / §E.4) ✅ 已完成
+- **Day 0 (2026-08-17 16:58-17:00 UTC)**: v1 RFC 关闭 + v2 patch 推送 ✅ 已完成
+  - PTX-EMU #12 → closed with v2 close comment (留 v2 链接)
+  - TaskRunner #10 → closed with v2 close comment (留 v2 链接)
+  - CppTLM #18 → v2 patch posted (保持 OPEN, 等 owner ack)
+- **Day 1-3**: 跟进 CppTLM owner 对 v2 patch 的 ack / clarification
+- **Day 4-7**: 重点 push CppTLM (v5.0 BREAKING 关键)
+- **Day 7-14**: CppTLM owner ack Gate #2 → ADR-090 v2 升 ✅ Accepted
+- **Day 14-28**: HSK-6 联发协议 (PTX-EMU 发起) + G-D4 迁移 (CppTLM P0-1) + ANTLR4 spike (P1)
+- **Day N > 28**: 若 CppTLM 未 ack, 升级抄送 CppTLM architecture lead
+
+### E.1 评审 cover letter 模板
+
+投递时建议搭配 PR/issue 描述,模板见 §E.2 / §E.3 / §E.4 (按端复用)。
+
+### E.1a v2 重启投递记录 (2026-08-17 16:58-17:00 UTC)
+
+- ✅ PTX-EMU #12 关闭 + v2 close comment: https://github.com/chisuhua/PTX-EMU/issues/12#issuecomment-5317969588
+  - 关闭理由: v1 RFC 含 4 项硬 BLOCKERS(F1 5 函数假设错 / F2 §D8 scope 错 / F3 ADR-0029 status 错 / F4 D1 已 ship 冲突),patch 不可挽回可信度
+  - 关闭 comment 链接 ADR-090 v2 commit `0e67d41` + Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy` + 等待 HSK-6 公告 ack
+- ✅ TaskRunner #10 关闭 + v2 close comment: https://github.com/chisuhua/TaskRunner/issues/10#issuecomment-5317969901
+  - 关闭理由: v1 RFC 含 5 项 BLOCKERS(F3 路径错 / F4 删除清单虚构 / F6 接口 diff 错 / F7 PTXIR 解析错 / F11/F12 文件缺失)
+  - 关闭 comment 提供 tadr-308 待创建文档路径 + `IGpuDriver` 接口修订草案 diff
+- ✅ CppTLM #18 v2 patch 就地更新 (issue 仍 OPEN): https://github.com/chisuhua/CppTLM/issues/18#issuecomment-5317970852
+  - patch 内容: v2 ↔ #18 反馈 15 维度映射表(角色反转 / 桥接代码删除两阶段 / ptx_emu_driver_shim.cc / 4 测试文件 / G-D4 / HSK 协议 / namespace tlm / v2.1→v3.0 / SmExecutor / git submodule / CompletionRing / dGPU 最小集 / ANTLR4 / P0-P4 / layered fallback 废除)
+  - 3 项关键反转: HSK-6 归属修正(PTX-EMU 发起) / ANTLR4 风险修正(vendored in-tree) / patch 就地而非新 RFC
+  - 等 CppTLM owner ack → Gate #2 ✅ → ADR-090 v2 升 ✅ Accepted
+
+### E.1a 投递记录 (2026-08-17)
+
+- ✅ PTX-EMU Issue #12 投递: https://github.com/chisuhua/PTX-EMU/issues/12
+- ✅ TaskRunner Issue #10 投递: https://github.com/chisuhua/TaskRunner/issues/10
+- ✅ CppTLM Issue #18 投递: https://github.com/chisuhua/CppTLM/issues/18
+- ✅ PTX-EMU 仓 issues 启用 (admin 操作, 此前 disabled)
+- ⚠️ Label `rfc` 在 TaskRunner/CppTLM 仓不存在, 暂不挂 label (后续 owner ack 后可加)
+
+### E.2 Cover Letter — PTX-EMU Owner
+
+```
+Subject: [RFC] ADR-0029 §D8 Amendment — PTX-EMU 集成点迁移到 CppTLM
+
+Hi [PTX-EMU Owner],
+
+UsrLinuxEmu 仓刚 Accepted ADR-090, 决定把 PTX-EMU 集成点从 UsrLinuxEmu HAL
+移到 CppTLM submodule。 ADR-090 ⇄ ADR-0029 §D8 amendment 草案见:
+
+  PR/issue: <PR URL 在 PTX-EMU 仓里>
+  草案     : docs/05-advanced/adr-090-cross-repo-coordination.md §A
+  源头     : UsrLinuxEmu/docs/00_adr/adr-090-ptxir-via-h2d-dma.md
+  commit   : c07d245 (feat/hal) + b26412a (docs/adr-090)
+
+涉及你方的变化 (代码零修改, 文档修订):
+  - ADR-0029 §D8 新增 "PTX-EMU as CppTLM submodule" 段
+  - 5 ABI 函数签名不变, 仅 ownership 注释从 UsrLinuxEmu HAL → CppTLM
+  - CppTLM 接口草案 (§A.4) 请同步 review
+
+评审重点 (Gate #3):
+  [ ] 5 ABI 函数签名是否被破坏 (C ABI 头文件 cptxemu.h)
+  [ ] §D8 文案是否清晰反映"PTX-EMU 不再 dlopen 在 UsrLinuxEmu 进程"
+  [ ] 跨仓 commit 顺序 (§A.5) 是否符合你方发布节奏
+
+请 ack 或在该 PR/issue 下回复反馈。预计评审周期 5 个工作日。
+
+Re: docs/05-advanced/adr-090-cross-repo-coordination.md §A
+```
+
+### E.3 Cover Letter — TaskRunner Owner
+
+```
+Subject: [RFC] tadr-308 — CUDA Launch Path Refactor (UMD 侧 PTXIR 解析)
+
+Hi [TaskRunner Owner],
+
+ADR-090 实施后, TaskRunner UMD 侧的 cu_module.cpp / cu_launch.cpp 需要
+适配: 移除 cuda_* ABI 调用, 改为 GPU_IOCTL_LOAD_KERNEL_MODULE +
+GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH (DISPATCH_KERNEL packet)。
+
+  PR/issue: <PR URL 在 TaskRunner 仓里>
+  草案     : docs/05-advanced/adr-090-cross-repo-coordination.md §B
+  源头     : UsrLinuxEmu/docs/00_adr/adr-090-ptxir-via-h2d-dma.md
+  变更 commit: c07d245 (UsrLinuxEmu)
+
+涉及你方的变化:
+  - IGpuDriver 接口修订 (§B.2): 移除 module_load_execute, 改为
+    load_kernel_module(vram_addr) + submit_batch(DISPATCH_KERNEL)
+  - cu_module.cpp 重构: PTXIR header 解析迁移到 UMD 侧
+    (UMD 职责, 非 driver 职责, per Linux amdgpu 真实架构)
+  - cu_launch.cpp 重构: 用 cuLaunchKernel 替代 pushbuffer inject
+  - 移除方法清查 (§B.3): tadr-307 已 undefine 的 4 个 cuda_* 函数
+
+评审重点 (Gate #4):
+  [ ] IGpuDriver 接口变更是否在 E2E 测试中覆盖
+  [ ] UMD 侧 PTXIR 解析是否复用现有 cuobjdump 路径
+  [ ] cu_module.cpp → cuobjdump 依赖是否需要版本锁
+
+请 ack。预计 ~2 周工作量, 期望与 UsrLinuxEmu Mode A 切 Mode B 同步。
+
+Re: docs/05-advanced/adr-090-cross-repo-coordination.md §B
+```
+
+### E.4 Cover Letter — CppTLM Maintainer
+
+```
+Subject: [RFC] handoff spec v5.0 — SM Executor Submodule Integration
+
+Hi [CppTLM Maintainer],
+
+ADR-088 阶段 4 (Week 12-21) 的 SM executor 子系统集成, 现在有了具体
+源头 — UsrLinuxEmu ADR-090 决定 PTX-EMU 通过 CppTLM submodule 集成。
+
+  PR/issue: <PR URL 在 CppTLM 仓里>
+  草案     : docs/05-advanced/adr-090-cross-repo-coordination.md §C
+  源头     : UsrLinuxEmu/docs/00_adr/adr-088-dgpu-complete-simulation.md
+                  §D6.2 BREAKING 流程注记 (+2~3 ABI)
+  UsrLinuxEmu commit: c07d245 (feat/hal) + b26412a (docs/adr-090)
+
+涉及你方的变化:
+  - handoff spec v5.0 (§C.1): 新增 "SM Executor Submodule" 章节
+  - 版本字符串 v4.x → v5.0 (BREAKING, per ADR-088 §D6.2 五步流程)
+  - +2~3 ABI 扩展 (image install / dispatch / completion callback)
+  - tools/docs-audit.sh 增加 BREAKING 检测 (§C.3)
+
+评审重点 (Gate #2):
+  [ ] SM executor submodule 集成方式 (CMake ExternalProject vs git
+    submodule vs 系统库) — 评估三种方案的优劣
+  [ ] 23 ABI 冻结 × +2~3 BREAKING 流程是否被正确触发
+  [ ] Mode A (sim/ translateLaunch) 与 Mode B (submodule) 是否能双轨
+    并行而不冲突 (Gate 4.7 双路径测试)
+
+请 ack。这一块工作量 ~3-4 周, 与 ADR-088 阶段 4 主线并行。
+
+Re: docs/05-advanced/adr-090-cross-repo-coordination.md §C
+```
+
+---
+
+## F. ADR-090 状态升级触发条件
+
+升级路径: `🔄 Proposed` → `✅ Accepted` 当且仅当 6 个 Gate 全部 ✅。
+
+| Gate | Owner | 当前状态 | 升 Accepted 前置 |
+|------|-------|----------|------------------|
+| #1 HAL append-only | UsrLinuxEmu | ✅ | (已验证) |
+| #2 CppTLM maintainer ack | CppTLM | ⏳ | annex §C 投递 + 对方 PR merged |
+| #3 PTX-EMU owner ack | PTX-EMU | ⏳ | annex §A 投递 + 对方 PR merged |
+| #4 TaskRunner owner ack | TaskRunner | ⏳ | annex §B 投递 + 对方 PR merged |
+| #5 Architecture Team | UsrLinuxEmu | ✅ | (已 user ack on 2026-08-17) |
+| #6 Oracle | UsrLinuxEmu | ✅ | (sessions ses_ff1f38c57ffe... / ses_ff1ecf07cffe... APPROVED) |
+
+### F.1 升级流程 Checklist (UsrLinuxEmu Architecture Team 执行)
+
+1. [ ] 收集 Gates #2 / #3 / #4 的对方 ack(PR merged 或 issue 显式 approved)
+2. [ ] 同步 §E 跟踪表(E 列填入 ack 日期)
+3. [ ] 更新 `docs/00_adr/adr-090-ptxir-via-h2d-dma.md` 头部:
+   - `Status: 🔄 Proposed` → `Status: ✅ Accepted`
+   - `Last updated: 2026-08-17` → `Last updated: <ack 完成日期>`
+   - `Acceptance Gates` 表格 6 行全部 ✅
+4. [ ] 更新 `docs/00_adr/README.md` 状态分布 (Proposed-1 +0 / Accepted +1)
+5. [ ] 更新 `docs/README.md` ADR 计数 + 状态分布行
+6. [ ] 触发 openspec change 归档:
+   - `openspec/changes/2026-08-17-adr-090-ptxir-via-h2d-dma/` → `archive/`
+   - `openspec/changes/INDEX.md` 加一行 `✅ 2026-08-XX 归档`
+7. [ ] 提交 follow-up commit: `docs(adr-090): accepted (cross-repo ack 收齐)`
+8. [ ] 在 PTX-EMU / TaskRunner / CppTLM 仓的对应 PR/issue 下发"released"回复
+
+### F.2 降级风险 (若某方长期不 ack)
+
+- **3 个月内未 ack**: ADR-090 状态降为 `🟡 Stalled`, 通知 UsrLinuxEmu && 对方仓 Owner 升级优先级
+- **6 个月内未 ack**: 进入 ADR-038 风格的"factual orphan" — 保留 ADR 但文档显式标注"未达成共识, 实施暂停"
+- **PTX-EMU 仓永久不维护**: 退化为 Mode A 永久 — `sim/translateLaunch.cpp` 维护到下一个硬件模拟器或淘汰
+
+---
+
+**本节(E + F)新增**: 2026-08-17, by UsrLinuxEmu Architecture Team
+**下次更新**: 三方 ack 状态变化时同步 §E 表
