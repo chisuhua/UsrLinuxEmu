@@ -720,37 +720,60 @@ struct gpu_mem_pool_export_args {
   u32 _pad;          /* alignment padding */
 };
 
-/* ===== ADR-076: PTX-EMU kernel module ioctls (0x27-0x29) =====
+/* ===== ADR-090: PTXIR image loading via CppTLM H2D DMA (0x27-0x29) =====
+ * 🚫 Supersedes ADR-076 v1 (2026-08-17).
+ *
  * These ioctl codes fill the gap between 0x20 GPU_IOCTL_GET_DEVICE_INFO
  * and 0x30 GPU_IOCTL_CREATE_VA_SPACE. They are append-only per ADR-023
  * §Decision 4 and the canonical mirror lives in
- * openspec/changes/add-ptxemu-kernel-module-hal-extension/specs/hal-kernel-module-extension/spec.md.
+ * docs/00_adr/adr-090-ptxir-via-h2d-dma.md.
+ *
+ * ADR-090 修订要点 (vs ADR-076 v1):
+ *  - 0x27 LOAD: 语义重定义为 "写入 PTXIR bytes 到 CppTLM VRAM" (H2D DMA path)
+ *    返回 out_vram_addr (code BO 的 GPU VA)，非 opaque handle
+ *    kernel_name[256] 字段已移除 — PTXIR header 解析下沉到 UMD 侧 (TaskRunner)
+ *  - 0x28 LAUNCH: ⚠️ 功能 deprecated — handler 返回 -ENOSYS
+ *    kernel 执行通过 GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH + DISPATCH_KERNEL opcode
+ *    launch_kernel_module_args 结构体保留作 ABI 卫生 (编号不复用), handler 强制 -ENOSYS
+ *  - 0x29 UNLOAD: 语义保留 — 释放 code BO (基于 vram_addr), driver 走 FREE_BO 路径
+ *    module_handle 字段类型保留作 ABI 兼容 (语义上 = vram_addr)
+ *
+ * 编号永久保留 (per ABI 卫生规则), 0x27/0x28/0x29 永不重新分配给其他 ioctl
  */
 #define MAX_KERNEL_IMAGE_SIZE (64ULL * 1024 * 1024)
 
 struct gpu_load_kernel_module_args {
   const void* image_ptr;        /* input: PTXIR bytes; user guarantees readable */
   u64 image_size;               /* input: must be in [1, MAX_KERNEL_IMAGE_SIZE] */
-  u64 out_module_handle;        /* OUT: opaque handle; non-zero on success */
-  char kernel_name[256];        /* OUT: kernel name from PTX-EMU */
-  u32 _pad;                     /* alignment */
+  u64 out_vram_addr;            /* OUT (ADR-090): code BO 的 GPU VA (替代 ADR-076 v1 的 opaque handle) */
+  /* kernel_name[256] 字段已删除 ( ADR-090):
+   *   - PTXIR header 解析下沉到 UMD 侧 (TaskRunner::cu_module.cpp)
+   *   - driver 不感知 kernel name, 仅搬运 bytes 到 VRAM
+   *   - struct 字段重排: image_ptr / image_size / out_vram_addr 占位
+   */
 };
 
 struct gpu_launch_kernel_module_args {
-  u64 module_handle;            /* input: from load */
-  u32 grid_x, grid_y, grid_z;   /* input: > 0 */
-  u32 block_x, block_y, block_z;/* input: > 0 */
-  const void* args_ptr;         /* input: kernargs; user guarantees readable */
-  u32 args_count;               /* input: must be <= 4096 */
-  u32 shared_mem;               /* input: dynamic shared memory bytes */
-  s32 launch_status;            /* OUT: cudaError_t from PTX-EMU (0 = success) */
+  /* ⚠️ ADR-090 DEPRECATED — handler 返回 -ENOSYS (强制 consumer 迁移到 PUSHBUFFER_SUBMIT_BATCH)
+   * struct 字段保留作 ABI 卫生 (编号永久不复用); 以下 6 个字段均被 handler 忽略
+   */
+  u64 module_handle;
+  u32 grid_x, grid_y, grid_z;
+  u32 block_x, block_y, block_z;
+  const void* args_ptr;
+  u32 args_count;
+  u32 shared_mem;
+  s32 launch_status;            /* OUT: handler 强制填 -ENOSYS */
 };
 
 struct gpu_unload_kernel_module_args {
-  u64 module_handle;            /* input: from load */
-  s32 unload_status;            /* OUT: cudaError_t from PTX-EMU (0 = success) */
+  /* ADR-090: 字段保留作 ABI 兼容, 语义上 = code BO 的 GPU VA (从 0x27 out_vram_addr 获得)
+   * driver 走 GPU_IOCTL_FREE_BO 路径释放 code BO
+   */
+  u64 module_handle;            /* ADR-090: input = vram_addr (语义对齐) */
+  s32 unload_status;            /* OUT: 0 = success; -ENOSYS if 0x28 stub semantics applied */
 };
 
 #define GPU_IOCTL_LOAD_KERNEL_MODULE    _IOWR(GPU_IOCTL_BASE, 0x27, struct gpu_load_kernel_module_args)
-#define GPU_IOCTL_LAUNCH_KERNEL_MODULE  _IOWR(GPU_IOCTL_BASE, 0x28, struct gpu_launch_kernel_module_args)
+#define GPU_IOCTL_LAUNCH_KERNEL_MODULE  _IOWR(GPU_IOCTL_BASE, 0x28, struct gpu_launch_kernel_module_args)  /* ADR-090: DEPRECATED, returns -ENOSYS */
 #define GPU_IOCTL_UNLOAD_KERNEL_MODULE  _IOWR(GPU_IOCTL_BASE, 0x29, struct gpu_unload_kernel_module_args)

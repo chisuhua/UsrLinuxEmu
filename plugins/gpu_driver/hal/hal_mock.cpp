@@ -268,8 +268,11 @@ static int mock_mem_map_bo(struct gpgpu_device* dev, uint64_t bo_offset,
     return 0;
 }
 
-/* ── ADR-076 test-only injection state (kernel_module contract) ──
- * Linked into test binaries; production plugin builds do not use this. */
+/* ── ADR-076 test-only injection state (⚠️ DEPRECATED by ADR-090) ──
+ * 🚫 Per ADR-090 §D1, PTX-EMU no longer runs inside UsrLinuxEmu HAL.
+ *    These injection hooks remain for one release to ease migration
+ *    of existing tests; new tests should NOT use them.
+ *    Mapped to ADR-090: cudart injection → CppTLM submodule tests. */
 
 #define KERNEL_NAME_FAIL_INJECTION 0x10001  /* sentinel: trigger rollback */
 
@@ -278,18 +281,15 @@ std::mutex g_mock_ptxemu_mutex;
 std::map<uint64_t, int> g_mock_ptxemu_error_inject;
 std::map<uint64_t, int> g_mock_ptxemu_unload_counts;
 
-/* Test-only replica of cuda_error_to_errno (defined in hal_user.cpp's
- * anonymous namespace, internal linkage). The 6 canonical mappings
- * below are documented at docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md
- * §D5 — keep these two tables in sync. */
+/* mock_cuda_error_to_errno: ⚠️ ADR-090 DEPRECATED — kept for ABI compat only. */
 int mock_cuda_error_to_errno(int cuda_error) {
   switch (cuda_error) {
     case 0: return 0;
-    case 2: return -ENOMEM;            /* CUDA_ERROR_OUT_OF_MEMORY */
-    case 11: return -EINVAL;           /* CUDA_ERROR_INVALID_VALUE */
-    case 400: return -EINVAL;          /* CUDA_ERROR_INVALID_HANDLE */
-    case 719: return -EIO;             /* CUDA_ERROR_LAUNCH_FAILED */
-    case 700: return -EAGAIN;          /* CUDA_ERROR_ILLEGAL_STATE */
+    case 2: return -ENOMEM;
+    case 11: return -EINVAL;
+    case 400: return -EINVAL;
+    case 719: return -EIO;
+    case 700: return -EAGAIN;
     default: return -EINVAL;
   }
 }
@@ -521,56 +521,32 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
   hal->puller_unregister_queue = [](void*, hal_puller_handle_t,
                                     uint32_t) -> int { return 0; };
 
-  /* ── ADR-076: PTX-EMU kernel module extension mocks (#66/#67/#68) ──
-   * Mock impls: test-friendly defaults. ADR-023 Decision 4: append-only.
-   * Bodies consult g_mock_ptxemu_error_inject / g_mock_ptxemu_unload_counts
-   * (defined below) so tests can inject specific cudaError_t codes and
-   * observe rollback call counts. Default behavior (empty maps) is
-   * success-on-all-paths, identical to the pre-injection mock. */
+  /* ── ADR-090: PTXIR image loading via H2D DMA (#66 only) ──
+   * 🚫 Supersedes ADR-076 v1 PTX-EMU mocks. PTXIR image handling moves
+   * to CppTLM submodule; mock now provides VRAM-write semantics.
+   * #67/#68 stubs return -ENOSYS (ADR-090 §D1). */
 
-  /* kernel_module_load: deterministic mock returning a fake handle.
-   * If an error is injected for the next-to-be-allocated handle, the
-   * rollback path is simulated (mock image_unload call counter +1). */
+  /* kernel_module_load: ADR-090 mock — allocates a fake VRAM gpu_va
+   * (no real PTX-EMU integration). Tests verify drv/-side ioctl flow. */
   hal->kernel_module_load = [](void*, void* args) -> int {
     auto* a = static_cast<gpu_load_kernel_module_args*>(args);
     static std::atomic<uint64_t> next{0x9000};
-    uint64_t h = ++next;
-    a->out_module_handle = h;
-    std::snprintf(a->kernel_name, sizeof(a->kernel_name),
-                  "mock_kernel_%lu", (unsigned long)h);
-
-    int inject = 0;
-    {
-      std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
-      auto it = g_mock_ptxemu_error_inject.find(h);
-      if (it != g_mock_ptxemu_error_inject.end()) inject = it->second;
-    }
-    if (inject == KERNEL_NAME_FAIL_INJECTION) {
-      std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
-      g_mock_ptxemu_unload_counts[h]++;
-      return -EINVAL;
-    }
+    a->out_vram_addr = ++next;
     return 0;
   };
 
+  /* kernel_module_execute: ⚠️ ADR-090 DEPRECATED stub. */
   hal->kernel_module_execute = [](void*, void* args) -> int {
     auto* a = static_cast<gpu_launch_kernel_module_args*>(args);
-    a->launch_status = 0;
-    return 0;
+    a->launch_status = -ENOSYS;
+    return -ENOSYS;
   };
 
+  /* kernel_module_unload: ⚠️ ADR-090 DEPRECATED stub. */
   hal->kernel_module_unload = [](void*, void* args) -> int {
     auto* a = static_cast<gpu_unload_kernel_module_args*>(args);
-    int inject = 0;
-    {
-      std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
-      auto it = g_mock_ptxemu_error_inject.find(a->module_handle);
-      if (it != g_mock_ptxemu_error_inject.end()) inject = it->second;
-    }
-    std::lock_guard<std::mutex> lock(g_mock_ptxemu_mutex);
-    g_mock_ptxemu_unload_counts[a->module_handle]++;
-    a->unload_status = inject;
-    return mock_cuda_error_to_errno(inject);
+    a->unload_status = -ENOSYS;
+    return -ENOSYS;
   };
 }
 

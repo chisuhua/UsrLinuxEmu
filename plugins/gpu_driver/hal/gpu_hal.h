@@ -359,31 +359,21 @@ struct gpu_hal_ops {
   int (*puller_unregister_queue)(void *ctx, hal_puller_handle_t puller,
                                   uint32_t queue_id);
 
-  /* ── ADR-076: PTX-EMU kernel module extension (#66/#67/#68) ──
-   * Append-only per ADR-023 Decision 4. Implements load/execute/unload
-   * of pre-compiled kernel modules via PTX-EMU libptxemu_device.so.
-   * ABI surface and version floor are documented in adr-076 §D4.
-   * All three take pre-validated drv/-side args structs (see
-   * plugins/gpu_driver/shared/gpu_ioctl.h) and return Linux-style
-   * negative errno on failure, 0 on success. */
+  /* ── ADR-090: PTXIR image loading via H2D DMA (#66 only) ──
+   * 🚫 Supersedes ADR-076 v1. PTX-EMU moves to CppTLM submodule; HAL
+   *    only exposes VRAM-write fn-ptr. Full contract: docs/00_adr/adr-090.
+   * #67/#68 retained as deprecated stubs (ADR-023 §D4 struct hygiene). */
 
-  /* kernel_module_load: validate + load + capture kernel name.
-   * @args: gpu_load_kernel_module_args*; populated out_module_handle/kernel_name on success.
-   * Returns 0 on success, -EINVAL on bounds check or rollback path,
-   * -ENOSYS if libptxemu_device.so cannot be loaded, -EPROTO if ABI
-   * version check fails. */
+  /* #66: H2D DMA PTXIR bytes → CppTLM VRAM; populates out_vram_addr.
+   * icache invalidate: Mode A (sim/ heap) is no-op; Mode B (CppTLM SM executor)
+   * owns the actual icache flush when DISPATCH_KERNEL packet is dispatched. */
   int (*kernel_module_load)(void *ctx, void *args);
 
-  /* kernel_module_execute: launch a previously loaded kernel.
-   * @args: gpu_launch_kernel_module_args*; populated launch_status on return.
-   * Returns 0 on success, -EINVAL on validation, mapped negative
-   * errno for cudaError_t != 0 returns. */
+  /* #67: ⚠️ DEPRECATED (ADR-090) — returns -ENOSYS.
+   * Kernel execution via GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH + DISPATCH_KERNEL. */
   int (*kernel_module_execute)(void *ctx, void *args);
 
-  /* kernel_module_unload: release a previously loaded kernel.
-   * @args: gpu_unload_kernel_module_args*; populated unload_status on return.
-   * Returns 0 on success, -EINVAL on invalid handle,
-   * mapped errno for cudaError_t != 0. */
+  /* #68: ⚠️ DEPRECATED (ADR-090) — folds into GPU_IOCTL_FREE_BO. */
   int (*kernel_module_unload)(void *ctx, void *args);
 };
 
@@ -729,14 +719,15 @@ static inline int hal_puller_unregister_queue(struct gpu_hal_ops *hal,
   return hal->puller_unregister_queue(hal->ctx, puller, queue_id);
 }
 
-/* ── ADR-076 inline wrappers (kernel module load/execute/unload) ──
- * Append-only per ADR-023 Decision 4. */
+/* ── ADR-090 inline wrappers (#66 active, #67/#68 deprecated stubs) ── */
 static inline int hal_kernel_module_load(struct gpu_hal_ops *hal, void *args) {
   return hal->kernel_module_load(hal->ctx, args);
 }
+/* ⚠️ ADR-090 DEPRECATED — returns -ENOSYS (kernel exec via PUSHBUFFER). */
 static inline int hal_kernel_module_execute(struct gpu_hal_ops *hal, void *args) {
   return hal->kernel_module_execute(hal->ctx, args);
 }
+/* ⚠️ ADR-090 DEPRECATED — folds into GPU_IOCTL_FREE_BO. */
 static inline int hal_kernel_module_unload(struct gpu_hal_ops *hal, void *args) {
   return hal->kernel_module_unload(hal->ctx, args);
 }

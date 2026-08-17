@@ -1107,6 +1107,8 @@ long GpgpuDevice::handleRegisterFirmwareCB(void* argp) {
   return kfd_sim_register_firmware_cb(args);
 }
 
+/* ADR-090 §D2: GPU_IOCTL_LOAD_KERNEL_MODULE 0x27 — H2D DMA PTXIR to VRAM.
+ * Returns gpu_va of code BO via out_vram_addr (no kernel_name field). */
 long GpgpuDevice::handleLoadKernelModule(void* argp) {
   if (!argp) return -EFAULT;
   auto* a = reinterpret_cast<gpu_load_kernel_module_args*>(argp);
@@ -1115,21 +1117,20 @@ long GpgpuDevice::handleLoadKernelModule(void* argp) {
   return hal_kernel_module_load(hal_, argp);
 }
 
+/* ⚠️ ADR-090 DEPRECATED: GPU_IOCTL_LAUNCH_KERNEL_MODULE 0x28 — returns -ENOSYS.
+ * Kernel execution now goes via GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH (0x07)
+ * with GPU_OP_DISPATCH_KERNEL opcode. Handler retained for ABI hygiene. */
 long GpgpuDevice::handleLaunchKernelModule(void* argp) {
   if (!argp) return -EFAULT;
-  auto* a = reinterpret_cast<gpu_launch_kernel_module_args*>(argp);
-  if (a->module_handle == 0) return -EINVAL;
-  if (a->args_count > 4096) return -EINVAL;
-  if (a->grid_x == 0 || a->grid_y == 0 || a->grid_z == 0) return -EINVAL;
-  if (a->block_x == 0 || a->block_y == 0 || a->block_z == 0) return -EINVAL;
   if (!hal_) return -ENOSYS;
   return hal_kernel_module_execute(hal_, argp);
 }
 
+/* ADR-090 §D2: GPU_IOCTL_UNLOAD_KERNEL_MODULE 0x29 — driver-side path
+ * folds into GPU_IOCTL_FREE_BO on out_vram_addr from handleLoadKernelModule.
+ * Handler retained for ABI hygiene; stub returns -ENOSYS. */
 long GpgpuDevice::handleUnloadKernelModule(void* argp) {
   if (!argp) return -EFAULT;
-  auto* a = reinterpret_cast<gpu_unload_kernel_module_args*>(argp);
-  if (a->module_handle == 0) return -EINVAL;
   if (!hal_) return -ENOSYS;
   return hal_kernel_module_unload(hal_, argp);
 }

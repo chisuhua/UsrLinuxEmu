@@ -17,7 +17,7 @@
 #include "../sim/fence_id.h"             // Stage 4.6 L2 foundation: fence_id_* fn-ptrs
 #include "../sim/vram_store.h"           // Stage 4.1: g_vram_store for BAR2 mmap
 #include "../sim/hardware/method_codec.h" // Stage 4.6 L2 foundation: method_codec_encode fn-ptr
-#include "../shared/gpu_ioctl.h"         // ADR-076: kernel_module args structs + MAX_KERNEL_IMAGE_SIZE
+#include "../shared/gpu_ioctl.h"         // ADR-090: kernel_module args structs + MAX_KERNEL_IMAGE_SIZE
 
 // Stage 4.6 L2 foundation (ADR-072 §Decision 4) — Phase 2: 28 new fn-ptrs
 #include "../sim/graph.h"               // sim_graph_*
@@ -295,9 +295,7 @@ static int user_mem_map_bo(struct gpgpu_device* dev, uint64_t bo_offset,
 
 /* ── 公开初始化函数 ────────────────────────────────── */
 
-/* Forward declarations for the file-scope user_kernel_module_* functions
- * defined later in this file. C++ requires these even for file-scope
- * symbols to be visible in hal_user_init (which references them). */
+/* Forward declarations for ADR-090 kernel_module_* fn-ptrs (defined below). */
 int user_kernel_module_load(void* ctx, void* args);
 int user_kernel_module_execute(void* ctx, void* args);
 int user_kernel_module_unload(void* ctx, void* args);
@@ -681,176 +679,50 @@ hal->puller_unregister_queue = [](void* ctx, hal_puller_handle_t puller,
   return 0;
 };
 
-  /* ADR-076: PTX-EMU kernel module HAL extension (#66/#67/#68).
-   * Append-only per ADR-023 Decision 4. Real dlsym in user_*
-   * implementations (defined in anonymous namespace below). */
+  /* ADR-090: PTXIR image loading via H2D DMA (#66 active, #67/#68 stubbed).
+   * 🚫 Supersedes ADR-076 v1. PTX-EMU dlopen removed; kernel exec via
+   *    GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH + DISPATCH_KERNEL opcode. */
   hal->kernel_module_load = user_kernel_module_load;
   hal->kernel_module_execute = user_kernel_module_execute;
   hal->kernel_module_unload = user_kernel_module_unload;
 }
 
-namespace {
-
-/* ADR-076: PTX-EMU kernel module ABI surface.
- *
- * Zero build-dep: we DO NOT include <cudart/cpptlm_module.h>. If PTX-EMU
- * renames any symbol, update these prototypes in lockstep and bump
- * kPtxemuAbiMinVersion per the governance rule documented in
- * docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md §D4. */
-
-typedef int (*ptxemu_module_version_fn)(void);
-typedef unsigned long (*ptxemu_image_load_fn)(const void*, unsigned long,
-                                             unsigned long*);
-typedef int (*ptxemu_image_kernel_name_fn)(unsigned long, char*, size_t);
-typedef int (*ptxemu_image_execute_fn)(unsigned long,
-                                       const uint32_t[3], const uint32_t[3],
-                                       const void*, unsigned int, unsigned int);
-typedef int (*ptxemu_image_unload_fn)(unsigned long);
-
-constexpr int kPtxemuAbiMinVersion = 1;
-
-struct PtxemuAbi {
-  bool loaded = false;
-  int sticky_err = 0;
-  ptxemu_module_version_fn version_fn = nullptr;
-  ptxemu_image_load_fn image_load = nullptr;
-  ptxemu_image_kernel_name_fn image_kernel_name = nullptr;
-  ptxemu_image_execute_fn image_execute = nullptr;
-  ptxemu_image_unload_fn image_unload = nullptr;
-};
-
-PtxemuAbi g_ptxemu_abi;
-std::once_flag g_ptxemu_abi_once;
-
-int ensurePtxemuAbiLoaded() {
-  std::call_once(g_ptxemu_abi_once, []() {
-    try {
-      void* base = nullptr;
-      const char* root = std::getenv("PTXEMU_ROOT");
-      if (root) {
-        std::string p = std::string(root) + "/lib/libptxemu_device.so";
-        base = dlopen(p.c_str(), RTLD_NOW | RTLD_LOCAL);
-      }
-      if (!base) {
-        base = dlopen("/opt/ptxemu/lib/libptxemu_device.so",
-                       RTLD_NOW | RTLD_LOCAL);
-      }
-
-      if (base) {
-        g_ptxemu_abi.version_fn =
-            reinterpret_cast<ptxemu_module_version_fn>(
-                dlsym(base, "ptxemu_module_version"));
-      } else {
-        g_ptxemu_abi.version_fn =
-            reinterpret_cast<ptxemu_module_version_fn>(
-                dlsym(RTLD_DEFAULT, "ptxemu_module_version"));
-        if (g_ptxemu_abi.version_fn) {
-          base = RTLD_DEFAULT;
-        }
-      }
-
-      if (!g_ptxemu_abi.version_fn) {
-        g_ptxemu_abi.sticky_err = -EPROTO;
-        return;
-      }
-      if (g_ptxemu_abi.version_fn() < kPtxemuAbiMinVersion) {
-        g_ptxemu_abi.sticky_err = -EPROTO;
-        return;
-      }
-
-#define RSOL(member) \
-  reinterpret_cast<decltype(g_ptxemu_abi.member)>(dlsym(base, "ptxemu_" #member))
-      g_ptxemu_abi.image_load = RSOL(image_load);
-      g_ptxemu_abi.image_kernel_name = RSOL(image_kernel_name);
-      g_ptxemu_abi.image_execute = RSOL(image_execute);
-      g_ptxemu_abi.image_unload = RSOL(image_unload);
-#undef RSOL
-
-      if (!g_ptxemu_abi.image_load || !g_ptxemu_abi.image_kernel_name
-          || !g_ptxemu_abi.image_execute || !g_ptxemu_abi.image_unload) {
-        g_ptxemu_abi.sticky_err = -ENOSYS;
-        return;
-      }
-      g_ptxemu_abi.loaded = true;
-    } catch (...) {
-      g_ptxemu_abi.sticky_err = -ENOSYS;
-    }
-  });
-  if (g_ptxemu_abi.sticky_err) return g_ptxemu_abi.sticky_err;
-  return g_ptxemu_abi.loaded ? 0 : -ENOSYS;
-}
-
-int cuda_error_to_errno(int cuda_error) {
-  switch (cuda_error) {
-    case 0: return 0;
-    case 2: return -ENOMEM;            /* CUDA_ERROR_OUT_OF_MEMORY */
-    case 11: return -EINVAL;           /* CUDA_ERROR_INVALID_VALUE */
-    case 400: return -EINVAL;          /* CUDA_ERROR_INVALID_HANDLE */
-    case 719: return -EIO;             /* CUDA_ERROR_LAUNCH_FAILED */
-    case 700: return -EAGAIN;          /* CUDA_ERROR_ILLEGAL_STATE */
-    default: return -EINVAL;
-  }
-}
-
-}  /* anonymous namespace */
-
-int user_kernel_module_load(void* /*ctx*/, void* args) {
-  int prepared = ensurePtxemuAbiLoaded();
-  if (prepared) return prepared;
+/* ADR-090 §D1: kernel_module_load → H2D DMA PTXIR bytes into HAL heap.
+ * Mode A interim (Mode B will route via CppTLM 23 ABI per ADR-088). */
+int user_kernel_module_load(void* ctx, void* args) {
+  auto* hc = static_cast<struct hal_user_context*>(ctx);
   auto* a = static_cast<gpu_load_kernel_module_args*>(args);
   if (a->image_size == 0 || a->image_size > MAX_KERNEL_IMAGE_SIZE) return -EINVAL;
+  if (a->image_ptr == nullptr) return -EFAULT;
 
-  unsigned long handle = 0;
-  int rc = g_ptxemu_abi.image_load(
-      a->image_ptr, static_cast<unsigned long>(a->image_size), &handle);
-  if (rc != 0 || handle == 0) return -EINVAL;
+  uint64_t vram_addr = 0;
+  int rc = user_mem_alloc(hc, a->image_size, &vram_addr);
+  if (rc != 0) return rc;
 
-  int kn_rc = g_ptxemu_abi.image_kernel_name(handle, a->kernel_name,
-                                              sizeof(a->kernel_name));
-  if (kn_rc != 0) {
-    /* Oracle H3: rollback to prevent PTX-EMU-side handle leak. */
-    g_ptxemu_abi.image_unload(handle);
-    return -EINVAL;
+  rc = user_mem_write(hc, vram_addr, a->image_ptr, a->image_size);
+  if (rc != 0) {
+    user_mem_free(hc, vram_addr);
+    return rc;
   }
-  a->out_module_handle = handle;
+
+  a->out_vram_addr = vram_addr;
   return 0;
 }
 
+/* ADR-090 §D1: kernel_module_execute ⚠️ DEPRECATED — returns -ENOSYS. */
 int user_kernel_module_execute(void* /*ctx*/, void* args) {
-  int prepared = ensurePtxemuAbiLoaded();
-  if (prepared) return prepared;
   auto* a = static_cast<gpu_launch_kernel_module_args*>(args);
-  if (a->module_handle == 0) return -EINVAL;
-  if (a->args_count > 4096) return -EINVAL;
-  if (a->grid_x == 0 || a->grid_y == 0 || a->grid_z == 0) return -EINVAL;
-  if (a->block_x == 0 || a->block_y == 0 || a->block_z == 0) return -EINVAL;
-
-  uint32_t grid[3]  = {a->grid_x, a->grid_y, a->grid_z};
-  uint32_t block[3] = {a->block_x, a->block_y, a->block_z};
-  int rc = g_ptxemu_abi.image_execute(
-      static_cast<unsigned long>(a->module_handle), grid, block,
-      a->args_ptr, a->args_count, a->shared_mem);
-  a->launch_status = rc;
-  return cuda_error_to_errno(rc);
+  a->launch_status = -ENOSYS;
+  return -ENOSYS;
 }
 
+/* ADR-090 §D1: kernel_module_unload ⚠️ DEPRECATED — caller uses
+ * GPU_IOCTL_FREE_BO on out_vram_addr from kernel_module_load. Stub
+ * * returns -ENOSYS for direct callers; drv/ folds this into FREE_BO. */
 int user_kernel_module_unload(void* /*ctx*/, void* args) {
-  int prepared = ensurePtxemuAbiLoaded();
-  if (prepared) return prepared;
   auto* a = static_cast<gpu_unload_kernel_module_args*>(args);
-  if (a->module_handle == 0) return -EINVAL;
-  int rc = g_ptxemu_abi.image_unload(
-      static_cast<unsigned long>(a->module_handle));
-  a->unload_status = rc;
-  return cuda_error_to_errno(rc);
-}
-
-extern "C" int hal_user_kernel_module_init(struct gpu_hal_ops* hal) {
-  if (!hal) return -EINVAL;
-  hal->kernel_module_load = user_kernel_module_load;
-  hal->kernel_module_execute = user_kernel_module_execute;
-  hal->kernel_module_unload = user_kernel_module_unload;
-  return 0;
+  a->unload_status = -ENOSYS;
+  return -ENOSYS;
 }
 
 void hal_user_destroy(struct hal_user_context *ctx) {
