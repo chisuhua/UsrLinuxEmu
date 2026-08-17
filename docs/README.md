@@ -74,7 +74,7 @@
 | [Doxygen API](06-reference/doxygen-api-index.md) | 自动生成的 Doxygen API 参考（HTML） |
 | [IOCTL 命令](06-reference/ioctl-commands.md) | System C IOCTL 命令参考 |
 | [术语表](06-reference/glossary.md) | 技术术语解释 |
-| [架构决策记录](00_adr/README.md) | 所有 ADR（001–075，含 066–068、070–071 跳号；backfill precheck 1 份无状态）|
+| [架构决策记录](00_adr/README.md) | 所有 ADR（001–090，含 066/067/068/070/071/077~086/088-089 跳号；backfill precheck 1 份无状态）|
 
 ### TaskRunner 集成
 
@@ -153,18 +153,18 @@
 | 高级主题 | 4 | 75% | 2026-06-16 |
 | 参考资料 | 4 | 80% | 2026-06-16 |
 | TaskRunner 集成 | 5 | 80% | 2026-06-16 |
-| ADR | 72（+1 ADR-087 v0.2 拟议中）| 95% | 2026-08-14 |
+| ADR | 73（+1 ADR-090 Proposed；ADR-076 v2 Superseded）| 95% | 2026-08-17 |
 
 **总体进度**: 约 **90%** 完成（Stage 4 全部 ✅ + Stage 1-3 已达成；Stage 5 trigger-gated by ADR-049/052）
 
 ### ADR 编号说明
 
-`docs/00_adr/` 当前收录 **72 份** ADR 文件（编号范围 **001–087**，含跳号 066/067/068/070/071/077~086；外加 1 份 `adr-045-047-050-backfill-precheck.md` 无状态 frontmatter）：
+`docs/00_adr/` 当前收录 **73 份** ADR 文件（编号范围 **001–090**，含跳号 066/067/068/070/071/077~086/088-089；外加 1 份 `adr-045-047-050-backfill-precheck.md` 无状态 frontmatter）：
 
-- ✅ **已接受（Accepted）**：~58 份（含 Stage 1-4 所有主线 ADR + KFD/C-12 子项目 ADR-059~063 + 回顾性 ADR-075 + 跨仓契约 ADR-076）
+- ✅ **已接受（Accepted）**：60 份（含 Stage 1-4 所有主线 ADR + KFD/C-12 子项目 ADR-059~063 + 回顾性 ADR-075 + ADR-088/089 v0.5）
 - ⏸️ **显式 Deferred**：8 份（ADR-025/026/028/029/030 等待 Phase 3；ADR-034 待 Phase 3；ADR-053 永不实现——无硬件队列限制；ADR-055 永不实现——无硬件 hang）
-- 🔄 **提议中**：4 份（ADR-087 v0.2 Multi-Process Device & Fabric Seam — pre-circulation；ADR-012 性能、ADR-013 错误处理、ADR-014 日志增强——合法 backlog）
-- 🚫 **Superseded**：1 份（ADR-011 多进程 → Superseded by ADR-087）
+- 🔄 **提议中**：6 份（ADR-012 性能、ADR-013 错误处理、ADR-014 日志增强——合法 backlog；**ADR-087 v0.2** Multi-Process Device & Fabric Seam — pre-circulation；**ADR-090** PTXIR via CppTLM H2D DMA — Oracle Gate #6 PASS, 待跨仓 ack）
+- 🚫 **Superseded**：2 份（**ADR-011** 多进程 → Superseded by ADR-087；**ADR-076 v2** PTX-EMU HAL Backend → Superseded by ADR-090）
 
 **Stage 4 主线 ADR 全部 Accepted**：ADR-040/041/042/043/044/045/046/047/048/049/050/051/052/054/056/057/058/064/069/072/073/074（22 份）。
 

@@ -1,9 +1,17 @@
 # Active Changes Index
 
-> **更新**: 2026-08-10
+> **更新**: 2026-08-17
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: **0 个活跃 change** + 93 个已完成/已归档（截至 2026-08-10）
-> **Source**: 2026-08-10 INDEX 同步 — 新增 2026-08-10-roadmap-unified-index 归档登记
+> **总数**: **1 个活跃 change** + 93 个已完成/已归档（截至 2026-08-17）
+> **Source**: 2026-08-17 INDEX 同步 — 新增 ADR-090 PTXIR via CppTLM H2D DMA 实施
+
+---
+
+## 🔄 2026-08-17 活跃 (ADR-090 Implementation, 1 change)
+
+| Change | 摘要 | 状态 |
+|--------|------|------|
+| [`2026-08-17-adr-090-ptxir-via-h2d-dma`](2026-08-17-adr-090-ptxir-via-h2d-dma/) | **ADR-090 Implementation**: PTXIR Image Loading via CppTLM H2D DMA (Supersedes ADR-076 v2)。HAL fn-ptrs 3→1(#66 保留,#67/#68 deprecated stub); ioctl 0x27 重定义(返回 vram_addr),0x28 stub 化(-ENOSYS);PTX-EMU 移出 UsrLinuxEmu HAL(dlopen → CppTLM submodule / Mode A sim/ translateLaunch);148/148 ctest PASS + Oracle Gate #6 ✅ + Gate #5 Architecture Team ✅;待跨仓 ack(Gate #2/#3/#4)| 🔄 Proposed(Gates 1/5/6 ✅, 2/3/4 ⏳) |
 
 ---
 

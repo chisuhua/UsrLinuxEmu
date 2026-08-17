@@ -1,7 +1,7 @@
 # ADR-076: GPGPU Kernel Module IOCTL（HAL Extension for PTX-EMU Image Executor 集成）
 
-**状态**: ✅ Accepted（2026-08-13，HAL extension 完整实施 + Oracle APPROVED-WITH-CONDITIONS + 144/145 ctest PASS + L1 portability check PASS）
-**日期**: 2026-08-09
+**状态**: 🚫 **Superseded by ADR-090**（2026-08-17 — 详见 [ADR-090](adr-090-ptxir-via-h2d-dma.md)；**已 ship 实施产物保留作为历史记录**，3 个 ioctl 0x27/0x28/0x29 + 3 个 HAL fn-ptr #66/#67/#68 + 144 ctest 全数保留，**退役路径见 ADR-090 §Migration**）
+**日期**: 2026-08-09（v1 草案）→ 2026-08-13（v1 升 Accepted）→ 2026-08-15（v2 演进推迟声明）→ **2026-08-17（v3 退役声明 — Superseded by ADR-090）**
 **提案人**: Sisyphus（基于 PTX-EMU ADR-0029 跨仓评审修订草案；canonical source per ADR-035 §R5.1 cross-repo 协议）
 **评审者**:
 - UsrLinuxEmu Architecture Team（owner 评审 — HAL append-only + ioctl 编号预留 39/40/41 可接受性）
@@ -13,6 +13,7 @@
 - [ADR-018](adr-018-driver-sim-separation.md) ✅ 驱动/仿真分离（HAL 仍是 ②③ 之间唯一桥）
 - [ADR-036](adr-036-three-way-separation.md) ✅ 3 区分架构原则（HAL 扩展不破坏分层）
 - [ADR-035](adr-035-governance-policy.md) ✅ 治理规则（本 ADR 走 §R5.1 cross-repo 流程）
+- [**ADR-090**](adr-090-ptxir-via-h2d-dma.md) 🔄 **Superseding ADR（本 ADR 的 v2 修订替代）** — PTXIR Image Loading via CppTLM H2D DMA。**本 ADR 的已 ship 实施产物退役路径由 ADR-090 §Migration 接管**。本 ADR 文件保留作为历史决策记录与已 ship 实现说明。
 - [ADR-039](adr-039-mem-pool-export-ioctl.md) ✅ MEM_POOL_EXPORT IOCTL 0x68（**姊妹变更**，同样跨仓扩展 IGpuDriver + ioctl）
 - [ADR-061](adr-061-hal-iommu-extension.md) ✅ HAL IOMMU ops 扩展（**模式借鉴** — 本 ADR 采用类似 append-only 治理）
 
@@ -25,7 +26,18 @@
 - [PTX-EMU ADR-0024](../external/PTX-EMU/docs/adr/ADR-0024-ptxir-cubin-embed-extension.md) ✅ PTXIR-Embedded CUBIN 格式（image bytes 编码）
 - [PTX-EMU ADR-0029 D3](../external/PTX-EMU/docs/adr/ADR-0029-ptxemu-image-executor.md#d3-image-bytes-私有保存--launch-时重-deserializea2-修复-mutation-bug) image bytes 私有保存 + per-launch re-deserialize（HAL 端需透传 image bytes）
 
-**关联 Change（建议）**: `openspec/changes/2026-08-15-stage5-ptxemu-kernel-module-hal-extension/`（建议命名，待 UsrLinuxEmu owner 确认）
+**关联 Change（建议）**: `openspec/changes/2026-08-15-stage5-ptxemu-kernel-module-hal-extension/`（建议命名，待 UsrLinuxEmu owner 确认；**注**：2026-08-15 调整——本 change 实施已 ship，本 ADR 后续演进待 ADR-088 实施后评估）
+
+**修订记录**:
+- 2026-08-09 v1：初版草案（PTX-EMU ADR-0029 跨仓评审修订触发；canonical source per ADR-035 §R5.1 cross-repo 协议）
+- 2026-08-13 v1 升 Accepted：HAL extension 完整实施（3 个 ioctl 0x27/0x28/0x29 + 3 个 HAL fn-ptr #66/#67/#68 + `hal_user.cpp` dlsym `libptxemu_device.so`）+ Oracle APPROVED-WITH-CONDITIONS + 144/145 ctest PASS + L1 portability check PASS
+- 2026-08-15 v2 修订：**后续演进讨论推迟**。当前项目焦点为推进 [ADR-088（dGPU 参考设计 — 完整硬件子系统仿真）](adr-088-dgpu-complete-simulation.md)；本 ADR 已 ship 的实施产物（3 个 ioctl + 3 个 fn-ptrs + 144 ctest）保持 ✅ Accepted 状态不变。**待 ADR-088 升 Accepted 后再启动本 ADR 的演进讨论**（注：ADR-088 已于 2026-08-15 升 Accepted，推迟已退出），届时重点评估：
+  - (a) 是否需要 v2 修订以支持 PTX-EMU 与 CppTLM backend 共存（环境变量 / dlopen 顺序 / C-ABI 命名空间）
+  - (b) HAL fn-ptr 是否需要扩展以支持 CppTLM path 的 Kernel Module 加载路径
+  - (c) TaskRunner [tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) 集成是否需要同步修订
+  - (d) 跨仓契约澄清文档（per Sisyphus + Metis 双层审查 P1-C 偏差）
+
+  **不冲突**：[ADR-088 §C2](adr-088-dgpu-complete-simulation.md) 明确"ADR-076 (PTX-EMU): **不被取代** — Kernel Module 仍走 PTX-EMU path"；两者**共存**：hal_user.cpp 可同时配置 PTX-EMU backend + CppTLM backend（env var 互不干扰）。本 v2 修订不撤销任何已 ship 实施，仅推迟**后续演进**讨论。
 
 ---
 
@@ -518,11 +530,145 @@ commit: UsrLinuxEmu 仓 final integration commit + push
 2. **TaskRunner 仓评审确认 gate**（**SOFT gate**，未通过 → ADR 仍可 Accepted，但 TaskRunner 集成延后）：
    - [tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) 评审通过
 
+✅ **当前状态（2026-08-13）**：HARD gate + SOFT gate 均已通过，ADR 升 Accepted。
+
+---
+
+## 后续演进推迟声明（v2 修订，2026-08-15）
+
+> **状态演进（重要）**：本 ADR ✅ Accepted 状态**保持不变**。已 ship 的实施产物（3 个 ioctl 0x27/0x28/0x29 + 3 个 HAL fn-ptr #66/#67/#68 + 144/145 ctest + `hal_user.cpp` dlsym `libptxemu_device.so`）**全部有效**。
+>
+> **本节目的**：明确推迟**未来演进讨论**（不是撤销或修改已 ship 实施）。
+
+### 1. 推迟原因
+
+当前项目焦点为推进 [ADR-088（dGPU 参考设计 — 完整硬件子系统仿真）](adr-088-dgpu-complete-simulation.md)（Stage 5.5 子项目）。ADR-088 涉及 HAL in-place 改造 + dlopen `libcpptlm_emulator.so` + 23 个 C ABI（dGPU 板卡仿真），与本 ADR（ADR-076 PTX-EMU HAL Backend）使用相同的 dlopen + env var 集成模式。
+
+为避免两 ADR 实施时出现冲突（env var 优先级 / dlopen 顺序 / C-ABI 命名空间 / HAL 静态变量共享），**本 ADR 的后续演进讨论统一推迟到 ADR-088 升 Accepted 之后**。
+
+### 2. 何时重启演进讨论
+
+**触发条件**：ADR-088 升 Accepted（per ADR-035 §R2 + §R6 lifecycle）。
+
+届时启动本 ADR 的"演进评估"工作流：
+
+| 评估项 | 范围 | Owner |
+|--------|------|-------|
+| (a) PTX-EMU 与 CppTLM backend 共存契约澄清 | env var 命名空间、优先级、dlopen 顺序 | UsrLinuxEmu Architecture Team |
+| (b) HAL fn-ptr 是否需要扩展以支持 CppTLM path 的 Kernel Module 加载路径 | 复用现有 3 个 fn-ptrs（load/launch/unload）还是新增 CppTLM-specific | UsrLinuxEmu Architecture Team + CppTLM maintainer |
+| (c) TaskRunner [tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) 集成是否需要同步修订 | consumer-side mirror | TaskRunner owner |
+| (d) 跨仓契约澄清文档 | Sisyphus + Metis 双层审查 P1-C 偏差（ADR-076 vs ADR-088 跨仓契约冲突）| UsrLinuxEmu Architecture Team |
+
+### 3. 与 ADR-088 共存关系（明确不变）
+
+**[ADR-088 §C2](adr-088-dgpu-complete-simulation.md) 已明确**：
+
+> "ADR-076 (PTX-EMU): **不被取代** — Kernel Module 仍走 PTX-EMU path"
+
+两者**共存**，**不冲突**：
+
+| 后端 | 触发 env var | dlopen 目标 | 用途 |
+|------|--------------|-------------|------|
+| **PTX-EMU**（本 ADR）| `PTXEMU_ROOT` 或 `/opt/ptxemu` 或 RTLD_DEFAULT | `libptxemu_device.so` | Kernel Module 加载/执行/卸载（IOCTL 0x27/0x28/0x29）|
+| **CppTLM**（ADR-088）| `USR_LINUX_EMU_USE_CPPTLM=1` | `libcpptlm_emulator.so` | dGPU 板卡仿真（23 ABI；系统 IOMMU/CXL.mem 由 UsrLinuxEmu `src/system_hw/` 提供）|
+
+两个后端通过不同 env var 触发，互不干扰；hal_user.cpp 可同时配置两个后端（per ADR-088 §C2 明确）。
+
+### 4. 推迟期间的维护原则
+
+- ✅ **不修改**：已 ship 的 3 个 ioctl 0x27/0x28/0x29、3 个 HAL fn-ptrs #66/#67/#68、144 个 ctest、PTX-EMU 集成路径
+- ✅ **不撤销**：ADR 状态保持 ✅ Accepted
+- ✅ **不阻塞**：ADR-088 实施进度（本 ADR 推迟不影响 ADR-088 实施）
+- ⏸️ **不演进**：本 ADR 不接受新需求/扩展，直到 ADR-088 升 Accepted
+- ⚠️ **必须记录**：如发现 PTX-EMU 集成 bug 或生产问题，按正常 issue 流程处理（不阻塞本推迟声明）
+
+### 5. 退出条件
+
+**退出"后续演进推迟"状态**（即重启演进讨论）需满足：
+
+1. ~~ADR-088 升 Accepted~~ → **✅ 已触发**（2026-08-15 [ADR-088 升 ✅ Accepted](adr-088-dgpu-complete-simulation.md)，Oracle 二次评审通过）
+2. ~~UsrLinuxEmu owner 启动 ADR-076 v2 修订工作流~~ → **✅ 已触发**（2026-08-15 同步执行）
+3. ~~在本 ADR 创建"## 演进路线图"章节，列出 (a)-(d) 评估项的具体决策~~ → **✅ 已完成**（详见 §演进路线图）
+
+**退出状态确认**（2026-08-15）：3 项退出条件全部满足，**本 ADR 已退出"后续演进推迟"状态**，进入正常演进轨道。后续演进讨论按 (a)-(d) 评估项的具体决策推进。
+
+**注**：本节不阻塞 ADR-088 任何阶段（包括 PROPOSED → UNDER_REVIEW → ACTIVE → ACCEPTED）；ADR-088 升 Accepted 是本推迟声明的"重启触发条件"，而非"前置条件"。
+
+---
+
+## 演进路线图（**v3 修订 2026-08-15** — 退出条件 3 完成）
+
+> **背景**：ADR-088 于 2026-08-15 升 ✅ Accepted（Oracle 二次评审通过），触发本 ADR §后续演进推迟声明 §5 退出条件。本节列出 (a)-(d) 4 项评估项的具体决策，作为后续演进讨论的工作框架。（注：ADR-088 早期多版本（v2/v3/v4/v5）演进期间的两次"重新校准"记录已随 ADR-088 单文件整合（2026-08-16）移除；(a)(b) 结论始终维持不变，(c)(d) 状态见下。）
+
+### (a) PTX-EMU 与 CppTLM backend 共存契约澄清
+
+**决策**（**已确定 2026-08-15**）：**共存关系维持**（不修改）。
+
+**依据**：Oracle 二次评审通过 4 维无冲突验证：
+- **库名**：`libptxemu_device.so`（本 ADR）vs `libcpptlm_emulator.so`（ADR-088）— 无冲突 ✓
+- **Env var**：`USR_LINUX_EMU_USE_PTXEMU=1` vs `USR_LINUX_EMU_USE_CPPTLM=1` — 无冲突 ✓
+- **C-ABI 命名空间**：`ptxemu_*` vs `cpptlm_emulator_*` — 独立命名空间 ✓
+- **HAL 静态变量**：`hal_user_context.use_ptxemu_backend`（bool）vs `hal_user_context.use_cpptlm_backend`（bool）— 独立字段 ✓
+
+**后续行动**：无需修改，per ADR-088 §C2 明确"ADR-076 (PTX-EMU): **不被取代** — Kernel Module  仍走 PTX-EMU path"。
+
+### (b) HAL fn-ptr 是否需要扩展以支持 CppTLM path 的 Kernel Module 加载路径
+
+**决策**（**已确定 2026-08-15**）：**不新增 fn-ptr，复用现有 3 个 kernel_module_* fn-ptrs**。
+
+**依据**：
+- ADR-088 维持 68 fn-ptrs 不变（in-place 替换不改 HAL 接口契约，per ADR-023 §D4 append-only 治理）
+- `kernel_module_load/execute/unload` (#66/#67/#68) 设计为 ABI 通用，不限于 PTX-EMU backend
+- CppTLM path 的 Kernel Module 加载路径可由 `libcpptlm_emulator.so` 通过 `cpptlm_emulator_*` 自行实现，不需 HAL 层扩展
+- ADR-023 §D4 append-only 治理明确禁止在无新 spec-driven 需求时新增 fn-ptr
+
+**后续行动**：无需修改，per ADR-076 D2 + ADR-088 §C2 共存关系。
+
+### (c) TaskRunner [tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) 集成是否需要同步修订
+
+**决策**（**待 TaskRunner owner 启动评估**）。
+
+**依据**：ADR-088 升 Accepted 后，TaskRunner tadr-307 的 IGpuDriver kernel module extension 集成可能需要扩展（以支持 CppTLM path），但需 TaskRunner owner 评估：
+- 是否需要在 IGpuDriver 接口层添加 mode 切换字段（PTX-EMU vs CppTLM）？
+- tadr-307 的 3 个纯虚方法（load_kernel_module / launch_kernel_module / unload_kernel_module）是否需要按 backend 分流？
+- 是否需要在 `cu_module.cpp::cuModuleLoadData` 添加 mode 选择逻辑？
+
+**Owner**: TaskRunner owner
+**预计启动时间**：ADR-088 实施 Gate 4（总集成完成）后
+**跟踪 issue**: （待 TaskRunner owner 建 #tadr-307-followup）
+
+### (d) 跨仓契约澄清文档
+
+**决策**（**待文档化 2026-08-15 启动**）。
+
+**依据**：ADR-088 Oracle 二次评审确认 4 维无冲突后，需编写独立的"ADR-076 vs ADR-088 跨仓契约澄清"文档，作为实施期间的权威依据：
+- env var 优先级（同时设置 `USR_LINUX_EMU_USE_PTXEMU=1` + `USR_LINUX_EMU_USE_CPPTLM=1` 时的行为）
+- dlopen 顺序（两个 .so 的加载顺序、依赖关系）
+- C-ABI 命名空间互不干扰（已在 Oracle 评审中验证）
+- HAL 静态变量共享（已在 Oracle 评审中验证）
+
+**Owner**: UsrLinuxEmu Architecture Team
+**预计创建时间**：ADR-088 实施阶段 1 启动前
+**文档路径**：`docs/05-advanced/adr-076-vs-088-cross-backend-contract.md`（待建）
+
+### 演进路线图时间表
+
+| 时间点 | 事件 | 触发条件 | 备注 |
+|--------|------|----------|------|
+| 2026-08-15 | (a) 已确定 | Oracle 评审通过 4 维无冲突验证 | ✅ |
+| 2026-08-15 | (b) 已确定 | ADR-023 §D4 append-only 治理 | ✅ |
+| 2026-08-15 | (d) 文档化启动 | ADR-088 升 Accepted | ⏳ 进行中 |
+| 2026-08-15+ | (c) TaskRunner owner 启动 | ADR-088 实施 Gate 4 | ⏳ 等待 |
+| ADR-088 阶段 1 | (d) 完成 | libcpptlm_emulator.so 加载框架就绪 | ⏳ 待 |
+| ADR-088 阶段 2a | (c) 进展 | MSI-X + DMA translate cb 验证 | ⏳ 待 |
+| ADR-088 阶段 4 | 全部完成 | 23 ABI dispatch 到 CppTLM + system_hw 集成 | ⏳ 待 |
+
 ---
 
 **维护者**: UsrLinuxEmu Architecture Team（canonical source）
-**最后更新**: 2026-08-09（v1 草案；PTX-EMU ADR-0029 跨仓评审修订触发）
+**最后更新**: 2026-08-09（v1 草案）→ 2026-08-13（v1 升 Accepted）→ 2026-08-15（v2 演进推迟声明 → v3 退出推迟 + 创建演进路线图章节）→ **2026-08-16（ADR-088 单文件整合：演进路线图 v4/v5 重新校准记录移除，(a)(b) 结论维持，(c)(d) 状态见 §演进路线图；各修订均不涉及已 ship 实施）**
 **关联 Issue**: 暂无（建议建 #76-gpgpu-kernel-module-ioctl）
+**状态**: ✅ Accepted（保持不变；2026-08-15/2026-08-16 各修订均不涉及已 ship 实施）
 
 ---
 
