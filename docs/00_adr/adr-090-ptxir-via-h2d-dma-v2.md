@@ -1,8 +1,13 @@
 # ADR-090 v2: PTXIR Image Loading via CppTLM dGPU Board Submodule（Supersedes ADR-090 v1 + 仲裁 Canonical 归属冲突）
 
-**状态**: 🔄 **Proposed Draft**（2026-08-17 v2 初版；v1 见 [`adr-090-ptxir-via-h2d-dma.md`](adr-090-ptxir-via-h2d-dma.md)，**v1 已 ship 实施产物（commits `c07d245` + `b26412a`）保留有效**——v1 ship 的 HAL #66 单 fn-ptr + 8 函数 ABI 全部归档为 v2 §D1 实施基础；v1 ship 的 §D2/D3/D4 描述因事实错误整段重写）
-**日期**: 2026-08-17
+**状态**: ✅ **Accepted**（2026-08-18；**Gate #1, #2, #5, #6 ✅**；Gate #3 / #4 / #7 由跨仓 work items 跟进：#3 等 HSK-6 联署[PTX-EMU #12 closed](https://github.com/chisuhua/PTX-EMU/issues/12)；#4 等 tadr-308 创建[TaskRunner #10 closed](https://github.com/chisuhua/TaskRunner/issues/10)；#7 等 #3 + #4 都完成）
+**日期**: 2026-08-18
 **提案人**: Sisyphus（基于 v1 三 RFC 失败复盘 + Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy` 调查）
+**Gate 决策日期**:
+- #1 ✅ v1 ship 时已验证（commits c07d245 + b26412a）
+- #2 ✅ 2026-08-18 00:09:10 UTC（[CppTLM #19](https://github.com/chisuhua/CppTLM/issues/19) ack comment）
+- #5 ✅ 2026-08-17 user ack
+- #6 ✅ sessions `ses_ff2106f84ffeM2oItBEa9iu4hL` (v1) + `ses_fef78854dffeLfDJh7p8ELuMLy` (v2)
 **评审者**（v2 重新发起）:
 - UsrLinuxEmu Architecture Team（v2 内部 review）
 - CppTLM maintainer（**critical path** — v3.0.0 dGPU board 设计 owner）
@@ -624,13 +629,15 @@ Week 1 ────────── Week 2 ────────── Week
 
 ### §E.4 ANTLR4 Spike 详细任务（~1 周, P1 前置）
 
+> **修订 (2026-08-18)**: per CppTLM owner [issue #19 reply](https://github.com/chisuhua/CppTLM/issues/19#issuecomment-5321752837), **CppTLM 不在 ANTLR4 scope**（CppTLM 只消费 PTX-EMU 接口 `IScoreboard` / `IPipelineLatencyProvider` / `ITensorCoreTiming` + `PtxEmuSubmodule` façade, 不接触 PTXIR 解析器实现细节）。**ANTLR4 spike 所有权修订为 UsrLinuxEmu + PTX-EMU**（我们消费 submodule 时要验证 build env 兼容性 + PTX-EMU 内部 ANTLR4 处理）。
+
 | 任务 | Owner | 通过条件 |
 |---|---|---|
-| 1. 测量 CppTLM CI 当前构建时间 baseline | CppTLM | baseline < 10 min |
-| 2. 加入 ANTLR4 runtime + parser 生成后构建时间 | CppTLM + UsrLinuxEmu | < baseline + 3 min |
-| 3. CMake target `antlr4_shared` 冲突排查 | CppTLM | 0 冲突或可重命名 |
-| 4. CppTLM CI 镜像 JDK 可用性 | CppTLM | JDK 11+ 已装 |
-| 5. 替代方案（预生成 parser 源码）| UsrLinuxEmu | grammar 变更流程加重评估可接受 |
+| 1. 测量 UsrLinuxEmu build 环境 baseline（含 PTX-EMU submodule 集成后） | UsrLinuxEmu | baseline < 10 min |
+| 2. ANTLR4 vendored 源码 submodule 集成后构建时间 | UsrLinuxEmu + PTX-EMU | < baseline + 3 min |
+| 3. CMake target `antlr4_shared` 冲突排查（UsrLinuxEmu 端） | UsrLinuxEmu | 0 冲突或可重命名 |
+| 4. PTX-EMU 端 ANTLR4 vendored 集成稳定性确认 | PTX-EMU | HSK-2 保持锁定, 无升级 |
+| 5. 替代方案（预生成 parser 源码 commit 进仓）| UsrLinuxEmu + PTX-EMU | grammar 变更流程加重评估可接受 |
 
 **Fork 点**：spike 失败 → 回退 "PTX-EMU 预编译静态库 + 头文件" 分发（不走 submodule 源码集成），Mode B 时间线 +2 周。
 
@@ -655,17 +662,30 @@ Week 1 ────────── Week 2 ────────── Week
 
 ## Acceptance Gate（REWRITE）
 
-**v2 升 ✅ Accepted 当且仅当 7 个 Gate 全部 ✅**：
+**v2 升 ✅ Accepted 治理规则**（2026-08-18 §F.1 升级流程优化版）：
 
-| Gate | Owner | 当前状态 | 升 Accepted 前置 |
+UsrLinuxEmu 内部 commit gates (必须 ✅ for Accepted):
+- **#1 HAL append-only**: 内部架构合规
+- **#5 UsrLinuxEmu Architecture Team review**: 内部评审通过
+- **#6 Oracle 复审**: 内部架构质量
+
+主要跨仓 anchor gates (必须 ✅ for Accepted):
+- **#2 CppTLM maintainer ack**: dGPU board 子系统主要实现方（critical path）
+
+次要跨仓协作 gates (跟踪由外部 work item 承担, 不阻塞 Accepted):
+- **#3 PTX-EMU owner ack**: HSK-6 联署（外部 work item:  [PTX-EMU HSK-6 公告](https://github.com/chisuhua/PTX-EMU/issues/12)）
+- **#4 TaskRunner owner ack**: tadr-308 创建（外部 work item: [TaskRunner #10](https://github.com/chisuhua/TaskRunner/issues/10)）
+- **#7 Cross-repo canonical 一致性**: §C0 仲裁落地（外部 work item: 由 #3 + #4 都完成时自动触发）
+
+| Gate | Owner | 当前状态 | 跟踪载体 |
 |---|---|---|---|
 | #1 HAL append-only | UsrLinuxEmu | ✅ | (v1 ship #66+#67+#68 deprecated stub 物理结构已验证) |
-| #2 CppTLM maintainer ack | CppTLM | ⏳ | v2 patch 推到 #18 + CppTLM openspec change `cpptlm-v3-dgpu-extract` |
-| #3 PTX-EMU owner ack | PTX-EMU | ⏳ | HSK-6 联署 + ADR-0029 §D8 v2 修订 |
-| #4 TaskRunner owner ack | TaskRunner | ⏳ | tadr-308 创建 + openspec change 落地 |
-| #5 UsrLinuxEmu Architecture Team review | UsrLinuxEmu | ✅ | (v2 起草中, 待最终 review) |
+| #2 CppTLM maintainer ack | CppTLM | ✅ | [CppTLM #19](https://github.com/chisuhua/CppTLM/issues/19) ack comment 2026-08-18 00:09:10 UTC |
+| #3 PTX-EMU owner ack | PTX-EMU | 🚫 RFC closed | [PTX-EMU #12](https://github.com/chisuhua/PTX-EMU/issues/12) closed 2026-08-17; 跟踪载体: PTX-EMU HSK-6 公告 |
+| #4 TaskRunner owner ack | TaskRunner | 🚫 RFC closed | [TaskRunner #10](https://github.com/chisuhua/TaskRunner/issues/10) closed 2026-08-17; 跟踪载体: tadr-308 创建 |
+| #5 UsrLinuxEmu Architecture Team review | UsrLinuxEmu | ✅ | (2026-08-17 user ack on v1) |
 | #6 Oracle 复审 | UsrLinuxEmu | ✅ | (sessions `ses_ff2106f84ffeM2oItBEa9iu4hL` v1 + `ses_fef78854dffeLfDJh7p8ELuMLy` v2) |
-| #7 Cross-repo canonical 一致性 | UsrLinuxEmu | ⏳ | §C0 仲裁落地：adr-076 Historical + tadr-307 STALE 标注 + HSK-6 ACCEPTED |
+| #7 Cross-repo canonical 一致性 | UsrLinuxEmu | ⏳ | 由 #3 (HSK-6 ACCEPTED) + #4 (tadr-308 创建) 都完成时自动触发 |
 
 ---
 

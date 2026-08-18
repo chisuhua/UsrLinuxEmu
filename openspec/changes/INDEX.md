@@ -1,17 +1,17 @@
 # Active Changes Index
 
-> **更新**: 2026-08-17
+> **更新**: 2026-08-18
 > **Owner**: UsrLinuxEmu Architecture Team
-> **总数**: **1 个活跃 change** + 93 个已完成/已归档（截至 2026-08-17）
-> **Source**: 2026-08-17 INDEX 同步 — 新增 ADR-090 PTXIR via CppTLM H2D DMA 实施
+> **总数**: **0 个活跃 change** + 94 个已完成/已归档（截至 2026-08-18）
+> **Source**: 2026-08-18 INDEX 同步 — ADR-090 v2 ✅ Accepted 归档 + annex §E 跟踪表指向 #19 (CppTLM owner-created v3.0 RFC)
 
 ---
 
-## 🔄 2026-08-17 活跃 (ADR-090 Implementation, 1 change)
+## ✅ 2026-08-18 归档 (ADR-090 v2 Accepted, 1 change)
 
-| Change | 摘要 | 状态 |
-|--------|------|------|
-| [`2026-08-17-adr-090-ptxir-via-h2d-dma`](2026-08-17-adr-090-ptxir-via-h2d-dma/) | **ADR-090 Implementation**: PTXIR Image Loading via CppTLM H2D DMA (Supersedes ADR-076 v2)。HAL fn-ptrs 3→1(#66 保留,#67/#68 deprecated stub); ioctl 0x27 重定义(返回 vram_addr),0x28 stub 化(-ENOSYS);PTX-EMU 移出 UsrLinuxEmu HAL(dlopen → CppTLM submodule / Mode A sim/ translateLaunch);148/148 ctest PASS + Oracle Gate #6 ✅ + Gate #5 Architecture Team ✅;待跨仓 ack(Gate #2/#3/#4)| 🔄 Proposed(Gates 1/5/6 ✅, 2/3/4 ⏳) |
+| 归档 | 摘要 | 状态 |
+|------|------|------|
+| `2026-08-18-adr-090-ptxir-via-h2d-dma-v2-accepted` | ADR-090 v2 升 ✅ Accepted(commit `0e67d41`)。**v1 → v2 关键变化** (Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy` 24 BLOCKERS 分析后整段重写): §C0 Canonical 仲裁(HSK-1 真相源 = PTX-EMU 仓 8 函数 ABI, CPPTLM_MODULE_VERSION 2)+ §C4 v1 三 RFC 失败复盘(12 事实错误 + 3 架构否决 + 9 缺失项)+ §D1 8 函数 ABI 全量采纳(逐字引用 `cpptlm_module.h:12-52`)+ §D3 Mode B 强化(submodule + CppTLM dGPU Board, PCIe 设备语义, gem5 惯例; 最小完备集 `DGpuBar + Doorbell + SQ/CQ`)+ §D4 废除 layered fallback(Mode A = 冻结基线)+ §D5 HSK-6 联发协议(**PTX-EMU 发起**, C++TLM ack, UsrLinuxEmu 利益相关方)+ §D6 两阶段删除流程(freeze → Mode B E2E → physical delete; 4 测试文件迁移路径)+ §E 9 周双轨 P0-P4 时间线 + §F 10 项风险矩阵。**Acceptance Gate 进度**: #1/#2/#5/#6 ✅; #3 / #4 / #7 由跨仓 work items 跟进 ([PTX-EMU #12](https://github.com/chisuhua/PTX-EMU/issues/12) / [TaskRunner #10](https://github.com/chisuhua/TaskRunner/issues/10) / [CppTLM #19](https://github.com/chisuhua/CppTLM/issues/19))。v1 ship 实施产物(commits `c07d245` + `b26412a`)保留作为历史追溯 | ✅ archived (proposal.md + tasks.md) |
 
 ---
 

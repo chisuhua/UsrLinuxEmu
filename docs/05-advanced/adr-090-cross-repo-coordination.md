@@ -262,11 +262,11 @@ Week 0 ────────── Week 2 ────────── Week
 
 **投递方案**: 方案 A — 三仓并行开 RFC issue (GitHub Issue), CppTLM 优先 push (critical path, v5.0 BREAKING 流程主开关)。详见顶部决策摘要。
 
-| Gate | 端 | Draft Anchor | Issue / PR | Owner | Status | Opened Date | Closed/Patched | Notes |
-|------|-----|--------------|------------|-------|--------|-------------|----------------|-------|
-| #2 | CppTLM | annex §C | [#19](https://github.com/chisuhua/CppTLM/issues/19) | _CppTLM maintainer_ | 🟡 v2 Patch Posted (tracking #19) | 2026-08-17 | 2026-08-17 23:32:59 UTC (issue) / 23:37:03 UTC (alignment comment) | handoff spec v3.0 + DGpuBar/Doorbell/SQ-CQ 最小完备集 + git submodule — **critical path**, #19 由 owner 自建对齐 ADR-090 v2 |
-| #3 | PTX-EMU | annex §A | [#12](https://github.com/chisuhua/PTX-EMU/issues/12) | _PTX-EMU owner_ | 🚫 Closed (superseded by v2) | 2026-08-17 | 2026-08-17 16:58:50 UTC | ADR-0029 §D8 amendment — **CLOSED**, v1 RFC 4 项硬 BLOCKERS 无法 patch, 关闭保留历史 |
-| #4 | TaskRunner | annex §B | [#10](https://github.com/chisuhua/TaskRunner/issues/10) | _TaskRunner owner_ | 🚫 Closed (superseded by v2) | 2026-08-17 | 2026-08-17 16:59:09 UTC | tadr-308 + cu_module.cpp / cu_launch.cpp 改造 — **CLOSED**, v1 RFC 5 项 BLOCKERS 无法 patch, 关闭保留历史 |
+| Gate | 端 | Draft Anchor | Issue / PR | Owner | Status | Opened Date | Ack Date | Notes |
+|------|-----|--------------|------------|-------|--------|-------------|----------|-------|
+| #2 | CppTLM | annex §C | [#19](https://github.com/chisuhua/CppTLM/issues/19) | _CppTLM maintainer_ | ✅ Acked | 2026-08-17 23:32:59 UTC | **2026-08-18 00:09:10 UTC** | handoff spec v3.0 — **Gate #2 ✅**, 12/14 一致 + 2 处实质性修正(HSK-6 origin + test_memory_bridge.cc delete)+ ANTLR4 scope 移除 |
+| #3 | PTX-EMU | annex §A | [#12](https://github.com/chisuhua/PTX-EMU/issues/12) | _PTX-EMU owner_ | 🚫 Closed (superseded by v2) | 2026-08-17 | _TBD: HSK-6_ | ADR-0029 §D8 amendment — **CLOSED**, v1 RFC 4 项硬 BLOCKERS 无法 patch;Gate #3 跟踪载体 = PTX-EMU HSK-6 公告(待 PTX-EMU Architecture Team 发起) |
+| #4 | TaskRunner | annex §B | [#10](https://github.com/chisuhua/TaskRunner/issues/10) | _TaskRunner owner_ | 🚫 Closed (superseded by v2) | 2026-08-17 | _TBD: tadr-308_ | tadr-308 + cu_module.cpp / cu_launch.cpp 改造 — **CLOSED**, v1 RFC 5 项 BLOCKERS 无法 patch;Gate #4 跟踪载体 = tadr-308 创建(待 TaskRunner owner) |
 
 **状态符号**:
 - `🟡 v2 Patch Posted` — v2 patch 已就地推送到 issue, 等待 owner ack
