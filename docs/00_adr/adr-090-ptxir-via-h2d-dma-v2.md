@@ -513,14 +513,29 @@ v1 §C3 + §D2 提议 Mode A = `sim/translateLaunch` 回调过渡层（UsrLinuxE
 
 ### §D5.2 G-D4 static_assert 迁移（Mode A.2 / P0-1 门禁）
 
-`CppTLM/include/cudart/cpptlm_bridge.h:243-306` 包含 **16 条 static_assert**（`CPPTLMBRIDGE_VERSION 2` 在 :55；6 PipelineId + 6 TcPrecision + 4 `is_same_v`），是 vendored 副本中**唯一守卫**——删除 cpptlm_bridge.h 前必须前置迁移到独立头文件。
+> **修订 (2026-08-18)**: per Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy` 第 4 轮评估, **G-D4 守卫不只 cpptlm_bridge.h:243-306 那一段**。CppTLM 仓内还有 **3 个 vendored cudart 头** + **1 条布局守卫** 在 `ptx_emu_driver.hh:27`,全部需前置迁移到 `abi_guards.h` 才能物理删除 cpptlm_bridge.h + ptx_emu_driver.hh。
 
-| 项 | v1 | v2 |
-|---|---|---|
-| 静态断言位置 | v1 未提及 | `CppTLM/include/cudart/cpptlm_bridge.h:243-306` |
-| 迁移目标 | v1 未提及 | `include/cudart/abi_guards.h`（**新建**, 由 CppTLM 仓 owner 创建）|
-| 完成前可删除 cpptlm_bridge.h？| v1 未提及 | ❌ **不可以**（P0-1 硬门禁）|
-| Owner | — | CppTLM maintainer |
+**全部 G-D4 守卫清单（按仓内文件分组）**:
+
+| 文件 | 行号 | 内容 | 守卫类型 |
+|---|---|---|---|
+| `CppTLM/include/cudart/cpptlm_bridge.h` | :55 | `CPPTLMBRIDGE_VERSION 2` 常量 | 版本锁 |
+| `CppTLM/include/cudart/cpptlm_bridge.h` | :243-306 | 16 条 `static_assert`（6 PipelineId + 6 TcPrecision + 4 `is_same_v`） | 类型/枚举锁 |
+| `CppTLM/include/tlm/gpu/ptx_emu_driver.hh` | :27 | `static_assert(sizeof(PtxEmuDriverApi) == 64)` | ABI 布局锁 |
+
+**配套 vendored 头（HSK-6 删除清单须覆盖）**:
+- `CppTLM/include/cudart/cpptlm_bridge.h`（14837 字节,vendored 308 行副本与 PTX-EMU 真相源 294 行有 diff）
+- `CppTLM/include/cudart/pipeline_interface.h`（1659 字节,被 `ptx_emu_driver.hh:18` include）
+- `CppTLM/include/cudart/scoreboard_interface.h`（1278 字节,被 `ptx_emu_driver.hh:19` include）
+- `CppTLM/include/cudart/tensor_core_interface.h`（1709 字节,被 `ptx_emu_driver.hh:20` include）
+
+| 项 | v1 | v2 初版 | v2 修订 |
+|---|---|---|---|
+| 静态断言位置 | v1 未提及 | `cpptlm_bridge.h:243-306` | **`cpptlm_bridge.h:243-306` + `ptx_emu_driver.hh:27`** |
+| vendored 头删除范围 | v1 未提及 | cpptlm_bridge.h 单独 | **4 个 vendored cudart 头全部** |
+| 迁移目标 | v1 未提及 | `include/cudart/abi_guards.h`（新建）| 同（不变） |
+| 完成前可删除 cpptlm_bridge.h？| v1 未提及 | ❌ 不可以（P0-1 硬门禁）| ❌ 不可以（P0-1 硬门禁,**+ 4 vendored 头全部迁完**）|
+| Owner | — | CppTLM maintainer | 同（不变）|
 
 **验证**：迁移完成后, 用 PTX-EMU 仓真相源（`PTX-EMU/include/cudart/cpptlm_bridge.h:14-16`）对比 vendored 副本, 确保 static_assert 组完整迁移且无遗漏。
 
@@ -530,17 +545,25 @@ v1 §C3 + §D2 提议 Mode A = `sim/translateLaunch` 回调过渡层（UsrLinuxE
 
 ### §D6.1 删除清单（基于 Oracle 本地调查）
 
+> **修订 (2026-08-18)**: per Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy` 第 4 轮评估, 删除清单从 7 项扩充至 **11 项**(新增 3 个 vendored cudart 头 + `PtxEmuDriverApi` 布局锁 + 修正确认 `DriverWrapper` 行号)。
+
 **Phase 1 冻结（Mode A + Mode B E2E 通过前）**：
 
 | 项 | 位置 | 状态 |
 |---|---|---|
 | `MemoryBridge` 类 | `CppTLM/include/tlm/gpu/memory_bridge.hh` | 冻结（已 ship, 不删不扩展）|
 | `IPtxEmuDriver` 接口 | `CppTLM/include/tlm/gpu/ptx_emu_driver.hh:19` | 冻结 |
-| `DriverWrapper` | CppTLM 仓（待定位）| 冻结 |
-| `g_ptx_emu_driver` 全局 | CppTLM 仓 | 冻结 |
-| `cpptlm_set_driver` ABI 入口 | CppTLM 仓 | 冻结 |
+| `DriverWrapper` 类 | `CppTLM/include/tlm/gpu/ptx_emu_driver.hh:51` | 冻结 |
+| `g_ptx_emu_driver` 全局 | CppTLM 仓（PTX-EMU ↔ CppTLM 入口点） | 冻结 |
+| `cpptlm_set_driver` ABI 入口 | CppTLM 仓（PTX-EMU 方向） | 冻结 |
 | `ptx_emu_driver_shim.cc` | `CppTLM/src/tlm/gpu/ptx_emu_driver_shim.cc` | 冻结（v2 列入删除清单）|
-| vendored `cpptlm_bridge.h` | `CppTLM/include/cudart/cpptlm_bridge.h`（308 行）| 冻结（HSK-6 P0-1 门禁）|
+| vendored `cpptlm_bridge.h` | `CppTLM/include/cudart/cpptlm_bridge.h`（14837 字节）| 冻结（HSK-6 P0-1 门禁）|
+| vendored `pipeline_interface.h` | `CppTLM/include/cudart/pipeline_interface.h`（1659 字节）| 冻结（被 ptx_emu_driver.hh:18 include）|
+| vendored `scoreboard_interface.h` | `CppTLM/include/cudart/scoreboard_interface.h`（1278 字节）| 冻结（被 ptx_emu_driver.hh:19 include）|
+| vendored `tensor_core_interface.h` | `CppTLM/include/cudart/tensor_core_interface.h`（1709 字节）| 冻结（被 ptx_emu_driver.hh:20 include）|
+| `PtxEmuDriverApi` 布局锁 | `CppTLM/include/tlm/gpu/ptx_emu_driver.hh:27`（`static_assert == 64`）| 冻结（HSK-6 P0-1 门禁, 需迁移到 `abi_guards.h`）|
+
+**Phase 2 物理删除（Mode B E2E 通过后, HSK-6 ACCEPTED）**：
 
 **Phase 2 物理删除（Mode B E2E 通过后, HSK-6 ACCEPTED）**：
 
