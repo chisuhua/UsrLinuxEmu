@@ -2,7 +2,7 @@
 
 本文档目录包含 UsrLinuxEmu 项目中所有已通过和提议中的架构决策记录。
 
-> **最后更新**: 2026-08-07（Stage 4 全部 ship + 归档后同步）
+> **最后更新**: 2026-08-20（TaskRunner TADR mirror 表更新：tadr-307 STALE + slimmed 标注 + 新增 tadr-308 行反映 Oracle A' 修订 2026-08-20；submodule pointer 待 bump）
 > **维护者**: UsrLinuxEmu Architecture Team + TaskRunner owner
 > **治理规则**: 见 [ADR-035](adr-035-governance-policy.md)
 
@@ -371,7 +371,7 @@ adr-001 (用户态模拟)
 
 ---
 
-**最后更新**: 2026-08-16（ADR-088 单文件整合：v3/v4/v5 文件删除，仅保留 `adr-088-dgpu-complete-simulation.md`；状态分布 60/5/1，总计 71）
+**最后更新**: 2026-08-20（TaskRunner TADR mirror 表：tadr-307 STALE + slimmed 2026-08-20 + 新增 tadr-308 行 per Oracle `ses_fe0443831ffenUxpEQxZqWE8Cp` A' 修订；ADR-090 v2 §C0 验证 tadr-307 STALE 缘由；tadr-308 canonical consumer-side 对偶）
 
 ## 编号 gap 治理（2026-06-16 → 2026-06-17）
 
@@ -468,7 +468,8 @@ TaskRunner 独立 ADR 体系（`TADR-NNN` 编号），与本仓 ADR-NNN 区分�
 | [tadr-303](../external/TaskRunner/docs/shared/adr/tadr-303-error-handling.md) | Error Handling 基础 (H-5 新增, Result\<T\> + ErrorCode) | — |
 | [tadr-304](../external/TaskRunner/docs/shared/adr/tadr-304-error-handling-strategy.md) | Error Handling 策略层 (H-5.1 新增, Linux errno 语义, 扩展自 tadr-303) | tadr-303 |
 | [tadr-305](../external/TaskRunner/docs/shared/adr/tadr-305-mempool-export-shareable.md) | IGpuDriver::memPoolExportShareable 契约 (Phase 4 新增 47 方法) | tadr-301, [ADR-039](adr-039-mem-pool-export-ioctl.md) |
-| [tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) | **IGpuDriver Kernel Module Extension**（PTX-EMU Image Executor HAL Backend 集成；新增 3 个纯虚方法 #48-#50 load/launch/unload_kernel_module + cu_module.cpp::cuModuleLoadData 替换 NOT_IMPLEMENTED + cu_launch.cpp fast-path；consumer-side 对偶 UsrLinuxEmu [adr-076](adr-076-gpgpu-kernel-module-ioctl.md)）| tadr-301, [adr-076](adr-076-gpgpu-kernel-module-ioctl.md), PTX-EMU ADR-0029 §D8 |
+| [tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) | **IGpuDriver Kernel Module Extension**（PTX-EMU Image Executor HAL Backend 集成；**3 方法方案已 STALE**, per Oracle session `ses_ff2106f84ffeM2oItBEa9iu4hL` 识别违反 ADR-036（HAL 桥承担硬件行为提供者职责）；2026-08-20 精简为 67 行历史决策摘要 + redirect 到 [tadr-308](../external/TaskRunner/docs/shared/adr/tadr-308-igpu-driver-vram-load.md) per ADR-035 §R2.4；不得作为实施依据） | tadr-301, [adr-076](adr-076-gpgpu-kernel-module-ioctl.md) (since 🚫 Superseded by ADR-090 v2), PTX-EMU ADR-0029 §D8 (since pending amendment per ADR-090 v2 §C4) |
+| [tadr-308](../external/TaskRunner/docs/shared/adr/tadr-308-igpu-driver-vram-load.md) | **IGpuDriver VRAM-Load Extension**（H2D DMA 路径；append-only 新增 1 个 IGpuDriver 方法 `load_kernel_module(image, image_size, *out_vram_addr)` 默认 `-ENOSYS`；CUmodule 重定义为 `uint64_t GPU VA`（per §Decision 1.2）；image_size 从 PTXIR 24B header (`string_table_offset + string_table_size`) 推断（per Oracle session `ses_fe0443831ffenUxpEQxZqWE8Cp` A′ 修订 2026-08-20）；kernel_name **由应用在 `cuModuleGetFunction` 传入**（不调 PTX-EMU ABI，零 UMD PTXIR 解析强制）；`cuModuleLoad` 同步改造走 VRAM-load 路径 + 独立 `next_func_id` 计数器（D6 owner 决策）；`cuModuleUnload` 走 `get_bo_gpu_va` 反查 + `free_bo` (G2 VA 翻译)；DISPATCH_KERNEL packet (T-013 G1) 携带 `vram_addr + kernel_name`；consumer-side 对偶 UsrLinuxEmu [ADR-090 v2](adr-090-ptxir-via-h2d-dma-v2.md) (canonical ✅ Accepted)；[tadr-307 STALE](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) 替代） | tadr-301 (exception), tadr-307 (STALE), [ADR-090 v2](adr-090-ptxir-via-h2d-dma-v2.md) (canonical), [PTX-EMU ADR-0023](https://github.com/chisuhua/PTX-EMU/blob/main/docs/adr/ADR-0023-ptxir-binary-format.md) (24B header), [PTX-EMU ADR-0028](https://github.com/chisuhua/PTX-EMU/blob/main/docs/adr/ADR-0028-multi-kernel-manifest.md) (kernels[]), [PTX-EMU ADR-0029 §D1](https://github.com/chisuhua/PTX-EMU/blob/main/docs/adr/ADR-0029-ptxemu-image-executor.md#d1-新-abi-header--cpptlm_moduleh) (cpptlm_module.h 8 ABI, **§D8 待 amendment per ADR-090 v2 §C4**), CppTLM #19 |
 
 #### 向后兼容 redirect 文件（DEPRECATED）
 
