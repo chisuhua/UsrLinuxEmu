@@ -32,7 +32,7 @@ struct iommu_group *iommu_group_alloc(void)
 	state->group_id = group->id;
 	group->priv = state;
 
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (g) {
 		g->groups.push_back(group);
 	}
@@ -57,7 +57,7 @@ void iommu_group_free(struct iommu_group *group)
 		group->default_domain = nullptr;
 	}
 
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (g) {
 		auto it = std::find(g->groups.begin(), g->groups.end(), group);
 		if (it != g->groups.end())
@@ -72,7 +72,7 @@ int iommu_group_add_device(struct iommu_group *group, struct device *dev)
 	if (!group || !dev)
 		return IOMMU_ERR_EINVAL;
 
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (!g)
 		return IOMMU_ERR_ENOSYS;
 
@@ -112,7 +112,7 @@ int iommu_group_remove_device(struct iommu_group *group, struct device *dev)
 			*pp = victim->next;
 			std::free(victim);
 			group->ndevices--;
-			auto *g = usr_linux_emu::iommu_emu_global_state();
+			auto *g = usr_linux_emu::iommu_driver_global_state();
 			if (g) {
 				auto it = g->device_to_group.find(dev);
 				if (it != g->device_to_group.end())
@@ -129,7 +129,7 @@ struct iommu_group *iommu_group_get(struct device *dev)
 {
 	if (!dev)
 		return nullptr;
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (!g)
 		return nullptr;
 	auto it = g->device_to_group.find(dev);

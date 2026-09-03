@@ -871,9 +871,14 @@ src/system_hw/iommu/（IOVA→PA 翻译）
 - **2026-08-16**：Oracle 独立复审（`ses_ff9752ae9ffeERpWfRpuVRFIi5`）后修订——ABI 计数对齐、"桥接层"措辞统一、ADR-061 协调（D6.1）、ABI 版本政策（D6.2）、Gate 4.5-4.7 新增、工期重估
 - **2026-08-16**：用户范围修订——CppTLM 收窄至 dGPU 板卡（23 ABI），系统 IOMMU + CXL.mem 移至 UsrLinuxEmu `src/system_hw/` 功能级仿真；新增 DMA translate callback；仿真拓扑与真硬件一致
 - **2026-08-16**：文档整合——早期版本文件（v3 `adr-088-cpptlm-emu-bridge.md` / v4 `adr-088-v4-dgpu-reference-design.md` / v5 `adr-088-v5-dgpu-complete-simulation.md`）已删除，内容以本文件为唯一权威来源（用户决策：单文件保留最新版本）
+- **2026-08-26**：**CppTLM 端 Board/SOC 两层分离细化**（不影响本 ADR 的 23 ABI 外部契约与责任边界，仅细化 CppTLM 内部构造）。CppTLM [ADR-SOC-07](https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/adr/ADR-SOC-07-dgpu-board-soc-layering.md)（📋 Proposed）明确：
+  1. **dGPU 板卡 = 两层**：`DGpuBoard`（C++ ABI shell，仅承担本 ADR §D5 的 23 ABI 翻译 / 设备枚举 / SOC 装配 / 回调接线 / 生命周期，自身不持有寄存器状态）+ `DGpuSoc`（SimModule 容器，JSON + ModuleFactory 构建内部组件拓扑）；
+  2. **PCIe Config Space / BAR MMIO / BAR memory / MSI-X 归属 SOC 片内 `PcieEndpointTLM`**（PCIe slave，与真硬件拓扑一致——endpoint IP 在 SOC die 内），upstream DMA 归属 `SdmaEngineTLM`（PCIe master，经 §D3.8 的 `cpptlm_dma_translate_cb` 回调系统 IOMMU）；
+  3. **本 ADR 外部契约零变更**：23 ABI 签名/语义/时序不变，仅 CppTLM 内部实现从"操作板卡成员"改为"向 SOC 端口发事务"；
+  4. **勘误注记**（per 2026-08-26 跨仓审计，不影响决策有效性，实施时须注意）：§D3.2 "加载 dev_id 对应 yaml" 应为 **JSON**（CppTLM 配置体系为 JSON/SimModule）；§D5 的 23 ABI 当前为 **planned contract**（两仓 `cpptlm_emulator_*` 符号 0 命中，尚未实现）；§D1/D3.6/D3.7 的 `src/system_hw/` 为**规划目录**（当前不存在，`src/kernel/iommu/` 是 Linux 内核 API 兼容层而非系统级 IOMMU 硬件仿真，两者不可混用）；§C2 的 ADR-076 共存段落已被 [ADR-090](adr-090-ptxir-via-h2d-dma-v2.md) 推翻（PTX-EMU dlopen 已移除），以 ADR-090 v2 为准。
 
 ---
 
-**最后更新**: 2026-08-16
+**最后更新**: 2026-08-26（追加 Board/SOC 两层分离修订注记，原文决策不变）
 **维护者**: UsrLinuxEmu Architecture Team + CppTLM maintainer
 **状态**: ✅ Accepted

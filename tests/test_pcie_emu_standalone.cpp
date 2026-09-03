@@ -8,6 +8,7 @@
 #include "pcie/pcie_emu.h"
 #include "linux_compat/pci/pci.h"
 #include "linux_compat/pci/msi.h"
+#include "test_plugin_loader_helper.h"
 
 using namespace usr_linux_emu;
 using usr_linux_emu::linux_compat::pci::pci_dev;
@@ -19,6 +20,7 @@ struct PcieEmuDeleter {
 using PcieEmuPtr = std::unique_ptr<PcieEmu, PcieEmuDeleter>;
 
 PcieEmuPtr make_emu() {
+  LOAD_PLUGINS_FOR_TESTS();
   return PcieEmuPtr(create_pcie_emu());
 }
 }  // namespace

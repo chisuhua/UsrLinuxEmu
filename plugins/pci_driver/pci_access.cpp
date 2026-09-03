@@ -12,7 +12,7 @@
 #include <iostream>
 
 namespace usr_linux_emu {
-namespace pcie_internal {
+namespace pci {
 
 namespace {
 constexpr const char* kTag = "PcieEmuImpl/config_space";
@@ -76,5 +76,5 @@ void PcieEmuImpl::write_config_dword(uint16_t offset, uint32_t value) {
   std::memcpy(&config_space_[offset], &value, sizeof(value));
 }
 
-}  // namespace pcie_internal
+}  // namespace pci
 }  // namespace usr_linux_emu

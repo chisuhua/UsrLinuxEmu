@@ -8,6 +8,7 @@
 
 #include "pcie/pcie_emu.h"
 #include "linux_compat/pci/msi.h"
+#include "test_plugin_loader_helper.h"
 
 using namespace usr_linux_emu;
 
@@ -27,6 +28,7 @@ using PcieEmuPtr = std::unique_ptr<PcieEmu, PcieEmuDeleter>;
 }  // namespace
 
 TEST_CASE("msix_setup_default_16_vectors", "[msix]") {
+  LOAD_PLUGINS_FOR_TESTS();
   PcieEmuPtr emu(create_pcie_emu());
   REQUIRE(emu);
   REQUIRE(emu->setup_msix(16, 0) == 0);
@@ -35,6 +37,7 @@ TEST_CASE("msix_setup_default_16_vectors", "[msix]") {
 }
 
 TEST_CASE("msix_setup_rejects_invalid_counts", "[msix][error]") {
+  LOAD_PLUGINS_FOR_TESTS();
   PcieEmuPtr emu(create_pcie_emu());
   REQUIRE(emu);
   // 0 vectors is invalid.
@@ -44,6 +47,7 @@ TEST_CASE("msix_setup_rejects_invalid_counts", "[msix][error]") {
 }
 
 TEST_CASE("msix_inject_invoke_handler", "[msix]") {
+  LOAD_PLUGINS_FOR_TESTS();
   PcieEmuPtr emu(create_pcie_emu());
   REQUIRE(emu);
   REQUIRE(emu->setup_msix(16, 0) == 0);

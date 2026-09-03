@@ -13,7 +13,7 @@
 #include <iostream>
 
 namespace usr_linux_emu {
-namespace pcie_internal {
+namespace pci {
 
 namespace {
 constexpr const char* kTag = "PcieEmuImpl";
@@ -21,13 +21,13 @@ constexpr uint32_t kDefaultVendorId = 0x1234;
 constexpr uint32_t kDefaultDeviceId = 0x5678;
 }  // namespace
 
-}  // namespace pcie_internal
+}  // namespace pci
 
 PcieEmu* create_pcie_emu() {
-  return new pcie_internal::PcieEmuImpl();
+  return new pci::PcieEmuImpl();
 }
 
-namespace pcie_internal {
+namespace pci {
 
 PcieEmuImpl::PcieEmuImpl() {
   // Zero-initialize all members (config_space_ is zero-initialized by default).
@@ -152,5 +152,5 @@ uint8_t PcieEmuImpl::get_current_power_state() const {
   return current_power_state_;
 }
 
-}  // namespace pcie_internal
+}  // namespace pci
 }  // namespace usr_linux_emu

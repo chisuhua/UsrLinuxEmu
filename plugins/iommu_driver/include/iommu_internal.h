@@ -90,7 +90,7 @@ struct iommu_emu_state {
 /*
  * Internal helpers (C++ namespace; only used across src/kernel/iommu/).
  */
-struct iommu_emu_state *iommu_emu_global_state(void);
+struct iommu_emu_state *iommu_driver_global_state(void);
 
 iommu_domain_state *iommu_domain_priv(struct iommu_domain *domain);
 iommu_group_state *iommu_group_priv(struct iommu_group *group);

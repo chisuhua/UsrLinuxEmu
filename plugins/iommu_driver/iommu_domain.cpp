@@ -42,7 +42,7 @@ struct iommu_domain *iommu_domain_alloc(enum iommu_domain_type type)
 	domain->priv = state;
 
 	/* Register with global state */
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (g) {
 		g->domains.push_back(domain);
 	}
@@ -62,7 +62,7 @@ void iommu_domain_free(struct iommu_domain *domain)
 		domain->priv = nullptr;
 	}
 
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (g) {
 		auto it = std::find(g->domains.begin(), g->domains.end(), domain);
 		if (it != g->domains.end())

@@ -41,9 +41,12 @@ int  sim_pm_is_page_dirty(struct sim_page_migration *pm, unsigned long offset);
 void sim_pm_mark_dirty(struct sim_page_migration *pm, unsigned long offset);
 }
 
+#include "test_plugin_loader_helper.h"
+
 TEST_CASE("sim_page_migration — create/destroy lifecycle",
           "[uvm][sim][migration]")
 {
+  LOAD_PLUGINS_FOR_TESTS();
   struct sim_page_migration *pm = sim_pm_create(0x10000);
   REQUIRE(pm != nullptr);
   sim_pm_destroy(pm);
@@ -52,6 +55,7 @@ TEST_CASE("sim_page_migration — create/destroy lifecycle",
 TEST_CASE("sim_page_migration — create with zero size returns null",
           "[uvm][sim][migration]")
 {
+  LOAD_PLUGINS_FOR_TESTS();
   struct sim_page_migration *pm = sim_pm_create(0);
   CHECK(pm == nullptr);
 }
@@ -59,6 +63,7 @@ TEST_CASE("sim_page_migration — create with zero size returns null",
 TEST_CASE("sim_page_migration — migration count starts at zero",
           "[uvm][sim][migration]")
 {
+  LOAD_PLUGINS_FOR_TESTS();
   struct sim_page_migration *pm = sim_pm_create(0x10000);
   REQUIRE(pm != nullptr);
   CHECK(sim_pm_get_migration_count(pm) == 0);
@@ -68,6 +73,7 @@ TEST_CASE("sim_page_migration — migration count starts at zero",
 TEST_CASE("sim_page_migration — migrate data to device and back",
           "[uvm][sim][migration]")
 {
+  LOAD_PLUGINS_FOR_TESTS();
   struct sim_page_migration *pm = sim_pm_create(0x10000);
   REQUIRE(pm != nullptr);
 
@@ -93,6 +99,7 @@ TEST_CASE("sim_page_migration — migrate data to device and back",
 TEST_CASE("sim_page_migration — reject offset beyond device memory",
           "[uvm][sim][migration]")
 {
+  LOAD_PLUGINS_FOR_TESTS();
   struct sim_page_migration *pm = sim_pm_create(0x1000);
   REQUIRE(pm != nullptr);
 

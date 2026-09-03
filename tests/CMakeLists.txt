@@ -27,8 +27,14 @@ function(add_catch_test TEST_NAME)
     add_executable(${TEST_NAME} ${SOURCES})
 
     # 链接 kernel 模块
+    # Stage 5.5.1: 静态链入 pci_driver / iommu_driver plugin 以解析 create_pcie_emu 等符号
     target_link_libraries(${TEST_NAME}
-        PRIVATE kernel)
+        PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+
+    # Stage 5.5.1: 强制 plugin .so 加入 DT_NEEDED（默认 --as-needed + 全局
+    # --unresolved-symbols=ignore-in-shared-libs 会让 .so 不被加入 DT_NEEDED）
+    target_link_options(${TEST_NAME} PRIVATE
+        "-Wl,--no-as-needed")
 
     # 添加测试，指定完整路径到可执行文件
     add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${TEST_NAME}>)
@@ -41,13 +47,20 @@ function(add_catch_test TEST_NAME)
         ${PROJECT_SOURCE_DIR}/include/linux_compat
         ${PROJECT_SOURCE_DIR}/drivers
         ${PROJECT_SOURCE_DIR}/plugins
+        # Stage 5.5.1: 新 pci_driver / iommu_driver plugin 头文件路径
+        ${PROJECT_SOURCE_DIR}/plugins/pci_driver/include
+        ${PROJECT_SOURCE_DIR}/plugins/iommu_driver/include
         ${CMAKE_CURRENT_SOURCE_DIR})
 endfunction()
 
 # 定义创建独立测试目标的函数
 function(add_standalone_test TEST_NAME TEST_SOURCE)
     add_executable(${TEST_NAME} ${TEST_SOURCE})
-    target_link_libraries(${TEST_NAME} PRIVATE kernel)
+    # Stage 5.5.1: 静态链入 pci_driver / iommu_driver plugin
+    target_link_libraries(${TEST_NAME} PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+    # Stage 5.5.1: 强制 plugin .so 加入 DT_NEEDED
+    target_link_options(${TEST_NAME} PRIVATE
+        "-Wl,--no-as-needed")
     target_include_directories(${TEST_NAME} PRIVATE
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/include/kernel
@@ -97,7 +110,12 @@ endfunction()
 # Define Catch2 sim test function (links kernel + gpu_sim + gpu_drv)
 function(add_catch_sim_test TEST_NAME TEST_SOURCE)
     add_executable(${TEST_NAME} ${TEST_SOURCE} ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp)
-    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim gpu_drv gpu_hal gpu_hal_mock)
+    # Stage 5.5.1: 加 pci_driver / iommu_driver plugin 以解析 iommu_emu_init、
+    # create_pcie_emu 等符号。
+    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim gpu_drv gpu_hal gpu_hal_mock pci_driver_plugin iommu_driver_plugin)
+    # Stage 5.5.1: 强制 plugin .so 加入 DT_NEEDED
+    target_link_options(${TEST_NAME} PRIVATE
+        "-Wl,--no-as-needed")
     target_include_directories(${TEST_NAME} PRIVATE
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/include/kernel
@@ -129,7 +147,10 @@ function(add_catch_compat_test TEST_NAME TEST_SOURCE)
         ${PROJECT_SOURCE_DIR}/src/kernel/compat/io.cpp
         ${PROJECT_SOURCE_DIR}/src/kernel/compat/dma-mapping.cpp
     )
-    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim gpu_drv gpu_hal gpu_hal_mock)
+    target_link_libraries(${TEST_NAME} PRIVATE kernel gpu_sim gpu_drv gpu_hal gpu_hal_mock pci_driver_plugin iommu_driver_plugin)
+    # Stage 5.5.1: 强制 plugin .so 加入 DT_NEEDED
+    target_link_options(${TEST_NAME} PRIVATE
+        "-Wl,--no-as-needed")
     target_include_directories(${TEST_NAME} PRIVATE
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/include/kernel
@@ -375,16 +396,20 @@ foreach(src ${CATCH2_SIM_TESTS})
 endforeach()
 
 # test_error_inject_standalone needs gpu_hal_mock for HAL failure injection
-target_link_libraries(test_error_inject_standalone PRIVATE gpu_hal_mock)
+target_link_libraries(test_error_inject_standalone PRIVATE gpu_hal_mock pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_error_inject_standalone PRIVATE "-Wl,--no-as-needed")
 
 # R-3 — test_hal_thread_safety_standalone links gpu_hal + gpu_hal_mock
 # TSan instrumentation is applied globally via add_compile_options(-fsanitize=thread) below
-target_link_libraries(test_hal_thread_safety_standalone PRIVATE gpu_hal gpu_hal_mock)
+target_link_libraries(test_hal_thread_safety_standalone PRIVATE gpu_hal gpu_hal_mock pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_hal_thread_safety_standalone PRIVATE "-Wl,--no-as-needed")
 find_package(Threads REQUIRED)
-target_link_libraries(test_hal_thread_safety_standalone PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_hal_thread_safety_standalone PRIVATE ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_hal_thread_safety_standalone PRIVATE "-Wl,--no-as-needed")
 
 # hal-iommu-full — IOMMU functional tests (links gpu_hal for hal_user.cpp)
-target_link_libraries(test_hal_iommu_standalone PRIVATE gpu_hal)
+target_link_libraries(test_hal_iommu_standalone PRIVATE gpu_hal pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_hal_iommu_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_hal_iommu_standalone PRIVATE ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal)
 
 # 为每个 sim 测试源文件创建测试
@@ -415,7 +440,8 @@ add_executable(test_kfd_process_standalone
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_pasid.c
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_svm.c
 )
-target_link_libraries(test_kfd_process_standalone PRIVATE kernel)
+target_link_libraries(test_kfd_process_standalone PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_process_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_process_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -434,7 +460,8 @@ add_executable(test_kfd_concurrent_processes_standalone
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_pasid.c
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_svm.c
 )
-target_link_libraries(test_kfd_concurrent_processes_standalone PRIVATE kernel ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_kfd_concurrent_processes_standalone PRIVATE kernel ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_concurrent_processes_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_concurrent_processes_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -451,7 +478,8 @@ add_executable(test_kfd_pasid_standalone
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_pasid.c
 )
-target_link_libraries(test_kfd_pasid_standalone PRIVATE kernel)
+target_link_libraries(test_kfd_pasid_standalone PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_pasid_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_pasid_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -472,7 +500,8 @@ set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
     PROPERTIES LANGUAGE C
 )
-target_link_libraries(test_sim_event_standalone PRIVATE kernel)
+target_link_libraries(test_sim_event_standalone PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_sim_event_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_sim_event_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
@@ -493,7 +522,8 @@ set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
     PROPERTIES LANGUAGE C
 )
-target_link_libraries(test_sim_event_page_standalone PRIVATE kernel)
+target_link_libraries(test_sim_event_page_standalone PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_sim_event_page_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_sim_event_page_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
@@ -509,7 +539,8 @@ add_executable(test_multiprocess_isolation_standalone
     test_multiprocess_isolation_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_multiprocess_isolation_standalone PRIVATE kernel)
+target_link_libraries(test_multiprocess_isolation_standalone PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_multiprocess_isolation_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_multiprocess_isolation_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/src
@@ -523,7 +554,8 @@ add_executable(test_pm4_parse_standalone
     test_pm4_parse_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_pm4_parse_standalone PRIVATE kernel gpu_sim)
+target_link_libraries(test_pm4_parse_standalone PRIVATE kernel gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_pm4_parse_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_pm4_parse_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -550,7 +582,8 @@ set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
     PROPERTIES LANGUAGE C
 )
-target_link_libraries(test_hal_event_signal_standalone PRIVATE kernel gpu_hal gpu_sim)
+target_link_libraries(test_hal_event_signal_standalone PRIVATE kernel gpu_hal gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_hal_event_signal_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_hal_event_signal_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/kernel
@@ -572,7 +605,8 @@ add_executable(test_kfd_dispatch_standalone
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_dispatch.c
 )
-target_link_libraries(test_kfd_dispatch_standalone PRIVATE kernel)
+target_link_libraries(test_kfd_dispatch_standalone PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_dispatch_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_dispatch_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -590,7 +624,8 @@ add_executable(test_kfd_end_to_end_standalone
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_dispatch.c
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd_sim_bridge.cpp
 )
-target_link_libraries(test_kfd_end_to_end_standalone PRIVATE kernel gpu_sim)
+target_link_libraries(test_kfd_end_to_end_standalone PRIVATE kernel gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_end_to_end_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_end_to_end_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -614,7 +649,8 @@ add_executable(test_kfd_fault_handling_standalone
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/sim_event.c
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/page_fault_handler.cpp
 )
-target_link_libraries(test_kfd_fault_handling_standalone PRIVATE kernel gpu_sim)
+target_link_libraries(test_kfd_fault_handling_standalone PRIVATE kernel gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_fault_handling_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_fault_handling_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -636,7 +672,8 @@ add_executable(test_kfd_l1_l2_bridge_standalone
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_dispatch.c
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd_sim_bridge.cpp
 )
-target_link_libraries(test_kfd_l1_l2_bridge_standalone PRIVATE kernel gpu_sim)
+target_link_libraries(test_kfd_l1_l2_bridge_standalone PRIVATE kernel gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_l1_l2_bridge_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_l1_l2_bridge_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -662,7 +699,8 @@ add_executable(test_kfd_module_standalone
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_process.c
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_dispatch.c
 )
-target_link_libraries(test_kfd_module_standalone PRIVATE kernel)
+target_link_libraries(test_kfd_module_standalone PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_module_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_module_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -685,7 +723,8 @@ set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_mmu.c
     PROPERTIES LANGUAGE CXX
 )
-target_link_libraries(test_kfd_mmu_standalone PRIVATE kernel)
+target_link_libraries(test_kfd_mmu_standalone PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_mmu_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_mmu_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -713,7 +752,8 @@ set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
     PROPERTIES LANGUAGE CXX
 )
-target_link_libraries(test_kfd_events_standalone PRIVATE kernel)
+target_link_libraries(test_kfd_events_standalone PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_events_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_events_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -734,7 +774,8 @@ add_executable(test_kfd_sim_bridge_audit_standalone
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd_sim_bridge.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/page_migration.cpp
 )
-target_link_libraries(test_kfd_sim_bridge_audit_standalone PRIVATE kernel gpu_sim)
+target_link_libraries(test_kfd_sim_bridge_audit_standalone PRIVATE kernel gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_sim_bridge_audit_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_sim_bridge_audit_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -770,7 +811,8 @@ set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
     PROPERTIES LANGUAGE CXX
 )
-target_link_libraries(test_kfd_events_tsan_standalone PRIVATE kernel gpu_sim)
+target_link_libraries(test_kfd_events_tsan_standalone PRIVATE kernel gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_events_tsan_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_events_tsan_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/kernel
@@ -797,7 +839,8 @@ add_executable(test_kfd_queue_standalone
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_pasid.c
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_process.c
 )
-target_link_libraries(test_kfd_queue_standalone PRIVATE kernel)
+target_link_libraries(test_kfd_queue_standalone PRIVATE kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_kfd_queue_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_kfd_queue_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/linux_compat
@@ -830,9 +873,11 @@ set_source_files_properties(
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/drv/kfd/kfd_events.c
     PROPERTIES LANGUAGE CXX
 )
-target_link_libraries(test_hal_event_standalone PRIVATE kernel gpu_hal_mock gpu_hal gpu_core gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_hal_event_standalone PRIVATE kernel gpu_hal_mock gpu_hal gpu_core gpu_sim pci_driver_plugin iommu_driver_plugin ${CMAKE_THREAD_LIBS_INIT})
+target_link_options(test_hal_event_standalone PRIVATE "-Wl,--no-as-needed")
 find_package(Threads REQUIRED)
-target_link_libraries(test_hal_event_standalone PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_hal_event_standalone PRIVATE ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_hal_event_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_hal_event_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/kernel
@@ -854,7 +899,8 @@ add_executable(test_interrupt_wiring_standalone
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_user.cpp
 )
-target_link_libraries(test_interrupt_wiring_standalone PRIVATE kernel gpu_hal gpu_sim)
+target_link_libraries(test_interrupt_wiring_standalone PRIVATE kernel gpu_hal gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_interrupt_wiring_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_interrupt_wiring_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -870,7 +916,8 @@ add_executable(test_hal_semaphore_preempt_standalone
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_user.cpp
 )
-target_link_libraries(test_hal_semaphore_preempt_standalone PRIVATE kernel gpu_hal gpu_sim)
+target_link_libraries(test_hal_semaphore_preempt_standalone PRIVATE kernel gpu_hal gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_hal_semaphore_preempt_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_hal_semaphore_preempt_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -886,7 +933,8 @@ add_executable(test_interrupt_vector_dispatch_standalone
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_user.cpp
 )
-target_link_libraries(test_interrupt_vector_dispatch_standalone PRIVATE kernel gpu_hal gpu_sim)
+target_link_libraries(test_interrupt_vector_dispatch_standalone PRIVATE kernel gpu_hal gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_interrupt_vector_dispatch_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_interrupt_vector_dispatch_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -902,7 +950,8 @@ add_executable(test_hal_green_context_pdl_standalone
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_user.cpp
 )
-target_link_libraries(test_hal_green_context_pdl_standalone PRIVATE kernel gpu_hal gpu_sim)
+target_link_libraries(test_hal_green_context_pdl_standalone PRIVATE kernel gpu_hal gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_hal_green_context_pdl_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_hal_green_context_pdl_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -921,7 +970,8 @@ add_executable(test_pm4_encode_decode_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_pm4_encode_decode_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_pm4_encode_decode_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_pm4_encode_decode_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_pm4_encode_decode_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_pm4_encode_decode_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -935,7 +985,8 @@ add_executable(test_hyperqueue_multistream_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_hyperqueue_multistream_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_hyperqueue_multistream_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_hyperqueue_multistream_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_hyperqueue_multistream_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_hyperqueue_multistream_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -951,7 +1002,8 @@ add_executable(test_mqd_state_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_mqd_state_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_mqd_state_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_mqd_state_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_mqd_state_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_mqd_state_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -968,7 +1020,8 @@ add_executable(test_preemption_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_preemption_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_preemption_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_preemption_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_preemption_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_preemption_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -986,7 +1039,8 @@ add_executable(test_context_type_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_context_type_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_context_type_standalone PRIVATE gpu_sim)
+target_link_libraries(test_context_type_standalone PRIVATE gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_context_type_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_context_type_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
@@ -1002,7 +1056,8 @@ add_executable(test_pdl_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_pdl_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_pdl_standalone PRIVATE gpu_sim)
+target_link_libraries(test_pdl_standalone PRIVATE gpu_sim pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_pdl_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_pdl_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
@@ -1020,7 +1075,8 @@ add_executable(test_cp_interrupt_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_cp_interrupt_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_cp_interrupt_standalone PRIVATE gpu_hal gpu_hal_mock gpu_core gpu_sim kernel ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_cp_interrupt_standalone PRIVATE gpu_hal gpu_hal_mock gpu_core gpu_sim kernel ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_cp_interrupt_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_cp_interrupt_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -1034,7 +1090,8 @@ add_executable(test_timestamp_query_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_timestamp_query_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_timestamp_query_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_timestamp_query_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_timestamp_query_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_timestamp_query_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -1052,7 +1109,8 @@ add_executable(test_semaphore_barrier_standalone
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler/channel_state.cpp
 )
-target_link_libraries(test_semaphore_barrier_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_semaphore_barrier_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_semaphore_barrier_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_semaphore_barrier_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -1070,7 +1128,8 @@ add_executable(test_priority_sched_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_priority_sched_standalone.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler/channel_state.cpp
 )
-target_link_libraries(test_priority_sched_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_priority_sched_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_priority_sched_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_priority_sched_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -1088,7 +1147,8 @@ add_executable(test_indirect_buffer_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_indirect_buffer_standalone.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler/channel_state.cpp
 )
-target_link_libraries(test_indirect_buffer_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_indirect_buffer_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_indirect_buffer_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_indirect_buffer_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -1112,7 +1172,8 @@ add_executable(test_predication_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_predication_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_predication_standalone PRIVATE kernel gpu_sim gpu_drv gpu_hal gpu_hal_mock)
+target_link_libraries(test_predication_standalone PRIVATE kernel gpu_sim gpu_drv gpu_hal gpu_hal_mock pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_predication_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_predication_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -1130,7 +1191,8 @@ add_executable(test_concurrent_preempt_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_concurrent_preempt.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_concurrent_preempt_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(test_concurrent_preempt_standalone PRIVATE kernel gpu_sim ${CMAKE_THREAD_LIBS_INIT} pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_concurrent_preempt_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_concurrent_preempt_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins
@@ -1161,7 +1223,8 @@ add_executable(test_hal_kernel_module_standalone
 # — without this, the link fails with --unresolved-symbols=ignore-in-shared-libs
 # because the linker pulls page_migration.cpp.o in via hal_mock.cpp's
 # sim_pm_create reference before encountering libkernel.so.
-target_link_libraries(test_hal_kernel_module_standalone PRIVATE kernel gpu_hal gpu_sim gpu_drv kernel)
+target_link_libraries(test_hal_kernel_module_standalone PRIVATE kernel gpu_hal gpu_sim gpu_drv kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_hal_kernel_module_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_hal_kernel_module_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/kernel
@@ -1179,7 +1242,8 @@ add_executable(test_ioctl_table_coverage_standalone
     ${CMAKE_CURRENT_SOURCE_DIR}/test_ioctl_table_coverage_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
 )
-target_link_libraries(test_ioctl_table_coverage_standalone PRIVATE kernel gpu_hal gpu_drv)
+target_link_libraries(test_ioctl_table_coverage_standalone PRIVATE kernel gpu_hal gpu_drv pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_ioctl_table_coverage_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_ioctl_table_coverage_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver
@@ -1196,7 +1260,8 @@ add_executable(test_hal_init_completeness_standalone
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal/hal_mock.cpp
 )
-target_link_libraries(test_hal_init_completeness_standalone PRIVATE kernel gpu_hal gpu_sim kernel)
+target_link_libraries(test_hal_init_completeness_standalone PRIVATE kernel gpu_hal gpu_sim kernel pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_hal_init_completeness_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_hal_init_completeness_standalone PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/kernel

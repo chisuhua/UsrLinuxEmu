@@ -7,6 +7,7 @@
 
 #include "pcie/pcie_emu.h"
 #include "linux_compat/pci/pci.h"
+#include "test_plugin_loader_helper.h"
 
 using namespace usr_linux_emu;
 using usr_linux_emu::linux_compat::pci::pci_dev;

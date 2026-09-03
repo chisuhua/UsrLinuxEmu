@@ -43,7 +43,7 @@ struct iommu_group *iommu_register_pci_device(void *pci_dev_handle)
 	if (!pci_dev_handle)
 		return nullptr;
 
-	auto *g_state = usr_linux_emu::iommu_emu_global_state();
+	auto *g_state = usr_linux_emu::iommu_driver_global_state();
 	if (!g_state || !g_state->initialized)
 		return nullptr;
 
@@ -90,7 +90,7 @@ int iommu_unregister_pci_device(void *pci_dev_handle)
 	if (!pci_dev_handle)
 		return IOMMU_ERR_EINVAL;
 
-	auto *g_state = usr_linux_emu::iommu_emu_global_state();
+	auto *g_state = usr_linux_emu::iommu_driver_global_state();
 	if (!g_state || !g_state->initialized)
 		return IOMMU_ERR_ENOSYS;
 

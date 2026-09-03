@@ -14,11 +14,16 @@ extern "C" {
 #include <linux_compat/iommu/ioasid.h>
 }
 
+#include "test_plugin_loader_helper.h"
+
 namespace {
 
 /* Ensure the emulator is initialized before any domain/group/ioasid test. */
 struct IommuEmuFixture {
-  IommuEmuFixture() { REQUIRE(iommu_emu_init() == 0); }
+  IommuEmuFixture() {
+    LOAD_PLUGINS_FOR_TESTS();
+    REQUIRE(iommu_emu_init() == 0);
+  }
   /* Do NOT call iommu_emu_shutdown() in destructor — it would wipe state
    * for tests that run after. Tests are designed to allocate and free
    * their own resources. */

@@ -16,7 +16,7 @@ static unsigned int g_ioasid_next = 1; /* 0 reserved as invalid */
 
 struct ioasid *ioasid_alloc(void)
 {
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (!g)
 		return nullptr;
 
@@ -53,7 +53,7 @@ struct ioasid *ioasid_alloc_id(unsigned int id)
 	if (id == 0 || id >= 0xFFFF)
 		return nullptr;
 
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (!g)
 		return nullptr;
 	if (g->ioasid_table[id])
@@ -73,7 +73,7 @@ int ioasid_free(struct ioasid *ioasid)
 	if (!ioasid)
 		return IOMMU_ERR_EINVAL;
 
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (!g)
 		return IOMMU_ERR_ENOSYS;
 
@@ -93,7 +93,7 @@ struct ioasid *ioasid_find(unsigned int id)
 {
 	if (id == 0 || id >= 0xFFFF)
 		return nullptr;
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (!g)
 		return nullptr;
 	return g->ioasid_table[id];

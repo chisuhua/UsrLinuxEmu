@@ -12,6 +12,8 @@ extern "C" {
 #include <linux_compat/iommu/iommu.h>
 #include <linux_compat/iommu/iommu_domain.h>
 
+#include "test_plugin_loader_helper.h"
+
 /* H2: sim_pm + bridge declarations (C-linkage, resolved from gpu_sim + kernel).
  * Forward-declared here rather than including sim_proxy.h, which redeclares
  * iommu_map/unmap with a conflicting signature (unsigned long vs phys_addr_t). */
@@ -57,6 +59,7 @@ static void counting_flush_iotlb(struct iommu_domain *d, unsigned long iova,
 struct DmaRemapFixture {
   struct iommu_domain *d = nullptr;
   DmaRemapFixture() {
+    LOAD_PLUGINS_FOR_TESTS();
     REQUIRE(iommu_emu_init() == 0);
     d = iommu_domain_alloc(IOMMU_DOMAIN_DMA);
     REQUIRE(d != nullptr);

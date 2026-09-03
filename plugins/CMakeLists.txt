@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
 
 add_subdirectory(gpu_driver)
+# Stage 5.5.1 — PCI subsystem driver plugin (per ADR-091 + Change-1)
+add_subdirectory(pci_driver)
+# Stage 5.5.1 — IOMMU subsystem driver plugin (per ADR-091 + Change-1)
+add_subdirectory(iommu_driver)
 # Stage 2.2 — Network device plugin (per ADR-038)
 add_subdirectory(net_driver)
 # Stage 2.3 — Storage device plugin (per plan §2.3.2)

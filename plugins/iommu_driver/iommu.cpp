@@ -2,7 +2,7 @@
  * iommu_emu_state.cpp — Global IOMMU emulator state instantiation + init/shutdown
  *
  * Stage 1.1 (IOMMU + ATS): provides the global state singleton reached via
- * iommu_emu_global_state(). iommu_emu_init() is the lifecycle entry point
+ * iommu_driver_global_state(). iommu_emu_init() is the lifecycle entry point
  * (called by Group 6 module load hook); it performs PCIe device enumeration
  * (Groups 6 wiring) and creates 1:1 iommu_groups.
  */
@@ -19,7 +19,7 @@ namespace usr_linux_emu {
 
 static struct iommu_emu_state g_state;
 
-struct iommu_emu_state *iommu_emu_global_state(void)
+struct iommu_emu_state *iommu_driver_global_state(void)
 {
 	return &g_state;
 }
@@ -30,7 +30,7 @@ extern "C" {
 
 int iommu_emu_init(void)
 {
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (!g)
 		return -1;
 	if (g->initialized)
@@ -51,7 +51,7 @@ int iommu_emu_init(void)
 
 void iommu_emu_shutdown(void)
 {
-	auto *g = usr_linux_emu::iommu_emu_global_state();
+	auto *g = usr_linux_emu::iommu_driver_global_state();
 	if (!g || !g->initialized)
 		return;
 

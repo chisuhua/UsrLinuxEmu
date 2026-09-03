@@ -12,7 +12,7 @@
 #include <iostream>
 
 namespace usr_linux_emu {
-namespace pcie_internal {
+namespace pci {
 
 namespace {
 constexpr const char* kTag = "PcieEmuImpl/msi_x";
@@ -84,5 +84,5 @@ void PcieEmuImpl::register_msix_handler(MsixHandler handler) {
   msix_handler_ = std::move(handler);
 }
 
-}  // namespace pcie_internal
+}  // namespace pci
 }  // namespace usr_linux_emu

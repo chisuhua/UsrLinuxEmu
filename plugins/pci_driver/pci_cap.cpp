@@ -22,7 +22,7 @@
 #include <cstring>
 
 namespace usr_linux_emu {
-namespace pcie_internal {
+namespace pci {
 
 namespace {
 /** Add a fixed-size block of cap-specific data to the capability. */
@@ -143,5 +143,5 @@ void PcieEmuImpl::add_capability(uint8_t cap_id) {
   capabilities_.push_back(std::move(cap));
 }
 
-}  // namespace pcie_internal
+}  // namespace pci
 }  // namespace usr_linux_emu

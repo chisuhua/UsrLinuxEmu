@@ -13,20 +13,8 @@ add_library(kernel SHARED
     kernel/poll_watcher.cpp
     kernel/device/serial_device.cpp
     kernel/device/memory_device.cpp
-    kernel/pcie/pcie_emu.cpp
-    kernel/pcie/config_space.cpp
-    kernel/pcie/capability_walk.cpp
-    kernel/pcie/msi_x.cpp
-    # Stage 1.1 — IOMMU + ATS (see openspec/changes/stage-1-1-iommu-ats/)
-    kernel/iommu/iommu_domain.cpp
-    kernel/iommu/iommu_group.cpp
-    kernel/iommu/ioasid.cpp
-    kernel/iommu/iommu_emu_state.cpp
-    kernel/iommu/dma_remap.cpp
-    kernel/iommu/vfio_bridge.cpp
-    kernel/iommu/ats_protocol.cpp
-    kernel/iommu/invalidate.cpp
-    kernel/iommu/pcie_integration.cpp
+    # Stage 5.5.1 — src/kernel/pcie/ 全部迁出到 plugins/pci_driver/
+    # Stage 5.5.1 — src/kernel/iommu/ 全部迁出到 plugins/iommu_driver/
     # Stage 1.2 — DRM GEM lifecycle (TDD)
     kernel/drm/drm_gem.cpp
     kernel/drm/drm_file.cpp

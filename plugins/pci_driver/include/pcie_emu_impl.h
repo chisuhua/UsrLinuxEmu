@@ -15,7 +15,7 @@
 #include <vector>
 
 namespace usr_linux_emu {
-namespace pcie_internal {
+namespace pci {
 
 /** Standard PCI capability IDs (subset per design.md Decision 5). */
 constexpr uint8_t PCI_CAP_ID_PM         = 0x01;  // Power Management
@@ -173,5 +173,5 @@ class PcieEmuImpl : public PcieEmu {
   uint32_t device_id_ = 0;
 };
 
-}  // namespace pcie_internal
+}  // namespace pci
 }  // namespace usr_linux_emu

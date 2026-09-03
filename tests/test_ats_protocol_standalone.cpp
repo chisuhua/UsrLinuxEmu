@@ -15,11 +15,14 @@ extern "C" {
 #include <linux_compat/pci/ats.h>
 }
 
+#include "test_plugin_loader_helper.h"
+
 namespace {
 
 struct AtsFixture {
   struct iommu_domain *d = nullptr;
   AtsFixture() {
+    LOAD_PLUGINS_FOR_TESTS();
     REQUIRE(iommu_emu_init() == 0);
     d = iommu_domain_alloc(IOMMU_DOMAIN_DMA);
     REQUIRE(d != nullptr);
