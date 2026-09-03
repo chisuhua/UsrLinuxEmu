@@ -260,13 +260,29 @@ const PlatformConfig& platform_get();
 ### §5.7 BAR Scalar Wrappers（可选）
 
 ```cpp
-inline int bar_read32(uint8_t bar, uint64_t offset, uint32_t* value);
-inline int bar_write32(uint8_t bar, uint64_t offset, uint32_t value);
+// 全局单例 accessor（per §4.5 静态状态规则：一个进程一个 sim_hardware_* 实现）
+CpptlmBridge* CpptlmBridge_get();
+int CpptlmBridge_set_active(CpptlmBridge* bridge);  // 显式切换（仅 test scope）
+```
+
+```cpp
+inline int bar_read32(uint8_t bar, uint64_t offset, uint32_t* value) {
+  CpptlmBridge* b = CpptlmBridge_get();
+  if (!b) return -ENODEV;
+  return b->mmio_read(bar, offset, value, sizeof(uint32_t));
+}
+inline int bar_write32(uint8_t bar, uint64_t offset, uint32_t value) {
+  CpptlmBridge* b = CpptlmBridge_get();
+  if (!b) return -ENODEV;
+  return b->mmio_write(bar, offset, &value, sizeof(uint32_t));
+}
 ```
 
 - wrappers 内部调用 `mmio_read/write(buf, sizeof(uint32_t))`
 - 不引入新的 backend 契约
 - 必须支持 `len ∈ {1, 2, 4, 8}` 的底层 buffer API
+- `CpptlmBridge_get()` 返回已 `init()` 成功的 bridge，未 init 返回 nullptr
+- 单例初始化：首个 `init()` 调用方自动注册；后续 `init()` 返回 `-EBUSY`
 
 ### §5.8 错误码表（统一）
 
@@ -437,7 +453,7 @@ enum class DrainPolicy : uint8_t {
 | `platform` | 是 | non-empty string |
 | `pcie.root_complex.enabled` | 是 | bool |
 | `pcie.bypass_mux.default_mode` | 是 | ∈ {"Full", "Bypass", "Partial"} |
-| `devices[].bdf` | 是 | 正则 `^[0-9A-Fa-f]{4}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\.[0-9A-Fa-f]$` |
+| `devices[].bdf` | 是 | 正则 `^[0-9A-Fa-f]{4}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\.[0-9A-Fa-f]$`；**全局唯一**（重复返回 `-EINVAL`） |
 | `devices[].vendor_id/device_id` | 是 | 0x0000~0xFFFF |
 | `devices[].bars[].index` | 是 | ∈ [0, 5] 且唯一 |
 | `devices[].bars[].is_64bit` | 是 | 若 true，占两个 BAR slot（index+1 必须未使用）|

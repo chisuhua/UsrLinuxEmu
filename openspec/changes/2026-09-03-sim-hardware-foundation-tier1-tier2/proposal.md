@@ -56,7 +56,7 @@ Change-1 完成 4 象限重构（`src/kernel/pcie/` → `plugins/pci_driver/`，
 |------|--------|---------|
 | P0-G1 | `sim_hardware/CMakeLists.txt` 是 INTERFACE；无 cpptlm target 链接 | grep 确认 `add_library(sim_hardware INTERFACE)` 且 `target_link_libraries(sim_hardware INTERFACE cpptlm_core)` 被注释或不存在 |
 | P0-G2 | 仓库无 CppTLM 头/库/符号 | `find . -name '*cpptlm*'` 仅命中 `sim_hardware/` 自身文件，无 `external/` 或系统 include 中的 cpptlm_emulator.h |
-| P0-G3 | `default_topology.json` 当前非法 | 运行 `nlohmann::json::parse`（或 `python3 -m json.tool`）失败；**不得声称已修复**（修复是 T3.1 任务） |
+| P0-G3 | `default_topology.json` 当前非法 | 运行 `nlohmann::json::parse`（或 `python3 -m json.tool`）失败；**不得声称已修复**（修复是 T2.1 任务） |
 | P0-G4 | 真实 PCI 边界文件为 `plugins/pci_driver/probe.cpp` | 文件存在；`pci_setup_bus.cpp` / `pcie_enable_device.cpp` 不存在 |
 | P0-G5 | 本 Change 不改任何 sim_hardware / plugins / tests / src / docs 文件 | `git diff --stat` 仅含 `openspec/changes/2026-09-03-sim-hardware-foundation-tier1-tier2/` 下 4 个 artifacts |
 
@@ -94,7 +94,7 @@ Change-1 完成 4 象限重构（`src/kernel/pcie/` → `plugins/pci_driver/`，
 | `sim_hardware/src/pcie/host_bridge.cpp`（修改）| mock 枚举（读 topology 的 devices 数组）+ mock bypass 读写（直写 BAR buffer）|
 | `sim_hardware/src/pcie/bypass.cpp`（修改）| Bypass 3 态真实切换（Full/Bypass/Partial 显式值 + DrainPolicy，见 design.md §8）|
 | `sim_hardware/src/topology.cpp`（修改）| nlohmann/json 真实解析 + 合法 schema 校验 + `topology_write_default_json` 修复 |
-| `sim_hardware/topology/default_topology.json`（修改）| 修复为**合法 JSON**（这是实施任务 T3.1；v0.4 现状是非法）|
+| `sim_hardware/topology/default_topology.json`（修改）| 修复为**合法 JSON**（这是实施任务 T2.1；v0.4 现状是非法）|
 | `sim_hardware/CMakeLists.txt`（修改）| INTERFACE 保持 + 新增 `sim_hardware_mock` STATIC |
 
 ### 3. plugins/pci_driver/ PCI probe 边界集成（v0.4 修正路径）

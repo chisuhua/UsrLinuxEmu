@@ -260,7 +260,7 @@ The `default_topology.json` SHALL match design.md §9.2 schema，包含：
 - `platform` = "pc-x86-mock"
 - `pcie.root_complex.enabled` = bool
 - `pcie.bypass_mux.default_mode` ∈ {"Full", "Bypass", "Partial"}
-- `devices[].bdf` 正则 `^[0-9A-Fa-f]{4}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\.[0-9A-Fa-f]$`
+- `devices[].bdf` 正则 `^[0-9A-Fa-f]{4}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\.[0-9A-Fa-f]$`；全局唯一（重复返回 `-EINVAL`）
 - `devices[].vendor_id` / `device_id` ∈ 0x0000~0xFFFF
 - `devices[].bars[].index` ∈ [0, 5] 且唯一
 - `devices[].bars[].is_64bit` 若 true，占两个 BAR slot

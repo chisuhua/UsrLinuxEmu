@@ -27,6 +27,8 @@
 
 **任务计数严格为 28**。任何子步骤并入对应顶层任务，不得新增或删除顶层任务。
 
+> **附加 gate（不计入 28）**：Wave 5 完成后必须执行的 Wave 0-2 临时测试 binary 清理（spec "exactly 4 new" 一致性），见 §Wave 5 完成后必须执行的清理 gate。
+
 ---
 
 ## §2 TDD 纪律
@@ -302,6 +304,27 @@
 - [ ] **Commit**: `test(pci-driver): extend test_pci_driver_standalone with probe bridge coverage`
 
 **验证标准**：Change-1 既有 4 测试 + 3 新测试 = 7 测试全 PASS；既有 test_pcie_emu_standalone / test_iommu_emu_standalone 0 regression
+
+### Wave 5 完成后必须执行的清理 gate（不计入 28 顶层任务；spec "exactly 4 new" 一致性）
+
+> **此节为 Metis 二次复审条件 2 的实施 gate**，必须在 T5.1-T5.5 完成后执行，但不作为顶层任务（保持 28 计数）。
+
+**清理任务（必做）**：
+
+- `rm` Wave 0-2 创建的 8 个临时测试源文件：
+  - T0.2 `test_cpptlm_abi_inventory_standalone.cpp`
+  - T0.3 `test_api_contract_standalone.cpp`
+  - T0.4 `test_topology_schema_standalone.cpp`
+  - T1.1 `test_target_wiring_standalone.cpp`
+  - T1.2 `test_bridge_lifecycle_standalone.cpp`
+  - T1.3 `test_ep_storage_standalone.cpp`
+  - T1.4 `test_bypass_enum_standalone.cpp`
+  - T2.1 `test_default_topology_standalone.cpp`
+- 从 `tests/CMakeLists.txt` 的 CATCH2_TESTS 列表移除对应注册
+- 验证 `find tests/sim_hardware tests/plugins -name '*_standalone.cpp' -newer Change-1-archived` 输出恰好 5 个（4 sim_hardware new + 1 pci_driver modified）
+- Commit: `chore(sim-hardware): cleanup Wave 0-2 transient test binaries (spec consistency)`
+
+**理由**：spec.md Delta 12 REQ-SIMHW-TEST-001 承诺"exactly 4 new + 1 modified"；ctest 总数 155（tasks.md T6.4）假定仅 +4 增量；保留 8 个临时 binary 会让计数矛盾。
 
 ---
 
