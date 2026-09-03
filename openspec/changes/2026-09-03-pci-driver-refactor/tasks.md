@@ -236,7 +236,7 @@
 - [x] `plugins/iommu_driver/plugin.cpp`（**v0.4 Oracle Gate D 回填**）：
   - [x] `.load_priority = 200`
   - [x] `.depends = (const char*[]){"pci_driver", nullptr}`（**v0.4 实装**：v0.3 计划 depends={nullptr}（独立于 pci_driver），但实装中 iommu 依赖 pci_driver，因为 `pci_iommu_integration.cpp` 跨 driver 协作需要 pci 先加载；与 design.md §D1.2 "iommu_driver 依赖 Q1" 不矛盾——Q1 kernel sim 包含 pci subsystem 概念；最终加载序：pci(100) → iommu(200, depends pci)）
-  - [ ] `.depends = (const char*[]){nullptr}` (无 plugin 依赖，独立于 pci_driver)
+  - [x] ~~`.depends = (const char*[]){nullptr}` (无 plugin 依赖，独立于 pci_driver)~~ — **v0.3 旧计划，已被上方 v0.4 实装取代（iommu 依赖 pci_driver）**
 
 ---
 
