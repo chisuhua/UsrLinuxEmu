@@ -144,13 +144,19 @@ TEST_CASE("现有 plugins 的 module mod 已填充 load_priority",
   REQUIRE_FALSE(priorities.empty());
 
   for (const auto& [name, prio] : priorities) {
-    // gpu_driver=50 / iommu_driver=200 是 Wave 1D 显式配置；
-    // pci_driver 的 .load_priority 被注释（默认 0）；
-    // 其余插件（net/storage）未配置时默认 0。
+    // Wave 1D 显式配置的优先级（Oracle F-004/F-003 后 v0.4 定稿）：
+    // gpu_driver=50 / pci_driver=100 / iommu_driver=200 / net_driver=300 / storage_driver=400。
+    // 其余插件（sample_*）未配置时默认 0。
     if (name == "gpu_driver") {
       CHECK(prio == 50);
+    } else if (name == "pci_driver") {
+      CHECK(prio == 100);
     } else if (name == "iommu_driver") {
       CHECK(prio == 200);
+    } else if (name == "net_driver") {
+      CHECK(prio == 300);
+    } else if (name == "storage_driver") {
+      CHECK(prio == 400);
     } else {
       CHECK(prio == 0);
     }

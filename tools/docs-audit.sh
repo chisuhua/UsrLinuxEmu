@@ -208,14 +208,15 @@ section_arch() {
     # Baseline: 12 root + pcie/ (Stage 1.0: 4) + iommu/ (Stage 1.1: 8) + device/ (2) + drm/ (Stage 1.2: 5) + uvm/ (Stage 1.3: 6) + net/ (Stage 2.2: 2) + block/ (Stage 2.3: 1) + thread/ (C-12 B.1.10: 2) = 42
     # Updated 2026-07-31 by stage4-5-cp-phase6-preemption-timeline-sem-gaps (kernel +2 from v1)
     # Updated 2026-08-14: 46 -> 47 (one new kernel module added)
-    # This expectation must be re-baselined after each new kernel module addition.
-    subsection "1.2 src/kernel cpp file count (expected 47 post-stage4-5)"
+    # Updated 2026-09-03: 47 -> 34 by Stage 5.5.1 (Wave 1A+1B migration removed src/kernel/pcie/ (4 cpp) + src/kernel/iommu/ (9 cpp) → migrated to plugins/pci_driver/ + plugins/iommu_driver/)
+    # This expectation must be re-baselined after each new kernel module addition or 4-quadrant refactor.
+    subsection "1.2 src/kernel cpp file count (expected 34 post-Stage-5.5.1)"
     local count
     count=$(find "${REPO_ROOT}/src/kernel" -name "*.cpp" 2>/dev/null | wc -l | tr -d ' ')
-    if [ "${count}" -eq 47 ]; then
-        check_pass "src/kernel has ${count} cpp files (matches post-stage4-5 baseline)"
+    if [ "${count}" -eq 34 ]; then
+        check_pass "src/kernel has ${count} cpp files (matches post-Stage-5.5.1 baseline)"
     else
-        check_warn "src/kernel has ${count} cpp files (baseline 47; update after adding new kernel modules)"
+        check_warn "src/kernel has ${count} cpp files (baseline 34 post-Stage-5.5.1; update after adding new kernel modules)"
     fi
 
     # 1.3 archive/openspec-deprecated-2026-06-15 should NOT exist

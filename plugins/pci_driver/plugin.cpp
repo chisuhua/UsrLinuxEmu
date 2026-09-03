@@ -17,7 +17,7 @@ static void pci_driver_exit(void) {
 
 module mod = {
     .name = "pci_driver",
-    // .load_priority = 100  (Wave 1D 添加，struct module 当前无此字段)
+    .load_priority = 100,  // Wave 1D: pci_driver 先于 iommu_driver 加载（后者 depends="pci_driver"）
     .depends = (const char*[]){nullptr},  // 无 plugin 依赖
     .init = pci_driver_init,
     .exit = pci_driver_exit,

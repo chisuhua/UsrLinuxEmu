@@ -220,23 +220,22 @@
 
 - [x] **Write test**: `tests/test_moduleloader_toposort_standalone.cpp::test_existing_plugins_have_load_priority` — 验证 3 个 plugin 的 module mod 包含 `load_priority` 字段且值非 0
 - [x] **Verify fail**: 测试失败（plugin 缺 load_priority）
-- [x] **Implement**（**v0.3 实测路径**）：
-  - [ ] 修改 `plugins/gpu_driver/plugin.cpp`（**无** drv/）：加 `load_priority = 300` + `.depends = (const char*[]){"pci_driver", "iommu_driver", nullptr}`
-  - [ ] 修改 `plugins/net_driver/drv/plugin.cpp`：加 `load_priority = 400`（无 plugin 依赖）
-  - [ ] 修改 `plugins/storage_driver/drv/plugin.cpp`：加 `load_priority = 400`（无 plugin 依赖）
-  - [ ] **skip sample_memory / sample_serial**（无 module mod 导出，无 module struct 需加 load_priority）
+- [x] **Implement**（**v0.3 实测路径** + **v0.4 Oracle Gate D 回填**）：
+  - [x] 修改 `plugins/gpu_driver/plugin.cpp`（**无** drv/）：**v0.4 实际值** = `load_priority = 50`（无 plugin 依赖，因 gpu_driver init 当前不触 pci/iommu — tasks v0.3 假设的 300 + depends={"pci_driver","iommu_driver"} 在 v0.4 实装中**移除**；理由：5.5.1 阶段 gpu_driver init 链不依赖 pci/iommu 运行时，加载序 pci(0)→gpu(50)→iommu(200) 已足够；若未来 gpu_driver init 需要 pci/iommu，再回填 depends）
+  - [x] 修改 `plugins/net_driver/drv/plugin.cpp`：**v0.4 实际值** = `load_priority = 300`（无 plugin 依赖；v0.3 假设 400 在实装中**下调**为 300 以让 net < storage，理由：net_driver 业务更轻量，先加载不影响 storage）
+  - [x] 修改 `plugins/storage_driver/drv/plugin.cpp`：**v0.4 实际值** = `load_priority = 400`（无 plugin 依赖，与 v0.3 一致）
+  - [x] **skip sample_memory / sample_serial**（v0.4 实测：sample_memory_plugin.cpp:10 / sample_serial.cpp:9 **有** module mod 导出，未填 load_priority 默认 0；不参与拓扑排序；v0.3 文档"无 module mod 导出"描述**不准确**，但功能无影响）
 - [x] **Verify pass**: 测试通过 + 3 个 plugin 编译通过
 - [x] **Commit**: `feat(plugin): add load_priority field to 3 existing plugins + gpu_driver deps`
 
 ### 任务 4.4：pci_driver + iommu_driver plugin.cpp 加 load_priority + depends
 
-- [x] `plugins/pci_driver/plugin.cpp`：
-  - [ ] `.load_priority = 100`
-  - [ ] `.depends = (const char*[]){"sim_hardware", nullptr}`（注意：sim_hardware 不是 plugin，是静态库）
-  - [ ] ⚠️ 注：sim_hardware 是 STATIC 库不是 plugin，所以 depends 实际为空数组
-  - [ ] 修改：`.depends = (const char*[]){nullptr}` (无 plugin 依赖)
-- [x] `plugins/iommu_driver/plugin.cpp`：
-  - [ ] `.load_priority = 200`
+- [x] `plugins/pci_driver/plugin.cpp`（**v0.4 Oracle Gate D 回填**）：
+  - [x] `.load_priority = 100`（**v0.4 修复**：v0.3 该行被错误注释（"struct module 当前无此字段"），Oracle F-004 确认 struct module 已有该字段；v0.4 取消注释 + 填 100）
+  - [x] `.depends = (const char*[]){nullptr}`（无 plugin 依赖）
+- [x] `plugins/iommu_driver/plugin.cpp`（**v0.4 Oracle Gate D 回填**）：
+  - [x] `.load_priority = 200`
+  - [x] `.depends = (const char*[]){"pci_driver", nullptr}`（**v0.4 实装**：v0.3 计划 depends={nullptr}（独立于 pci_driver），但实装中 iommu 依赖 pci_driver，因为 `pci_iommu_integration.cpp` 跨 driver 协作需要 pci 先加载；与 design.md §D1.2 "iommu_driver 依赖 Q1" 不矛盾——Q1 kernel sim 包含 pci subsystem 概念；最终加载序：pci(100) → iommu(200, depends pci)）
   - [ ] `.depends = (const char*[]){nullptr}` (无 plugin 依赖，独立于 pci_driver)
 
 ---
