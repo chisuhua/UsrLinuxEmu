@@ -1,6 +1,6 @@
 # UsrLinuxEmu 项目文档
 
-> **最后验证**: 2026-08-18（ADR-090 v2 升 ✅ Accepted 同步）
+> **最后验证**: 2026-09-03（ADR-091 v0.2 升 ✅ Accepted — Stage 5.5.1 实施升档 + Change-1 ship）
 >
 > **权威架构说明**: [docs/02_architecture/post-refactor-architecture.md](02_architecture/post-refactor-architecture.md)（SSOT）+ 顶层 [README.md](../README.md) + [AGENTS.md](../AGENTS.md)
 >
@@ -153,15 +153,15 @@
 | 高级主题 | 4 | 75% | 2026-06-16 |
 | 参考资料 | 4 | 80% | 2026-06-16 |
 | TaskRunner 集成 | 5 | 80% | 2026-06-16 |
-| ADR | 74（+1 ADR-090 v2 Accepted 2026-08-18；ADR-090 v1 🚫 Superseded；ADR-076 v2 🚫 Superseded）| 95% | 2026-08-18 |
+| ADR | 75（+1 ADR-091 v0.2 Accepted 2026-09-03 — Stage 5.5.1 实施升档；ADR-090 v1 🚫 Superseded；ADR-076 v2 🚫 Superseded）| 95% | 2026-09-03 |
 
 **总体进度**: 约 **90%** 完成（Stage 4 全部 ✅ + Stage 1-3 已达成；Stage 5 trigger-gated by ADR-049/052）
 
 ### ADR 编号说明
 
-`docs/00_adr/` 当前收录 **74 份** ADR 文件（编号范围 **001–090**，含跳号 066/067/068/070/071/077~086/088-089；外加 1 份 `adr-045-047-050-backfill-precheck.md` 无状态 frontmatter）：
+`docs/00_adr/` 当前收录 **75 份** ADR 文件（编号范围 **001–091**，含跳号 066/067/068/070/071/077~086/088-089；外加 1 份 `adr-045-047-050-backfill-precheck.md` 无状态 frontmatter）：
 
-- ✅ **已接受（Accepted）**：61 份（含 Stage 1-4 所有主线 ADR + KFD/C-12 子项目 ADR-059~063 + 回顾性 ADR-075 + ADR-088/089 v0.5 + **ADR-090 v2** 2026-08-18 升档）
+- ✅ **已接受（Accepted）**：62 份（含 Stage 1-4 所有主线 ADR + KFD/C-12 子项目 ADR-059~063 + 回顾性 ADR-075 + ADR-088/089 v0.5 + ADR-090 v2 2026-08-18 + **ADR-091 v0.2** 2026-09-03 Stage 5.5.1 实施升档）
 - ⏸️ **显式 Deferred**：8 份（ADR-025/026/028/029/030 等待 Phase 3；ADR-034 待 Phase 3；ADR-053 永不实现——无硬件队列限制；ADR-055 永不实现——无硬件 hang）
 - 🔄 **提议中**：5 份（ADR-012 性能、ADR-013 错误处理、ADR-014 日志增强——合法 backlog；**ADR-087 v0.2** Multi-Process Device & Fabric Seam — pre-circulation；**ADR-090** 已升 Accepted 移出）
 - 🚫 **Superseded**：3 份（**ADR-011** 多进程 → Superseded by ADR-087；**ADR-076 v2** PTX-EMU HAL Backend → Superseded by ADR-090 v2；**ADR-090 v1** PTXIR via CppTLM H2D DMA → Superseded by ADR-090 v2 — Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy` 24 BLOCKERS 分析后整段重写）

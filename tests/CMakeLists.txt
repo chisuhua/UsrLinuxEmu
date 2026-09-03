@@ -207,6 +207,12 @@ set(CATCH2_TESTS
     test_pcie_emu_standalone.cpp
     test_config_space_standalone.cpp
     test_msi_x_inject_standalone.cpp
+    # Stage 5.5.1 — Wave 1D (ModuleLoader topology sort + cycle detection, design.md §D6.2)
+    test_moduleloader_toposort_standalone.cpp
+    # Stage 5.5.1 — Wave 1A (pci_driver 迁移 verification, tasks.md §2 任务 1.2/1.3/1.4/1.5)
+    plugins/test_pci_driver_standalone.cpp
+    # Stage 5.5.1 — Wave 1B (iommu_driver 迁移 verification, tasks.md §3 任务 2.2/2.3/2.5/2.6)
+    plugins/test_iommu_driver_standalone.cpp
     # Stage 1.1 — IOMMU + ATS (see openspec/changes/stage-1-1-iommu-ats/)
     # All IOMMU tests moved to CATCH2_SIM_TESTS: ADR-063 D4 ①->③ bridge
     # (default_flush_iotlb -> sim_pm_invalidate) requires gpu_sim link.

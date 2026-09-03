@@ -819,6 +819,65 @@ Stage 1.4 完成 5 个 KFD ioctl handler 穿透到 sim 原语的运行时行为�
 **对应 OpenSpec**：[`openspec/changes/archive/2026-07-04-stage-1-4-tier2-kfd-integration/`](../../openspec/changes/archive/2026-07-04-stage-1-4-tier2-kfd-integration/) (archived)  
 **boundary v1.1 状态更新**：[kfd-portability-boundary.md §3 状态映射](../05-advanced/kfd-portability-boundary.md#3-tier-2poC-实际超界必须显式记录--延后) 已标记 §3.1/§3.2/§3.3 为 Penetrated/Real Implementation/Implemented。
 
+#### 1.10.5 Stage 5.5.1 — 4 象限目录布局重构（PCI/IOMMU 驱动迁移 + sim_hardware 顶级目录）
+
+> **状态**: ✅ Accepted（[ADR-091 v0.2](../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) ✅ Accepted v0.2 — Stage 5.5.1 实施后升档；本文件反映该 ADR 已批准后的状态）
+> **触发**: 2026-09-03 用户提案"PC 系统硬件模拟用于和 CppTLM 端的 dGPU 对接" + ADR-091 v0.1 INCONCLUSIVE → v0.2 修复
+> **Change**: [openspec/changes/2026-09-03-pci-driver-refactor/](../../openspec/changes/2026-09-03-pci-driver-refactor/)（已 ship，4 commits 实施 + 3 new tests + 151/151 ctest PASS）
+> **前置 ADR**: [ADR-036 v0.2](../00_adr/adr-036-three-way-separation.md)（3 区分 → 4 象限）、[ADR-072 v0.2](../00_adr/adr-072-portability-validation.md)（L2 build 扩展 pci_driver + iommu_driver）、[ADR-089 v0.6](../00_adr/adr-089-v55-system-hw-simulation.md)（location `src/system_hw/` → `sim_hardware/`）
+
+**关键架构变更**（per ADR-091 §D2.3 SSOT）：
+
+1. **目录模型**：从 3 区分（kernel sim / driver / hardware sim）演进为 4 象限（kernel sim / driver / sim_hardware / HAL bridge），sim_hardware 提升为**顶级目录**（不在 `src/` 或 `include/` 下）
+2. **Q1 kernel sim 收缩**：`src/kernel/pcie/`（648 LOC）+ `src/kernel/iommu/`（1,262 LOC）全部迁出
+3. **Q2 driver 扩张**：新建 `plugins/pci_driver/` + `plugins/iommu_driver/` 两个独立 plugin（per ADR-091 + 真机 Linux `drivers/pci/` + `drivers/iommu/` 对齐）
+4. **Q3 sim_hardware 顶级化**：`sim_hardware/{include,src,topology}/`（Stage 5.5.1 仅骨架占位，Stage 5.5.2+ 填充 Tier 1-8）
+5. **ModuleLoader ABI 变更**：`struct module` 新增 `uint32_t load_priority` 字段（值越小越先加载）；拓扑排序 + 环检测实现于 `src/kernel/module_loader.cpp::topo_sort`
+
+**迁移后目录结构**（与 design.md §D1.1 对齐）：
+
+```
+UsrLinuxEmu/
+├── include/kernel/                  # Q1 kernel env sim（缩减）
+├── src/kernel/                      # Q1 kernel env sim impl（无 pcie/iommu 子目录）
+├── plugins/
+│   ├── pci_driver/                  # 🆕 Q2 PCI subsystem driver
+│   │   ├── probe.cpp / pci_access.cpp / pci_msi.cpp / pci_cap.cpp
+│   │   ├── pci_iommu_integration.cpp
+│   │   └── include/{pcie_emu, pcie_emu_impl, pci_device}.h
+│   ├── iommu_driver/                # 🆕 Q2 IOMMU subsystem driver
+│   │   ├── iommu.cpp / iommu_group.cpp / iommu_domain.cpp
+│   │   ├── ats_protocol.cpp / dma_remap.cpp / ioasid.cpp / invalidate.cpp
+│   │   ├── vfio_bridge.cpp + include/{iommu_internal, vfio_bridge}.h
+│   │   └── invalidate.cpp 暂留 Q2（Q2/Q3 拆分决策推迟 Change-2 显式裁决）
+│   └── gpu_driver/                  # 不变（HAL 桥 + sim + drv + shared）
+├── sim_hardware/                    # 🆕 Q3 顶级目录（Stage 5.5.1 仅骨架）
+│   ├── include/{platform, pcie/host_bridge, pcie/bypass, cpptlm/bridge}.h
+│   ├── src/                         # Stage 5.5.1 占位（Wave 1C 显式 -ENOSYS stub）
+│   └── topology/default_topology.json
+└── tests/plugins/                   # 🆕 Stage 5.5.1 新增
+    ├── test_pci_driver_standalone.cpp    # Wave 1A 验证
+    └── test_iommu_driver_standalone.cpp  # Wave 1B 验证
+```
+
+**实施 commits**（[openspec/changes/2026-09-03-pci-driver-refactor/](../../openspec/changes/2026-09-03-pci-driver-refactor/) Stage 5.5.1 实证）：
+
+| Commit | Wave | 内容 |
+|--------|------|------|
+| `8c4ee2f` | 1A+1B | migrate PCI/IOMMU subsystems to 4-quadrant layout |
+| `485de1e` | 1C | sim_hardware 骨架填充（Q3 INTERFACE library） |
+| `dd70988` | 1D | ModuleLoader load_priority + 拓扑排序 + 环检测 |
+| `1db07d1` | 1E | ADR 升级 + L2 build scripts |
+| (本次) | Gate A/B | 3 新测试 + 151/151 ctest PASS |
+
+**Gate 验证**：
+- **Gate 5.5.1-A**（现有 ctest 全 PASS）：148 → **151** 测试通过，0 regression（23.97 sec）
+- **Gate 5.5.1-B**（ModuleLoader 拓扑排序）：`test_moduleloader_toposort_standalone` 新增（5 test cases：struct layout / load_priority 填充 / load_plugins 成功 / 依赖链可加载 / 环检测 -ELOOP）
+- **Gate 5.5.1-C**（L2 build）：`tools/l2-build/build_pci_driver.sh` + `build_iommu_driver.sh` 创建（commit `1db07d1`）
+- **Gate 5.5.1-D**（Oracle 实施后复审）：待 Change-1 归档前触发 Oracle 实施后复审
+
+**下游解锁**：[Change-2 Stage 5.5.2](../2026-09-03-sim-hardware-foundation-tier1-tier2/)（Tier 1+2 PCIe 仿真实施）— 当前 Change-2 已创建 proposal/design/tasks/specs 但代码未实施（占位 stub 显式 `-ENOSYS`），Change-1 归档后才能启动 Change-2 实施。
+
 ---
 
 ## §2 docs/ 审计发现

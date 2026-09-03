@@ -1,10 +1,10 @@
 # ADR-091: 4 象限目录布局 + PCI/VFIO/IOMMU 驱动迁移 + sim_hardware/ 引入
 
-**状态**: 🔄 **Proposed v0.1**（2026-09-03，待 Oracle 复审）
+**状态**: ✅ **Accepted v0.2**（2026-09-03，Stage 5.5.1 实施后升档；4 commits ship + 151/151 ctest PASS + Gate 5.5.1-A/B/C 全部通过；Oracle 实施后复审 Gate D 待触发）
 **日期**: 2026-09-03
-**版本**: v0.1
+**版本**: v0.2（Accepted — Stage 5.5.1 实施升档）
 **提案人**: UsrLinuxEmu Architecture Team
-**评审者**: Oracle（待 Phase A.4 复审）
+**评审者**: Oracle（v0.2 实施后复审 Gate D 待触发；proposal + design v0.3 经 Oracle + Metis 双审查通过）
 **关联 ADR**:
 - [ADR-036](adr-036-three-way-separation.md) ✅ Accepted — 3 区分原则（**本 ADR 将其扩展为 4 象限**）
 - [ADR-088](../00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted — dGPU 参考设计（明确 `src/system_hw/` 概念）
@@ -540,6 +540,12 @@ ADR-088 §C2 提出 `src/system_hw/` 概念，ADR-089 v0.5 实施时已部分采
   - OQ1：关闭（VFIO 时机已通过路线图决策）
   - 新增 OQ4（ctest 基线）+ OQ5（vfio_bridge 归属）+ OQ6（iommu_internal.h 处理）
   - 测试文件迁移清单：补 6 个 test_*_standalone 的去向说明
+
+- **v0.2 (Accepted)** (2026-09-03, Stage 5.5.1 实施升档)：4 commits ship + 151/151 ctest PASS
+  - 实施 commit: `8c4ee2f`（Wave 1A+1B PCI/IOMMU 迁移）/ `485de1e`（Wave 1C sim_hardware 骨架）/ `dd70988`（Wave 1D ModuleLoader toposort）/ `1db07d1`（Wave 1E ADR + L2 build）
+  - Gate 验证：5.5.1-A (151/151 ctest PASS) / 5.5.1-B (test_moduleloader_toposort_standalone 5 测试场景 PASS) / 5.5.1-C (tools/l2-build/build_*.sh 创建) / 5.5.1-D (Oracle 实施后复审 — Gate D 待触发)
+  - OpenSpec change [2026-09-03-pci-driver-refactor](../../changes/2026-09-03-pci-driver-refactor/) 状态：126/126 tasks 已 ship，3 new tests + Gate A/B/C 验证全部通过
+  - 关联 ADR 升档：[ADR-036 v0.2](adr-036-three-way-separation.md)（3 区分 → 4 象限）/ [ADR-072 v0.2](adr-072-portability-validation.md)（L2 build 扩展 pci_driver + iommu_driver）/ [ADR-089 v0.6](adr-089-v55-system-hw-simulation.md)（location `src/system_hw/` → `sim_hardware/`）
 
 - **v0.1** (2026-09-03, Proposed)：初版
   - 4 象限目录布局
