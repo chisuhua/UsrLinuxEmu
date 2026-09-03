@@ -277,6 +277,12 @@ The `default_topology.json` SHALL match design.md §9.2 schema，包含：
 - **When** `topology_load_json(path, &topo)`
 - **Then** 返回 `-EINVAL`
 
+#### Scenario: duplicate BDF 被拒绝
+
+- **Given** JSON 的 `devices` 数组包含两个相同的 `bdf`（例如两个 `"0000:01:00.0"`）
+- **When** `topology_load_json(path, &topo)`
+- **Then** 返回 `-EINVAL`（per design.md §9.3 全局唯一规则）
+
 #### Scenario: 未知字段
 
 - **Given** JSON 含 schema 未声明字段（如 `extra_field`）
