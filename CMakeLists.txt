@@ -83,6 +83,7 @@ set(SIM_DEVICE_VA_BASE 0x560000000000ULL CACHE STRING "Device VA base address (b
 add_subdirectory(src)
 add_subdirectory(drivers)
 add_subdirectory(plugins)
+add_subdirectory(sim_hardware)
 add_subdirectory(tests)
 add_subdirectory(tools/cli)
 add_subdirectory(libgpu_core)
