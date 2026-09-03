@@ -47,6 +47,7 @@ static void plugin_fini_internal() {
 
 module mod = {
     .name = "net_driver",
+    .load_priority = 300,
     .depends = nullptr,
     .init = plugin_init_internal,
     .exit = plugin_fini_internal,

@@ -47,6 +47,7 @@ static void plugin_fini_internal() {
 
 module mod = {
     .name = "storage_driver",
+    .load_priority = 400,
     .depends = nullptr,
     .init = plugin_init_internal,
     .exit = plugin_fini_internal,

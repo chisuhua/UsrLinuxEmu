@@ -141,6 +141,7 @@ static void plugin_fini_internal() {
 
 module mod = {
     .name = "gpu_driver",
+    .load_priority = 50,
     .depends = nullptr,
     .init = plugin_init_internal,
     .exit = plugin_fini_internal,

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <dlfcn.h>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -8,10 +9,11 @@
 
 extern "C" {
 typedef struct module {
-  const char* name;      // 插件名称
-  const char** depends;  // 依赖项列表（NULL结尾）
-  int (*init)(void);     // 初始化函数
-  void (*exit)(void);    // 卸载函数
+  const char* name;        // 插件名称
+  uint32_t load_priority;  // 加载优先级（数值越小越先加载，per Wave 1D ADR-091）
+  const char** depends;    // 依赖项列表（NULL结尾）
+  int (*init)(void);       // 初始化函数
+  void (*exit)(void);      // 卸载函数
 } module;
 }
 
