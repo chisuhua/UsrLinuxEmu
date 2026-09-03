@@ -1,4 +1,12 @@
-# ADR-036: 3-Way Architectural Separation (3 区分架构原则)
+# ADR-036: 4-Quadrant Architectural Layout (4 象限架构原则)
+
+> **v0.2 (2026-09-03)**: 3 区分架构升级为 4 象限布局（per ADR-091 v0.2 Accepted + Stage 5.5.1 实施）。
+> - **Q1 Linux 内核环境模拟**（src/kernel/ + include/kernel/ + include/linux_compat/）— 不变
+> - **Q2 可移植驱动代码**（plugins/*_driver/）— 从 src/kernel/{pcie,iommu}/ 迁出
+> - **Q3 PC 系统硬件仿真**（sim_hardware/，NEW）— 原计划位于 src/system_hw/，重新组织到顶层 sim_hardware/
+> - **Q4 GPU 特定仿真**（plugins/gpu_driver/sim/）— 不变
+> - **HAL**（plugins/gpu_driver/hal/）— 不变
+
 
 **状态**: ✅ Accepted
 **日期**: 2026-06-23

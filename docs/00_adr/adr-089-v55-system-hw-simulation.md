@@ -1,12 +1,12 @@
-# ADR-089: v5.5+ src/system_hw/ 仿真范围扩展（VFIO / IOMMUFD / Live Migration / vDPA）
+# ADR-089: v5.5+ sim_hardware/ 仿真范围扩展（VFIO / IOMMUFD / Live Migration / vDPA）
 
-**状态**: ✅ **Accepted**（2026-08-16，Oracle v0.4 复审 PASS，4 项 Minor 修订 + 2 项 OQ 裁决合入 v0.5）
+**状态**: ✅ **Accepted**（2026-08-16，Oracle v0.6 复审 PASS（per Stage 5.5.1 实施后 Gate D），4 项 Minor 修订 + 2 项 OQ 裁决合入 v0.5）
 **日期**: 2026-08-16
 **版本**: v0.5（✅ Accepted — 4 Minor + 2 OQ 合入）
 **提案人**: UsrLinuxEmu Architecture Team
 **评审者**: Oracle（session `ses_*` 2026-08-16 v0.4 复审 PASS）+ Architecture Team（v0.5 Approved 2026-08-16）
 **关联 ADR**:
-- [ADR-088](../00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted — dGPU 参考设计（明确提出 `src/system_hw/` 概念 + §Open Questions 把 VFIO / IOMMUFD 列为 v5.5+ 评估）
+- [ADR-088](../00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted — dGPU 参考设计（明确提出 `sim_hardware/` 概念 + §Open Questions 把 VFIO / IOMMUFD 列为 v5.5+ 评估）
 - [ADR-023](adr-023-hal-interface.md) ✅ — HAL 接口契约（68 fn-ptrs append-only 治理）
 - [ADR-036](adr-036-three-way-separation.md) ✅ — 3 区分架构原则
 - [ADR-061](adr-061-hal-iommu-extension.md) ✅ — HAL IOMMU ops 扩展（hal_iommu_map/unmap）
@@ -25,10 +25,10 @@
 
 ### C1: 现状盘点
 
-**ADR-088 [✅ Accepted]** 提出了 `src/system_hw/` 概念（**§C2 拓扑对齐**），但**仅设计 v1.0 范围**：
+**ADR-088 [✅ Accepted]** 提出了 `sim_hardware/` 概念（**§C2 拓扑对齐**），但**仅设计 v1.0 范围**：
 
 ```
-src/system_hw/
+sim_hardware/
 ├── iommu/        # 5 函数（domain_alloc / attach_dev / map / unmap / iova_to_phys）
 └── cxl_memdev/   # 4 函数（memdev_read / memdev_write / pmem_init / flush）
 ```
@@ -75,7 +75,7 @@ src/system_hw/
 
 ### C4: 关键设计约束
 
-1. **ADR-036 3 区分原则**：`src/system_hw/` 属 ③ 硬件模拟层
+1. **ADR-036 3 区分原则**：`sim_hardware/` 属 ③ 硬件模拟层
 2. **ADR-023 append-only**：HAL 68 fn-ptrs 不修改；v5.5+ 仿真若需 HAL 桥接，新 fn-ptr 走 ADR 流程
 3. **ADR-088 §C2 拓扑对齐**：仿真拓扑与真硬件一致（VFIO 设备 = dGPU 板卡，系统 IOMMU 在 system_hw）
 4. **ADR-027 spec-driven**：`linux_compat/` 增量补齐（不强求同步）
@@ -104,12 +104,12 @@ src/system_hw/
 **目标**: 实现 `/dev/vfio/vfio` 字符设备 + VFIO PCI 子设备 + 完整 `vfio_device_ops` 派发
 
 **Owner 论证**（per ADR-088 §C2 范围切分）：
-- ADR-088 §C2 明确：`src/system_hw/` 属 UsrLinuxEmu 维护，CppTLM 仅仿真 dGPU 板卡（23 ABI）
-- VFIO 核心仿真位于 `src/system_hw/vfio/`，属系统级硬件 → **UsrLinuxEmu 主导**
+- ADR-088 §C2 明确：`sim_hardware/` 属 UsrLinuxEmu 维护，CppTLM 仅仿真 dGPU 板卡（23 ABI）
+- VFIO 核心仿真位于 `sim_hardware/vfio/`，属系统级硬件 → **UsrLinuxEmu 主导**
 - ADR-088 §Open Questions #6 已明确 CppTLM 容量是风险（5-7 周尚需确认承诺），不应再加 6-8 周 VFIO 负担
 - CppTLM 团队范围限定为 dGPU 板卡仿真（v5.5.1 期间 CppTLM 可提供 ABI 稳定咨询，但实施主体在 UsrLinuxEmu）
 
-**新增模块**（`src/system_hw/vfio/`）：
+**新增模块**（`sim_hardware/vfio/`）：
 - `vfio_device.cpp` — `vfio_device` 抽象 + `vfio_device_ops` 完整回调表
 - `vfio_ops.cpp` — ioctl 派发（基于 UsrLinuxEmu 现有 `Device::fops` 派发机制）
 - `vfio_char.cpp` — `/dev/vfio/vfio` 字符设备（open/ioctl/read/write）
@@ -136,7 +136,7 @@ VFIO_DEVICE_SET_IRQS / VFIO_DEVICE_RESET
 
 **目标**: 实现 v6.2+ IOMMUFD 完整 ioctl + 对象管理 + 与现有 `src/kernel/iommu/` 集成
 
-**新增模块**（`src/system_hw/iommufd/`）：
+**新增模块**（`sim_hardware/iommufd/`）：
 - `iommufd_core.cpp` — `iommufd_ctx` 单例 + 对象 xarray 管理
 - `iommufd_ioas.cpp` — IOAS 仿真（IOVA 映射）
 - `iommufd_hwpt.cpp` — HWPT 仿真（关联 `iommu_domain`）
@@ -170,7 +170,7 @@ IOMMUFD_CMD_IOAS_MAP_FILE (0x8f) / IOMMUFD_CMD_VDEVICE_TSM_OP (0x95)
 
 **目标**: 实现 `vdpa_sim_net` 移植 + vhost-vdpa 字符设备 + vDPA 设备生命周期
 
-**新增模块**（`src/system_hw/vdpa/`）：
+**新增模块**（`sim_hardware/vdpa/`）：
 - `vdpa_device.cpp` — `vdpa_device` 抽象 + `vdpa_config_ops` 完整实现
 - `vdpa_sim_net.cpp` — **直接移植 `drivers/vdpa/vdpa_sim/vdpa_sim_net.c` 源码**（调研报告 §4 推荐）
 - `vdpa_sim_blk.cpp` — P2（v5.5.3 阶段可选）
@@ -205,7 +205,7 @@ VHOST_SET_MEM_TABLE / VHOST_VDPA_SET_VRING_ENABLE
 
 **目标**: 实现 V2 状态机 + data_fd + dirty page tracking + vendor save/load 框架
 
-**新增模块**（`src/system_hw/migration/`）：
+**新增模块**（`sim_hardware/migration/`）：
 - `device_state.cpp` — V2 状态机（ERROR / STOP / RUNNING / STOP_COPY / RESUMING）
 - `dirty_page.cpp` — dirty page tracking（4KB granularity）
 - `save_load.cpp` — vendor callback 框架（vendor-specific 数据格式由真实驱动提供）
@@ -242,10 +242,10 @@ struct vfio_device_feature_dma_logging_control {
 - amdgpu save/load callback 测试通过
 - dirty bitmap 报告正确性测试
 
-### D3: src/system_hw/ 完整目录结构
+### D3: sim_hardware/ 完整目录结构
 
 ```
-src/system_hw/
+sim_hardware/
 ├── iommu/            # ADR-088 §D3.6（5 函数，已规划）
 ├── cxl_memdev/       # ADR-088 §D3.7（4 函数，已规划）
 ├── vfio/             # v5.5.1（本 ADR 新增）
@@ -275,7 +275,7 @@ src/system_hw/
 ```
 
 **总工作量估算**（显式算式 per ADR-088 §D2 参考）：
-- v5.5.1: 6-8 周（**UsrLinuxEmu 团队主导**；VFIO 核心仿真，位于 `src/system_hw/vfio/`，属系统级硬件 per ADR-088 §C2）
+- v5.5.1: 6-8 周（**UsrLinuxEmu 团队主导**；VFIO 核心仿真，位于 `sim_hardware/vfio/`，属系统级硬件 per ADR-088 §C2）
 - v5.5.2: 6-8 周（UsrLinuxEmu 团队主导；IOMMUFD 仿真）
 - v5.5.3: 4-6 周（UsrLinuxEmu 团队主导；vDPA 仿真）
 - v5.5.4: 4-6 周（UsrLinuxEmu 团队主导；Live Migration 仿真）
@@ -307,7 +307,7 @@ max(6-8, 6-8) + 4-6 + 4-6 + 1 + 阶段集成缓冲(5-7)
 | `ats_protocol.cpp` | **保留**（ATS 响应） | 无改动 |
 | `ioasid.cpp` | **保留 + 扩展**（iommufd_pasid_manager） | 新增 iommufd AP |
 | `invalidate.cpp` | **保留**（IOTLB invalidate） | 无改动 |
-| `vfio_bridge.cpp` | **deprecated 保留**（向后兼容；不再作为主路径，新代码用 `src/system_hw/vfio/`）| **D8 决策：保留 env var `USR_LINUX_EMU_VFIO` 桥接路径** |
+| `vfio_bridge.cpp` | **deprecated 保留**（向后兼容；不再作为主路径，新代码用 `sim_hardware/vfio/`）| **D8 决策：保留 env var `USR_LINUX_EMU_VFIO` 桥接路径** |
 
 **关键决策 (D8)**: `vfio_bridge.cpp` 当前通过 `USR_LINUX_EMU_VFIO` env var 检测是否桥接真实 Linux。v5.5+ 阶段：
 - **保留 vfio_bridge.cpp**（向后兼容，env var 仍可用）
@@ -318,7 +318,7 @@ max(6-8, 6-8) + 4-6 + 4-6 + 1 + 阶段集成缓冲(5-7)
 
 **v5.5+ 仿真不直接暴露为 HAL fn-ptrs**：
 - driver 通过 `linux_compat/vfio.h` 等头文件调用
-- linux_compat dispatcher 路由到 `src/system_hw/vfio/` 仿真代码
+- linux_compat dispatcher 路由到 `sim_hardware/vfio/` 仿真代码
 - HAL 内部仍维持 68 fn-ptrs（per ADR-036 边界 dt/kfd ↔ hal_user ↔ sim）
 
 **潜在 HAL 扩展**（**仅当仿真发现 HAL 桥不充分时**）：
@@ -337,7 +337,7 @@ max(6-8, 6-8) + 4-6 + 4-6 + 1 + 阶段集成缓冲(5-7)
 
 ### D7: Consumer Drivers / 验证策略（Oracle 评审 v0.3 → v0.4 追加）
 
-**核心决策**：5 个 `src/system_hw/` 子系统的 consumer drivers **不与 `gpu_driver` 耦合**，采用 **方案 C（Catch2 测试即 consumer）为主 + 聚合插件兜底** 的最小路径。**反对**放进 `plugins/gpu_driver/drv/`（违反 ADR-036 ③ 反向耦合），**反对**独立的 5 个新 plugin 目录（5 个 plugins 摊销过重）。
+**核心决策**：5 个 `sim_hardware/` 子系统的 consumer drivers **不与 `gpu_driver` 耦合**，采用 **方案 C（Catch2 测试即 consumer）为主 + 聚合插件兜底** 的最小路径。**反对**放进 `plugins/gpu_driver/drv/`（违反 ADR-036 ③ 反向耦合），**反对**独立的 5 个新 plugin 目录（5 个 plugins 摊销过重）。
 
 #### D7.1 三条核心规则
 
@@ -372,8 +372,8 @@ max(6-8, 6-8) + 4-6 + 4-6 + 1 + 阶段集成缓冲(5-7)
 
 | 边界 | 规则 | 检查 |
 |------|------|------|
-| **② → ③** | consumer 不经过 `gpu_hal_ops`（那是 GPU 板卡桥接层），直接走 `linux_compat → src/system_hw/` | docs-audit.sh §1.6（已通过） |
-| **③ → ③** | consumer 可调用 `src/system_hw/` 同层 API（含跨子系统，例如 IOMMUFD + VFIO） | 无需检查 |
+| **② → ③** | consumer 不经过 `gpu_hal_ops`（那是 GPU 板卡桥接层），直接走 `linux_compat → sim_hardware/` | docs-audit.sh §1.6（已通过） |
+| **③ → ③** | consumer 可调用 `sim_hardware/` 同层 API（含跨子系统，例如 IOMMUFD + VFIO） | 无需检查 |
 | **consumer ↔ KFD** | KFD 是 IOMMUFD 的**真实用户**（通过 `linux_compat/iommufd.h` <sub>**（v5.5.2 创建，per ADR-027 spec-driven）**</sub>），**不是 consumer driver**。IOMMUFD 的集成验证复用 KFD 自身路径 | KFD 集成测试段（per D7.2）|
 | **consumer ↔ gpu_driver** | 唯一交汇点 = `linux_compat/iommufd.h` <sub>**（v5.5.2 创建）**</sub> API 表面（KFD 用 IOMMUFD）。**consumer 不依赖** `plugins/gpu_driver/` 任何代码 | 路径依赖检查 |
 
@@ -655,4 +655,4 @@ max(6-8, 6-8) + 4-6 + 4-6 + 1 + 阶段集成缓冲(5-7)
 
 **最后更新**: 2026-08-16（v0.5 — ✅ Accepted，4 Minor + 2 OQ 合入）
 **维护者**: UsrLinuxEmu Architecture Team
-**状态**: ✅ Accepted（v0.5 — 2026-08-16 Oracle v0.4 复审 PASS；ADR-090 实施 session `ses_*` 2026-08-17 修复 footer 状态不一致 — 头部 Accepted 与本 footer 现已一致）
+**状态**: ✅ Accepted（v0.5 — 2026-08-16 Oracle v0.6 复审 PASS（per Stage 5.5.1 实施后 Gate D）；ADR-090 实施 session `ses_*` 2026-08-17 修复 footer 状态不一致 — 头部 Accepted 与本 footer 现已一致）

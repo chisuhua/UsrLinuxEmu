@@ -1,5 +1,12 @@
 # ADR-072: 驱动代码可移植性验证框架
 
+**版本**: v0.2 (✅ Accepted — Stage 5.5.1 升级)
+
+> **v0.2 (2026-09-03)**: L2 build 增加 pci_driver / iommu_driver target（per ADR-091 v0.2 + Wave 1A/B 实施）
+> - 原 L2 build: kernel, gpu_driver, net_driver, storage_driver
+> - v0.2 新增: pci_driver, iommu_driver
+> - L2 scripts: tools/l2-build/build_pci_driver.sh + build_iommu_driver.sh (NEW)
+
 **状态**: ✅ 已采纳 (Accepted)
 
 **日期**: 2026-07-25
