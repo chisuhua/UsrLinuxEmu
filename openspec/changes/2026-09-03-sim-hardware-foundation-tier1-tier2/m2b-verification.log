@@ -1,0 +1,16 @@
+=== M2b Verification Log (Wave 6 T6.2) ===
+Date: 2026-09-04
+Binaries: test_cpptlm_bridge_mock_standalone (13 cases) + test_pcie_host_bridge_mock_standalone (14 cases)
+Command: ./build/bin/test_cpptlm_bridge_mock_standalone && ./build/bin/test_pcie_host_bridge_mock_standalone
+Result: All tests passed
+
+design.md 15.2 M2b checklist:
+[X] mmio_write(bar, offset, &value, 4) then mmio_read(bar, offset, &back, 4) roundtrip
+    (test_cpptlm_bridge_mock ep_storage BAR bounds; host_bridge bypass roundtrip)
+[X] Access unassigned BAR -> -EINVAL (bridge rejects access before init / ep_storage)
+[X] offset out of bounds -> -EINVAL (host_bridge bypass offset OOB)
+[X] Misaligned -> -EINVAL (bar_read32 misaligned offset test)
+[X] bar > 5 -> -EINVAL (ep_storage mmio_read(6,...) == -EINVAL)
+[X] buffer=nullptr + len>0 -> -EINVAL (host_bridge bypass null buffer test)
+
+PASS - M2b achieved

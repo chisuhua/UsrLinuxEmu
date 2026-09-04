@@ -1,0 +1,16 @@
+=== M2a Verification Log (Wave 6 T6.1) ===
+Date: 2026-09-04
+Binary: test_pcie_host_bridge_mock_standalone (14 test cases, 30 assertions)
+Command: ./build/bin/test_pcie_host_bridge_mock_standalone
+Result: All tests passed
+
+design.md 15.1 M2a checklist:
+[X] Load legal default_topology.json (test_pcie_host_bridge_mock: legal topology + 1 device)
+[X] host_bridge_enumerate returns 1 device (vendor_id=0x10DE, device_id=0x1234,
+    BDF=0000:01:00.0 packed=0x0008) (test_pcie_host_bridge_mock: legal topology + 1 device)
+[X] Boundary: max_devices==0 -> query count only (test: query count only)
+[X] Boundary: empty topology -> count=0 return 0 NOT -ENODEV (test: empty topology)
+[X] Error: malformed topology -> -EINVAL (test: malformed JSON)
+[X] Error: missing file -> -ENOENT (test: missing file)
+
+PASS - M2a achieved

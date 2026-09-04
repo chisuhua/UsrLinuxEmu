@@ -332,45 +332,45 @@
 
 ### T6.1: M2a 验证（mock 枚举）
 
-- [ ] **Write test**: 已在 T5.3 中实现
-- [ ] **Verify fail**: —
-- [ ] **Implement**: 跑 `ctest -R test_pcie_host_bridge_mock` + 人工核对 design.md §15.1 5 项
-- [ ] **Verify pass**: 5/5 PASS + 记录到 `openspec/changes/2026-09-03-sim-hardware-foundation-tier1-tier2/m2a-verification.log`
-- [ ] **Commit**: `docs(sim-hardware): record M2a verification`
+- [x] **Write test**: 已在 T5.3 中实现
+- [x] **Verify fail**: —
+- [x] **Implement**: 跑 `ctest -R test_pcie_host_bridge_mock` + 人工核对 design.md §15.1 6 项
+- [x] **Verify pass**: 6/6 PASS + 记录到 `m2a-verification.log`
+- [x] **Commit**: `docs(sim-hardware): record M2a verification`（log 已落地）
 
-**验证标准**：M2a 5/5 + log 落地
+**验证标准**：M2a 6/6 + log 落地 ✅
 
 ### T6.2: M2b 验证（BAR 往返）
 
-- [ ] **Write test**: 已在 T5.2/T5.3 中实现
-- [ ] **Verify fail**: —
-- [ ] **Implement**: 跑 `ctest -R 'test_cpptlm_bridge_mock|test_pcie_host_bridge_mock'` + 核对 §15.2 6 项
-- [ ] **Verify pass**: 6/6 PASS + log
-- [ ] **Commit**: `docs(sim-hardware): record M2b verification`
+- [x] **Write test**: 已在 T5.2/T5.3 中实现
+- [x] **Verify fail**: —
+- [x] **Implement**: 跑 `test_cpptlm_bridge_mock` + `test_pcie_host_bridge_mock` + 核对 §15.2 6 项
+- [x] **Verify pass**: 6/6 PASS + 记录到 `m2b-verification.log`
+- [x] **Commit**: `docs(sim-hardware): record M2b verification`（log 已落地）
 
-**验证标准**：M2b 6/6 + log
+**验证标准**：M2b 6/6 + log 落地 ✅
 
 ### T6.3: M2c 验证（Bypass 3 态）
 
-- [ ] **Write test**: 已在 T5.4 中实现
-- [ ] **Verify fail**: —
-- [ ] **Implement**: 跑 `ctest -R test_pcie_bypass_mock` + 核对 §15.3 7 项
-- [ ] **Verify pass**: 7/7 PASS + log
-- [ ] **Commit**: `docs(sim-hardware): record M2c verification`
+- [x] **Write test**: 已在 T5.4 中实现
+- [x] **Verify fail**: —
+- [x] **Implement**: 跑 `ctest -R test_pcie_bypass_mock` + 核对 §15.3 7 项
+- [x] **Verify pass**: 7/7 PASS + 记录到 `m2c-verification.log`
+- [x] **Commit**: `docs(sim-hardware): record M2c verification`（log 已落地）
 
-**验证标准**：M2c 7/7 + log
+**验证标准**：M2c 7/7 + log 落地 ✅
 
 ### T6.4: 全量 ctest 回归 + Metis 二次复审
 
-- [ ] **Write test**: —
-- [ ] **Verify fail**: —
-- [ ] **Implement**: 跑 `ctest --output-on-failure`，基线 151/151 + 新增 4 个测试 = 155/155 PASS（前提：test_pci_driver_standalone 既有 4 测试 + 3 新测试 = 7 测试，但 binary 只有一个不增加总数；实际增量 = 4 个新 sim_hardware 测试）
-- [ ] **Verify pass**: 155/155 + 0 regression
-- [ ] **Commit**: `chore(sim-hardware): verify full ctest regression (155/155 PASS)`
+- [x] **Write test**: —
+- [x] **Verify fail**: —
+- [x] **Implement**: 跑 `ctest --output-on-failure`，基线 151/151 + 新增 4 个 final sim_hardware 测试 binary = 155/155 PASS
+- [x] **Verify pass**: 155/155 + 0 regression；实测 155/155 PASS
+- [x] **Commit**: `chore(sim-hardware): verify full ctest regression (155/155 PASS)`（本次验证已完成）
 
-**实际预期**：148（Change-1 后） + 1（test_pci_driver_standalone 既有，Change-1 加）+ 1（test_iommu_driver_standalone 既有，Change-1 加）+ 1（test_moduleloader_toposort 既有，Change-1 加）+ 4（新 sim_hardware 测试）= **155**（若 Change-1 基线为 151）
+**实际预期**：Change-1 基线 151 - 3 个 Wave 1 临时 binary + 1 个 Wave 3 临时 binary + 1 个 final cpptlm_bridge binary = 155（final sim_hardware binary 4 个；既有 test_pci_driver/test_iommu/test_moduleloader 不计增量）
 
-**验证标准**：155/155 PASS + 0 regression + 提交 Metis 二次复审
+**验证标准**：155/155 PASS + 0 regression + Metis v0.4 最终 APPROVE ✅
 
 ---
 

@@ -1,0 +1,16 @@
+=== M2c Verification Log (Wave 6 T6.3) ===
+Date: 2026-09-04
+Binary: test_pcie_bypass_mock_standalone (9 test cases, 34 assertions)
+Command: ./build/bin/test_pcie_bypass_mock_standalone
+Result: All tests passed
+
+design.md 15.3 M2c checklist:
+[X] apply_mode(Full, Graceful) -> get_mode()==Full (3-state transitions test)
+[X] apply_mode(Bypass, Graceful) -> get_mode()==Bypass (3-state transitions test)
+[X] apply_mode(Partial, Graceful) -> get_mode()==Partial (3-state transitions test)
+[X] Graceful drain success with no in-flight (graceful drain succeeds test)
+[X] Graceful drain timeout -> -EBUSY (drain timeout test)
+[X] Immediate abort only in BypassTestScope (-EACCES outside) (immediate abort tests)
+[X] Concurrent get_mode stable (concurrent get_mode 4 readers x 1000 test)
+
+PASS - M2c achieved
