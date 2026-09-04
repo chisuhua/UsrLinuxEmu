@@ -7,6 +7,9 @@
  */
 
 #include "pcie_emu_impl.h"
+#include "pci_probe.h"
+
+#include "pcie/host_bridge.h"
 
 #include <algorithm>
 #include <cstring>
@@ -150,6 +153,17 @@ bool PcieEmuImpl::is_device_enabled() const {
 
 uint8_t PcieEmuImpl::get_current_power_state() const {
   return current_power_state_;
+}
+
+int pci_probe_enumerate_from_sim_hardware(
+    sim_hardware::pcie::DiscoveredDevice* devices,
+    size_t max_devices,
+    size_t* out_count,
+    const char* topology_path) {
+  // T4.1: thin bridge to sim_hardware host_bridge_enumerate (mock M2a).
+  // pci_driver (Q2) -> sim_hardware (Q3) dependency direction is legal.
+  return sim_hardware::pcie::host_bridge_enumerate(devices, max_devices,
+                                                   out_count, topology_path);
 }
 
 }  // namespace pci

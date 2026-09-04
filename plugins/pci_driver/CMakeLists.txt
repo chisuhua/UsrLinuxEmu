@@ -11,6 +11,8 @@ add_library(pci_driver_plugin SHARED
     pci_msi.cpp
     pci_cap.cpp
     pci_iommu_integration.cpp
+    pci_setup_bus.cpp
+    pcie_enable_device.cpp
 )
 
 target_include_directories(pci_driver_plugin PRIVATE
@@ -21,9 +23,13 @@ target_include_directories(pci_driver_plugin PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins/pci_driver/include
     # Stage 5.5.1 — pci_iommu_integration.cpp 引用 iommu_driver 的 iommu_internal.h
     ${PROJECT_SOURCE_DIR}/plugins/iommu_driver/include
+    # Stage 5.5.2 Wave 4 — probe.cpp/pci_setup_bus.cpp 桥接 sim_hardware (Q2->Q3)
+    ${PROJECT_SOURCE_DIR}/sim_hardware/include
+    ${PROJECT_SOURCE_DIR}/sim_hardware/include/pcie
+    ${PROJECT_SOURCE_DIR}/sim_hardware/include/cpptlm
 )
 
-target_link_libraries(pci_driver_plugin PRIVATE kernel ${CMAKE_DL_LIBS})
+target_link_libraries(pci_driver_plugin PRIVATE kernel sim_hardware_mock ${CMAKE_DL_LIBS})
 
 set_target_properties(pci_driver_plugin PROPERTIES
     PREFIX ""

@@ -29,6 +29,7 @@ add_library(sim_hardware_mock STATIC
 
 target_link_libraries(sim_hardware_mock PUBLIC sim_hardware)
 target_link_options(sim_hardware_mock PRIVATE "-Wl,--no-undefined")
+set_target_properties(sim_hardware_mock PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(sim_hardware_mock PUBLIC
     ${PROJECT_SOURCE_DIR}/sim_hardware/include
     ${PROJECT_SOURCE_DIR}/sim_hardware/include/pcie
