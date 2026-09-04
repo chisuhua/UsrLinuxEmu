@@ -216,16 +216,11 @@ set(CATCH2_TESTS
     test_msi_x_inject_standalone.cpp
     # Stage 5.5.1 — Wave 1D (ModuleLoader topology sort + cycle detection, design.md §D6.2)
     test_moduleloader_toposort_standalone.cpp
-    # Stage 5.5.2 Wave 1 — sim_hardware mock foundation
-    sim_hardware/test_target_wiring_standalone.cpp
-    sim_hardware/test_bridge_lifecycle_standalone.cpp
-    sim_hardware/test_ep_storage_standalone.cpp
-    # Stage 5.5.2 Wave 3 — bypass controller + BAR scalar + MSI-X callback
-    sim_hardware/test_pcie_bypass_mock_standalone.cpp
-    sim_hardware/test_bypass_enum_standalone.cpp
-    # Stage 5.5.2 Wave 2 — topology loader + default_topology.json validity
+    # Stage 5.5.2 — sim_hardware mock foundation (4 final binaries, Wave 5 T5.1-T5.4)
     sim_hardware/test_topology_standalone.cpp
+    sim_hardware/test_cpptlm_bridge_mock_standalone.cpp
     sim_hardware/test_pcie_host_bridge_mock_standalone.cpp
+    sim_hardware/test_pcie_bypass_mock_standalone.cpp
     # Stage 5.5.1 — Wave 1A (pci_driver 迁移 verification, tasks.md §2 任务 1.2/1.3/1.4/1.5)
     plugins/test_pci_driver_standalone.cpp
     # Stage 5.5.1 — Wave 1B (iommu_driver 迁移 verification, tasks.md §3 任务 2.2/2.3/2.5/2.6)
