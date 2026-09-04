@@ -347,7 +347,9 @@ int topology_write_default_json(const std::string& path, const Topology* src) {
         uint8_t bus    = (packed >> 8) & 0x1F;
         uint8_t device = (packed >> 3) & 0x1F;
         uint8_t func   = packed & 0x07;
-        std::snprintf(buf, sizeof(buf), "0000:%02x:%02x.%x", bus, device, func);
+        // Parser (pack_bdf) reads: bus from chars 0-3 (4 hex), device from chars 5-6
+        // (2 hex), func from chars 8-9 (2 hex). Writer must mirror that layout.
+        std::snprintf(buf, sizeof(buf), "%04x:%02x:%02x.0", bus, device, func);
         return std::string(buf);
     };
     auto hex_u16 = [](uint16_t v) -> std::string {

@@ -269,9 +269,12 @@ TEST_CASE("topology round-trip: write then load yields equal structure",
   REQUIRE(dst.enable_link_layer == src.enable_link_layer);
   REQUIRE(dst.devices.size() == src.devices.size());
   for (size_t i = 0; i < src.devices.size(); ++i) {
+    REQUIRE(dst.devices[i].bdf == src.devices[i].bdf);
     REQUIRE(dst.devices[i].vendor_id == src.devices[i].vendor_id);
     REQUIRE(dst.devices[i].device_id == src.devices[i].device_id);
     REQUIRE(dst.devices[i].class_code == src.devices[i].class_code);
+    REQUIRE(std::string(dst.devices[i].endpoint_kind) ==
+            std::string(src.devices[i].endpoint_kind));
   }
 
   std::remove(tmp_path.c_str());
