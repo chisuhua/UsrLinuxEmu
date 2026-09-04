@@ -1,5 +1,6 @@
 #include "cpptlm/bridge.h"
 #include "cpptlm/endpoint.h"
+#include "pcie/bypass.h"
 
 #include <array>
 #include <cerrno>
@@ -25,6 +26,11 @@ struct CpptlmBridge::Impl {
 namespace {
 CpptlmBridge* g_active_bridge = nullptr;
 std::mutex g_active_bridge_mutex;
+
+struct TlpGuard {
+  TlpGuard() { bypass_enter_tlp(); }
+  ~TlpGuard() { bypass_exit_tlp(); }
+};
 
 bool valid_mmio(uint8_t bar, uint64_t offset, size_t len) {
   if (bar >= 6) return false;
@@ -91,6 +97,7 @@ int CpptlmBridge::mmio_read(uint8_t bar, uint64_t offset, void* buf, size_t len)
   std::lock_guard<std::mutex> lock(impl_->mutex);
   if (!impl_->initialized) return -ENODEV;
   if (!buf || !valid_mmio(bar, offset, len)) return -EINVAL;
+  TlpGuard tlp;
   std::memcpy(buf, impl_->bars[bar].data() + offset, len);
   return 0;
 }
@@ -100,6 +107,7 @@ int CpptlmBridge::mmio_write(uint8_t bar, uint64_t offset, const void* buf, size
   std::lock_guard<std::mutex> lock(impl_->mutex);
   if (!impl_->initialized) return -ENODEV;
   if (!buf || !valid_mmio(bar, offset, len)) return -EINVAL;
+  TlpGuard tlp;
   std::memcpy(impl_->bars[bar].data() + offset, buf, len);
   return 0;
 }
@@ -109,6 +117,7 @@ int CpptlmBridge::config_read(uint16_t offset, uint32_t* value) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   if (!impl_->initialized) return -ENODEV;
   if (!value || offset > 4092) return -EINVAL;
+  TlpGuard tlp;
   std::memcpy(value, impl_->config_space.data() + offset, sizeof(*value));
   return 0;
 }
@@ -118,6 +127,7 @@ int CpptlmBridge::config_write(uint16_t offset, uint32_t value) {
   std::lock_guard<std::mutex> lock(impl_->mutex);
   if (!impl_->initialized) return -ENODEV;
   if (offset > 4092) return -EINVAL;
+  TlpGuard tlp;
   std::memcpy(impl_->config_space.data() + offset, &value, sizeof(value));
   return 0;
 }
