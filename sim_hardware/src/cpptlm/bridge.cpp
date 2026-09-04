@@ -24,7 +24,18 @@ CpptlmBridge* g_active_bridge = nullptr;
 std::mutex g_active_bridge_mutex;
 
 bool valid_mmio(uint8_t bar, uint64_t offset, size_t len) {
-  return bar < 6 && len > 0 && offset <= 4096 && len <= 4096 - offset;
+  if (bar >= 6) return false;
+  if (len == 0) return false;
+  if (len > 4096) return false;
+  if (offset > 4096) return false;
+  if (len > 4096 - offset) return false;  // would overflow buffer
+  // Width must be power-of-2 in {1,2,4,8}
+  if (len != 1 && len != 2 && len != 4 && len != 8) return false;
+  // Alignment: offset must be a multiple of len
+  if (offset % len != 0) return false;
+  // 64-bit offset+len overflow check
+  if (offset + len < offset) return false;  // wrap-around guard
+  return true;
 }
 }
 

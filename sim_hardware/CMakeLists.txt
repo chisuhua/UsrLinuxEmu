@@ -35,6 +35,7 @@ target_include_directories(sim_hardware_mock PUBLIC
     ${PROJECT_SOURCE_DIR}/sim_hardware/include/cpptlm
     ${PROJECT_SOURCE_DIR}/sim_hardware/include/chipset
     ${PROJECT_SOURCE_DIR}/sim_hardware/include/topology
+    ${PROJECT_SOURCE_DIR}/external/json  # Wave 2: vendored nlohmann/json (header-only)
 )
 target_compile_features(sim_hardware_mock PUBLIC cxx_std_17)
 

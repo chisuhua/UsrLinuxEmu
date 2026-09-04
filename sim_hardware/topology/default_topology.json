@@ -1,19 +1,23 @@
 {
-    "_comment": "Wave 1C default PC topology (pc-x86-mock). Real AMD/Nvidia profiles added in Change-3.",
-    "platform": "pc-x86-mock",
-    "pcie": {
-        "root_complex": {"type": "PcieRootComplexTLM", "enabled": true},
-        "link_layer":   {"type": "PcieLinkLayer", "enabled": true},
-        "phy":          {"type": "PciePhyDigitalCtrl", "enabled": false},
-        "bypass_mux":   {"default_mode": "Full", "drain_policy": "GracefulDrain"}
-    },
-    "devices": [
-        {
-            "_comment": "Wave 1C 占位 dGPU 设备。Change-2 真实 vendor_id/device_id 由 topology loader 验证。",
-            "bdf": "0000:01:00.0",
-            "vendor_id": "0x10DE",
-            "device_id": "0x1234",
-            "class_code": "0x030200",
-            "endpoint": "PcieEndpointIP",
-            "bars": [
-                {"index": 0, "type": "MM64", "size_bytes": 16777216, "prefetcha
+  "schema_version": 1,
+  "platform": "pc-x86-mock",
+  "pcie": {
+    "root_complex": {"type": "PcieRootComplexMock", "enabled": true},
+    "link_layer":   {"type": "PcieLinkLayer",       "enabled": true},
+    "phy":          {"type": "PciePhyDigitalCtrl",  "enabled": false},
+    "bypass_mux":   {"default_mode": "Full", "default_drain_policy": "GracefulDrain"}
+  },
+  "devices": [
+    {
+      "bdf": "0000:01:00.0",
+      "vendor_id": "0x10DE",
+      "device_id": "0x1234",
+      "class_code": "0x030200",
+      "endpoint_kind": "PcieEndpointMock",
+      "bars": [
+        {"index": 0, "size_bytes": 16777216, "prefetchable": false, "is_mmio": true,  "is_64bit": false},
+        {"index": 1, "size_bytes": 16777216, "prefetchable": true,  "is_mmio": true,  "is_64bit": true}
+      ]
+    }
+  ]
+}

@@ -52,6 +52,8 @@ function(add_catch_test TEST_NAME)
         ${PROJECT_SOURCE_DIR}/sim_hardware/include/cpptlm
         ${PROJECT_SOURCE_DIR}/sim_hardware/include/chipset
         ${PROJECT_SOURCE_DIR}/sim_hardware/include/topology
+        # Wave 2: vendored nlohmann/json (header-only)
+        ${PROJECT_SOURCE_DIR}/external/json
         # Stage 5.5.1: 新 pci_driver / iommu_driver plugin 头文件路径
         ${PROJECT_SOURCE_DIR}/plugins/pci_driver/include
         ${PROJECT_SOURCE_DIR}/plugins/iommu_driver/include
@@ -219,6 +221,9 @@ set(CATCH2_TESTS
     sim_hardware/test_bridge_lifecycle_standalone.cpp
     sim_hardware/test_ep_storage_standalone.cpp
     sim_hardware/test_bypass_enum_standalone.cpp
+    # Stage 5.5.2 Wave 2 — topology loader + default_topology.json validity
+    sim_hardware/test_topology_standalone.cpp
+    sim_hardware/test_pcie_host_bridge_mock_standalone.cpp
     # Stage 5.5.1 — Wave 1A (pci_driver 迁移 verification, tasks.md §2 任务 1.2/1.3/1.4/1.5)
     plugins/test_pci_driver_standalone.cpp
     # Stage 5.5.1 — Wave 1B (iommu_driver 迁移 verification, tasks.md §3 任务 2.2/2.3/2.5/2.6)
