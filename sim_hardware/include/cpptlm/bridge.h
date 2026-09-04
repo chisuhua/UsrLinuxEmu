@@ -36,6 +36,11 @@ class CpptlmBridge {
   int register_msix_callback(IntrDeliverCb cb, void* ctx);
   int attach_endpoint(void* endpoint_handle);
 
+  // Test helper (T3.4) — mock-inject an MSI-X vector delivery.
+  // Invokes the registered callback synchronously (if any). No-op if no
+  // callback registered. Called from bridge_inject_msix shim.
+  void inject_msix_for_test(uint32_t vector);
+
  private:
   struct Impl;
   Impl* impl_;
@@ -43,6 +48,10 @@ class CpptlmBridge {
 
 CpptlmBridge* CpptlmBridge_get();
 int CpptlmBridge_set_active(CpptlmBridge* bridge);
+
+// C-linkage shim for test access
+extern "C" void bridge_inject_msix_shim(uint32_t vector);
+inline void bridge_inject_msix(uint32_t vector) { bridge_inject_msix_shim(vector); }
 
 }  // namespace usr_linux_emu::sim_hardware
 

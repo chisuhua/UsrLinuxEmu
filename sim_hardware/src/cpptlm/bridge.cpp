@@ -16,6 +16,9 @@ struct CpptlmBridge::Impl {
   cpptlm::PcieEndpointIP* endpoint{nullptr};
   std::array<uint8_t, 4096> config_space{};
   std::array<std::array<uint8_t, 4096>, 6> bars{};
+  // MSI-X mock callback adapter (T3.4) — stored in bridge instance (NOT thread_local)
+  IntrDeliverCb msix_cb{nullptr};
+  void* msix_ctx{nullptr};
   std::mutex mutex;
 };
 
@@ -123,7 +126,8 @@ int CpptlmBridge::register_msix_callback(IntrDeliverCb cb, void* ctx) {
   if (!impl_) return -EINVAL;
   std::lock_guard<std::mutex> lock(impl_->mutex);
   if (!impl_->initialized) return -ENODEV;
-  (void)cb; (void)ctx;
+  impl_->msix_cb = cb;
+  impl_->msix_ctx = ctx;
   return 0;
 }
 
@@ -144,6 +148,28 @@ int CpptlmBridge_set_active(CpptlmBridge* bridge) {
   std::lock_guard<std::mutex> lock(g_active_bridge_mutex);
   g_active_bridge = bridge;
   return 0;
+}
+
+// C-linkage shim for test access (T3.4)
+extern "C" void bridge_inject_msix_shim(uint32_t vector) {
+  std::lock_guard<std::mutex> g_lock(g_active_bridge_mutex);
+  CpptlmBridge* b = g_active_bridge;
+  if (!b) return;
+  b->inject_msix_for_test(vector);
+}
+
+void CpptlmBridge::inject_msix_for_test(uint32_t vector) {
+  if (!impl_) return;
+  // Copy callback+ctx under lock, then invoke outside lock to avoid deadlocks
+  IntrDeliverCb cb;
+  void* ctx;
+  {
+    std::lock_guard<std::mutex> lock(impl_->mutex);
+    if (!impl_->initialized) return;
+    cb = impl_->msix_cb;
+    ctx = impl_->msix_ctx;
+  }
+  if (cb) cb(vector, ctx);
 }
 
 }  // namespace usr_linux_emu::sim_hardware

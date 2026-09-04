@@ -220,6 +220,8 @@ set(CATCH2_TESTS
     sim_hardware/test_target_wiring_standalone.cpp
     sim_hardware/test_bridge_lifecycle_standalone.cpp
     sim_hardware/test_ep_storage_standalone.cpp
+    # Stage 5.5.2 Wave 3 — bypass controller + BAR scalar + MSI-X callback
+    sim_hardware/test_pcie_bypass_mock_standalone.cpp
     sim_hardware/test_bypass_enum_standalone.cpp
     # Stage 5.5.2 Wave 2 — topology loader + default_topology.json validity
     sim_hardware/test_topology_standalone.cpp

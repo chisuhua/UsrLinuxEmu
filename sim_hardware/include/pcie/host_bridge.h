@@ -2,8 +2,11 @@
 // per ADR-091 v0.2 §D3.1 + Change-2 design.md §5.3
 #pragma once
 
-#include <cstdint>
+#include <cerrno>
 #include <cstddef>
+#include <cstdint>
+
+#include "cpptlm/bridge.h"
 
 namespace usr_linux_emu::sim_hardware::pcie {
 
@@ -39,5 +42,18 @@ int host_bridge_bypass_write(uint8_t bar, uint64_t offset,
 
 int host_bridge_bypass_read(uint8_t bar, uint64_t offset,
                             void* dst, size_t len);
+
+// BAR scalar wrappers (T3.3) — convenience over mmio_read/write buffer API.
+// All delegate to CpptlmBridge::mmio_read/write via the active singleton.
+inline int bar_write32(uint8_t bar, uint64_t offset, uint32_t value) {
+  CpptlmBridge* b = CpptlmBridge_get();
+  if (!b) return -EINVAL;
+  return b->mmio_write(bar, offset, &value, sizeof(value));
+}
+inline int bar_read32(uint8_t bar, uint64_t offset, uint32_t* value) {
+  CpptlmBridge* b = CpptlmBridge_get();
+  if (!b) return -EINVAL;
+  return b->mmio_read(bar, offset, value, sizeof(*value));
+}
 
 }  // namespace usr_linux_emu::sim_hardware::pcie
