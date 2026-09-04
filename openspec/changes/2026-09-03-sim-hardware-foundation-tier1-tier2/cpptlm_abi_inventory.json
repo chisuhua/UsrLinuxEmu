@@ -1,0 +1,44 @@
+{
+  "inventory": {
+    "purpose": "CppTLM 23 ABI inventory for gated follow-up (Change-2 Phase 0 T0.2)",
+    "generated": "2026-09-04",
+    "repository_status": "no external CppTLM artifacts present (no cpptlm_emulator.h, no libcpptlm_emulator.so)",
+    "authoritative_source": "docs/00_adr/adr-088-dgpu-complete-simulation.md §D5 + docs/05-advanced/cpptlm-v4-implementation-handoff.md §附录 A"
+  },
+  "abi_groups": {
+    "base_forward": { "count": 6, "description": "基础 lifecycle/version/MMIO/config (A.1)" },
+    "base_callback_typedef": { "count": 4, "description": "callback typedefs, 不导出运行时符号 (A.2)" },
+    "base_register": { "count": 1, "description": "register_callbacks (A.2)" },
+    "board_extension_forward": { "count": 7, "description": "多板卡枚举 + PCIe Config + backdoor (A.3)" },
+    "board_extension_register": { "count": 1, "description": "register_backdoor_cb (A.3)" },
+    "msix_forward": { "count": 3, "description": "MSI-X 硬件仿真 (A.4)" },
+    "dma_translate_register": { "count": 1, "description": "register_dma_translate_cb (A.5)" }
+  },
+  "total_abi": 23,
+  "exported_symbol_count": "nm -D libcpptlm_emulator.so | grep cpptlm_emulator_ | wc -l 应返回 19 (= 23 - 4 callback typedef)",
+  "symbols": [
+    { "id": 1, "name": "cpptlm_emulator_get_version", "group": "base_forward", "status": "not_present" },
+    { "id": 2, "name": "cpptlm_emulator_create", "group": "base_forward", "status": "not_present" },
+    { "id": 3, "name": "cpptlm_emulator_mmio_read", "group": "base_forward", "status": "not_present" },
+    { "id": 4, "name": "cpptlm_emulator_mmio_write", "group": "base_forward", "status": "not_present" },
+    { "id": 5, "name": "cpptlm_emulator_lookup_register", "group": "base_forward", "status": "not_present" },
+    { "id": 6, "name": "cpptlm_emulator_destroy", "group": "base_forward", "status": "not_present" },
+    { "id": 7, "name": "cpptlm_mmio_read_cb_t", "group": "base_callback_typedef", "status": "not_present" },
+    { "id": 8, "name": "cpptlm_mmio_write_cb_t", "group": "base_callback_typedef", "status": "not_present" },
+    { "id": 9, "name": "cpptlm_intr_deliver_cb_t", "group": "base_callback_typedef", "status": "not_present" },
+    { "id": 10, "name": "cpptlm_dma_translate_cb_t", "group": "base_callback_typedef", "status": "not_present" },
+    { "id": 11, "name": "cpptlm_emulator_register_callbacks", "group": "base_register", "status": "not_present" },
+    { "id": 12, "name": "cpptlm_emulator_get_device_count", "group": "board_extension_forward", "status": "not_present" },
+    { "id": 13, "name": "cpptlm_emulator_get_device_info", "group": "board_extension_forward", "status": "not_present" },
+    { "id": 14, "name": "cpptlm_emulator_create_by_id", "group": "board_extension_forward", "status": "not_present" },
+    { "id": 15, "name": "cpptlm_emulator_pcie_config_read", "group": "board_extension_forward", "status": "not_present" },
+    { "id": 16, "name": "cpptlm_emulator_pcie_config_write", "group": "board_extension_forward", "status": "not_present" },
+    { "id": 17, "name": "cpptlm_emulator_backdoor_read", "group": "board_extension_forward", "status": "not_present" },
+    { "id": 18, "name": "cpptlm_emulator_backdoor_write", "group": "board_extension_forward", "status": "not_present" },
+    { "id": 19, "name": "cpptlm_emulator_register_backdoor_cb", "group": "board_extension_register", "status": "not_present" },
+    { "id": 20, "name": "cpptlm_emulator_msix_init", "group": "msix_forward", "status": "not_present" },
+    { "id": 21, "name": "cpptlm_emulator_msix_update_pending", "group": "msix_forward", "status": "not_present" },
+    { "id": 22, "name": "cpptlm_emulator_msix_clear_pending", "group": "msix_forward", "status": "not_present" },
+    { "id": 23, "name": "cpptlm_emulator_register_dma_translate_cb", "group": "dma_translate_register", "status": "not_present" }
+  ]
+}

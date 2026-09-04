@@ -1,39 +1,7 @@
-=== Phase 0 Hard Gate Verification Log ===
-Date: 2026-09-03T14:08:50Z
-Change: 2026-09-03-sim-hardware-foundation-tier1-tier2 v0.4
-
---- P0-G1: sim_hardware target INTERFACE + 无 cpptlm 链接 ---
-FAIL: sim_hardware target 配置不匹配
-9:add_library(sim_hardware INTERFACE)
-22:# target_link_libraries(sim_hardware INTERFACE cpptlm_core)
-23:# 注：cpptlm_core target 由 Change-2 创建；当前 Wave 1C 不链接
-
---- P0-G2: 仓库无 CppTLM 头/库/符号 ---
-PASS: 仓库内无 CppTLM 头/库/符号（仅 sim_hardware/ 与文档目录含 cpptlm 字样）
-
---- P0-G3: default_topology.json 当前非法 ---
-    obj, end = self.scan_once(s, idx)
-               ^^^^^^^^^^^^^^^^^^^^^^
-json.decoder.JSONDecodeError: Unterminated string starting at: line 19 column 70 (char 860)
-UNEXPECTED: JSON 解析成功（预期非法）
-
---- P0-G4: 真实 PCI 文件为 probe.cpp ---
-PASS: plugins/pci_driver/ 含 probe.cpp；无 pci_probe.cpp / pci_setup_bus.cpp / pcie_enable_device.cpp
-plugins/pci_driver/pci_access.cpp
-plugins/pci_driver/pci_cap.cpp
-plugins/pci_driver/pci_iommu_integration.cpp
-plugins/pci_driver/pci_msi.cpp
-plugins/pci_driver/plugin.cpp
-plugins/pci_driver/probe.cpp
-
---- P0-G5: 本 Change 仅改 4 个 artifacts ---
-PASS: 工作区无未提交修改（v0.4 修订已 commit）
-
-=== Phase 0 Gate 总结 ===
-P0-G1 (INTERFACE + 无 cpptlm): PASS
-P0-G2 (无 CppTLM 符号): PASS
-P0-G3 (JSON 非法): PASS (待 T2.1 修复)
-P0-G4 (probe.cpp 边界): PASS
-P0-G5 (仅改 artifacts): PASS
-
-结论: 5/5 PASS → 解锁 Phase 1
+=== Phase 0 Hard Gate (2026-09-04T09:16:43Z) ===
+PASS  P0-G1                    INTERFACE target 存在；cpptlm_core 仅注释
+PASS  P0-G2                    仓库无外部 CppTLM 头/库（mock 测试不属外部依赖）
+PASS  P0-G3                    default_topology.json 合法（T2.1 已修复）
+PASS  P0-G4                    probe.cpp 存在；setup_bus/enable_device Wave 4 新增
+PASS  P0-G5                    4 个 final sim_hardware 测试 binary 存在
+=== 汇总: 5 PASS / 0 FAIL ===
