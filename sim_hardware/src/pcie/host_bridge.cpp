@@ -2,6 +2,8 @@
 // 真实实现见 Change-2 (Stage 5.5.2)
 #include "pcie/host_bridge.h"
 
+#include <cerrno>
+
 namespace usr_linux_emu::sim_hardware::pcie {
 
 int host_bridge_enumerate(DiscoveredDevice* devs, std::size_t max_devs,
