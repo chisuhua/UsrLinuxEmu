@@ -118,6 +118,39 @@ jobs:
           echo "::error::To update the SSOT: docs/02_architecture/post-refactor-architecture.md"
           echo "::error::Bypass only if the failure is a known false positive; document the reason in the PR."
 
+  # ---------------------------------------------------------------------------
+  # Phase 0 Hard Gate for Change-2 (sim-hardware-foundation-tier1-tier2).
+  # Validates that the sim_hardware foundation keeps its Phase 0 invariants:
+  #   - sim_hardware target is INTERFACE (no CppTLM linkage)
+  #   - No external CppTLM artifacts (cpptlm_emulator.h / .so)
+  #   - default_topology.json is legal JSON
+  #   - PCI driver boundary at probe.cpp (with Wave 4 wiring)
+  #   - 4 final sim_hardware test binaries present
+  # Triggers on pushes that touch sim_hardware/, plugins/pci_driver/, or
+  # tools/check_phase0_gate.sh. Mirrors pre-commit hook logic.
+  # Reference: design.md §2 + ADR-088 §D5.
+  # ---------------------------------------------------------------------------
+  phase0-gate:
+    name: Phase 0 Hard Gate (sim_hardware foundation)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Run phase0-gate
+        # Pure bash + python3 (json validation) — no extra dependencies.
+        run: bash tools/check_phase0_gate.sh
+
+      - name: Annotate failure with bypass instructions
+        if: failure()
+        run: |
+          echo "::error::phase0-gate failed. P0-G1..G5 reports above."
+          echo "::error::To run locally: bash tools/check_phase0_gate.sh"
+          echo "::error::To bypass: SKIP_PHASE0_GATE=1 git commit (and document the reason)."
+          echo "::error::See docs/00_adr/adr-088-dgpu-complete-simulation.md §D5 + design.md §2."
+
   # ===== Sanitizer jobs (change: 2026-07-16-three-sanitizer-infra) =====
   # Required: ASan + UBSan + TSan must all pass; configure as required
   # status checks in GitHub repository settings.

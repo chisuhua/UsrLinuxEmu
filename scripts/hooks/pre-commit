@@ -72,4 +72,40 @@ if echo "${STAGED_FILES}" | grep -qE "${DOCS_PATTERN}"; then
     echo "[pre-commit] docs-audit passed ✓"
 fi
 
+# ---------------------------------------------------------------------------
+# 3. phase0-gate（仅在 sim_hardware 或 pci_driver 相关文件被 staged 时触发）
+#    锁定 Change-2 Phase 0 Hard Gate（P0-G1..G5）：任何回归将阻止提交。
+#    详见 docs/00_adr/adr-088-dgpu-complete-simulation.md §D5 与
+#    openspec/changes/archive/2026-09-04-2026-09-03-sim-hardware-foundation-tier1-tier2/design.md §2。
+# ---------------------------------------------------------------------------
+
+if [ "${SKIP_PHASE0_GATE}" = "1" ]; then
+    echo "[pre-commit] SKIP_PHASE0_GATE=1, skipping phase0-gate"
+    exit 0
+fi
+
+PHASE0_SCRIPT="${REPO_ROOT}/tools/check_phase0_gate.sh"
+
+if [ ! -x "${PHASE0_SCRIPT}" ]; then
+    echo "[pre-commit] tools/check_phase0_gate.sh not found or not executable, skipping"
+    exit 0
+fi
+
+# 当 staged 文件涉及 sim_hardware 基础、pci_driver 边界、或 gate 脚本自身时触发
+PHASE0_PATTERN='^(sim_hardware/|plugins/pci_driver/|tools/check_phase0_gate\.sh$)'
+
+if echo "${STAGED_FILES}" | grep -qE "${PHASE0_PATTERN}"; then
+    echo "[pre-commit] sim_hardware/pci_driver files changed, running phase0-gate"
+    if ! "${PHASE0_SCRIPT}"; then
+        echo ""
+        echo "==================================================="
+        echo "  phase0-gate failed. To bypass: SKIP_PHASE0_GATE=1 git commit"
+        echo "  P0-G1..G5 验证脚本: tools/check_phase0_gate.sh"
+        echo "  See design.md §2 + ADR-088 §D5"
+        echo "==================================================="
+        exit 1
+    fi
+    echo "[pre-commit] phase0-gate passed ✓"
+fi
+
 exit 0
