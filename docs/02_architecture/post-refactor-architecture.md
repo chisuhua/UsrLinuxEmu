@@ -239,6 +239,15 @@ UsrLinuxEmu/
 │   ├── plugin_gpu_driver.so
 │   └── plugins.json
 ├── libgpu_core/                   (纯 C buddy allocator, ADR-020)
+├── sim_hardware/                  ✅ 已添加（Change-2 v0.4 mock-first，2026-09-04 归档）
+│   ├── include/topology.h         (BDF 编码 + Topology/Device/Bar POD 类型)
+│   ├── include/pcie/host_bridge.h (BAR 标量包装 + bypass 接口契约)
+│   ├── src/topology.cpp           (nlohmann/json 严格 schema 校验)
+│   ├── src/host_bridge.cpp        (host_bridge_enumerate + bypass_read/write)
+│   ├── src/cpptlm/bridge.cpp      (CpptlmBridge mock + RAII TlpGuard + MSI-X cb)
+│   ├── src/cpptlm/bypass.cpp      (3-state FSM + atomic in-flight + drain)
+│   ├── topology/default_topology.json (合法默认拓扑)
+│   └── CMakeLists.txt             (INTERFACE target + sim_hardware_mock STATIC)
 ├── tests/                         (Catch2 + standalone + sim)
 ├── tools/cli/                     ✅ 存在（main.cpp + CMakeLists.txt，构建产物 cli 在 build/bin/）
 ├── ~~simulator/~~                 ❌ 已 git-silent 删除（commit `4f42005`，2026-06-16；迁移到 plugins/gpu_driver/sim/ 在 Phase 1.5 完成，2026-05）
