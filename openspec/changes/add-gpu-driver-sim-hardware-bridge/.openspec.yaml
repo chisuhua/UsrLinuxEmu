@@ -1,0 +1,5 @@
+schema: spec-driven
+created: 2026-09-05
+goal: Bridge gpu_driver to sim_hardware foundation (Change-2) so each discovered
+  GPU device gets its own HalHolder + GpgpuDevice. Single-device topologies
+  fully wired today; multi-device singletons deferred with explicit fail-fast.

@@ -216,6 +216,8 @@ set(CATCH2_TESTS
     test_msi_x_inject_standalone.cpp
     # Stage 5.5.1 — Wave 1D (ModuleLoader topology sort + cycle detection, design.md §D6.2)
     test_moduleloader_toposort_standalone.cpp
+    # Change-3 add-gpu-driver-sim-hardware-bridge — pci_probe_enumerate consumer + GET_DEVICE_INFO round-trip
+    test_gpu_sim_hardware_bridge_standalone.cpp
     # Stage 5.5.2 — sim_hardware mock foundation (4 final binaries, Wave 5 T5.1-T5.4)
     sim_hardware/test_topology_standalone.cpp
     sim_hardware/test_cpptlm_bridge_mock_standalone.cpp

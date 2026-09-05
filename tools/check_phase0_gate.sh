@@ -90,6 +90,15 @@ if [ "$missing" = "0" ]; then
   report PASS "P0-G5" "4 个 final sim_hardware 测试 binary 存在"
 fi
 
+# P0-G6: N=1 fail-fast contract — gpu_driver plugin WARN-bridges device[0] only when out_count > 1.
+# 2nd device's arrival is the escalation trigger for the BDF-keyed sim singletons follow-up change.
+p0g6_count=$(python3 -c 'import json; print(len(json.load(open("sim_hardware/topology/default_topology.json"))["devices"]))' 2>/dev/null)
+if [ "$p0g6_count" = "1" ]; then
+  report PASS "P0-G6" "default_topology.json devices == 1 (N=1 fail-fast contract)"
+else
+  report FAIL "P0-G6" "default_topology.json has $p0g6_count devices (expected 1; N>1 triggers WARN bridge-only-device[0])"
+fi
+
 echo "=== 汇总: ${PASS} PASS / ${FAIL} FAIL ==="
 if [ -n "$LOG_PATH" ]; then
   { echo "# Phase 0 Hard Gate — $(date -u +%Y-%m-%dT%H:%M:%SZ)"; echo; echo "P0-G1..G5 逐项结果见上（由 tools/check_phase0_gate.sh 生成）"; } > "$LOG_PATH"

@@ -15,6 +15,12 @@ target_include_directories(gpu_driver_plugin PRIVATE
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/hardware
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim/scheduler
     ${PROJECT_SOURCE_DIR}/libgpu_core/include
+    # Change-3 add-gpu-driver-sim-hardware-bridge: composition root consumes
+    # pci_probe_enumerate_from_sim_hardware (pci_driver Q2→Q3 bridge) +
+    # DiscoveredDevice (sim_hardware/pcie/host_bridge.h). Consumer-only —
+    # plugins/pci_driver/ source is not modified.
+    ${PROJECT_SOURCE_DIR}/plugins/pci_driver/include
+    ${PROJECT_SOURCE_DIR}/sim_hardware/include
 )
 
 # 添加 kernel 框架头文件
@@ -30,7 +36,11 @@ add_subdirectory(hal)
 # sim/ 总是编译（gpu_sim 提供 doorbell/puller/scheduler 仿真）
 add_subdirectory(sim)
 
-target_link_libraries(gpu_driver_plugin PRIVATE kernel gpu_hal gpu_core gpu_drv gpu_sim ${CMAKE_DL_LIBS})
+# Change-3 add-gpu-driver-sim-hardware-bridge: link pci_driver_plugin SHARED
+# (DT_NEEDED auto-resolves pci_probe_enumerate_from_sim_hardware at dlopen;
+# per AGENTS.md §"kernel 库必须是 SHARED" — same singleton principle). This
+# is the consumer direction: gpu_driver depends on pci_driver, not the reverse.
+target_link_libraries(gpu_driver_plugin PRIVATE kernel gpu_hal gpu_core gpu_drv gpu_sim pci_driver_plugin ${CMAKE_DL_LIBS})
 
 set_target_properties(gpu_driver_plugin PROPERTIES
     PREFIX ""
