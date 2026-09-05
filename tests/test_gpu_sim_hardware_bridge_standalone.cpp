@@ -2,10 +2,13 @@
 //
 // Add-gpu-driver-sim-hardware-bridge — regression test (Change-3).
 //
-// Spec requirement (spec.md): "A new Catch2 test binary MUST be added that:
+// Spec requirement (spec.md REQ-BRIDGE-TEST-001): "A new Catch2 test binary
+// MUST be added that:
 //  1. Loads default_topology.json via pci_probe_enumerate_from_sim_hardware
 //  2. Asserts out_count >= 1
-//  3. Asserts discovered[0].bdf == 0x0100 (packed BDF for "0000:01:00.0")
+//  3. Asserts discovered[0].bdf == 0x08 (packed BDF for "0000:01:00.0")
+//     — see spec.md:85 for the non-standard pack_bdf parser convention
+//     (offset [0:4] is read as bus rather than domain).
 //  4. Exercises the gpu_driver composition root indirectly by verifying the
 //     registered device responds to GPU_IOCTL_GET_DEVICE_INFO"
 //
@@ -58,11 +61,11 @@ void ensure_plugins_loaded() {
 }  // namespace
 
 // ============================================================================
-// Scenario: bridge enumerates default_topology.json with packed BDF 0x0100
+// Scenario: bridge enumerates default_topology.json with packed BDF 0x08
 // ============================================================================
 
 TEST_CASE("bridge: pci_probe_enumerate_from_sim_hardware yields ≥1 device "
-          "with packed BDF 0x0100",
+          "with packed BDF 0x08",
           "[stage_5_5_2][bridge][sim_hardware]") {
   DiscoveredDevice discovered[kMaxDiscoveredDevices] = {};
   size_t out_count = 0;
@@ -74,7 +77,9 @@ TEST_CASE("bridge: pci_probe_enumerate_from_sim_hardware yields ≥1 device "
   REQUIRE(rc == 0);
   REQUIRE(out_count >= 1);
 
-  // "0000:01:00.0" → packed BDF = (1<<8)|(0<<3)|0 = 0x0100.
+  // Packed BDF per sim_hardware/src/topology.cpp:27-48 pack_bdf (bus parsed
+  // from offset [0:4], device from [5:7], func from [8:10]). For
+  // "0000:01:00.0" the parser yields bus=0, device=1, func=0 → 0x08.
   // Spec §REQ-BRIDGE-TEST-001 step 3 mandates comparing against the packed
   // uint16 form, NOT the human-readable string.
   REQUIRE(discovered[0].bdf == kExpectedPackedBdf);
