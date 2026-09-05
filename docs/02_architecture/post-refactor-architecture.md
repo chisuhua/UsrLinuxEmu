@@ -248,6 +248,18 @@ UsrLinuxEmu/
 │   ├── src/cpptlm/bypass.cpp      (3-state FSM + atomic in-flight + drain)
 │   ├── topology/default_topology.json (合法默认拓扑)
 │   └── CMakeLists.txt             (INTERFACE target + sim_hardware_mock STATIC)
+│   └── Change-3 (2026-09-05 已归档 add-gpu-driver-sim-hardware-bridge)：
+│       ├── plugins/gpu_driver/plugin.cpp: composition root 改为
+│       │   std::vector<std::unique_ptr<HalHolder>> 驱动
+│       │   pci_probe_enumerate_from_sim_hardware 输出
+│       ├── N=1 fail-fast 契约：out_count > 1 时 WARN + 只 bridge device[0]
+│       ├── HAL ABI 字节不变；drv/ + hal/ + sim/ 全空（per ADR-088 drv-zero-modify）
+│       └── Escalation trigger: P0-G6 gate（tools/check_phase0_gate.sh）
+│            监控 default_topology.json 的 devices 数，≥2 时 FAIL 阻断
+│            commit → 触发后续 BDF-keyed sim singletons（g_vram_store /
+│            g_dma_pool / g_plugin_mm_shim / KFD）重构。设计见
+│            openspec/changes/archive/2026-09-05-add-gpu-driver-sim-hardware-bridge/design.md
+│            Decision 5 + §Escalation trigger。
 ├── tests/                         (Catch2 + standalone + sim)
 ├── tools/cli/                     ✅ 存在（main.cpp + CMakeLists.txt，构建产物 cli 在 build/bin/）
 ├── ~~simulator/~~                 ❌ 已 git-silent 删除（commit `4f42005`，2026-06-16；迁移到 plugins/gpu_driver/sim/ 在 Phase 1.5 完成，2026-05）
