@@ -789,7 +789,7 @@ target_compile_options(test_kfd_events_standalone PRIVATE -Wno-implicit-function
 add_test(NAME test_kfd_events_standalone COMMAND test_kfd_events_standalone)
 set_tests_properties(test_kfd_events_standalone PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-# C-12 B.3.3 + B.3.5 — kfd_sim_bridge audit + set_hal + sim_pm_* integration test
+# C-12 B.3.3 — kfd_sim_bridge audit + sim_pm_* integration test
 add_executable(test_kfd_sim_bridge_audit_standalone
     test_kfd_sim_bridge_audit_standalone.cpp
     ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp
