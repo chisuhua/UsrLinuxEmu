@@ -50,3 +50,42 @@ TEST_CASE("refcount semantics: relative increment on duplicate load",
   auto dev = VFS::instance().open("/dev/gpgpu0", 0);
   REQUIRE(dev != nullptr);
 }
+
+TEST_CASE("plugin unload is safe after multiple loads",
+          "[plugin][regression][unload]") {
+  for (int i = 0; i < 100 && ModuleLoader::plugin_ref_count("gpu_driver") >= 0; i++) {
+    ModuleLoader::unload_plugins();
+  }
+  REQUIRE(ModuleLoader::plugin_ref_count("gpu_driver") == -1);
+
+  ModuleLoader::load_plugins("plugins");
+  REQUIRE(ModuleLoader::plugin_ref_count("gpu_driver") == 0);
+
+  ModuleLoader::load_plugins("plugins");
+  REQUIRE(ModuleLoader::plugin_ref_count("gpu_driver") == 1);
+
+  ModuleLoader::unload_plugins();
+  REQUIRE(ModuleLoader::plugin_ref_count("gpu_driver") == -1);
+}
+
+TEST_CASE("plugin unload is safe after 5x loads (stress)",
+          "[plugin][regression][unload][stress]") {
+  for (int i = 0; i < 100 && ModuleLoader::plugin_ref_count("gpu_driver") >= 0; i++) {
+    ModuleLoader::unload_plugins();
+  }
+  REQUIRE(ModuleLoader::plugin_ref_count("gpu_driver") == -1);
+
+  int before = ModuleLoader::plugin_ref_count("gpu_driver");
+  for (int i = 0; i < 5; i++) {
+    ModuleLoader::load_plugins("plugins");
+  }
+  REQUIRE(ModuleLoader::plugin_ref_count("gpu_driver") == before + 5);
+
+  ModuleLoader::unload_plugins();
+  REQUIRE(ModuleLoader::plugin_ref_count("gpu_driver") >= 0);
+
+  for (int i = 0; i < 100 && ModuleLoader::plugin_ref_count("gpu_driver") >= 0; i++) {
+    ModuleLoader::unload_plugins();
+  }
+  REQUIRE(ModuleLoader::plugin_ref_count("gpu_driver") == -1);
+}
