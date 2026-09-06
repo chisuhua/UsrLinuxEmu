@@ -6,7 +6,7 @@ When `pci_probe_enumerate_from_sim_hardware("sim_hardware/topology/default_topol
 
 #### Scenario: missing topology file causes plugin init failure with no /dev/gpgpu0
 
-- **WHEN** the process CWD does not contain a `sim_hardware/topology/default_topology.json` path (test injects this via `chdir` to an empty temp dir before `load_plugins`)
+- **WHEN** the test binary captures the absolute path to the `plugins` directory before `chdir`, then calls `ModuleLoader::load_plugins(<absolute plugins path>)` from a temp directory that does not contain a `sim_hardware/topology/default_topology.json` path
 - **THEN** `VFS::instance().open("/dev/gpgpu0", 0)` returns `nullptr`
 - **AND** the gpu_driver plugin's `init()` returns non-zero
 - **AND** no other plugin's failure masks the gpu_driver failure (gpu_driver is first by load_priority 50; ModuleLoader logs the failure)

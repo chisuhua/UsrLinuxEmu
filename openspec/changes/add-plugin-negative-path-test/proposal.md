@@ -14,14 +14,16 @@ The first Scenario is reachable today without code change: `pci_probe_enumerate_
 - `VFS::instance().open("/dev/gpgpu0", O_RDWR)` returns `nullptr` (no device registered)
 - No zombie device nodes from the failed init leak across the rest of ctest (handled by Catch2 process isolation)
 
-This must be a separate test binary — process-global plugin loading is one-shot per process; the existing `test_gpu_sim_hardware_bridge_standalone` calls `load_plugins` once with the canonical CWD and cannot also exercise the missing-topology path.
+**Critical implementation detail (Oracle deep-dive finding)**: the test must capture the **absolute** path to the `plugins` directory *before* `chdir`, then pass the absolute path to `load_plugins`. Passing a relative `"plugins"` after `chdir` to an empty temp dir causes `scan_candidates` to fail (`fs::exists("plugins")` returns false, `load_plugins` returns -1) *before* any plugin's `init()` runs — the `-ENOENT` propagation path would never be exercised, and the test would pass trivially on a vacuous assertion.
+
+This must be a separate test binary — process-global plugin loading is one-shot per process; the existing `test_gpu_sim_hardware_bridge_standalone` calls `load_plugins` once with the canonical CWD and cannot also exercise the missing-topology path. Process isolation comes from ctest running each test binary in its own process, not from Catch2 itself.
 
 ## What Changes
 
 - New `tests/test_gpu_plugin_negative_path_standalone.cpp` (Catch2):
-  - `mkdir` a temp dir, `chdir` into it, call `ModuleLoader::load_plugins("plugins")`, restore CWD, then assert:
-    - The captured stdout/stderr contains `pci_probe_enumerate_from_sim_hardware failed:` (proves the propagate-error path ran)
-    - `VFS::instance().open("/dev/gpgpu0", 0)` returns `nullptr`
+  - `mkdir` a temp dir, `chdir` into it, call `ModuleLoader::load_plugins(<absolute path to plugins>)` (absolute path captured before `chdir`), restore CWD, then assert:
+    - `VFS::instance().open("/dev/gpgpu0", 0)` returns `nullptr` (the load-bearing check)
+  - Clean up the temp directory after the test (`std::filesystem::remove_all`)
 - `tests/CMakeLists.txt`: register the new file in `CATCH2_TESTS` (the first list, processed by `add_catch_test` — NOT `add_catch_sim_test`, which lacks the required include paths)
 
 ## Non-goals (deferred)

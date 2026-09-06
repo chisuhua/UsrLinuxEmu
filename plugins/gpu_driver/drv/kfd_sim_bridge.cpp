@@ -8,7 +8,7 @@
  */
 
 #include "kfd_sim_bridge.h"
-#include "kfd/kfd_sim_bridge.h"   /* B.3.5: kfd_sim_bridge_set_hal declaration */
+#include "kfd/kfd_sim_bridge.h"
 #include <kernel/uvm/mm_shim.h>
 
 #include <cstring>
@@ -252,18 +252,6 @@ u64 kfd_sim_get_firmware_cb_fn(void) {
 u64 kfd_sim_get_firmware_cb_user_data(void) {
   std::lock_guard<std::mutex> lock(g_mutex);
   return g_state.firmware_cb_user_data;
-}
-
-/* ── B.3.5: HAL registration ─────────────────────────────────── */
-
-static struct gpu_hal_ops *g_bridge_hal_ = nullptr;
-
-void kfd_sim_bridge_set_hal(struct gpu_hal_ops *hal) {
-  g_bridge_hal_ = hal;
-}
-
-struct gpu_hal_ops *kfd_sim_bridge_get_hal(void) {
-  return g_bridge_hal_;
 }
 
 /* ── Phase C.2.1: mm_shim binding ─────────────────────────────── */

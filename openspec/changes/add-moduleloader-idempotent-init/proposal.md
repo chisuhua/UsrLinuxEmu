@@ -27,4 +27,5 @@ Today the gpu_driver plugin masks this via its own `g_plugin_initialized` guard 
 
 ## Notes
 
-29 test files call `ModuleLoader::load_plugins("plugins")` — any future plugin that wants `init()` called fresh on every `dlopen` would need to opt out (e.g., via a flag in the `module` struct); no such plugin exists today.
+- 29 test files call `ModuleLoader::load_plugins("plugins")` — any future plugin that wants `init()` called fresh on every `dlopen` would need to opt out (e.g., via a flag in the `module` struct); no such plugin exists today.
+- **Dependency ref_count asymmetry** (Oracle deep-dive finding): the new already-loaded branch increments only the loaded plugin's own `ref_count`, NOT its dependencies' `ref_count`. This is intentional scope (avoid re-running `resolve_dependencies` on duplicate load), but documented in the spec as a non-symmetric behavior. Harmless today; a future implementer should not silently "fix" it.

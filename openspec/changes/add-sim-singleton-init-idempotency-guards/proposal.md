@@ -16,9 +16,10 @@ Per Oracle Q2: "guard placement (top of function, before singletons block) is RE
 
 ## What Changes
 
-- `plugins/gpu_driver/sim/vram_store.h` + `vram_store.cpp`: add `bool initialized_ = false;` member; `init()` returns `true` early if `initialized_` is already true.
-- `plugins/gpu_driver/sim/dma_coherent_pool.h` + `dma_coherent_pool.cpp`: same pattern.
-- Optional symmetry: `GpuVramStore::destroy()` (if exists) sets `initialized_ = false` so a teardown-then-reinit cycle works.
+- `plugins/gpu_driver/sim/vram_store.cpp`: at the top of `GpuVramStore::init(size_t)`, add `if (initialized) return true;` before any `mmap`. The class **already owns** a `bool initialized` member (initialized to `false` in the constructor and set to `true` on the success path of `init()` — `vram_store.cpp:10,40`); the fix is to *check* the existing member at the top of `init()`. Do **not** add a new member with a different name (e.g., `initialized_`) — that would create a duplicate/shadow.
+- `plugins/gpu_driver/sim/dma_coherent_pool.cpp`: same pattern (member already exists at `dma_coherent_pool.h:16`, set true at `:26`).
+- **Different-size semantics** (Oracle deep-dive finding): if `GpuVramStore::init(new_size)` is called with a size that differs from the size used in the original `init()`, the call SHALL return `false` (NOT silently succeed with the old size). This catches a real caller bug — silently returning `true` would mask the caller's wrong assumption that the second `init()` reflected the new size. Same logic does not apply to `DmaCoherentPool::init()` (parameterless).
+- No change to the `initialized` member wiring — it's already set to `true` at the end of a successful `init()` and reset to `false` in the constructor. No `destroy()` method exists on either class; re-init after process restart is unsupported (acceptable — these are process-lifetime singletons).
 
 ## Non-goals (deferred)
 
