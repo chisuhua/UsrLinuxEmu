@@ -1,7 +1,7 @@
 # kfd-sim-bridge-api Specification
 
 ## Purpose
-TBD - created by archiving change resolve-kfd-sim-bridge-set-hal. Update Purpose after archive.
+Defines the public API surface of the `kfd_sim_bridge` module (`plugins/gpu_driver/drv/kfd_sim_bridge.cpp` + `plugins/gpu_driver/drv/kfd/kfd_sim_bridge.h`). The module is a thin translation layer between the kfd ioctl dispatch layer and the sim hardware backend. The 14 `kfd_sim_*` symbols defined in the .cpp are the only exported surface; there is no runtime setter or getter for the HAL — the kfd ioctl dispatch layer reaches the sim backend via direct calls to those 14 symbols (resolved at link time within the gpu_driver .so). Deletion of any would-be setter/getter (e.g. `kfd_sim_bridge_set_hal`/`_get_hal`/`g_bridge_hal_`) is a permanent simplification, not a temporary workaround; if a runtime HAL-swap API is ever needed, it must be reintroduced under a different name and justified in a new OpenSpec change.
 ## Requirements
 ### Requirement: kfd_sim_bridge API does not expose setters or getters for the HAL
 
