@@ -363,6 +363,8 @@ set(CATCH2_SIM_TESTS
     test_vram_store.cpp
     # add-sim-singleton-init-idempotency-guards — VramStore/DmaCoherentPool init() idempotency
     test_sim_singleton_init_idempotent_standalone.cpp
+    # fix-plugin-exit-cleanup-order — minimal repro for plugin fini SIGSEGV
+    test_plugin_exit_cleanup_standalone.cpp
 )
 
 # Stage 4.1 Phase 2 - ① COMPAT layer tests (io.cpp + dma-mapping.cpp compiled in)

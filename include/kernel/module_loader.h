@@ -22,6 +22,8 @@ namespace usr_linux_emu {
 class ModuleLoader {
  public:
   static int load_plugins(const std::string& dir_path);
+  // dlcloses plugin .so files; Device/FileOperations shared_ptrs from
+  // VFS::open() MUST be reset before this call (SIGSEGV otherwise).
   static void unload_plugins();
 
  private:
