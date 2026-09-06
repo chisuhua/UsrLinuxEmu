@@ -218,6 +218,8 @@ set(CATCH2_TESTS
     test_moduleloader_toposort_standalone.cpp
     # Change-3 add-gpu-driver-sim-hardware-bridge — pci_probe_enumerate consumer + GET_DEVICE_INFO round-trip
     test_gpu_sim_hardware_bridge_standalone.cpp
+    # F4 regression: plugin_init_internal idempotency under repeated load_plugins
+    test_gpu_plugin_init_idempotent_standalone.cpp
     # Stage 5.5.2 — sim_hardware mock foundation (4 final binaries, Wave 5 T5.1-T5.4)
     sim_hardware/test_topology_standalone.cpp
     sim_hardware/test_cpptlm_bridge_mock_standalone.cpp

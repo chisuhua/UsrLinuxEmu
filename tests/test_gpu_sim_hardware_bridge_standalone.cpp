@@ -48,8 +48,10 @@ constexpr size_t kMaxDiscoveredDevices = 16;
 constexpr uint16_t kExpectedPackedBdf = 0x08;
 
 // Load plugins exactly once for the entire test binary.
-// ModuleLoader::load_plugins is idempotent inside a single process —
-// subsequent calls are no-ops when /dev/gpgpu0 is already registered.
+// Re-entry safety: if load_plugins is called again in-process, the gpu_driver
+// plugin's init guard (plugin_init_internal) returns 0 immediately without
+// re-allocating HAL heaps or re-registering /dev/gpgpu0. The static-init
+// wrapper here is belt-and-braces, not load-bearing.
 void ensure_plugins_loaded() {
   static const bool loaded = []() {
     usr_linux_emu::ModuleLoader::load_plugins("plugins");

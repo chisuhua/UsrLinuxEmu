@@ -32,6 +32,12 @@ struct HalHolder {
 // One HalHolder per DiscoveredDevice; loop populates this in plugin_init.
 static std::vector<std::unique_ptr<HalHolder>> hal_holders;
 
+// F4: tracks whether plugin_init_internal completed successfully. Set to true
+// only at the end of a clean init; reset to false at the end of fini. The
+// init guard reads this (NOT hal_holders.empty()) so the condition is
+// unambiguous: "we have a complete plugin" vs "we have partial state".
+static bool g_plugin_initialized = false;
+
 /* Phase C.2.1: single-process mm_shim fallback. Real C-12 uses
  * kfd_process_create()->mm_shim, but Tier-1 plugin init runs before any
  * process is created. The bridge holds the singleton mm_shim and
@@ -48,6 +54,17 @@ using usr_linux_emu::sim_hardware::pcie::DiscoveredDevice;
 extern "C" {
 
 static int plugin_init_internal() {
+  // F4: ModuleLoader::load_plugin re-invokes init() on every dlopen of the
+  // same path (no already-loaded check); this guard prevents duplicate 256MB
+  // HAL heap + vram/dma pool leaks. Do NOT remove even if ModuleLoader later
+  // gains an idempotency check. Guard must come BEFORE singletons init
+  // because g_vram_store.init / g_dma_pool.init are themselves non-idempotent.
+  if (g_plugin_initialized) {
+    std::cout << "[GpuPlugin] Already initialized (" << hal_holders.size()
+              << " holder(s)); returning 0\n";
+    return 0;
+  }
+
   std::cout << "[GpuPlugin] Initializing...\n";
 
   // C-12 B.1.1: KFD subsystem init (per kfd_module.h bridge contract)
@@ -111,6 +128,10 @@ static int plugin_init_internal() {
     if (puller_ret != 0) {
       std::cerr << "[GpuPlugin] Failed to create puller for device " << i
                 << ": " << puller_ret << "\n";
+      // F2 rollback: hal_user_init already allocated ctx->heap (256MB);
+      // release it and remove the half-built holder.
+      hal_user_destroy(&h->ctx);
+      hal_holders.pop_back();
       return puller_ret;
     }
 
@@ -134,6 +155,11 @@ static int plugin_init_internal() {
     if (db_ret != 0) {
       std::cerr << "[GpuPlugin] Failed to set doorbell callback for device "
                 << i << ": " << db_ret << "\n";
+      // F2 rollback: puller + ctx->heap both need teardown (acquire order).
+      hal_puller_destroy(&h->hal, h->puller_handle);
+      h->puller_handle = 0;
+      hal_user_destroy(&h->ctx);
+      hal_holders.pop_back();
       return db_ret;
     }
 
@@ -147,12 +173,19 @@ static int plugin_init_internal() {
     if (int reg_rc = VFS::instance().register_device(vfs_dev); reg_rc != 0) {
       std::cerr << "[GpuPlugin] register_device(" << dev_name << ") failed: "
                 << reg_rc << "\n";
+      // F2 rollback: dev/vfs_dev shared_ptrs release automatically;
+      // holder's puller + ctx still need teardown.
+      hal_puller_destroy(&h->hal, h->puller_handle);
+      h->puller_handle = 0;
+      hal_user_destroy(&h->ctx);
+      hal_holders.pop_back();
       return reg_rc;
     }
   }
 
   std::cout << "[GpuPlugin] Registered " << devices_to_bridge
             << " device(s) (topology out_count=" << out_count << ")\n";
+  g_plugin_initialized = true;
   return 0;
 }
 
@@ -173,6 +206,7 @@ static void plugin_fini_internal() {
     hal_user_destroy(&h->ctx);
   }
   hal_holders.clear();
+  g_plugin_initialized = false;
 }
 
 module mod = {
