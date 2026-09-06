@@ -1,7 +1,7 @@
 # sim-singleton-init Specification
 
 ## Purpose
-TBD - created by archiving change add-sim-singleton-init-idempotency-guards. Update Purpose after archive.
+Idempotency guarantees for `GpuVramStore::init()` and `DmaCoherentPool::init()` in `plugins/gpu_driver/sim/`. Without these guards, a second `init()` call would re-`mmap` and leak the prior anonymous mapping; for `GpuVramStore`, calling `init()` with a different size after a successful init would silently overwrite the stored size and pool_backing pointer, hiding a real caller bug. The guards make both inits safe to call more than once per process lifetime (same-size → no-op true; different-size for VramStore → false + stderr WARN).
 ## Requirements
 ### Requirement: GpuVramStore::init is idempotent (same size)
 

@@ -55,10 +55,11 @@ extern "C" {
 
 static int plugin_init_internal() {
   // F4: ModuleLoader::load_plugin re-invokes init() on every dlopen of the
-  // same path (no already-loaded check); this guard prevents duplicate 256MB
-  // HAL heap + vram/dma pool leaks. Do NOT remove even if ModuleLoader later
-  // gains an idempotency check. Guard must come BEFORE singletons init
-  // because g_vram_store.init / g_dma_pool.init are themselves non-idempotent.
+  // Same path (no already-loaded check); this guard prevents duplicate
+  // HAL heap + hal_user + puller + device-registry leaks. Must come
+  // BEFORE HAL init; do NOT remove even if ModuleLoader gains
+  // idempotency. (sim singletons now have their own guards — 980fcca —
+  // but the plugin guard stays as defense in depth for HAL/drv.)
   if (g_plugin_initialized) {
     std::cout << "[GpuPlugin] Already initialized (" << hal_holders.size()
               << " holder(s)); returning 0\n";
