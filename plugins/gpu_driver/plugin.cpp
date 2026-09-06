@@ -54,12 +54,10 @@ using usr_linux_emu::sim_hardware::pcie::DiscoveredDevice;
 extern "C" {
 
 static int plugin_init_internal() {
-  // F4: ModuleLoader::load_plugin re-invokes init() on every dlopen of the
-  // Same path (no already-loaded check); this guard prevents duplicate
-  // HAL heap + hal_user + puller + device-registry leaks. Must come
-  // BEFORE HAL init; do NOT remove even if ModuleLoader gains
-  // idempotency. (sim singletons now have their own guards — 980fcca —
-  // but the plugin guard stays as defense in depth for HAL/drv.)
+  // F4: defense-in-depth. Framework guard (d2c6d4b) short-circuits
+  // load_plugins path; this guard covers direct plugin_init_internal
+  // callers. Must come BEFORE HAL init; do NOT remove. (sim
+  // singletons have their own guards — 980fcca.)
   if (g_plugin_initialized) {
     std::cout << "[GpuPlugin] Already initialized (" << hal_holders.size()
               << " holder(s)); returning 0\n";

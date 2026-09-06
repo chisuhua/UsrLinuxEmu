@@ -35,12 +35,16 @@ class ModuleLoader {
   static std::unordered_map<std::string, std::shared_ptr<PluginInfo>> loaded_plugins_;
 
  public:
+  // not thread-safe; loaded_plugins_ is unlocked; call from main thread only
   static int load_plugin(const std::string& path);
   static int unload_plugin(const std::string& name);
   static int resolve_dependencies(module* mod);
   static void increase_ref(const char* name);
   static void decrease_ref(const char* name);
   static void list_plugins();
+
+  // test-only: -1 if absent, else ref_count
+  static int plugin_ref_count(const std::string& name);
 };
 
 }  // namespace usr_linux_emu

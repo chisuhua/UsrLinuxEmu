@@ -36,3 +36,17 @@ TEST_CASE("plugin init is idempotent across repeated load_plugins",
   auto dev = VFS::instance().open("/dev/gpgpu0", 0);
   REQUIRE(dev != nullptr);
 }
+
+TEST_CASE("refcount semantics: relative increment on duplicate load",
+          "[plugin][f4][regression][refcount]") {
+  int before = ModuleLoader::plugin_ref_count("gpu_driver");
+
+  ModuleLoader::load_plugins("plugins");
+  REQUIRE(ModuleLoader::plugin_ref_count("gpu_driver") == before + 1);
+
+  ModuleLoader::load_plugins("plugins");
+  REQUIRE(ModuleLoader::plugin_ref_count("gpu_driver") == before + 2);
+
+  auto dev = VFS::instance().open("/dev/gpgpu0", 0);
+  REQUIRE(dev != nullptr);
+}

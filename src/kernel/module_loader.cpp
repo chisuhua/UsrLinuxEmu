@@ -268,4 +268,10 @@ void ModuleLoader::list_plugins() {
   }
 }
 
+int ModuleLoader::plugin_ref_count(const std::string& name) {
+  auto it = loaded_plugins_.find(name);
+  if (it == loaded_plugins_.end()) return -1;
+  return it->second->ref_count;
+}
+
 }  // namespace usr_linux_emu
