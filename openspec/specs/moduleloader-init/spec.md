@@ -1,7 +1,7 @@
 # moduleloader-init Specification
 
 ## Purpose
-TBD - created by archiving change add-moduleloader-idempotent-init. Update Purpose after archive.
+Framework-level idempotency for `ModuleLoader::load_plugin` so that repeated `load_plugins` calls do not re-invoke `mod->init()`, do not overwrite the existing `PluginInfo` (which would reset `ref_count = 0` and break the loader's refcount accounting), and do not leak a second dlopen handle (which would leave glibc refcount=1 after a single dlclose on unload_plugins, preventing the plugin from ever fully unmapping). The guard sits before `resolve_dependencies` so that duplicate loads do not re-increment dependency ref_counts (a documented asymmetry — intentional scope limit, see Requirement below).
 ## Requirements
 ### Requirement: ModuleLoader::load_plugin skips init when plugin already loaded
 
