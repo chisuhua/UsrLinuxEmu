@@ -1,18 +1,11 @@
 // tests/test_gpu_plugin_init_idempotent_standalone.cpp
 //
-// F4 regression test: verifies that repeated load_plugins("plugins") is
-// idempotent at the gpu_driver plugin layer. ModuleLoader::load_plugin does
-// not skip already-loaded plugins (no idempotency check), so without the
-// guard in plugin_init_internal each repeat would:
-//   - allocate a fresh 256MB HAL heap via hal_user_init
-//   - mmapp a fresh vram_store 256MB pool (non-idempotent init)
-//   - mmapp a fresh dma pool (non-idempotent init)
-//   - push back a HalHolder that fails at register_device, lingering until
-//     fini runs (process-lifetime leak, observed 512MB in test_gpu_ioctl_number
-//     which calls load_plugins twice in one process).
+// F4 regression test: repeated load_plugins("plugins") does not
+// double-init the gpu_driver plugin.
 //
-// Pre-fix: this test FAILS (two "[GpuPlugin] Initializing" log lines).
-// Post-fix: this test PASSES (one "Initializing", one "Already initialized").
+// Defense-in-depth: framework guard (Plan 1) catches immediate-repeat
+// load before plugin_init_internal; plugin-side guard (31dd5e1) stays
+// as defense in depth. After Plan 1, "Already initialized" is OPTIONAL.
 
 #include <catch_amalgamated.hpp>
 
@@ -39,7 +32,6 @@ TEST_CASE("plugin init is idempotent across repeated load_plugins",
   const size_t first = out.find("[GpuPlugin] Initializing");
   REQUIRE(first != std::string::npos);
   REQUIRE(out.find("[GpuPlugin] Initializing", first + 1) == std::string::npos);
-  REQUIRE(out.find("Already initialized") != std::string::npos);
 
   auto dev = VFS::instance().open("/dev/gpgpu0", 0);
   REQUIRE(dev != nullptr);

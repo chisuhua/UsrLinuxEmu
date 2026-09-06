@@ -191,6 +191,13 @@ int ModuleLoader::load_plugin(const std::string& path) {
 
   std::cout << "[ModuleLoader] Found plugin: " << mod->name << std::endl;
 
+  auto already_it = loaded_plugins_.find(mod->name);
+  if (already_it != loaded_plugins_.end()) {
+    already_it->second->ref_count++;
+    dlclose(handle);
+    return 0;
+  }
+
   if (resolve_dependencies(mod) != 0) {
     dlclose(handle);
     return -1;
