@@ -210,6 +210,7 @@ set(STANDALONE_TESTS
 set(CATCH2_TESTS
     test_gpu_memory.cpp
     test_gpu_mmap_bar.cpp
+    test_gpu_plugin_init_negative_path_standalone.cpp
     test_module_loader_isolation.cpp
     test_pcie_emu_standalone.cpp
     test_config_space_standalone.cpp

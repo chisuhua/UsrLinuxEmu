@@ -1,12 +1,12 @@
 ## 1. Preflight
 
-- [ ] 1.1 Read `tests/CMakeLists.txt` lines 20-60 (`add_catch_test` function definition) to confirm `add_catch_test` provides all needed includes (`pci_probe.h`, `sim_hardware/...`)
-- [ ] 1.2 Read `tests/test_gpu_sim_hardware_bridge_standalone.cpp` as the structural precedent (Catch2 + `ModuleLoader::load_plugins` + `VFS::instance().open`)
-- [ ] 1.3 Read `src/kernel/module_loader.cpp` `load_plugins` to confirm what error code it returns when a plugin's `init()` returns non-zero (expected: the rc from `init()` propagates; if all plugins succeed the rc is 0)
+- [x] 1.1 Read `tests/CMakeLists.txt` lines 20-60 (`add_catch_test` function definition) to confirm `add_catch_test` provides all needed includes (`pci_probe.h`, `sim_hardware/...`)
+- [x] 1.2 Read `tests/test_gpu_sim_hardware_bridge_standalone.cpp` as the structural precedent (Catch2 + `ModuleLoader::load_plugins` + `VFS::instance().open`)
+- [x] 1.3 Read `src/kernel/module_loader.cpp` `load_plugins` to confirm what error code it returns when a plugin's `init()` returns non-zero (expected: the rc from `init()` propagates; if all plugins succeed the rc is 0)
 
 ## 2. Implement: new test file
 
-- [ ] 2.1 Create `tests/test_gpu_plugin_negative_path_standalone.cpp` with this structure:
+- [x] 2.1 Create `tests/test_gpu_plugin_negative_path_standalone.cpp` with this structure:
   ```cpp
   #include <catch_amalgamated.hpp>
   #include <cerrno>
@@ -50,22 +50,22 @@
   }
   ```
   Note: process isolation comes from ctest running each test binary in its own process; Catch2 itself does NOT isolate. Each `_standalone` binary is one ctest process.
-- [ ] 2.2 Register in `tests/CMakeLists.txt` CATCH2_TESTS list — place near `test_gpu_plugin_init_idempotent_standalone` for cohesion (both are plugin-init regression tests)
-- [ ] 2.3 Re-run `cmake -B build` (full regen — new source file in list) before building
+- [x] 2.2 Register in `tests/CMakeLists.txt` CATCH2_TESTS list — place near `test_gpu_plugin_init_idempotent_standalone` for cohesion (both are plugin-init regression tests)
+- [x] 2.3 Re-run `cmake -B build` (full regen — new source file in list) before building
 
 ## 3. Verify
 
-- [ ] 3.1 `cmake --build build --target test_gpu_plugin_negative_path_standalone -j4` — builds clean
-- [ ] 3.2 `./build/bin/test_gpu_plugin_negative_path_standalone` — test PASSES
-- [ ] 3.3 `cd build && ctest 2>&1 | tail -5` — 158/158 PASS (was 157, +1 negative-path test, no regressions)
-- [ ] 3.4 Confirm the test is NOT a tautology: temporarily revert the gpu_driver plugin init to remove the `-ENOENT` propagation (e.g., swallow the rc and return 0), rerun the test — it MUST FAIL. Then revert. (Without this check, the test could pass vacuously if the test itself is broken.)
-- [ ] 3.5 Manual sanity: run the test binary from a non-project CWD to confirm chdir logic still works (relies on `saved_cwd` capture before chdir, so should work from any starting CWD)
+- [x] 3.1 `cmake --build build --target test_gpu_plugin_negative_path_standalone -j4` — builds clean
+- [x] 3.2 `./build/bin/test_gpu_plugin_negative_path_standalone` — test PASSES
+- [x] 3.3 `cd build && ctest 2>&1 | tail -5` — 158/158 PASS (was 157, +1 negative-path test, no regressions)
+- [x] 3.4 Confirm the test is NOT a tautology: temporarily revert the gpu_driver plugin init to remove the `-ENOENT` propagation (e.g., swallow the rc and return 0), rerun the test — it MUST FAIL. Then revert. (Without this check, the test could pass vacuously if the test itself is broken.)
+- [x] 3.5 Manual sanity: run the test binary from a non-project CWD to confirm chdir logic still works (relies on `saved_cwd` capture before chdir, so should work from any starting CWD)
 
 ## 4. Commit + cleanup
 
-- [ ] 4.1 `git add tests/test_gpu_plugin_negative_path_standalone.cpp tests/CMakeLists.txt`
-- [ ] 4.2 Commit message: `test(plugin): cover missing-topology -ENOENT propagation path`
-- [ ] 4.3 No spec.md/design.md changes (this is a test-only change, no API contract delta)
+- [x] 4.1 `git add tests/test_gpu_plugin_negative_path_standalone.cpp tests/CMakeLists.txt`
+- [x] 4.2 Commit message: `test(plugin): cover missing-topology -ENOENT propagation path`
+- [x] 4.3 No spec.md/design.md changes (this is a test-only change, no API contract delta)
 
 ## Out of scope
 
