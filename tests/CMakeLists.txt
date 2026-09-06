@@ -360,6 +360,8 @@ set(CATCH2_SIM_TESTS
     test_hal_iommu_standalone.cpp
     # Stage 4.1 - VRAM backing store + DMA coherent pool sim (per ADR-069/073)
     test_vram_store.cpp
+    # add-sim-singleton-init-idempotency-guards — VramStore/DmaCoherentPool init() idempotency
+    test_sim_singleton_init_idempotent_standalone.cpp
 )
 
 # Stage 4.1 Phase 2 - ① COMPAT layer tests (io.cpp + dma-mapping.cpp compiled in)

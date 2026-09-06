@@ -17,6 +17,7 @@ DmaCoherentPool::~DmaCoherentPool() {
 }
 
 bool DmaCoherentPool::init() {
+    if (initialized) return true;
     cpu_pool = mmap(nullptr, DMA_COHERENT_SIZE, PROT_READ | PROT_WRITE,
                     MAP_ANONYMOUS | MAP_SHARED, -1, 0);
     if (cpu_pool == MAP_FAILED) {

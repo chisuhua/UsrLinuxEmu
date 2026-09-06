@@ -2,6 +2,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <iostream>
 
 namespace usr_linux_emu {
 
@@ -30,6 +31,16 @@ GpuVramStore::~GpuVramStore() {
 
 bool GpuVramStore::init(size_t vram_size_mb) {
     std::lock_guard<std::mutex> lock(vram_lock_);
+    if (initialized) {
+        size_t requested_bytes = vram_size_mb * 1024 * 1024;
+        if (vram_size == requested_bytes) {
+            return true;
+        }
+        std::cerr << "[GpuVramStore] WARN: init(" << vram_size_mb
+                  << " MB) ignored — existing init was "
+                  << (vram_size / (1024 * 1024)) << " MB\n";
+        return false;
+    }
     vram_size = vram_size_mb * 1024 * 1024;
     pool_backing = mmap(nullptr, vram_size, PROT_READ | PROT_WRITE,
                         MAP_ANONYMOUS | MAP_SHARED, -1, 0);
