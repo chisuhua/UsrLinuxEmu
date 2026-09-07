@@ -226,6 +226,7 @@ set(CATCH2_TESTS
     sim_hardware/test_cpptlm_bridge_mock_standalone.cpp
     sim_hardware/test_pcie_host_bridge_mock_standalone.cpp
     sim_hardware/test_pcie_bypass_mock_standalone.cpp
+    sim_hardware/test_platform_standalone.cpp
     # Stage 5.5.1 — Wave 1A (pci_driver 迁移 verification, tasks.md §2 任务 1.2/1.3/1.4/1.5)
     plugins/test_pci_driver_standalone.cpp
     # Stage 5.5.1 — Wave 1B (iommu_driver 迁移 verification, tasks.md §3 任务 2.2/2.3/2.5/2.6)

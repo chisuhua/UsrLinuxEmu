@@ -218,3 +218,121 @@ TEST_CASE("host_bridge_bypass: misaligned access -> -EINVAL",
   uint32_t out = 0;
   REQUIRE(host_bridge_bypass_read(0, 1, &out, sizeof(out)) == -EINVAL);
 }
+
+// ============ HB.5: multi-device enumerate ============
+
+TEST_CASE("host_bridge_enumerate: 3-device topology returns all 3 in order (HB.5)",
+          "[stage_5_5_2][host_bridge][enumerate]") {
+  std::string content = R"({
+    "schema_version": 1,
+    "platform": "pc-x86-mock",
+    "pcie": {
+      "root_complex": {"type": "PcieRootComplexMock", "enabled": true},
+      "link_layer":   {"type": "PcieLinkLayer", "enabled": true},
+      "phy":          {"type": "PciePhyDigitalCtrl", "enabled": false},
+      "bypass_mux":   {"default_mode": "Full", "default_drain_policy": "GracefulDrain"}
+    },
+    "devices": [
+      {
+        "bdf": "0000:01:00.0",
+        "vendor_id": "0x10DE",
+        "device_id": "0x1234",
+        "class_code": "0x030200",
+        "endpoint_kind": "PcieEndpointMock",
+        "bars": [{"index": 0, "size_bytes": 16777216, "prefetchable": false, "is_mmio": true, "is_64bit": false}]
+      },
+      {
+        "bdf": "0000:02:00.0",
+        "vendor_id": "0x10DE",
+        "device_id": "0x1235",
+        "class_code": "0x030200",
+        "endpoint_kind": "PcieEndpointMock",
+        "bars": [{"index": 0, "size_bytes": 16777216, "prefetchable": false, "is_mmio": true, "is_64bit": false}]
+      },
+      {
+        "bdf": "0000:03:00.0",
+        "vendor_id": "0x10DE",
+        "device_id": "0x1236",
+        "class_code": "0x030200",
+        "endpoint_kind": "PcieEndpointMock",
+        "bars": [{"index": 0, "size_bytes": 16777216, "prefetchable": false, "is_mmio": true, "is_64bit": false}]
+      }
+    ]
+  })";
+  std::string path = write_temp(content, "hb5_three_devs");
+  DiscoveredDevice devs[16];
+  size_t count = 0;
+  REQUIRE(host_bridge_enumerate(devs, 16, &count, path.c_str()) == 0);
+  REQUIRE(count == 3);
+  // BDF pack derivation: "0000:01:00.0" → bus="0000"=0, device="01"=1, func="00"=0
+  //   packed = (bus<<8) | (device<<3) | func = (0<<8) | (1<<3) | 0 = 0x0008
+  // "0000:02:00.0" → (0<<8)|(2<<3)|0 = 0x0010
+  // "0000:03:00.0" → (0<<8)|(3<<3)|0 = 0x0018
+  REQUIRE(devs[0].bdf == 0x0008);
+  REQUIRE(devs[1].bdf == 0x0010);
+  REQUIRE(devs[2].bdf == 0x0018);
+  REQUIRE(devs[0].vendor_id == 0x10DE);
+  REQUIRE(devs[1].vendor_id == 0x10DE);
+  REQUIRE(devs[2].vendor_id == 0x10DE);
+  REQUIRE(devs[0].device_id == 0x1234);
+  REQUIRE(devs[1].device_id == 0x1235);
+  REQUIRE(devs[2].device_id == 0x1236);
+}
+
+// ============ HB.6: truncation (copies min(size,max), out_count=total) ============
+
+TEST_CASE("host_bridge_enumerate: truncation copies min(total,max), out_count=total (HB.6)",
+          "[stage_5_5_2][host_bridge][enumerate]") {
+  std::string content = R"({
+    "schema_version": 1,
+    "platform": "pc-x86-mock",
+    "pcie": {
+      "root_complex": {"type": "PcieRootComplexMock", "enabled": true},
+      "link_layer":   {"type": "PcieLinkLayer", "enabled": true},
+      "phy":          {"type": "PciePhyDigitalCtrl", "enabled": false},
+      "bypass_mux":   {"default_mode": "Full", "default_drain_policy": "GracefulDrain"}
+    },
+    "devices": [
+      {
+        "bdf": "0000:01:00.0",
+        "vendor_id": "0x10DE",
+        "device_id": "0x1234",
+        "class_code": "0x030200",
+        "endpoint_kind": "PcieEndpointMock",
+        "bars": [{"index": 0, "size_bytes": 16777216, "prefetchable": false, "is_mmio": true, "is_64bit": false}]
+      },
+      {
+        "bdf": "0000:02:00.0",
+        "vendor_id": "0x10DE",
+        "device_id": "0x1235",
+        "class_code": "0x030200",
+        "endpoint_kind": "PcieEndpointMock",
+        "bars": [{"index": 0, "size_bytes": 16777216, "prefetchable": false, "is_mmio": true, "is_64bit": false}]
+      },
+      {
+        "bdf": "0000:03:00.0",
+        "vendor_id": "0x10DE",
+        "device_id": "0x1236",
+        "class_code": "0x030200",
+        "endpoint_kind": "PcieEndpointMock",
+        "bars": [{"index": 0, "size_bytes": 16777216, "prefetchable": false, "is_mmio": true, "is_64bit": false}]
+      }
+    ]
+  })";
+  std::string path = write_temp(content, "hb6_trunc");
+  DiscoveredDevice devs[3];
+  // Pre-fill with sentinel bytes; per-field asserts verify untouched slots
+  std::memset(&devs, 0xEE, sizeof(devs));
+  size_t count = 0;
+  REQUIRE(host_bridge_enumerate(devs, 2, &count, path.c_str()) == 0);
+  // out_count reports actual total, not copied count
+  REQUIRE(count == 3);
+  // First two slots filled (packed BDFs: 0x08, 0x10)
+  REQUIRE(devs[0].bdf == 0x0008);
+  REQUIRE(devs[1].bdf == 0x0010);
+  // Third slot untouched — sentinel per field (padding bytes unreliable)
+  REQUIRE(devs[2].bdf == 0xEEEE);
+  REQUIRE(devs[2].vendor_id == 0xEEEE);
+  REQUIRE(devs[2].device_id == 0xEEEE);
+  REQUIRE(devs[2].class_code == 0xEEEEEEEE);
+}

@@ -12,6 +12,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "pcie/bypass.h"
 #include "topology.h"
 
 using usr_linux_emu::sim_hardware::topology::topology_load_json;
@@ -278,4 +279,94 @@ TEST_CASE("topology round-trip: write then load yields equal structure",
   }
 
   std::remove(tmp_path.c_str());
+}
+
+// ============ HB.7-HB.9: enum validation ============
+
+TEST_CASE("topology_load_json: invalid default_mode -> -EINVAL (HB.7)",
+          "[stage_5_5_2][topology][loader]") {
+  std::string content = R"({
+    "schema_version": 1,
+    "platform": "pc-x86-mock",
+    "pcie": {
+      "root_complex": {"type": "PcieRootComplexMock", "enabled": true},
+      "link_layer":   {"type": "PcieLinkLayer", "enabled": true},
+      "phy":          {"type": "PciePhyDigitalCtrl", "enabled": false},
+      "bypass_mux":   {"default_mode": "Invalid", "default_drain_policy": "GracefulDrain"}
+    },
+    "devices": [
+      {
+        "bdf": "0000:01:00.0",
+        "vendor_id": "0x10DE",
+        "device_id": "0x1234",
+        "class_code": "0x030200",
+        "endpoint_kind": "PcieEndpointMock",
+        "bars": [{"index": 0, "size_bytes": 16777216, "prefetchable": false, "is_mmio": true, "is_64bit": false}]
+      }
+    ]
+  })";
+  std::string path = write_temp(content, "hb7_bad_mode");
+  Topology topo{};
+  REQUIRE(topology_load_json(path, &topo) == -EINVAL);
+}
+
+TEST_CASE("topology_load_json: invalid default_drain_policy -> -EINVAL (HB.8)",
+          "[stage_5_5_2][topology][loader]") {
+  std::string content = R"({
+    "schema_version": 1,
+    "platform": "pc-x86-mock",
+    "pcie": {
+      "root_complex": {"type": "PcieRootComplexMock", "enabled": true},
+      "link_layer":   {"type": "PcieLinkLayer", "enabled": true},
+      "phy":          {"type": "PciePhyDigitalCtrl", "enabled": false},
+      "bypass_mux":   {"default_mode": "Full", "default_drain_policy": "Invalid"}
+    },
+    "devices": [
+      {
+        "bdf": "0000:01:00.0",
+        "vendor_id": "0x10DE",
+        "device_id": "0x1234",
+        "class_code": "0x030200",
+        "endpoint_kind": "PcieEndpointMock",
+        "bars": [{"index": 0, "size_bytes": 16777216, "prefetchable": false, "is_mmio": true, "is_64bit": false}]
+      }
+    ]
+  })";
+  std::string path = write_temp(content, "hb8_bad_policy");
+  Topology topo{};
+  REQUIRE(topology_load_json(path, &topo) == -EINVAL);
+}
+
+TEST_CASE("topology_load_json: all 6 legal enum combinations succeed (HB.9)",
+          "[stage_5_5_2][topology][loader]") {
+  using BypassMode = usr_linux_emu::sim_hardware::BypassMode;
+  using DrainPolicy = usr_linux_emu::sim_hardware::DrainPolicy;
+
+  const std::vector<std::tuple<std::string, std::string, BypassMode, DrainPolicy>> variants = {
+    {"Full",         "GracefulDrain",  BypassMode::kFull,         DrainPolicy::kGracefulDrain},
+    {"Full",         "ImmediateAbort",  BypassMode::kFull,         DrainPolicy::kImmediateAbort},
+    {"Bypass",       "GracefulDrain",  BypassMode::kBypass,       DrainPolicy::kGracefulDrain},
+    {"Bypass",       "ImmediateAbort",  BypassMode::kBypass,       DrainPolicy::kImmediateAbort},
+    {"Partial",      "GracefulDrain",  BypassMode::kPartial,      DrainPolicy::kGracefulDrain},
+    {"Partial",      "ImmediateAbort",  BypassMode::kPartial,      DrainPolicy::kImmediateAbort},
+  };
+
+  for (const auto& [mode, policy, expected_mode, expected_policy] : variants) {
+    std::string content = R"({
+      "schema_version": 1,
+      "platform": "pc-x86-mock",
+      "pcie": {
+        "root_complex": {"type": "PcieRootComplexMock", "enabled": true},
+        "link_layer":   {"type": "PcieLinkLayer", "enabled": true},
+        "phy":          {"type": "PciePhyDigitalCtrl", "enabled": false},
+        "bypass_mux":   {"default_mode": ")" + mode + R"(", "default_drain_policy": ")" + policy + R"("}
+      },
+      "devices": []
+    })";
+    std::string path = write_temp(content, "hb9_" + mode + "_" + policy);
+    Topology topo{};
+    REQUIRE(topology_load_json(path, &topo) == 0);
+    REQUIRE(topo.default_bypass_mode == expected_mode);
+    REQUIRE(topo.default_drain_policy == expected_policy);
+  }
 }

@@ -8,6 +8,8 @@
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
+#include <thread>
+#include <vector>
 
 #include "cpptlm/bridge.h"
 #include "cpptlm/endpoint.h"
@@ -202,4 +204,152 @@ TEST_CASE("msix: scope exit unregisters callback (no call after scope)",
   }
   bridge_inject_msix(2);
   REQUIRE(calls.load() == 1);
+}
+
+// ============ (Stage 5.5.2 E2.x) attach_endpoint + concurrency + config bounds + destroy ============
+
+TEST_CASE("E2.1 attach_endpoint: valid created endpoint on init'd bridge returns 0",
+          "[stage_5_5_2][bridge_attach]") {
+  MockBridgeScope scope;
+  PcieEndpointIP* ep = pcie_endpoint_create(0x10DE, 0x2237, 0x038000);
+  REQUIRE(ep != nullptr);
+  REQUIRE(scope.bridge.attach_endpoint(ep) == 0);
+  pcie_endpoint_destroy(ep);
+}
+
+TEST_CASE("E2.2 attach_endpoint: nullptr handle on init'd bridge returns -EINVAL",
+          "[stage_5_5_2][bridge_attach]") {
+  MockBridgeScope scope;
+  REQUIRE(scope.bridge.attach_endpoint(nullptr) == -EINVAL);
+}
+
+TEST_CASE("E2.3 attach_endpoint: valid handle on FRESH uninitialized bridge returns -ENODEV",
+          "[stage_5_5_2][bridge_attach]") {
+  CpptlmBridge bridge;
+  PcieEndpointIP* ep = pcie_endpoint_create(0x10DE, 0x2237, 0x038000);
+  REQUIRE(ep != nullptr);
+  REQUIRE(bridge.attach_endpoint(ep) == -ENODEV);
+  pcie_endpoint_destroy(ep);
+}
+
+TEST_CASE("E2.4 attach_endpoint: two sequential attaches both return 0 and mmio works",
+          "[stage_5_5_2][bridge_attach]") {
+  MockBridgeScope scope;
+  PcieEndpointIP* ep1 = pcie_endpoint_create(0x10DE, 0x2237, 0x038000);
+  PcieEndpointIP* ep2 = pcie_endpoint_create(0x1002, 0x7344, 0x038000);
+  REQUIRE(ep1 != nullptr);
+  REQUIRE(ep2 != nullptr);
+  REQUIRE(scope.bridge.attach_endpoint(ep1) == 0);
+  REQUIRE(scope.bridge.attach_endpoint(ep2) == 0);
+
+  uint8_t wdata[4] = {0x11, 0x22, 0x33, 0x44};
+  uint8_t rdata[4] = {0};
+  REQUIRE(scope.bridge.mmio_write(0, 0, wdata, sizeof(wdata)) == 0);
+  REQUIRE(scope.bridge.mmio_read(0, 0, rdata, sizeof(rdata)) == 0);
+  REQUIRE(rdata[0] == 0x11);
+  REQUIRE(rdata[3] == 0x44);
+
+  pcie_endpoint_destroy(ep1);
+  pcie_endpoint_destroy(ep2);
+}
+
+TEST_CASE("E2.5 endpoint destroy lazy: mmio roundtrip still works after pcie_endpoint_destroy",
+          "[stage_5_5_2][bridge_attach]") {
+  MockBridgeScope scope;
+  PcieEndpointIP* ep = pcie_endpoint_create(0x10DE, 0x2237, 0x038000);
+  REQUIRE(ep != nullptr);
+  REQUIRE(scope.bridge.attach_endpoint(ep) == 0);
+  pcie_endpoint_destroy(ep);
+
+  uint8_t wdata[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+  uint8_t rdata[4] = {0};
+  REQUIRE(scope.bridge.mmio_write(0, 0, wdata, sizeof(wdata)) == 0);
+  REQUIRE(scope.bridge.mmio_read(0, 0, rdata, sizeof(rdata)) == 0);
+  REQUIRE(rdata[0] == 0xAA);
+  REQUIRE(rdata[3] == 0xDD);
+}
+
+TEST_CASE("E2.6 mmio concurrency: 4 writers x 4 readers x 1000 iters, all reads valid",
+          "[stage_5_5_2][bridge_attach]") {
+  MockBridgeScope scope;
+  constexpr int kWriters = 4;
+  constexpr int kReaders = 4;
+  constexpr int kIters = 1000;
+  const uint32_t VAL[4] = {0x11111111u, 0x22222222u, 0x33333333u, 0x44444444u};
+
+  std::atomic<int> bad_reads{0};
+  std::atomic<int> total_reads{0};
+  std::vector<std::thread> threads;
+
+  for (int i = 0; i < kWriters; ++i) {
+    threads.emplace_back([&, i] {
+      uint64_t offset = static_cast<uint64_t>(i) * 8;
+      uint32_t val = VAL[i];
+      uint8_t buf[4] = {
+        static_cast<uint8_t>(val & 0xFF),
+        static_cast<uint8_t>((val >> 8) & 0xFF),
+        static_cast<uint8_t>((val >> 16) & 0xFF),
+        static_cast<uint8_t>((val >> 24) & 0xFF),
+      };
+      for (int j = 0; j < kIters; ++j) {
+        scope.bridge.mmio_write(0, offset, buf, 4);
+      }
+    });
+  }
+
+  for (int i = 0; i < kReaders; ++i) {
+    threads.emplace_back([&, i] {
+      uint64_t offset = static_cast<uint64_t>(i) * 8;
+      uint32_t expected = VAL[i];
+      uint8_t rbuf[4] = {0};
+      for (int j = 0; j < kIters; ++j) {
+        int r = scope.bridge.mmio_read(0, offset, rbuf, 4);
+        if (r != 0) {
+          ++bad_reads;
+          continue;
+        }
+        uint32_t v = rbuf[0] | (static_cast<uint32_t>(rbuf[1]) << 8) |
+                     (static_cast<uint32_t>(rbuf[2]) << 16) |
+                     (static_cast<uint32_t>(rbuf[3]) << 24);
+        if (v != 0 && v != expected) {
+          ++bad_reads;
+        }
+        ++total_reads;
+      }
+    });
+  }
+
+  for (auto& t : threads) t.join();
+  REQUIRE(bad_reads.load() == 0);
+  REQUIRE(total_reads.load() == kReaders * kIters);
+}
+
+TEST_CASE("E2.7 config space: offset 4092 (last legal dword) read/write roundtrip succeeds",
+          "[stage_5_5_2][bridge_attach]") {
+  MockBridgeScope scope;
+  uint32_t val = 0;
+  REQUIRE(scope.bridge.config_write(4092, 0xDEADBEEF) == 0);
+  REQUIRE(scope.bridge.config_read(4092, &val) == 0);
+  REQUIRE(val == 0xDEADBEEF);
+}
+
+TEST_CASE("E2.8 config space: offsets 4093 and 4094 are rejected with -EINVAL",
+          "[stage_5_5_2][bridge_attach]") {
+  MockBridgeScope scope;
+  uint32_t val = 0;
+  REQUIRE(scope.bridge.config_write(4093, 0xDEADBEEF) == -EINVAL);
+  REQUIRE(scope.bridge.config_read(4093, &val) == -EINVAL);
+  REQUIRE(scope.bridge.config_read(4094, &val) == -EINVAL);
+}
+
+TEST_CASE("E2.9 destroy clears active singleton: get returns nullptr after destroy",
+          "[stage_5_5_2][bridge_attach]") {
+  CpptlmBridge bridge;
+  CpptlmBridgeInitParams params;
+  REQUIRE(bridge.init(params) == 0);
+  CpptlmBridge_set_active(&bridge);
+  REQUIRE(CpptlmBridge_get() == &bridge);
+  bridge.destroy();
+  REQUIRE(CpptlmBridge_get() == nullptr);
+  CpptlmBridge_set_active(nullptr);
 }
