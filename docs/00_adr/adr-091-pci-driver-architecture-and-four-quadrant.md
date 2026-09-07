@@ -237,28 +237,28 @@ sim_hardware/
 ```cpp
 namespace usr_linux_emu::sim_hardware::pcie {
 
+// Canonical 枚举值（per Oracle Gate D 修正）：与代码 `sim_hardware/include/pcie/bypass.h:8-12` 实测一致
+// kBypass=1, kPartial=2 是实现事实，文档/ADR 此前误写为 Partial=1, Bypass=2 — 已修正
 enum class BypassMode : uint8_t {
-    Full    = 0,  // PHY + LL + TL + AXI（完整 PCIe 链路，最真）
-    Partial = 1,  // LL + TL + AXI（跳过 PHY，保留 FC + ACK-NAK）
-    Bypass  = 2,  // TL + AXI（直接事务层，快速软件 bring-up）
+    kFull    = 0,  // PHY + LL + TL + AXI（完整 PCIe 链路，最真）
+    kBypass  = 1,  // TL + AXI（直接事务层，快速软件 bring-up）
+    kPartial = 2,  // LL + TL + AXI（跳过 PHY，保留 FC + ACK-NAK）
 };
 
-class PcieBypassController {
-public:
-    int apply_mode(BypassMode new_mode, DrainPolicy policy = GRACEFUL_DRAIN);
-    BypassMode current_mode() const;
-    static BypassMode default_mode_from_topology();
-};
-
-}
+// 命名空间级自由函数（代码实测，非 class）：命名空间 `sim_hardware::pcie` 暴露
+// bypass_apply_mode(BypassMode, DrainPolicy) + bypass_get_mode() + drain accounting
+int  bypass_apply_mode(BypassMode mode, DrainPolicy policy = DrainPolicy::kGracefulDrain);
+BypassMode bypass_get_mode(void);
 ```
+
+**说明（Gate D 修订）**：本 ADR v0.2 §D4 原生采用 `class PcieBypassController` 抽象设计，Stage 5.5.1 实施采用 namespace-scoped free functions（`bypass.cpp:43-80`），是简化版的等价实现。Gate D 验证时若 class 封装需求回归，可由 free functions  + 全局 atomic 重构回 class。
 
 **模式选择策略**（`sim_hardware/topology/default_topology.json`）：
 - **L1 (Bypass)**：driver bring-up，最快迭代
 - **L2 (Partial)**：driver 功能验证
 - **L8 (Full)**：硬件协同验证
 
-**运行时切换**：`PcieBypassController::apply_mode()` 调 CppTLM `PcieBypassMux::apply_mode()` 的 10 步清理（DrainPolicy 处理 in-flight TLP）。
+**运行时切换**：`bypass_apply_mode()`（`bypass.cpp:44`）实现 DrainPolicy 处理 in-flight TLP 的阻塞/超时逻辑（10 步清理，对齐 CppTLM `PcieBypassMux`）。
 
 ### D5: 8 tier PCIe 仿真分层
 

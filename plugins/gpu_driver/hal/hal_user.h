@@ -15,6 +15,7 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 #include "gpu_buddy.h"
 #include "gpu_hal.h"
 
@@ -92,6 +93,14 @@ struct hal_user_context {
    * underlying object without exposing shared_ptr semantics through the
    * HAL C interface. */
   std::unordered_map<hal_queue_handle_t, GpuQueueEmu*> queue_ptrs;
+
+  /* kcpptlm-backend-binding-with-handle-and-adapter-info — §D1
+   * Adapter info state for the 3 new fn-ptrs (69/70/71). */
+  gpu_adapter_info_t adapter_info;
+  bool adapter_initialized = false;
+  std::mutex adapter_lock;
+  uint64_t next_adapter_handle = 1;
+  std::unordered_set<gpu_adapter_handle_t> adapter_handles;
 };
 
 void hal_user_init(struct gpu_hal_ops *hal, struct hal_user_context *ctx);

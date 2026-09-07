@@ -27,6 +27,10 @@ typedef uint64_t hal_queue_handle_t;
  * drv/ removal changes will cast back via shared/hal_puller_handle.h. */
 typedef uint64_t hal_puller_handle_t;
 
+/* kcpptlm-backend-binding-with-handle-and-adapter-info — adapter handle type.
+ * First-touch handle for BackdoorEndpoint debug interface (ule_dgpu_acquire). */
+typedef uint64_t gpu_adapter_handle_t;
+
 #ifdef __cplusplus
 }
 #endif

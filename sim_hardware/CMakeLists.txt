@@ -21,6 +21,7 @@ target_compile_features(sim_hardware INTERFACE cxx_std_17)
 add_library(sim_hardware_mock STATIC
     src/cpptlm/bridge.cpp
     src/cpptlm/endpoint.cpp
+    src/cpptlm/backdoor_endpoint_stub.cpp
     src/pcie/bypass.cpp
     src/pcie/host_bridge.cpp
     src/topology.cpp

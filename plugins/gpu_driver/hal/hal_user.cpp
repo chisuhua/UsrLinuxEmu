@@ -685,6 +685,35 @@ hal->puller_unregister_queue = [](void* ctx, hal_puller_handle_t puller,
   hal->kernel_module_load = user_kernel_module_load;
   hal->kernel_module_execute = user_kernel_module_execute;
   hal->kernel_module_unload = user_kernel_module_unload;
+
+  /* kcpptlm-backend-binding-with-handle-and-adapter-info — §D1
+   * 3 new fn-ptrs (69/70/71): adapter info + first-touch handle lifecycle.
+   * adapter_open uses a static monotonic counter (hal_green_context_create style). */
+  hal->adapter_get_info = [](void* ctx, gpu_adapter_info_t* out_info) -> int {
+    if (!out_info) return -EINVAL;
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::lock_guard<std::mutex> lock(hc->adapter_lock);
+    if (!hc->adapter_initialized) return -ENODEV;
+    *out_info = hc->adapter_info;
+    return 0;
+  };
+  hal->adapter_open = [](void* ctx, gpu_adapter_handle_t* out_handle) -> int {
+    if (!out_handle) return -EINVAL;
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::lock_guard<std::mutex> lock(hc->adapter_lock);
+    gpu_adapter_handle_t h = hc->next_adapter_handle++;
+    if (h == 0) h = hc->next_adapter_handle++;
+    hc->adapter_handles.insert(h);
+    *out_handle = h;
+    return 0;
+  };
+  hal->adapter_close = [](void* ctx, gpu_adapter_handle_t handle) -> int {
+    auto* hc = static_cast<struct hal_user_context*>(ctx);
+    std::lock_guard<std::mutex> lock(hc->adapter_lock);
+    if (hc->adapter_handles.count(handle) == 0) return -EINVAL;
+    hc->adapter_handles.erase(handle);
+    return 0;
+  };
 }
 
 /* ADR-090 §D1: kernel_module_load → H2D DMA PTXIR bytes into HAL heap.

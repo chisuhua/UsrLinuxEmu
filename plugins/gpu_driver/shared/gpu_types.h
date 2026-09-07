@@ -138,3 +138,19 @@ typedef u64 gpu_queue_handle_t;    /* Queue handle */
 /* Stage 4.1: BAR2 VRAM offset range (ADR-064 D2, ADR-069 D4) */
 #define BAR2_OFFSET_BASE  0x200000000ULL  /* 8GB offset (VRAM BAR2 typical base) */
 #define BAR2_OFFSET_SIZE  0x10000000ULL   /* 256MB */
+
+/* kcpptlm-backend-binding-with-handle-and-adapter-info — §D1
+ * Adapter info struct aligned with CppTLM cpptlm_device_info_t (7 extended fields):
+ * visible_vram_size, invisible_vram_size, va_region_size, gpu_id, gfx_version,
+ * bdf, bar_sizes[6]. Total 9 fields. */
+typedef struct {
+  uint16_t vendor_id;
+  uint16_t device_id;
+  uint32_t gpu_id;
+  uint16_t gfx_version;
+  uint16_t bdf;
+  uint64_t visible_vram_size;
+  uint64_t invisible_vram_size;
+  uint64_t va_region_size;
+  uint64_t bar_sizes[6];
+} gpu_adapter_info_t;

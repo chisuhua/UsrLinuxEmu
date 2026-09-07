@@ -227,6 +227,9 @@ set(CATCH2_TESTS
     sim_hardware/test_pcie_host_bridge_mock_standalone.cpp
     sim_hardware/test_pcie_bypass_mock_standalone.cpp
     sim_hardware/test_platform_standalone.cpp
+    # kcpptlm-backend-binding — §D1/D2: backdoor endpoint + bypass vs full
+    sim_hardware/test_backdoor_endpoint_standalone.cpp
+    sim_hardware/test_pcie_bypass_vs_full_standalone.cpp
     # Stage 5.5.1 — Wave 1A (pci_driver 迁移 verification, tasks.md §2 任务 1.2/1.3/1.4/1.5)
     plugins/test_pci_driver_standalone.cpp
     # Stage 5.5.1 — Wave 1B (iommu_driver 迁移 verification, tasks.md §3 任务 2.2/2.3/2.5/2.6)
@@ -360,6 +363,8 @@ set(CATCH2_SIM_TESTS
     test_sim_errno_standalone.cpp
     # hal-iommu-full — IOMMU map/unmap functional tests
     test_hal_iommu_standalone.cpp
+    # kcpptlm-backend-binding — HAL adapter info fn-ptrs (69/70/71)
+    test_hal_adapter_info_standalone.cpp
     # Stage 4.1 - VRAM backing store + DMA coherent pool sim (per ADR-069/073)
     test_vram_store.cpp
     # add-sim-singleton-init-idempotency-guards — VramStore/DmaCoherentPool init() idempotency
@@ -439,6 +444,11 @@ target_link_options(test_hal_thread_safety_standalone PRIVATE "-Wl,--no-as-neede
 target_link_libraries(test_hal_iommu_standalone PRIVATE gpu_hal pci_driver_plugin iommu_driver_plugin)
 target_link_options(test_hal_iommu_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_hal_iommu_standalone PRIVATE ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal)
+
+# kcpptlm-backend-binding — HAL adapter info (links gpu_hal + gpu_hal_mock)
+target_link_libraries(test_hal_adapter_info_standalone PRIVATE gpu_hal gpu_hal_mock pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_hal_adapter_info_standalone PRIVATE "-Wl,--no-as-needed")
+target_include_directories(test_hal_adapter_info_standalone PRIVATE ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal)
 
 # 为每个 sim 测试源文件创建测试
 foreach(src ${SIM_TESTS})

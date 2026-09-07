@@ -2,7 +2,7 @@
 
 本文档目录包含 UsrLinuxEmu 项目中所有已通过和提议中的架构决策记录。
 
-> **最后更新**: 2026-09-03（ADR-091 v0.2 ✅ Accepted — Stage 5.5.1 实施升档；4 commits ship + 151/151 ctest PASS；Oracle 实施后复审 Gate D 待触发）
+> **最后更新**: 2026-09-07（ADR-092 v0.1 🔄 Proposed）（ADR-091 v0.2 ✅ Accepted — Stage 5.5.1 实施升档；4 commits ship + 151/151 ctest PASS；Oracle 实施后复审 Gate D 待触发）
 
 > **2026-09-03 变更（ADR-091 v0.2 ✅ Accepted 升档）**：ADR-091（4 象限目录布局 + PCI/VFIO/IOMMU 驱动迁移 + sim_hardware/ 引入）从 🔄 Proposed 升 ✅ Accepted v0.2。**Stage 5.5.1 实施升档** 触发（per Oracle + Metis 双审查 + 4 commits ship + 151/151 ctest PASS + Gate A/B/C 全部通过）。**关联升档**：ADR-036 v0.2（3 区分 → 4 象限）/ ADR-072 v0.2（L2 build 扩展 pci_driver + iommu_driver）/ ADR-089 v0.6（location `src/system_hw/` → `sim_hardware/`）。**OpenSpec change**：[2026-09-03-pci-driver-refactor](../../changes/2026-09-03-pci-driver-refactor/) 状态：126/126 tasks 已 ship + 3 new tests 实施（test_moduleloader_toposort_standalone / test_pci_driver_standalone / test_iommu_driver_standalone）+ Gate 5.5.1-A/B/C 全部通过。**Oracle 实施后复审 Gate D 待触发**（per design.md §D6.4 — Oracle 评估实施 vs ADR-091 v0.2 偏差 + 决定是否调整 ADR / 4 象限架构 / 实施路线图 / Change-2）。**状态分布**：Accepted 61→**62**（ADR-091 升档），总计 74→**75**（新增 ADR-091）。
 > **维护者**: UsrLinuxEmu Architecture Team + TaskRunner owner
@@ -88,6 +88,7 @@
 | [adr-089](adr-089-v55-system-hw-simulation.md) | **v5.5+ src/system_hw/ 仿真范围扩展（VFIO / IOMMUFD / Live Migration / vDPA）**（基于 ADR-088 §Open Questions v5.5+ 评估；4 阶段实施：v5.5.1 VFIO 核心 6-8 周 + v5.5.2 IOMMUFD 6-8 周 + v5.5.3 vDPA 4-6 周 + v5.5.4 Live Migration 4-6 周 = **总计 20-28 周**；充分复用 `src/kernel/iommu/` 1262 行现有 IOMMU 仿真；vDPA 直接移植 `drivers/vdpa/vdpa_sim/vdpa_sim_net.c` 源码；vendor-specific 数据由真实驱动提供；HAL 68 fn-ptrs 保持不变（per ADR-023 append-only）；调研基础：[系统级硬件仿真调研报告](../05-advanced/system-hw-survey-2026-08-16.md) v0.2 + [Live Migration 独立深度报告](../05-advanced/vfio-live-migration-research.md)；**§D7 Consumer Drivers**：consumer drivers **不与 `gpu_driver` 耦合**，采用 **方案 C（Catch2 测试即 consumer）为主 + 聚合插件兜底** 路径（**三层阈值**：200-400 目标 / 500 坏味道 / 1000+ 升格；Linux 命名 + `_consumer` 后缀；KFD 是 IOMMUFD 真实用户采用方案 B — KFD 走 HAL IOMMU 路径，下层由 IOMMUFD 仿真承接）| ✅ Accepted v0.5（2026-08-16；v0.3 修复 Oracle 4 项 Blocking + 7 项 Minor；v0.4 追加 §D7 Consumer Drivers；v0.5 Oracle 复审 PASS 合入 4 Minor + 2 OQ 裁决）| 2026-08-16 |
 | [adr-090](adr-090-ptxir-via-h2d-dma-v2.md) | **PTXIR Image Loading via CppTLM dGPU Board Submodule**（🚫 Supersedes ADR-090 v1 + ADR-076 v2；**§C0 Canonical 仲裁** 推翻 v1 "Supersedes ADR-076 v2" 假设，HSK-1 真相源 = PTX-EMU 仓 8 函数 ABI (CPPTLM_MODULE_VERSION 2)；**§D1 8 函数 ABI 全量采纳** — 逐字引用 PTX-EMU `cpptlm_module.h:12-52`，HAL #66 仅承载 `ptxemu_image_load` 语义，#67/#68 deprecated stub 保留；**§D3 Mode B** = submodule + CppTLM dGPU Board（PCIe 设备语义，gem5 惯例），最小完备集 `DGpuBar + Doorbell + SQ/CQ`；**§D4 废除 Mode A layered fallback**（采用冻结基线）；**§D5 HSK-6 联发协议**（PTX-EMU 发起 + CppTLM ack + UsrLinuxEmu 利益相关方 ack）；**§D6 两阶段删除流程**（freeze → Mode B E2E → physical delete）；**§E 9 周双轨 P0-P4 时间线**；ADR-088 §C2 + §D6.2 修订注记；Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy` v2 决策 + 本地 file:line 验证）| ✅ **Accepted**（2026-08-18 — Gate #1/#2/#5/#6 ✅；Gate #3 / #4 / #7 由跨仓 work items 跟进：[PTX-EMU #12](https://github.com/chisuhua/PTX-EMU/issues/12) closed 等 HSK-6；[TaskRunner #10](https://github.com/chisuhua/TaskRunner/issues/10) closed 等 tadr-308；[CppTLM #19](https://github.com/chisuhua/CppTLM/issues/19) ack comment 2026-08-18 00:09:10 UTC；v1 ship 实施产物保留作为历史）| 2026-08-17 (v1) / 2026-08-18 (v2) |
 | [adr-091](adr-091-pci-driver-architecture-and-four-quadrant.md) | **4 象限目录布局 + PCI/VFIO/IOMMU 驱动迁移 + sim_hardware/ 引入**（Stage 5.5.1 架构基础；3 区分 → 4 象限升级；`src/kernel/pcie/` + `src/kernel/iommu/` 共 1910 LOC 迁移至 `plugins/pci_driver/` + `plugins/iommu_driver/`；sim_hardware 顶级目录模型（per §D2.3 SSOT）；ModuleLoader `struct module` 新增 `uint32_t load_priority` 字段 + 拓扑排序 + 环检测；invalidate.cpp 暂留 Q2（Q2/Q3 拆分决策推迟 Change-2）；per ADR-036 v0.2 / ADR-072 v0.2 / ADR-089 v0.6 配套升档；OpenSpec change [2026-09-03-pci-driver-refactor](../../changes/2026-09-03-pci-driver-refactor/) 已 ship 4 commits + 151/151 ctest PASS + Gate A/B/C 全部通过；Oracle 实施后复审 Gate D 待触发）| ✅ **Accepted v0.2**（2026-09-03 — Stage 5.5.1 实施升档；4 commits ship + 151/151 ctest PASS + Gate A/B/C 通过；Gate D Oracle 复审待触发）| 2026-09-03 |
+| [adr-092](adr-092-hal-adapter-and-bypass-binding.md) | **HAL Adapter 扩展与全链路 vs Bypass AXI 双路径切换架构**（Stage 5.5.2+ 触发；HAL 68→71 fn-ptrs append-only 扩展 3 个 adapter 接口：adapter_get_info/open/close；驱动零修改路径通过总线层 Q3 `sim_hardware/pcie` 路由；First-touch Handle + Command 模式对齐 QEMU QOM/DRM drm_file；VFIO 守住 ADR-036 边界**不作为** GPU 驱动接口；跨仓版本锁 = CppTLM `dgpu-board-adapter-info-extension` → UsrLinuxEmu `kcpptlm-backend-binding-with-handle-and-adapter-info` 同步 PR；Oracle Gate D 实施后复审升档）| 🔄 **Proposed v0.1**（2026-09-07 — 等 Oracle Gate D 复审升 Accepted v0.2）| 2026-09-07 |
 
 > **2026-08-16 变更（ADR-089 ✅ Accepted 升档）**：ADR-089（v5.5+ src/system_hw/ 仿真范围扩展 — VFIO / IOMMUFD / Live Migration / vDPA）从 🔄 Proposed 升 ✅ Accepted。Oracle 复审 PASS（v0.4 + 4 Minor + 2 OQ 合入 v0.5）。**核心决策**：① 4 阶段实施 v5.5.1-v5.5.4 = 总计 20-28 周（UsrLinuxEmu 团队主导 14-20 周，可与 v5.5.1 部分并行）；② 23 ABI = 基础 6 + callback typedef 4 + register 1 + 板卡扩展 8 + MSI-X 3 + DMA translate 1；③ §D7 Consumer Drivers = 方案 C（Catch2 测试即 consumer）为主 + 聚合插件兜底，三层阈值（200-400 目标 / 500 坏味道 / 1000+ 升格）。**Open Questions 裁决**：OQ1 KFD↔IOMMUFD 拓扑采用方案 B（KFD 走 HAL IOMMU 路径，下层由 IOMMUFD 仿真承接，保持"零修改移植"承诺）；OQ2 **不拆分**为多个子 ADR（4 大子系统紧密耦合，单 ADR 总纲更合适）。**调研基础**：[系统级硬件仿真调研报告](../05-advanced/system-hw-survey-2026-08-16.md) v0.2 + [Live Migration 独立深度报告](../05-advanced/vfio-live-migration-research.md) 18KB。状态分布：Accepted 60→**61**，PROPOSED 6→**5**，总计 72 维持。HAL append-only 治理（ADR-023 §D4）继续生效，HAL 68 fn-ptrs 不变。**后续阶段 0 行动**：v5.5.1 VFIO kickoff + `tests/test_vfio_consumer_standalone.cpp` 作为首个 consumer 模板（per §D7 规则 1）。
 
@@ -114,6 +115,22 @@
 > **2026-07-15 变更**：ADR-061（HAL IOMMU ops 扩展）+ ADR-062（HAL Event Signal ops 扩展）状态升 ✅ Accepted。fn-ptrs 已 commit 到 `struct gpu_hal_ops`（11→14），hal_user/hal_mock stub 实现已落地。C-12 Phase A.2 hard gate CLEARED；Phase B 可启动。
 
 > **2026-08-17 变更（ADR-090 创建 + ADR-076 退役）**：[`adr-090-ptxir-via-h2d-dma.md`](adr-090-ptxir-via-h2d-dma.md) — Oracle session `ses_ff2106f84ffeM2oItBEa9iu4hL` 识别 ADR-076 v1 层次违规（HAL 桥承担硬件行为提供者职责），提议 PTX-EMU 移入 CppTLM submodule。**核心决策**：① HAL fn-ptrs 3→1（#66 kernel_module_load 保留重定义为 VRAM write + icache invalidate，#67/#68 deprecated stub）；② ioctl 0x27 重定义（返回 vram_addr，移除 kernel_name[256] 字段），0x28 stub 化返回 -ENOSYS，0x29 保留；③ PTX-EMU 移出 UsrLinuxEmu 进程，挂 CppTLM submodule（Mode B 终态）或 sim/ translateLaunch（Mode A interim）；④ ADR-088 §C2 修订注记（取消"不被取代"条款）+ §D6.2 扩展 SM executor +2~3 ABI（走 BREAKING 流程）。**ADR-076** 状态由 ✅ Accepted v3 改为 🚫 Superseded v2 by ADR-090（已 ship 实施产物保留作为历史记录）。**状态分布**：Accepted 61→**60**（ADR-076 移出），Proposed 5→**6**（新增 ADR-090），Superseded 1→**2**（新增 ADR-076），总计 72→**73**。HAL append-only 治理（ADR-023 §D4）继续生效，HAL 68 fn-ptrs 不变（#67/#68 槽位保留作 deprecated stub）。**ADR-090 实施期间**：Mode A 解耦于 ADR-088 Phase 1，层次修复可独立推进（节省 4-6 周串行时间）。
+
+## 状态分布总览（截至 2026-09-07）
+
+| 状态 | 数量 |
+|------|----:| 
+| ✅ 已接受 | **62**（ADR-091 v0.2 已升档 + Gate D 验证中）|
+| 🔄 提议中 | **6**（+ ADR-092 v0.1 新增；ADR-087 v0.2 维持）|
+| 🚫 Superseded | **3** |
+| ⏸️ 显式 Deferred | **8**（025/026/028/029/030/053/055 + others，详见历史表）|
+| **总计** | **79**（**注**：历史阶段统计 62+6+3+8 含 75 ADR + ADR-091/092/087/090-v1/090-v2 = 79 文件，超出 75 标准 ADR 编号因引入 v1/v2 多版本文件） |
+
+> **2026-09-07 Oracle Gate D 验收 checklist**（per ADR-092 风险表）：
+> ① `kcpptlm-backend-binding-with-handle-and-adapter-info` tasks 勾选率 ≥80%  
+> ② `dgpu-board-adapter-info-extension` tasks 勾选率 ≥80% + CppTLM commit 已合并  
+> ③ `nm -D libcpptlm_emulator.so` 导出集校验 PASS（22 fn + 4 typedef = 26 symbols）  
+> ④ BypassMode canonical 枚举值（kFull=0/kBypass=1/kPartial=2）已在 ADR-091 §D4 / four-quadrant §4.5 同步修正
 
 ## 状态分布总览（截至 2026-08-18）
 

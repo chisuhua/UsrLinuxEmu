@@ -1,6 +1,6 @@
 # UsrLinuxEmu 4 象限目录布局（Four-Quadrant Directory Layout）
 
-> **SSOT** | 最后验证: 2026-09-03（ADR-091 v0.1 同期）| 对应 ADR: [ADR-091](../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) 🔄 Proposed
+> **SSOT** | 最后验证: 2026-09-07（ADR-091 v0.2 ✅ Accepted + ADR-092 v0.1 🔄 Proposed 同期）| 对应 ADR: [ADR-091](../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) ✅ Accepted v0.2 + [ADR-092](../00_adr/adr-092-hal-adapter-and-bypass-binding.md) 🔄 Proposed
 >
 > **作者**: UsrLinuxEmu Architecture Team
 > **作用**: 把 UsrLinuxEmu 顶层目录按"Linux kernel sim vs portable driver vs PC system sim vs GPU-specific sim"**4 象限**划分，对应真机 Linux 内核目录结构
@@ -355,23 +355,25 @@ sim_hardware/
 ```cpp
 namespace usr_linux_emu::sim_hardware::pcie {
 
+// Canonical 枚举值（per Oracle Gate D 修正）：与代码 `bypass.h:8-12` 实测一致
 enum class BypassMode : uint8_t {
-    Full    = 0,  // PHY + LL + TL + AXI（完整 PCIe 链路）
-    Partial = 1,  // LL + TL + AXI（跳过 PHY，保留 FC + ACK-NAK）
-    Bypass  = 2,  // TL + AXI（仅事务层，软件 bring-up）
+    kFull    = 0,  // PHY + LL + TL + AXI（完整 PCIe 链路）
+    kBypass  = 1,  // TL + AXI（直接事务层，软件 bring-up）
+    kPartial = 2,  // LL + TL + AXI（跳过 PHY，保留 FC + ACK-NAK）
 };
 
-class PcieBypassController {
-public:
-    int apply_mode(BypassMode new_mode, DrainPolicy policy = GRACEFUL_DRAIN);
-    BypassMode current_mode() const;
-    static BypassMode default_mode_from_topology();
-};
-
-}
+// 命名空间级自由函数（代码实测）：bypass_apply_mode/bypass_get_mode + drain accounting
+int  bypass_apply_mode(BypassMode mode, DrainPolicy policy = DrainPolicy::kGracefulDrain);
+BypassMode bypass_get_mode(void);
 ```
 
 **实现**：`bypass.cpp` 封装 CppTLM `PcieBypassMux::apply_mode()` 的 10 步清理（DrainPolicy）。
+
+**驱动零修改路径（per [ADR-092](../00_adr/adr-092-hal-adapter-and-bypass-binding.md) §D2）**：driver 通过 `linux_compat/pci`（`ioremap` + `readl`/`writel`）调用的 BAR MMIO，在 `PcieBypassController` 自动裁决下路由：
+- **`kFull` / `kPartial`** → `cpptlm_emulator_mmio_*`（PCIe EP TLM 编解码）；
+- **`kBypass`** → `cpptlm_emulator_backdoor_*`（跳过 PCIe EP TLM，直插 DGpuBoard AXI/VRAM）。
+
+**Adapter 信息通道（per ADR-092 §D1）**：HAL `gpu_hal_ops` 68 → 71 fn-ptrs append-only 扩展 3 个 adapter 接口（`adapter_get_info`/`open`/`close`）；新文件 `hal_cpptlm.cpp` 通过 `sim_hardware::BackdoorEndpoint` + `CpptlmBridge` 真实调用 CppTLM 扩展后的 `cpptlm_emulator_open/close/get_adapter_info`。
 
 **模式选择**（`topology/default_topology.json`）：
 - **L1 (Bypass)**：driver bring-up，最快
@@ -443,7 +445,7 @@ public:
                   │ Q4: gpu_driver/ │
                   │     sim/        │
                   └────────▲────────┘
-                           │ HAL 桥接（68 fn-ptrs）
+                           │ HAL 桥接（71 fn-ptrs，per ADR-092 68→71 append-only）
                   ┌────────┴────────┐
                   │ Q2: gpu_driver/ │
                   │     drv/        │

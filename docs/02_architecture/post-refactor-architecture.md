@@ -1,6 +1,6 @@
 # UsrLinuxEmu 重构后架构与文档同步方案
 
-> **SSOT** | 最后验证: 2026-08-14（HAL 68 fn-ptrs / Stage 4 完成修订）| 对应代码 commit: `HEAD`
+> **SSOT** | 最后验证: 2026-09-07（HAL 71 fn-ptrs / ADR-092 Gate D 待触发 / Stage 4 完成修订）| 对应代码 commit: `HEAD`
 >
 > **作者**: UsrLinuxEmu Architecture Team
 > **状态**: ✅ Approved（v0.1.7，2026-08-07 修订 HAL 契约）
@@ -614,6 +614,8 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 > - "33 → 65 (+32)" 误写为 +32，**实际为 +34**（Stage 4.7 Phase 1+2 累积：3 + 1 + 7 + 10 + 3 + 5 + 5 = 34）
 > - 最终总数 68（67 fn-ptrs + 1 helper）与代码实证一致 ✓
 >
+> **2026-09-07 增量修订 (ADR-092)**: Stage 5.5.2+ 触发 HAL 68 → **71** fn-ptrs append-only 扩展 3 个 adapter 接口（`adapter_get_info` / `adapter_open` / `adapter_close`），定义 `gpu_adapter_info_t` 与 `gpu_adapter_handle_t`；新增 `hal_cpptlm.cpp` 通过 `sim_hardware::BackdoorEndpoint` + `CpptlmBridge` 真实调用 CppTLM 扩展后的 `cpptlm_emulator_open/close/get_adapter_info`。详见 [ADR-092](../00_adr/adr-092-hal-adapter-and-bypass-binding.md) 与 [OpenSpec change `kcpptlm-backend-binding-with-handle-and-adapter-info`](../../openspec/changes/kcpptlm-backend-binding-with-handle-and-adapter-info/)。驱动零修改承诺通过总线层 Q3 `sim_hardware/pcie` 的 `PcieBypassController` 3 态裁决自动生效（Full → `cpptlm_emulator_mmio_*` / Bypass → `cpptlm_emulator_backdoor_*`）。
+
 > **每个新增 fn-ptr 的 ADR 追踪**：见附录 C `HAL fn-ptr 完整追踪表`（待添加）。HAL interface 已超过 50 阈值，未来新需求应优先复用现有 fn-ptrs（参数扩展）而非新增（per ADR-023 §D4 append-only 规则）。
 
 **Preemption spec addendum**: See

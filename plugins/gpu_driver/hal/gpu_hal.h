@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include "shared/method_codec_types.h"  // ADR-072 §Decision 2 A-class: method_codec types in shared/
 #include "shared/gpu_hal_handles.h"     // ADR-072 §Decision 4 Phase 2: opaque hal_queue_handle_t, hal_puller_handle_t
+#include "../shared/gpu_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -375,6 +376,12 @@ struct gpu_hal_ops {
 
   /* #68: ⚠️ DEPRECATED (ADR-090) — folds into GPU_IOCTL_FREE_BO. */
   int (*kernel_module_unload)(void *ctx, void *args);
+
+  /* kcpptlm-backend-binding-with-handle-and-adapter-info — §D1
+   * 3 new fn-ptrs (69/70/71): adapter info + first-touch handle lifecycle. */
+  int (*adapter_get_info)(void *ctx, gpu_adapter_info_t *out_info);
+  int (*adapter_open)(void *ctx, gpu_adapter_handle_t *out_handle);
+  int (*adapter_close)(void *ctx, gpu_adapter_handle_t handle);
 };
 
 /* ── inline 包装函数：零开销简化调用 ──────────────────────── */
@@ -730,6 +737,20 @@ static inline int hal_kernel_module_execute(struct gpu_hal_ops *hal, void *args)
 /* ⚠️ ADR-090 DEPRECATED — folds into GPU_IOCTL_FREE_BO. */
 static inline int hal_kernel_module_unload(struct gpu_hal_ops *hal, void *args) {
   return hal->kernel_module_unload(hal->ctx, args);
+}
+
+/* kcpptlm-backend-binding-with-handle-and-adapter-info — §D1 inline wrappers */
+static inline int hal_adapter_get_info(struct gpu_hal_ops *hal,
+                                      gpu_adapter_info_t *out_info) {
+  return hal->adapter_get_info(hal->ctx, out_info);
+}
+static inline int hal_adapter_open(struct gpu_hal_ops *hal,
+                                   gpu_adapter_handle_t *out_handle) {
+  return hal->adapter_open(hal->ctx, out_handle);
+}
+static inline int hal_adapter_close(struct gpu_hal_ops *hal,
+                                   gpu_adapter_handle_t handle) {
+  return hal->adapter_close(hal->ctx, handle);
 }
 
 #ifdef __cplusplus

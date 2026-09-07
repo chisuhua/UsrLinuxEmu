@@ -548,6 +548,19 @@ void hal_mock_init(struct gpu_hal_ops *hal, struct hal_mock_state *state) {
     a->unload_status = -ENOSYS;
     return -ENOSYS;
   };
+
+  /* kcpptlm-backend-binding-with-handle-and-adapter-info — §D1
+   * 3 new fn-ptrs (69/70/71): conservative -ENOSYS defaults since mock
+   * has no real adapter. Real impl provided by hal_cpptlm.cpp. */
+  hal->adapter_get_info = [](void*, gpu_adapter_info_t*) -> int {
+    return -ENOSYS;
+  };
+  hal->adapter_open = [](void*, gpu_adapter_handle_t*) -> int {
+    return -ENOSYS;
+  };
+  hal->adapter_close = [](void*, gpu_adapter_handle_t) -> int {
+    return -ENOSYS;
+  };
 }
 
 void hal_mock_destroy(struct hal_mock_state *state) {
