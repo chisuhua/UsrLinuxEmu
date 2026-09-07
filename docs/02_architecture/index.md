@@ -2,7 +2,7 @@
 
 这里包含理解 UsrLinuxEmu 所必需的核心概念和架构信息。
 
-> **最后更新**: 2026-06-23（H-4 governance cleanup，ADR-035 §Rule 4 实施）
+> **最后更新**: 2026-09-07（Stage 5.5.2 落定 — 新增 driver-stack-flow 文档 + ADR-092 Proposed）
 > **SSOT**: [`post-refactor-architecture.md`](post-refactor-architecture.md)（v0.1.7+，持续维护）
 
 ## 导航
@@ -10,6 +10,8 @@
 ### 活跃文档（推荐阅读）
 
 - [**post-refactor-architecture.md**](post-refactor-architecture.md) ⭐ **SSOT** — 重构后架构总览 + H-2.5 + H-3 跨仓架构（v0.1.7+，2026-06-23 更新）
+- [**driver-stack-flow-post-stage-5-5-2.md**](driver-stack-flow-post-stage-5-5-2.md) ⭐ **Stage 5.5.2 驱动栈** — 控制/数据流完整图谱（Path A Full TLP + Path B Bypass AXI + Command 模式 + Adapter 通道；2026-09-07 新增，commit `bab64dd5` + `6d2ea90`）
+- [**four-quadrant-architecture.md**](four-quadrant-architecture.md) — 4 象限目录布局（Q1-Q4，ADR-091 派生 SSOT）
 - [**ROADMAP**](../roadmap/README.md) ⭐ **演进路线** — 4 阶段 + 蓝图，从 MVP 到 Linux 内核环境模拟（v0.1+，2026-06-23 新增）
 - [API 参考](api-reference.md) — 核心 API 接口文档
 
@@ -28,6 +30,7 @@
 |------------|----------|
 | 项目是什么 | [项目概述](overview.md) |
 | 系统如何工作 | [架构设计](architecture.md) |
+| **Stage 5.5.2 驱动栈数据流/控制流** | [driver-stack-flow-post-stage-5-5-2.md](driver-stack-flow-post-stage-5-5-2.md) |
 | 架构如何演进 | [ROADMAP](../roadmap/README.md) |
 | API 如何使用 | [API 参考](api-reference.md) |
 | 如何构建项目 | [构建指南](../04-building/build_system.md) |
