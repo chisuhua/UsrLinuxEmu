@@ -232,6 +232,7 @@ set(CATCH2_TESTS
     # 5.5.6-cpptlm-ep-binding — P4.NEW-A/B/C/D: real CppTLM binding tests
     sim_hardware/test_backdoor_endpoint_real_standalone.cpp
     sim_hardware/test_bridge_kcpptlm_dlopen_standalone.cpp
+    sim_hardware/test_bridge_kcpptlm_data_path_standalone.cpp
     sim_hardware/test_host_bridge_bypass_full_dispatch_standalone.cpp
     test_hal_cpptlm_real_standalone.cpp
     test_backend_selection_standalone.cpp

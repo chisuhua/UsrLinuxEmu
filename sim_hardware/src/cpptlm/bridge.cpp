@@ -11,12 +11,15 @@
 
 namespace usr_linux_emu::sim_hardware {
 
+using cpptlm_emulator_t = struct cpptlm_emulator_opaque;
+
 struct CpptlmBridge::Impl {
   bool initialized{false};
   CpptlmBackendKind backend{CpptlmBackendKind::kMock};
   char topology_path[256]{0};
   uint32_t flags{0};
   cpptlm::PcieEndpointIP* endpoint{nullptr};
+  cpptlm_emulator_t* emu{nullptr};
   std::array<uint8_t, 4096> config_space{};
   std::array<std::array<uint8_t, 4096>, 6> bars{};
   IntrDeliverCb msix_cb{nullptr};
@@ -44,7 +47,6 @@ struct CpptlmDeviceInfo {
   uint64_t bar_sizes[6];
 };
 
-using cpptlm_emulator_t = struct cpptlm_emulator_opaque;
 using cpptlm_handle = uint64_t;
 
 struct CpptlmSymbols {
@@ -233,6 +235,20 @@ int CpptlmBridge::init(const CpptlmBridgeInitParams& params) {
   }
   impl_->config_space.fill(0);
   for (auto& bar : impl_->bars) bar.fill(0);
+
+  if (impl_->backend == CpptlmBackendKind::kCpptlm) {
+    if (impl_->topology_path[0] != '\0' && bridge_state().syms.create) {
+      impl_->emu = bridge_state().syms.create(impl_->topology_path);
+    } else {
+      impl_->emu = bridge_state().syms.create_by_id(1);
+    }
+    if (!impl_->emu) {
+      std::fprintf(stderr,
+                   "[bridge] WARN: cpptlm_emulator_create failed\n");
+      return -ENOSYS;
+    }
+  }
+
   impl_->initialized = true;
 
   std::lock_guard<std::mutex> g_lock(g_active_bridge_mutex);
@@ -245,6 +261,12 @@ int CpptlmBridge::init(const CpptlmBridgeInitParams& params) {
 void CpptlmBridge::destroy() {
   if (!impl_) return;
   std::lock_guard<std::mutex> lock(impl_->mutex);
+  if (impl_->backend == CpptlmBackendKind::kCpptlm && impl_->emu) {
+    if (bridge_state().resolved && bridge_state().syms.destroy) {
+      bridge_state().syms.destroy(impl_->emu);
+    }
+    impl_->emu = nullptr;
+  }
   impl_->initialized = false;
   std::lock_guard<std::mutex> g_lock(g_active_bridge_mutex);
   if (g_active_bridge == this) {
@@ -259,9 +281,8 @@ int CpptlmBridge::mmio_read(uint8_t bar, uint64_t offset, void* buf, size_t len)
   if (!buf || !valid_mmio(bar, offset, len)) return -EINVAL;
 
   if (impl_->backend == CpptlmBackendKind::kCpptlm) {
-    if (!bridge_state().resolved) return -ENOSYS;
-    // TODO(P4.NEW-D): plumb emu through and call syms.mmio_read
-    return -ENOSYS;
+    if (!bridge_state().resolved || !impl_->emu) return -ENOSYS;
+    return bridge_state().syms.mmio_read(impl_->emu, bar, offset, buf, len);
   }
 
   TlpGuard tlp;
@@ -277,9 +298,8 @@ int CpptlmBridge::mmio_write(uint8_t bar, uint64_t offset, const void* buf,
   if (!buf || !valid_mmio(bar, offset, len)) return -EINVAL;
 
   if (impl_->backend == CpptlmBackendKind::kCpptlm) {
-    if (!bridge_state().resolved) return -ENOSYS;
-    // TODO(P4.NEW-D): plumb emu through and call syms.mmio_write
-    return -ENOSYS;
+    if (!bridge_state().resolved || !impl_->emu) return -ENOSYS;
+    return bridge_state().syms.mmio_write(impl_->emu, bar, offset, buf, len);
   }
 
   TlpGuard tlp;
@@ -295,8 +315,8 @@ int CpptlmBridge::backdoor_read(uint8_t bar, uint64_t offset, void* buf,
   if (!buf || !valid_mmio(bar, offset, len)) return -EINVAL;
 
   if (impl_->backend == CpptlmBackendKind::kCpptlm) {
-    if (!bridge_state().resolved) return -ENOSYS;
-    return -ENOSYS;  // TODO(P4.NEW-D): call syms.backdoor_read(emu, ...)
+    if (!bridge_state().resolved || !impl_->emu) return -ENOSYS;
+    return bridge_state().syms.backdoor_read(impl_->emu, bar, offset, buf, len);
   }
   return -ENOSYS;
 }
@@ -309,7 +329,8 @@ int CpptlmBridge::backdoor_write(uint8_t bar, uint64_t offset, const void* buf,
   if (!buf || !valid_mmio(bar, offset, len)) return -EINVAL;
 
   if (impl_->backend == CpptlmBackendKind::kCpptlm) {
-    return -ENOSYS;  // see backdoor_read note
+    if (!bridge_state().resolved || !impl_->emu) return -ENOSYS;
+    return bridge_state().syms.backdoor_write(impl_->emu, bar, offset, buf, len);
   }
   return -ENOSYS;
 }
