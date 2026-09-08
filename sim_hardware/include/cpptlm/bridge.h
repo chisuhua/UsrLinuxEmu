@@ -30,6 +30,9 @@ class CpptlmBridge {
   int mmio_read(uint8_t bar, uint64_t offset, void* buf, size_t len);
   int mmio_write(uint8_t bar, uint64_t offset, const void* buf, size_t len);
 
+  int backdoor_read(uint8_t bar, uint64_t offset, void* buf, size_t len);
+  int backdoor_write(uint8_t bar, uint64_t offset, const void* buf, size_t len);
+
   int config_read(uint16_t offset, uint32_t* value);
   int config_write(uint16_t offset, uint32_t value);
 

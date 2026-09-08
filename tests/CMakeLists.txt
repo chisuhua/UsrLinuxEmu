@@ -232,6 +232,7 @@ set(CATCH2_TESTS
     sim_hardware/test_pcie_bypass_vs_full_standalone.cpp
     # 5.5.6-cpptlm-ep-binding — P4.NEW-A: real CppTLM binding tests
     sim_hardware/test_backdoor_endpoint_real_standalone.cpp
+    sim_hardware/test_bridge_kcpptlm_dlopen_standalone.cpp
     # Stage 5.5.1 — Wave 1A (pci_driver 迁移 verification, tasks.md §2 任务 1.2/1.3/1.4/1.5)
     plugins/test_pci_driver_standalone.cpp
     # Stage 5.5.1 — Wave 1B (iommu_driver 迁移 verification, tasks.md §3 任务 2.2/2.3/2.5/2.6)
