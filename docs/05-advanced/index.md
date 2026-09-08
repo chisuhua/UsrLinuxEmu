@@ -22,7 +22,7 @@
 | IOMMU 错误码 | [IOMMU 错误码语义](iommu-error-semantics.md) |
 | KFD 边界 | [KFD Portability Boundary](kfd-portability-boundary.md) |
 | Stage 2 决策 | [Stage 2 Spike Report](stage-2-spike-report.md) |
-| 系统架构 | [架构设计](../02_architecture/architecture.md) |
+| 系统架构 | [核心架构 SSOT](../02_architecture/core-architecture.md) |
 | API 详情 | [API 参考](../06-reference/api-reference.md) |
 
 ## 目标读者

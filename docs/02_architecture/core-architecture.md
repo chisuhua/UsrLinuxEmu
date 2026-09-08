@@ -71,7 +71,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 | `docs/00_adr/adr-018~024` | 架构决策记录 | 🟡 准确但分散，关系图待更新 | — |
 | `docs/README.md` | 文档索引 | 🟡 65% 完成度数字失真 | — |
 | [ADR-036](../00_adr/adr-036-three-way-separation.md) | 3 区分架构原则 | ✅ Accepted | 2026-06-23 |
-| [ROADMAP](../roadmap/README.md) | 架构演进路线图（4 阶段 + 蓝图，从 MVP 到终态）| 🔄 进行中 | 2026-06-23 |
+| [ROADMAP](../../roadmap.md) | 架构演进路线图（4 阶段 + 蓝图，从 MVP 到终态）| 🔄 进行中 | 2026-06-23 |
 | **本文**（core-architecture.md）| **重构后架构 SSOT + docs 同步方案** | ✅ Approved（v0.1.7）| — |
 | [scale-up-fabric-architecture.md](scale-up-fabric-architecture.md) | Scale-up Fabric 局部架构 SSOT（节点内 L1 Switch + 统一 PA + UVM/PGAS）| 📋 Draft v0.2 | 2026-08-14 |
 | [multi-process-gpu-simulator-integration.md](multi-process-gpu-simulator-integration.md) | Multi-Process GPU Simulator 跨仓集成 SSOT（4 仓 vision × UsrLinuxEmu 局部 SSOT）| 📋 Draft v0.1 | 2026-08-14 |
@@ -710,7 +710,7 @@ for IB jump_stack defer behavior (NOT save/restore — clarifies `archive/2026-0
 
 #### 1.10.3 与 ROADMAP 的关系
 
-本原则是 [`docs/roadmap/`](../roadmap/README.md) 的架构基础。Stage 1（Linux 内核环境模拟）按 3 区分组织工作：每个子阶段（1.0 PCIe / 1.1 IOMMU+ATS / 1.2 DRM / 1.3 UVM/HMM / 1.4 集成）都明确标注影响哪些层。
+本原则是 [`docs/roadmap/`](../../roadmap.md) 的架构基础。Stage 1（Linux 内核环境模拟）按 3 区分组织工作：每个子阶段（1.0 PCIe / 1.1 IOMMU+ATS / 1.2 DRM / 1.3 UVM/HMM / 1.4 集成）都明确标注影响哪些层。
 
 ##### sim 原语清单（③ 硬件模拟层的对外接口）
 
