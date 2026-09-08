@@ -1,6 +1,6 @@
 # 驱动栈图谱实施路径图（post-Stage 5.5.2 Roadmap）
 
-> **目的**：本文档是 [driver-stack-flow-post-stage-5-5-2.md](./driver-stack-flow-post-stage-5-5-2.md) 修订工作的实施计划，使该文档成为 PF 阶段（基于 CppTLM 仿真）驱动开发的**真相源**，并为未来 SR-IOV VF 演进预留路径。
+> **目的**：本文档是 [stage-5-5-2-driver-stack-flow.md](../02_architecture/stage-5-5-2-driver-stack-flow.md) 修订工作的实施计划，使该文档成为 PF 阶段（基于 CppTLM 仿真）驱动开发的**真相源**，并为未来 SR-IOV VF 演进预留路径。
 >
 > **状态**: Draft（待评审后转 Approved）
 > **最后更新**: 2026-09-08
@@ -205,7 +205,7 @@ flowchart LR
 
 ### 3.2 每阶段产出物清单
 
-- P0：`driver-stack-flow-post-stage-5-5-2.md` v0.1.3（纯纠错 diff）
+- P0：`stage-5-5-2-driver-stack-flow.md` v0.1.3（纯纠错 diff）
 - P1：本文档 v0.2.0（+§-1.2.1、§-1.6、§12；§-1.2/§-1.3.9 修订）
 - P2：本文档 v0.2.1（+§13；§-1.4 加注）
 - P3：四象限/post-refactor/AGENTS.md/gpu_hal.h/ADR-092 各一份修订 diff + 对账差异清单
