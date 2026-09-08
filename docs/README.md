@@ -120,7 +120,7 @@
 
 ### 驱动开发工程师
 
-1. [重构后架构 SSOT](02_architecture/core-architecture.md)
+1. [核心架构 SSOT](02_architecture/core-architecture.md)
 2. [GPU 驱动架构](05-advanced/gpu_driver_architecture.md)
 3. [开发指南](03-development/guide.md)
 4. [代码风格](03-development/coding-style.md)
@@ -143,7 +143,7 @@
 
 1. [TaskRunner 索引](07-integration/taskrunner-index.md)
 2. [GPU API 参考](07-integration/gpu-api-reference.md)
-3. [重构后架构 §1.6 IOCTL 体系](02_architecture/core-architecture.md)
+3. [核心架构 §1.6 IOCTL 体系](02_architecture/core-architecture.md)
 
 ## 📊 文档状态
 
@@ -171,7 +171,7 @@
 
 **Stage 4 主线 ADR 全部 Accepted**：ADR-040/041/042/043/044/045/046/047/048/049/050/051/052/054/056/057/058/064/069/072/073/074（22 份）。
 
-详见 [ADR 索引](00_adr/README.md) 和重构后架构 §2.7。
+详见 [ADR 索引](00_adr/README.md) 和核心架构 §2.7。
 
 ## 🔧 文档维护
 

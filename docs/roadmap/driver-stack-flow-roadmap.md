@@ -32,6 +32,8 @@
 - `four-quadrant-architecture.md`（L5 SR-IOV tier、Wave 3/5、§4.5 BypassMode）
 - `core-architecture.md`（SSOT，L560-561 双后端、L617 ADR-092、L700 后端共存）
 - `AGENTS.md`（68→71 fn-ptrs、39→41 ioctls）
+- `README.md`（`重构后架构 SSOT` 等措辞改为`核心架构 SSOT`，与 core-architecture.md 改名同步）
+- `docs/README.md`（架构表刷新 + 措辞同步；2026-09-08 commit `6683740` 部分完成，P3 阶段完整化）
 - `adr-092-hal-adapter-and-bypass-binding.md`（Proposed v0.1 → 推动升 Accepted v0.2）
 - `adr-091 / adr-023 / adr-055 / adr-088`
 

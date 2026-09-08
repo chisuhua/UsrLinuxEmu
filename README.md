@@ -168,7 +168,7 @@ UsrLinuxEmu/
 │
 ├── docs/                      # 项目文档
 │   ├── 02_architecture/
-│   │   └── core-architecture.md   # 重构后架构 SSOT
+│   │   └── core-architecture.md   # 核心架构 SSOT
 │   ├── 00_adr/                # 架构决策记录
 │   ├── 01-quickstart/         # 快速上手
 │   ├── 03-development/        # 开发指南
@@ -419,7 +419,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 | 类别 | 入口 | 说明 |
 |------|------|------|
 | 快速开始 | [docs/01-quickstart/](docs/01-quickstart/) | 安装、构建、第一个示例 |
-| 架构（SSOT） | [docs/02_architecture/core-architecture.md](docs/02_architecture/core-architecture.md) | 重构后权威架构说明 |
+| 架构（SSOT） | [docs/02_architecture/core-architecture.md](docs/02_architecture/core-architecture.md) | 核心架构权威说明 |
 | 架构演进路线 | [roadmap.md](roadmap.md) | 4 阶段路线图 + 终态蓝图 |
 | 架构决策 | [docs/00_adr/](docs/00_adr/) | ADR 列表（001~024）|
 | 开发指南 | [docs/03-development/](docs/03-development/) | 编码规范、添加设备 |
