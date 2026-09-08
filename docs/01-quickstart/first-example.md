@@ -5,7 +5,7 @@
 > **状态**: ✅ 对齐 System C (Phase 2) 架构；编译运行实测通过
 > **实测耗时**（不含 `git clone`，4 核 VM）：CMake 配置 ~2s，首次编译 ~6 min，运行示例 ~2s（预期 < 15 min）
 >
-> **SSOT**: [`docs/02_architecture/post-refactor-architecture.md`](../02_architecture/post-refactor-architecture.md) §1.3 / §1.4 / 附录 A
+> **SSOT**: [`docs/02_architecture/core-architecture.md`](../02_architecture/core-architecture.md) §1.3 / §1.4 / 附录 A
 
 本教程带你跑通一个端到端 GPU 命令提交流程。从打开设备，到创建虚拟地址空间、命令队列、映射环形缓冲区、分配显存、提交 GPFIFO 条目、等待 fence，最后按相反顺序释放资源。整个流程跑完大约 15 分钟。
 
@@ -35,7 +35,7 @@ GPU 驱动 (GpgpuDevice + HAL)
 
 我们关注的接口边界只有两条：用户态到框架的 `VFS::instance().open()` 与 `dev->fops->ioctl()`，框架到驱动的 ioctl 编号表。两边都遵循 Linux 风格错误码（`0` 成功，`-EINVAL`、`-EBUSY` 等表示失败）。
 
-完整分层与数据流参考 [SSOT §1.2](../02_architecture/post-refactor-architecture.md#12-架构一张图) 和 [SSOT §1.3](../02_architecture/post-refactor-architecture.md#13-关键数据流phase-2-完整版)。
+完整分层与数据流参考 [SSOT §1.2](../02_architecture/core-architecture.md#12-架构一张图) 和 [SSOT §1.3](../02_architecture/core-architecture.md#13-关键数据流phase-2-完整版)。
 
 ## 数据模型
 
@@ -58,7 +58,7 @@ Queue (u64 handle)
 - `Queue` 必须挂在某个 `VASpace` 之下，孤立 Queue 不存在。
 - `Ring Buffer` 是用户态与 Puller 之间的共享内存握手点，容量受 `GPU_MAX_RING_ENTRIES` 限制。
 
-字段定义见 [`plugins/gpu_driver/shared/gpu_ioctl.h`](../../plugins/gpu_driver/shared/gpu_ioctl.h) 与 [`plugins/gpu_driver/shared/gpu_queue.h`](../../plugins/gpu_driver/shared/gpu_queue.h)。结构图参考 [SSOT §1.4](../02_architecture/post-refactor-architecture.md#14-数据模型va-space--queue--ring-buffer)。
+字段定义见 [`plugins/gpu_driver/shared/gpu_ioctl.h`](../../plugins/gpu_driver/shared/gpu_ioctl.h) 与 [`plugins/gpu_driver/shared/gpu_queue.h`](../../plugins/gpu_driver/shared/gpu_queue.h)。结构图参考 [SSOT §1.4](../02_architecture/core-architecture.md#14-数据模型va-space--queue--ring-buffer)。
 
 ## 完整示例: 端到端 GPU 命令提交
 
@@ -243,11 +243,11 @@ cd /workspace/project/UsrLinuxEmu/build
 ctest --output-on-failure
 ```
 
-如果第 1、2 步单独可跑而你的 `first_gpu_run` 失败，差异基本只剩 ioctl 字段顺序或 `#include` 路径。逐项对照 [SSOT 附录 A](../02_architecture/post-refactor-architecture.md#附录-a完整-ioctl-编号表) 与 `plugins/gpu_driver/shared/gpu_ioctl.h` 检查。
+如果第 1、2 步单独可跑而你的 `first_gpu_run` 失败，差异基本只剩 ioctl 字段顺序或 `#include` 路径。逐项对照 [SSOT 附录 A](../02_architecture/core-architecture.md#附录-a完整-ioctl-编号表) 与 `plugins/gpu_driver/shared/gpu_ioctl.h` 检查。
 
 ## IOCTL 速查表
 
-本示例用到 9 个 ioctl，完整编号与方向见下表（节选自 [SSOT 附录 A](../02_architecture/post-refactor-architecture.md#附录-a完整-ioctl-编号表)）：
+本示例用到 9 个 ioctl，完整编号与方向见下表（节选自 [SSOT 附录 A](../02_architecture/core-architecture.md#附录-a完整-ioctl-编号表)）：
 
 | 编号 | 宏 | 方向 | 关键参数 | 何时调用 |
 |------|----|------|----------|----------|
@@ -288,7 +288,7 @@ ctest --output-on-failure
 
 走通端到端流程后，你可以继续：
 
-- 阅读 [架构总览（SSOT）](../02_architecture/post-refactor-architecture.md) §1.3 理解完整数据流：`PUSHBUFFER_SUBMIT_BATCH` → `HardwarePullerEmu` 状态机 → `GlobalScheduler` → fence 回调
+- 阅读 [架构总览（SSOT）](../02_architecture/core-architecture.md) §1.3 理解完整数据流：`PUSHBUFFER_SUBMIT_BATCH` → `HardwarePullerEmu` 状态机 → `GlobalScheduler` → fence 回调
 - 阅读 [API 参考](../06-reference/api-reference.md) 了解 `VFS`、`ModuleLoader`、其他设备 API（该文档仍在重写中，参考 `include/kernel/*.h` 为准）
 - 跑 [`test_va_space.cpp`](../../tests/test_va_space.cpp) 查看 VA Space 边界条件（无效 handle、cascade destroy）
 - 接入 [TaskRunner 集成文档](../07-integration/) 学习真实任务调度路径

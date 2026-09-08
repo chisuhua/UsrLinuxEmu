@@ -109,7 +109,7 @@ UsrLinuxEmu 的核心目标（见 [ADR-001](adr-001-user-mode-emulation.md)）�
 
 ### 文档同步（本 ADR 被接受后由后续 change 执行）
 
-1. **SSOT 更新**：`docs/02_architecture/post-refactor-architecture.md` 新增 §1.10 章节，标题"3 区分架构原则"，把原"四层架构"图统一改为"3 区分 + HAL 桥"。本任务范围内不修改 SSOT，由后续 change 落地。
+1. **SSOT 更新**：`docs/02_architecture/core-architecture.md` 新增 §1.10 章节，标题"3 区分架构原则"，把原"四层架构"图统一改为"3 区分 + HAL 桥"。本任务范围内不修改 SSOT，由后续 change 落地。
 2. **ADR 交叉引用更新**：
    - [ADR-018](adr-018-driver-sim-separation.md) line 11「关联 ADR」追加 `, ADR-036 (3-way Architectural Separation)`
    - [ADR-023](adr-023-hal-interface.md) line 11「关联 ADR」追加 `, ADR-036 (3-way Architectural Separation: HAL as bridge)`

@@ -1,6 +1,6 @@
 # UsrLinuxEmu 重构历史
 
-> **SSOT**: 详细架构现状请见 [`post-refactor-architecture.md`](post-refactor-architecture.md)
+> **SSOT**: 详细架构现状请见 [`core-architecture.md`](core-architecture.md)
 > **本文件**: 记录从 Phase 0 到 Phase 2 的演进时间线
 
 ## Phase 0: 早期单仓库布局 (2025-12 ~ 2026-02)
@@ -81,13 +81,13 @@
   - **AI 工具配置清理**：`.claude`, `.kiro`, `.qoder`, `.gemini`, `.sisyphus`, `.omo`（commit `2f55f5e`）
   - **删除未使用文件**（commit `d253574`）
   - **Testing 文档更新**（commit `1504893`）
-  - **`post-refactor-architecture.md` 创建**（v0.1 草案，2026-06-15）
+  - **`core-architecture.md` 创建**（v0.1 草案，2026-06-15）
   - **`tools/docs-audit.sh` 创建**（自动化审计脚本）
 - 当前 commit: `374d463`
 
 ## 关键洞察
 
-1. **Phase 1.5 → 2 期间 docs 严重脱节**：7 个功能 commit 在 2 周内完成，但 docs/CHANGELOG 几乎没跟进。这是项目治理问题，催生了 `post-refactor-architecture.md` SSOT 和 `tools/docs-audit.sh` 自动化审计。
+1. **Phase 1.5 → 2 期间 docs 严重脱节**：7 个功能 commit 在 2 周内完成，但 docs/CHANGELOG 几乎没跟进。这是项目治理问题，催生了 `core-architecture.md` SSOT 和 `tools/docs-audit.sh` 自动化审计。
 2. **测试框架的"投票"不一致**：实际代码用 Catch2，但 docs/AGENTS/ADR 声明 GTest。最终由 ADR-010 v2 确认 Catch2 选型（2026-06-16）。
 3. **ADR 编号有"二阶问题"**：不仅 ADR-022 缺失，README 关系图本身画的是"未来规划"，而 PRD 把它当"已存在"引用。这是 ADR 治理问题。
 

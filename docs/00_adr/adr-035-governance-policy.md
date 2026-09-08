@@ -100,7 +100,7 @@ H-4 governance cleanup 提炼治理规则为正式 ADR。
 
 ### Rule 4 — 架构蓝图 SSOT
 
-**R4.1 SSOT 路径**：`UsrLinuxEmu/docs/02_architecture/post-refactor-architecture.md`
+**R4.1 SSOT 路径**：`UsrLinuxEmu/docs/02_architecture/core-architecture.md`
 
 **R4.2 更新触发**:
 - 每次 openspec change 归档后，必须更新 §1.3+ 章节反映新架构状态
@@ -173,7 +173,7 @@ Step 4: Archive openspec change (after combined commit, before/with push)
 - ✅ Rule 1: ADR-032 (H-2.5), ADR-033 (H-3), ADR-034 (H-7), ADR-035 (governance) 新增
 - ✅ Rule 1.3: `docs/00_adr/README.md` INDEX 同步创建
 - ✅ Rule 3: `external/TaskRunner/plans/` 归档（6 文件）+ slim sync-plan v2.0 + plans/README.md
-- ✅ Rule 4: 待 Phase 4 更新 `post-refactor-architecture.md` §1.3
+- ✅ Rule 4: 待 Phase 4 更新 `core-architecture.md` §1.3
 
 ### 待完成
 

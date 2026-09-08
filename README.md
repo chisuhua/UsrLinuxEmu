@@ -13,7 +13,7 @@
 
 > **最后验证**: 2026-08-07 (Stage 4 全部 ship + 归档后)
 >
-> **权威架构文档**: [AGENTS.md](AGENTS.md) + [docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md)
+> **权威架构文档**: [AGENTS.md](AGENTS.md) + [docs/02_architecture/core-architecture.md](docs/02_architecture/core-architecture.md)
 >
 > 本 README 反映 Stage 4（4.1~4.7.2 全部 ✅ ship + 归档，2026-07-26 ~ 2026-08-05）后的状态。如发现与上述两文件冲突，以它们为准。
 
@@ -168,7 +168,7 @@ UsrLinuxEmu/
 │
 ├── docs/                      # 项目文档
 │   ├── 02_architecture/
-│   │   └── post-refactor-architecture.md   # 重构后架构 SSOT
+│   │   └── core-architecture.md   # 重构后架构 SSOT
 │   ├── 00_adr/                # 架构决策记录
 │   ├── 01-quickstart/         # 快速上手
 │   ├── 03-development/        # 开发指南
@@ -180,7 +180,7 @@ UsrLinuxEmu/
 └── zpoline/                   # 实验性子项目（不在 CMake 中）
 ```
 
-> 详细的目录演进与归档清单参见 [docs/02_architecture/post-refactor-architecture.md §1.5](docs/02_architecture/post-refactor-architecture.md)。
+> 详细的目录演进与归档清单参见 [docs/02_architecture/core-architecture.md §1.5](docs/02_architecture/core-architecture.md)。
 
 ## 架构概览
 
@@ -230,7 +230,7 @@ UsrLinuxEmu 采用 **3 区分架构 + HAL 桥**（per [ADR-036](docs/00_adr/adr-
 | System B | `GPGPU_*` | ⚠️ 已归档到 `archive/system_b_drivers/gpu/` |
 | **System C** | **`GPU_IOCTL_*`** | ✅ **当前使用**（TaskRunner 与 UsrLinuxEmu 共享头文件） |
 
-System C 完整编号表与结构体定义见 [plugins/gpu_driver/shared/gpu_ioctl.h](plugins/gpu_driver/shared/gpu_ioctl.h) 或 [post-refactor-architecture.md 附录 A](docs/02_architecture/post-refactor-architecture.md)。
+System C 完整编号表与结构体定义见 [plugins/gpu_driver/shared/gpu_ioctl.h](plugins/gpu_driver/shared/gpu_ioctl.h) 或 [core-architecture.md 附录 A](docs/02_architecture/core-architecture.md)。
 
 ### GPU 内存分配流程（Phase 2）
 
@@ -346,7 +346,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 
 ## 开发状态
 
-当前阶段：**Stage 4 ✅ Complete**（2026-08-05 全部 ship + 归档）。详细时间轴见 [post-refactor-architecture.md §1.1](docs/02_architecture/post-refactor-architecture.md)。
+当前阶段：**Stage 4 ✅ Complete**（2026-08-05 全部 ship + 归档）。详细时间轴见 [core-architecture.md §1.1](docs/02_architecture/core-architecture.md)。
 
 > **架构演进路线**: 见 [roadmap.md](roadmap.md) — 从 MVP 到 Linux 内核环境模拟（4 阶段 + 蓝图）
 
@@ -410,7 +410,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 - **Stage 4** ✅ 已达成 (2026-08-05)：真实 BAR + ioremap + GPU CP Phase 4-7 完整化 + B-class L2 违规清理（4.1~4.7.2 全部 ship + 归档，HAL 11→33→65 fn-ptrs append-only per ADR-023 §D4）。**详见** [stage-4-bar-ioremap.md](docs/roadmap/stage-4-bar-ioremap.md)
 - **Stage 5** 📋 Trigger-gated：multi-engine Puller (ADR-049 Phase 6+) + PM4 microcode (ADR-052 Phase 6.5)；等待触发条件
 - **后续子项目** ✅ COMPLETE (C-12, 2026-07-18)：完整 KFD 多文件集成（独立子项目，~50K 行 amdgpu driver 移植）。**Phase A ✅**（ADR-059/060/061/062 Accepted）；**Phase B ✅**（6 模块：kfd_module/process/pasid/dispatch/mmu/events 全部实施）；**Phase C ✅**（sim_pfh/sim_pm 真实化 + IOTLB + mm_shim wire-up）；**Phase D ✅**（FIXME 清理）；**Phase E ✅**（集成测试 + E2E + L1↔L2 bridge 跨仓）。详见 [openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/](openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/tasks.md)
-- 详见 [docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md) 与 [roadmap.md](roadmap.md)
+- 详见 [docs/02_architecture/core-architecture.md](docs/02_architecture/core-architecture.md) 与 [roadmap.md](roadmap.md)
 
 ## 文档
 
@@ -419,7 +419,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 | 类别 | 入口 | 说明 |
 |------|------|------|
 | 快速开始 | [docs/01-quickstart/](docs/01-quickstart/) | 安装、构建、第一个示例 |
-| 架构（SSOT） | [docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md) | 重构后权威架构说明 |
+| 架构（SSOT） | [docs/02_architecture/core-architecture.md](docs/02_architecture/core-architecture.md) | 重构后权威架构说明 |
 | 架构演进路线 | [roadmap.md](roadmap.md) | 4 阶段路线图 + 终态蓝图 |
 | 架构决策 | [docs/00_adr/](docs/00_adr/) | ADR 列表（001~024）|
 | 开发指南 | [docs/03-development/](docs/03-development/) | 编码规范、添加设备 |
@@ -428,7 +428,7 @@ dev->fops->ioctl(dev->fd, GPU_IOCTL_PUSHBUFFER_SUBMIT_BATCH, &pb);
 | API 参考 | [docs/06-reference/](docs/06-reference/) | API 与 IOCTL |
 | TaskRunner 集成 | [docs/07-integration/](docs/07-integration/) | 与 TaskRunner 子模块的对接 |
 
-> **架构与构建相关信息以本 README + AGENTS.md + post-refactor-architecture.md (SSOT) 为准**。`docs/02_architecture/architecture.md` 与 `architecture_design.md` 已标记 DEPRECATED（最后验证 2026-06-16 commit `374d463`，pre-v0.1.5 内容），请改读 SSOT。
+> **架构与构建相关信息以本 README + AGENTS.md + core-architecture.md (SSOT) 为准**。`docs/02_architecture/architecture.md` 与 `architecture_design.md` 已标记 DEPRECATED（最后验证 2026-06-16 commit `374d463`，pre-v0.1.5 内容），请改读 SSOT。
 
 ## 贡献指南
 

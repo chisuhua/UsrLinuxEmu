@@ -155,4 +155,4 @@ struct net_hal_ops {
 
 **维护者**: UsrLinuxEmu Architecture Team
 **评审要求**: Stage 2 启动前必须 Review + 状态升 ✅ Accepted
-**对应 SSOT**: docs/02_architecture/post-refactor-architecture.md §1.10 (待追加 §1.10.6 网络栈 3 区分)
+**对应 SSOT**: docs/02_architecture/core-architecture.md §1.10 (待追加 §1.10.6 网络栈 3 区分)

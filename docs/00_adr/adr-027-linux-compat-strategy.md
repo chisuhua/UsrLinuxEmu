@@ -125,4 +125,4 @@
 - `docs/00_adr/adr-008-linux-api-compat.md`（已接受的基础兼容层决策）
 - `docs/00_adr/adr-031-ttm-migration-priority.md`（P1 触发器）
 - `include/linux_compat/*.h`（已实现的兼容头）
-- `docs/02_architecture/post-refactor-architecture.md` §1.6（IOCTL 体系，决定了 linux_compat 的真实消费场景）
+- `docs/02_architecture/core-architecture.md` §1.6（IOCTL 体系，决定了 linux_compat 的真实消费场景）

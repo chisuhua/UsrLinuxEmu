@@ -5,7 +5,7 @@
 > **测试框架**: **Catch2**（vendored 单文件 `tests/catch_amalgamated.{hpp,cpp}`）。
 > 系统包管理器**不需要**安装任何外部测试框架。
 >
-> 权威架构文档：[post-refactor-architecture.md §1.7](../02_architecture/post-refactor-architecture.md)
+> 权威架构文档：[core-architecture.md §1.7](../02_architecture/core-architecture.md)
 
 ---
 
@@ -498,7 +498,7 @@ firefox coverage.html
 | [build_system.md](build_system.md) | 构建系统详解、测试分三类的原因 |
 | [ci-cd.md](ci-cd.md) | CI 配置（基于 Catch2） |
 | [AGENTS.md](../../AGENTS.md) | 开发指南 + 编码风格 + 测试覆盖目标 |
-| [post-refactor-architecture.md §1.7](../02_architecture/post-refactor-architecture.md) | 测试框架"声称 vs 实际"审计 |
+| [core-architecture.md §1.7](../02_architecture/core-architecture.md) | 测试框架"声称 vs 实际"审计 |
 | [tests/test_gpu_memory.cpp](../../tests/test_gpu_memory.cpp) | 标准 Catch2 模板 |
 | [tests/CMakeLists.txt](../../tests/CMakeLists.txt) | 测试构建配置 |
 

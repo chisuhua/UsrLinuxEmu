@@ -140,7 +140,7 @@ int  ttm_bo_place(u32 handle, u32 new_domain);  /* placement 调整 */
 ## 相关文档
 
 - `docs/00_adr/adr-019-drm-gem-ttm-alignment.md`（TTM 对齐路径）
-- `docs/02_architecture/post-refactor-architecture.md` §1.4（数据模型）
+- `docs/02_architecture/core-architecture.md` §1.4（数据模型）
 - `libgpu_core/include/gpu_buddy.h`（page pool，v1 决策保留）
 - `include/linux_compat/drm/drm_*.h`（TTM header 位置参考）
 - `docs/openspec/changes/cleanup-adr-placeholders/`（本变更的设计与 spec）

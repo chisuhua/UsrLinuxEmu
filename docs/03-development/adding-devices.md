@@ -2,7 +2,7 @@
 
 > **最后验证**: 2026-06-16 (commit `374d463`)
 >
-> **架构 SSOT**: [`docs/02_architecture/post-refactor-architecture.md`](../02_architecture/post-refactor-architecture.md)
+> **架构 SSOT**: [`docs/02_architecture/core-architecture.md`](../02_architecture/core-architecture.md)
 > **状态**: 已重写，对齐 Phase 1.5 / Phase 2 重构后的三层架构
 
 本文档说明如何在 UsrLinuxEmu 框架里**从零添加一种新设备类型**。下面的示例基于 `drivers/sample_memory.cpp` + `drivers/sample_memory_plugin.cpp`，代码**真实可编译可运行**。
@@ -252,7 +252,7 @@ long SampleMemory::ioctl(int fd, unsigned long request, void* argp) {
 
 ### 4.3 GPU 设备用 System C
 
-GPU 设备**不要**自造 magic；统一用 `plugins/gpu_driver/shared/gpu_ioctl.h` 的 `GPU_IOCTL_*`（15 个）。完整编号表见 [`post-refactor-architecture.md` 附录 A](../02_architecture/post-refactor-architecture.md)。
+GPU 设备**不要**自造 magic；统一用 `plugins/gpu_driver/shared/gpu_ioctl.h` 的 `GPU_IOCTL_*`（15 个）。完整编号表见 [`core-architecture.md` 附录 A](../02_architecture/core-architecture.md)。
 
 ---
 
@@ -647,7 +647,7 @@ auto dev = std::make_shared<Device>("my0", 0x9000, fops, /*plugin_handle=*/nullp
 | 三层架构 / Device / VFS / ModuleLoader 完整 API | [`docs/06-reference/api-reference.md`](../06-reference/api-reference.md) |
 | 15 个 `GPU_IOCTL_*` 命令的参数 / 结构体 / 示例 | [`docs/06-reference/ioctl-commands.md`](../06-reference/ioctl-commands.md) |
 | 从环境搭建到跑通第一个测试的完整步骤 | [`guide.md`](guide.md) |
-| 架构 SSOT（三层图、IOCTL 编号表、Phase 时间轴）| [`docs/02_architecture/post-refactor-architecture.md`](../02_architecture/post-refactor-architecture.md) |
+| 架构 SSOT（三层图、IOCTL 编号表、Phase 时间轴）| [`docs/02_architecture/core-architecture.md`](../02_architecture/core-architecture.md) |
 | GPU 驱动内部（`GpgpuDevice` / HAL / sim / scheduler）| [`docs/05-advanced/gpu_driver_architecture.md`](../05-advanced/gpu_driver_architecture.md) |
 | 编码风格详细规范 | [`docs/03-development/coding-style.md`](coding-style.md) + [`AGENTS.md`](../../AGENTS.md) |
 | TaskRunner 对接 | [`docs/07-integration/taskrunner-index.md`](../07-integration/taskrunner-index.md) |

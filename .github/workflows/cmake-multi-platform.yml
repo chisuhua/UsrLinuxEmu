@@ -83,7 +83,7 @@ jobs:
   #
   # Runs tools/docs-audit.sh --strict to catch doc/code drift BEFORE merge.
   # Uses --strict so warnings also fail the check (not just hard failures).
-  # Reference: docs/02_architecture/post-refactor-architecture.md
+  # Reference: docs/02_architecture/core-architecture.md
   # ---------------------------------------------------------------------------
   docs-audit:
     name: Documentation Audit (--strict)
@@ -115,7 +115,7 @@ jobs:
         run: |
           echo "::error::docs-audit --strict failed. Review the report above."
           echo "::error::To run locally: bash tools/docs-audit.sh --strict"
-          echo "::error::To update the SSOT: docs/02_architecture/post-refactor-architecture.md"
+          echo "::error::To update the SSOT: docs/02_architecture/core-architecture.md"
           echo "::error::Bypass only if the failure is a known false positive; document the reason in the PR."
 
   # ---------------------------------------------------------------------------

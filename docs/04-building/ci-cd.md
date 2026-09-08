@@ -74,7 +74,7 @@ docs-audit:
 
 ## 文档审计 (`tools/docs-audit.sh`)
 
-SSOT 关联文档：[docs/02_architecture/post-refactor-architecture.md](../02_architecture/post-refactor-architecture.md)
+SSOT 关联文档：[docs/02_architecture/core-architecture.md](../02_architecture/core-architecture.md)
 
 ### 设计目标
 

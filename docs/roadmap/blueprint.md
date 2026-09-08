@@ -1,7 +1,7 @@
 # 终态蓝图 — 3 区分架构的成熟形态
 
 > **性质**: 终态愿景描述（what "done" looks like）
-> **对比**: 与 [SSOT §1.10](../02_architecture/post-refactor-architecture.md) 互补 — SSOT 描述当前实现，本文描述成熟形态
+> **对比**: 与 [SSOT §1.10](../02_architecture/core-architecture.md) 互补 — SSOT 描述当前实现，本文描述成熟形态
 > **关联原则**: [ADR-036](../00_adr/adr-036-three-way-separation.md) (✅ Accepted)
 > **最后更新**: 2026-08-04（HAL 46 fn-ptrs / Stage 4.7 B-class L2 Phase 2 启动）
 
@@ -123,7 +123,7 @@
 ## 跨引用
 
 - [ADR-036](../00_adr/adr-036-three-way-separation.md) — 3 区分架构原则
-- [SSOT §1.10](../02_architecture/post-refactor-architecture.md) — 3 区分的当前实现
+- [SSOT §1.10](../02_architecture/core-architecture.md) — 3 区分的当前实现
 - [stage-0-mvp.md](stage-0-mvp.md) — 当前 MVP 状态
 - [stage-1-kernel-emu.md](stage-1-kernel-emu.md) — 阶段 1（Linux 内核环境）
 - [stage-2-multi-device.md](stage-2-multi-device.md) — 阶段 2（多设备）

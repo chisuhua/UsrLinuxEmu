@@ -14,7 +14,7 @@
 > - [scale-up-fabric-research.md](scale-up-fabric-research.md) — 共享 scale-up 架构调研
 > - [kfd-nvidia-mempool-va-research.md](kfd-nvidia-mempool-va-research.md) — KFD/Nvidia UVM VA 分配模式
 > - [iommu-error-semantics.md](iommu-error-semantics.md) — IOMMU 错误码权威映射
-> - [post-refactor-architecture.md](../02_architecture/post-refactor-architecture.md) §1.10 — HAL 列表
+> - [core-architecture.md](../02_architecture/core-architecture.md) §1.10 — HAL 列表
 >
 > **目标读者**:
 > - 架构师（评估 src/system_hw/ 仿真范围与 v5.5+ 路线图）

@@ -7,7 +7,7 @@
 > **范围**: 多仓多进程 GPU 仿真栈与 UsrLinuxEmu scale-up 轨道的集成架构；不涉及执行计划
 > **关系图**:
 > ```
-> post-refactor-architecture.md (项目级 SSOT, v0.1.7)
+> core-architecture.md (项目级 SSOT, v0.1.7)
 >      │
 >      ├─ scale-up-fabric-architecture.md (Scale-up 局部 SSOT, v0.2)
 >      │       │

@@ -420,7 +420,7 @@ mv external/TaskRunner/plans/2026-06-19-h3-phase2-openspec-skeleton \
 - `docs/00_adr/adr-015-gpu-ioctl-unification.md` — System C ioctl 统一
 - `docs/00_adr/adr-017-gpfifo-queue-abstraction.md` — Queue 抽象（与 H-3 直接相关）
 - `docs/00_adr/adr-024-user-mode-queue-submission.md` — 用户态队列提交（R2 mapping 来源）
-- `docs/02_architecture/post-refactor-architecture.md` — 重构后架构 SSOT
+- `docs/02_architecture/core-architecture.md` — 重构后架构 SSOT
 - `docs/06-reference/ioctl-commands.md` — ioctl 完整参考
 - `docs/07-integration/taskrunner-index.md` — 跨仓协同工作文档索引
 - `plugins/gpu_driver/shared/gpu_ioctl.h` — Canonical ioctl 定义（System C）

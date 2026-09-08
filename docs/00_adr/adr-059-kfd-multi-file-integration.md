@@ -335,7 +335,7 @@ struct kfd_process_device_private_data {
 |------|------|------|
 | E.1 | 完整 build 验证 | `make -j4` 0 errors + 76/76 + ~30 新 ctest |
 | E.2 | ctest + TaskRunner E2E（吸收 TADR-401 Entry 3b）| 318/318 + 76/76 |
-| E.3 | docs 更新（kfd-portability-boundary.md v1.3 + post-refactor-architecture.md §1.10）| docs-audit clean |
+| E.3 | docs 更新（kfd-portability-boundary.md v1.3 + core-architecture.md §1.10）| docs-audit clean |
 | E.4 | PR + merge + 归档（ADR-059 升级 Accepted，INDEX.md 更新）| merge to main |
 
 ---
@@ -370,7 +370,7 @@ struct kfd_process_device_private_data {
 - [x] `docs/05-advanced/kfd-multi-file.md` 已创建（Phase A.1）
 - [ ] ADR-059 review + Accepted
 - [ ] `kfd-portability-boundary.md` v1.3 已更新（Tier-2 §3.2 §3.3 标注完成）
-- [ ] `post-refactor-architecture.md` §1.10 已更新（KFD 多文件实现描述）
+- [ ] `core-architecture.md` §1.10 已更新（KFD 多文件实现描述）
 - [ ] `tools/docs-audit.sh --strict` 无 warning
 
 ### 跨仓验收
@@ -394,7 +394,7 @@ struct kfd_process_device_private_data {
 
 ### 内部文档
 
-- [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md) - 3 区分当前实现
+- [core-architecture.md §1.10](../02_architecture/core-architecture.md) - 3 区分当前实现
 - [kfd-portability-boundary.md v1.2](../05-advanced/kfd-portability-boundary.md) - KFD Tier-1/Tier-2 边界 SSOT
 - [kfd-portability-report.md](../05-advanced/kfd-portability-report.md) - Tier-1 交付报告
 - [tier2-runtime-penetration-report.md](../05-advanced/tier2-runtime-penetration-report.md) - Tier-2 穿透报告

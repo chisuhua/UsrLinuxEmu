@@ -87,7 +87,7 @@ openspec/changes/h3-phase2-management/
 - **H-1 closeout**（参考格式）: UsrLinuxEmu `openspec/changes/archive/2026-06-17-h1-pushbuffer-validation-closeout/`
 - **H-2.5 前置**（✅ 已完成 + archived 2026-06-19）: `openspec/changes/archive/2026-06-19-h2-5-architecture-foundation/`
 - **Upstream ADR**: UsrLinuxEmu ADR-024 Phase 2 (Accepted v1)
-- **SSOT**: `docs/02_architecture/post-refactor-architecture.md` §1.3
+- **SSOT**: `docs/02_architecture/core-architecture.md` §1.3
 - **3 owner issues** (deferred to H-7 ADR): R2 mapping 类型不匹配 / ioctl 绕过 GpuQueueEmu / attached_queues 弱校验
 - **H-3 review feedback**: `UsrLinuxEmu/docs/07-integration/h3-plan-review-feedback.md`
 - **H-3 follow-up fix request**: `UsrLinuxEmu/docs/07-integration/h3-activation-followup.md`

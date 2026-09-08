@@ -11,7 +11,7 @@
 **关联 ADR**: ADR-005 (Ring Buffer), ADR-015 (IOCTL Unification), ADR-017 (GPFIFO/Queue), ADR-018 (驱动/仿真分离), ADR-020 (libgpu_core 提取), ADR-021 (Hardware Puller), ADR-023 (HAL 接口契约), ADR-024 (用户态队列提交)
 
 **修订记录**:
-- 2026-06-16 v0: 占位骨架（来自 ADR 编号治理清理；详见 `docs/02_architecture/post-refactor-architecture.md` §3.3）
+- 2026-06-16 v0: 占位骨架（来自 ADR 编号治理清理；详见 `docs/02_architecture/core-architecture.md` §3.3）
 - 2026-06-17 v1: 填入 operator-level emulation 决策（change cleanup-adr-placeholders）
 
 ## 背景
@@ -118,5 +118,5 @@ UsrLinuxEmu Compute Unit Emulation 采用 **operator-level emulation**（算子�
 - `docs/00_adr/adr-018-driver-sim-separation.md` §3（明确引用 "见 ADR-022"）
 - `docs/00_adr/adr-019-drm-gem-ttm-alignment.md` §6（TTM 迁移优先级）
 - `docs/00_adr/adr-021-hardware-puller.md`（compute unit 是 puller 的下游消费者）
-- `docs/02_architecture/post-refactor-architecture.md` §1.6（Phase 3+ 规划）
+- `docs/02_architecture/core-architecture.md` §1.6（Phase 3+ 规划）
 - `docs/openspec/changes/cleanup-adr-placeholders/`（本变更的设计与 spec）

@@ -2,7 +2,7 @@
 
 > **最后验证**: 2026-09-03（ADR-091 v0.2 升 ✅ Accepted — Stage 5.5.1 实施升档 + Change-1 ship）
 >
-> **权威架构说明**: [docs/02_architecture/post-refactor-architecture.md](02_architecture/post-refactor-architecture.md)（SSOT）+ 顶层 [README.md](../README.md) + [AGENTS.md](../AGENTS.md)
+> **权威架构说明**: [docs/02_architecture/core-architecture.md](02_architecture/core-architecture.md)（SSOT）+ 顶层 [README.md](../README.md) + [AGENTS.md](../AGENTS.md)
 >
 > 本文档反映 Stage 4（4.1~4.7.2 全部 ✅ 归档）后的状态。如发现与上述 SSOT 冲突，以它们为准。
 
@@ -28,7 +28,7 @@
 
 | 文档 | 说明 |
 |------|------|
-| [重构后架构 SSOT](02_architecture/post-refactor-architecture.md) | **权威架构说明**（Phase 2 后）|
+| [重构后架构 SSOT](02_architecture/core-architecture.md) | **权威架构说明**（Phase 2 后）|
 | [架构概述](02_architecture/overview.md) | 项目简介、目标与核心功能 |
 | [架构设计](02_architecture/architecture.md) | 系统架构、模块设计、数据流 |
 | [重构历史](02_architecture/refactor-history.md) | Phase 0 → 1 → 1.5 → 2 演进记录 |
@@ -117,7 +117,7 @@
 
 ### 驱动开发工程师
 
-1. [重构后架构 SSOT](02_architecture/post-refactor-architecture.md)
+1. [重构后架构 SSOT](02_architecture/core-architecture.md)
 2. [GPU 驱动架构](05-advanced/gpu_driver_architecture.md)
 3. [开发指南](03-development/guide.md)
 4. [代码风格](03-development/coding-style.md)
@@ -125,7 +125,7 @@
 
 ### 系统架构师
 
-1. [重构后架构 SSOT](02_architecture/post-refactor-architecture.md)
+1. [重构后架构 SSOT](02_architecture/core-architecture.md)
 2. [GPU 驱动架构](05-advanced/gpu_driver_architecture.md)
 3. [ADR 索引](00_adr/README.md)
 4. [架构概述](02_architecture/overview.md)
@@ -140,7 +140,7 @@
 
 1. [TaskRunner 索引](07-integration/taskrunner-index.md)
 2. [GPU API 参考](07-integration/gpu-api-reference.md)
-3. [重构后架构 §1.6 IOCTL 体系](02_architecture/post-refactor-architecture.md)
+3. [重构后架构 §1.6 IOCTL 体系](02_architecture/core-architecture.md)
 
 ## 📊 文档状态
 
@@ -209,14 +209,14 @@
 
 ### 2026-06-16 - P0 文档清理 + SSOT 建立
 
-**重大变更**: 完成 Phase 2 重构后的文档审计与修复，建立 post-refactor-architecture.md 作为权威架构 SSOT。
+**重大变更**: 完成 Phase 2 重构后的文档审计与修复，建立 core-architecture.md 作为权威架构 SSOT。
 
 **修复**:
 - 替换所有 kebab-case 链接为 snake_case（34 处，11 个文件）
 - 删除对不存在文件的引用（如 `06-reference/adr.md` → `00_adr/README.md`）
 - 更新完成度数字 65% → 85%
 - 标注 ADR 编号缺失（022 占位）
-- 新增 [重构后架构 SSOT](02_architecture/post-refactor-architecture.md) 交叉引用
+- 新增 [重构后架构 SSOT](02_architecture/core-architecture.md) 交叉引用
 - 编码规范统一为 snake_case（与 AGENTS.md 对齐）
 - 测试框架声明统一为 Catch2
 

@@ -146,4 +146,4 @@ ioctl → GpgpuDevice dispatch → HAL → Puller FSM → Method Decode (PM4)
 
 ---
 
-*本差距分析基于 roadmap.md + stage-4-bar-ioremap.md + ADR-040~057 + post-refactor-architecture.md 生成。初版 (2026-07-28) 假设 4.3 未完成; 更新版 (2026-07-28) 修正为 4.3 ✅, 范围缩至 4.4–4.6。*
+*本差距分析基于 roadmap.md + stage-4-bar-ioremap.md + ADR-040~057 + core-architecture.md 生成。初版 (2026-07-28) 假设 4.3 未完成; 更新版 (2026-07-28) 修正为 4.3 ✅, 范围缩至 4.4–4.6。*

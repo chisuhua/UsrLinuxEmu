@@ -3,7 +3,7 @@
 > **状态**: ✅ **已达成** (2026-07-16) — 子阶段 1.0-1.4 全部 + Tier-2 runtime penetration 完成 + C-12 KFD 多文件集成
 > **目标**: 提供完整 Linux 内核环境，使在 UsrLinuxEmu 开发的驱动可编译运行 KFD / NV 内核驱动
 > **范围**: DRM + UVM + IOMMU + ATS + PCIe BAR/中断
-> **关联 SSOT**: [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md)
+> **关联 SSOT**: [core-architecture.md §1.10](../02_architecture/core-architecture.md)
 > **架构边界 SSOT**: [kfd-portability-boundary.md](../05-advanced/kfd-portability-boundary.md) (Tier-1 / Tier-2 分界，v1.2)
 > **Stage 1.4 交付报告**: [kfd-portability-report.md](../05-advanced/kfd-portability-report.md) (commit `f41ace5`)
 > **Stage 1.4 Tier-2 穿透报告**: [tier2-runtime-penetration-report.md](../05-advanced/tier2-runtime-penetration-report.md) (2026-07-05)

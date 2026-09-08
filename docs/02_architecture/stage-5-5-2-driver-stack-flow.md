@@ -340,7 +340,7 @@ struct gpu_hal_ops {
 - 4 象限目录布局 → [`four-quadrant-architecture.md`](four-quadrant-architecture.md)
 - HAL 契约 append-only 治理 → [ADR-023 §D4](../00_adr/adr-023-hal-interface.md)
 - 3 区分架构原则 → [ADR-036](../00_adr/adr-036-three-way-separation.md)
-- 文档同步主参考 → [`post-refactor-architecture.md`](post-refactor-architecture.md)（**SSOT**）
+- 文档同步主参考 → [`core-architecture.md`](core-architecture.md)（**SSOT**）
 
 ---
 

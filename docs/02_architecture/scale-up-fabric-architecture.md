@@ -1,7 +1,7 @@
 # Scale-up Fabric Architecture (节点内 L1 Switch + 统一 PA + UVM/PGAS)
 
 > **状态**: 📋 Draft v0.5（2026-08-14，ADR-087 D6 IMP-4 决策后修订：L1 Switch 跨 3 仓实现 = 与 GPU 软件栈同构 + §13.4 条件性 gate 解除 + Q10 决策；零代码零 ADR 变更）
-> **角色**: Scale-up 轨道的**局部架构 SSOT**（与项目级 SSOT `post-refactor-architecture.md` 配套，不替代）
+> **角色**: Scale-up 轨道的**局部架构 SSOT**（与项目级 SSOT `core-architecture.md` 配套，不替代）
 > **作者**: UsrLinuxEmu Architecture Team（基于 scale-up-fabric-research.md v0.2 + ATS/CXL research v0.3 综合）
 > **对应 commit**: HEAD (2026-08-14)
 > **证据基础**:
@@ -11,7 +11,7 @@
 >
 > **关系图**:
 > ```
-> post-refactor-architecture.md (项目级 SSOT, v0.1.7)
+> core-architecture.md (项目级 SSOT, v0.1.7)
 >      │
 >      └─ scale-up-fabric-architecture.md (本文件, 局部 SSOT)
 >           │
@@ -59,7 +59,7 @@
 
 | 文档 | 范围 | 状态 |
 |------|------|------|
-| `post-refactor-architecture.md` v0.1.7 | **项目级**架构（3 区分、HAL、CP、IOCTL 等）| ✅ Approved |
+| `core-architecture.md` v0.1.7 | **项目级**架构（3 区分、HAL、CP、IOCTL 等）| ✅ Approved |
 | `scale-up-fabric-architecture.md` v0.5（本文件）| **Scale-up 轨道**架构（节点内 L1 Switch + 统一 PA + UVM/PGAS）| 📋 Draft |
 | `ats-cxl-30-implementation-research.md` v0.3 | ATS/CXL 协议级研究（Living Document）| 🟡 Living |
 | `scale-up-fabric-research.md` v0.2 | Scale-up 愿景调研（Living Document）| 🟡 Living |
@@ -1182,7 +1182,7 @@ Wave 4 (P7-P8 实施)
 
 ### B.3 关联文档
 
-- [post-refactor-architecture.md](../02_architecture/post-refactor-architecture.md) v0.1.7（项目级 SSOT）
+- [core-architecture.md](../02_architecture/core-architecture.md) v0.1.7（项目级 SSOT）
 - [ats-cxl-30-implementation-research.md](../05-advanced/ats-cxl-30-implementation-research.md) v0.3
 - [scale-up-fabric-research.md](../05-advanced/scale-up-fabric-research.md) v0.2
 - **Multi-Process Vision Spec**（2026-08-13, `docs/superpowers/specs/2026-08-13-multi-process-gpu-simulator-vision.md`）：4 仓协作总栈 vision；scale-up fabric = Phase 4 子集；Phase 3 IPC seam 是 W2 前置

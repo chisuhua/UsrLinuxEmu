@@ -4,7 +4,7 @@
 
 **最后验证**: 2026-06-16 (commit `374d463`)
 
-权威架构说明见 [`docs/02_architecture/post-refactor-architecture.md`](02_architecture/post-refactor-architecture.md) §1.1 重构时间轴。本变更日志与该 SSOT 对齐，如发现冲突以 SSOT 为准。
+权威架构说明见 [`docs/02_architecture/core-architecture.md`](02_architecture/core-architecture.md) §1.1 重构时间轴。本变更日志与该 SSOT 对齐，如发现冲突以 SSOT 为准。
 
 ---
 
@@ -315,7 +315,7 @@ v0.1 是项目的奠基版本。在 `drivers/gpu/` 下用 System B 接口实现�
 
 - **新增版本**：在 `[Unreleased]` 下累积条目；发布时把 `Unreleased` 改名为新版本号与日期，并把空模板重新加回顶部
 - **commit hash 引用**：使用短格式（7 位）；正式发布前用 `git log --oneline` 重新对齐
-- **跨文档一致性**：所有版本描述必须与 `docs/02_architecture/post-refactor-architecture.md` §1.1 时间轴保持一致
+- **跨文档一致性**：所有版本描述必须与 `docs/02_architecture/core-architecture.md` §1.1 时间轴保持一致
 
 ---
 

@@ -1,6 +1,6 @@
 # UsrLinuxEmu GPU 驱动仿真架构
 
-> **SSOT 引用**: 本文档基于 [docs/02_architecture/post-refactor-architecture.md](../02_architecture/post-refactor-architecture.md) (SSOT) 第 §1.2、§1.3、§1.4 节，与代码 commit `374d463` 同步。
+> **SSOT 引用**: 本文档基于 [docs/02_architecture/core-architecture.md](../02_architecture/core-architecture.md) (SSOT) 第 §1.2、§1.3、§1.4 节，与代码 commit `374d463` 同步。
 >
 > **最后验证**: 2026-06-16 (commit `374d463`)
 >
@@ -1598,7 +1598,7 @@ TaskRunner 通过符号链接访问 canonical 头文件。任何 IOCTL 编号或
 
 ### 15.5 进一步阅读
 
-- SSOT: [post-refactor-architecture.md](../02_architecture/post-refactor-architecture.md)
+- SSOT: [core-architecture.md](../02_architecture/core-architecture.md)
 - 顶层 README: [../../README.md](../../README.md)
 - 开发指南: [../../AGENTS.md](../../AGENTS.md)
 - ADR 列表: [../00_adr/README.md](../00_adr/README.md)

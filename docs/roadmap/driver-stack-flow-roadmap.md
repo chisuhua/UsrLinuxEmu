@@ -30,7 +30,7 @@
 ### 0.3 涉及的其他文档（需对齐）
 
 - `four-quadrant-architecture.md`（L5 SR-IOV tier、Wave 3/5、§4.5 BypassMode）
-- `post-refactor-architecture.md`（SSOT，L560-561 双后端、L617 ADR-092、L700 后端共存）
+- `core-architecture.md`（SSOT，L560-561 双后端、L617 ADR-092、L700 后端共存）
 - `AGENTS.md`（68→71 fn-ptrs、39→41 ioctls）
 - `adr-092-hal-adapter-and-bypass-binding.md`（Proposed v0.1 → 推动升 Accepted v0.2）
 - `adr-091 / adr-023 / adr-055 / adr-088`
@@ -97,7 +97,7 @@
 
 **目标**：所有引用本文档或与其冲突的文件完成同步，消除指针漂移。
 
-- 任务 P3.1：**与 post-refactor-architecture.md 对齐**
+- 任务 P3.1：**与 core-architecture.md 对齐**
   比对 L560-561（双后端）、L617（ADR-092 增补）、L700（后端共存）与本文档 §12 新章节；差异最小化（post-refactor 为 SSOT，本文档补充细节，不重复主文）。
 - 任务 P3.2：**与 four-quadrant-architecture.md 对齐**
   ① §6 BypassMode 与四象限 §4.5 逐字核对（已在两轮中确认一致）；② §-1.4/§13 的 SR-IOV 口径互链（P2.3）。
@@ -217,7 +217,7 @@ flowchart LR
 |------|------|------------|
 | §3 偏差的"哪边是对的"争议（ADR-092 §D3 vs header） | 中 | Oracle 已建议：改 ADR 不改 header（成本最低、无跨仓风险）；P4.1 任务已据此设计 |
 | 占比口径（8 模块 115% vs 六主体 105%）与既有 ADR-088 表述冲突 | 中 | §-1.2 保留旧口径注释作为脚注，主表采用 8 模块口径；若 ADR-088 有正式占比，以其为准并反向修订本文 |
-| "真相源"与 post-refactor-architecture.md（SSOT）定位冲突 | 中 | §0 明确分工：post-refactor = 全局 SSOT；本文 = PF 阶段（Stage 5.5.2+）驱动栈专项真相源；冲突时 post-refactor 优先，本文负责细节与演进锚点 |
+| "真相源"与 core-architecture.md（SSOT）定位冲突 | 中 | §0 明确分工：post-refactor = 全局 SSOT；本文 = PF 阶段（Stage 5.5.2+）驱动栈专项真相源；冲突时 post-refactor 优先，本文负责细节与演进锚点 |
 | P4 ADR 笔误修订波及 ADR-092 治理流程 | 中 | ADR-092 升 Accepted v0.2 时一并合并笔误修订；如不可行则回退为"仅文档标注偏差" |
 | 修订幅度过大拖长评审 | 低 | 分 4 个 PR（P0/P1/P2+P3 文档/P4），每个独立可合并 |
 

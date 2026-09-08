@@ -178,7 +178,7 @@ va_space/queue 等 7 个 STUB 共享 GpgpuDevice 公共 dispatch 路径，独立
 **维护者**: UsrLinuxEmu Architecture Team
 **最后更新**: 2026-07-05
 **对应 commit**: `62d2353` (Tier-2 closeout head)
-**关联 SSOT**: [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md), [kfd-portability-boundary.md v1.1](kfd-portability-boundary.md)
+**关联 SSOT**: [core-architecture.md §1.10](../02_architecture/core-architecture.md), [kfd-portability-boundary.md v1.1](kfd-portability-boundary.md)
 ---
 
 ## v1.1 C-12 Phase C Implementation Records (2026-07-16)

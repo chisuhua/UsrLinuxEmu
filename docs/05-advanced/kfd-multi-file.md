@@ -5,7 +5,7 @@
 > **Owner**: UsrLinuxEmu Architecture Team
 > **关联 Change**: `openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/`（C-12）
 > **关联 ADR**: [ADR-059](../00_adr/adr-059-kfd-multi-file-integration.md)（KFD 多文件架构边界）
-> **基础 SSOT**: [kfd-portability-boundary.md](kfd-portability-boundary.md) v1.2 + [stage-1-kernel-emu.md §1.4](../roadmap/stage-1-kernel-emu.md) + [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md)
+> **基础 SSOT**: [kfd-portability-boundary.md](kfd-portability-boundary.md) v1.2 + [stage-1-kernel-emu.md §1.4](../roadmap/stage-1-kernel-emu.md) + [core-architecture.md §1.10](../02_architecture/core-architecture.md)
 
 ---
 
@@ -94,7 +94,7 @@ C-12 (kfd-multi-file-integration)
 
 | 文档 | 引用位置 |
 |------|---------|
-| [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md) | 3 区分当前实现（KFD drv/hal/sim 物理隔离判定） |
+| [core-architecture.md §1.10](../02_architecture/core-architecture.md) | 3 区分当前实现（KFD drv/hal/sim 物理隔离判定） |
 | [kfd-portability-boundary.md](kfd-portability-boundary.md) v1.2 | KFD Tier-1/Tier-2 边界 SSOT |
 | [kfd-portability-report.md](kfd-portability-report.md) | Tier-1 交付报告（commit `f41ace5`）|
 | [tier2-runtime-penetration-report.md](tier2-runtime-penetration-report.md) | Tier-2 穿透报告（commit `6a7f4ab`）|
@@ -308,7 +308,7 @@ Stage 1.4 Tier-1 已创建 `plugins/gpu_driver/drv/kfd_sim_bridge.{h,cpp}`（5 h
 
 - E.1 完整 build 验证（85+ ctest 全绿）
 - E.2 全套 ctest + **TaskRunner E2E**（可吸收 TADR-401 Entry 3b）
-- E.3 docs 更新（kfd-portability-boundary.md v1.3 + post-refactor-architecture.md §1.10）
+- E.3 docs 更新（kfd-portability-boundary.md v1.3 + core-architecture.md §1.10）
 - E.4 PR + merge + 归档
 
 ---
@@ -478,7 +478,7 @@ Week 6-7 🏁 验收归档
 
 | 类别 | 文档 |
 |------|------|
-| **架构 SSOT** | [post-refactor-architecture.md](../02_architecture/post-refactor-architecture.md), [kfd-portability-boundary.md](kfd-portability-boundary.md) |
+| **架构 SSOT** | [core-architecture.md](../02_architecture/core-architecture.md), [kfd-portability-boundary.md](kfd-portability-boundary.md) |
 | **Roadmap** | [stage-1-kernel-emu.md §1.4](../roadmap/stage-1-kernel-emu.md), [blueprint.md](../roadmap/blueprint.md) |
 | **ADR** | [ADR-018](../00_adr/adr-018-driver-sim-separation.md), [ADR-023](../00_adr/adr-023-hal-interface.md), [ADR-035](../00_adr/adr-035-governance-policy.md), [ADR-036](../00_adr/adr-036-three-way-separation.md), [ADR-059](../00_adr/adr-059-kfd-multi-file-integration.md) |
 | **变更记录** | [C-12 proposal.md](../../openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/proposal.md), [C-12 tasks.md](../../openspec/changes/2026-08-15-stage1-4-kfd-multi-file-integration/tasks.md) |

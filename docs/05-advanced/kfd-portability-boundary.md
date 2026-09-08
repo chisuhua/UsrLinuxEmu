@@ -8,7 +8,7 @@
 > **基础证据**：[5341c3f](https://github.com/chisuhua/UsrLinuxEmu/commit/5341c3f) "stage-1.4 PoC integration attempt" + 1.0-1.3 全部 commit 历史 + 63/63 ctest 全绿基线 + Stage 1.4 Tier-2 10 commits 穿透 + Stage 2 multi-device 14 commits
 > **关联 SSOT**：
 > - 路线图: [stage-1-kernel-emu.md](../roadmap/stage-1-kernel-emu.md) + [stage-2-multi-device.md](../roadmap/stage-2-multi-device.md)
-> - 架构: [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md)
+> - 架构: [core-architecture.md §1.10](../02_architecture/core-architecture.md)
 > - 治理: [ADR-035](../00_adr/adr-035-governance-policy.md)
 > - 3 区分: [ADR-036](../00_adr/adr-036-three-way-separation.md)
 > - 网络栈 3 区分: [ADR-038](../00_adr/adr-038-network-stack-three-way-separation.md)
@@ -272,7 +272,7 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 | **B.2** | 4 个 KFD handler 穿透到 sim | MAP/UNMAP_MEMORY 真的调 sim_pm_migrate_*；GET_PROCESS_APERTURE 真的查 sim aperture；UPDATE_QUEUE 真的改 sim queue 状态 |
 | **B.3** | 运行时测试矩阵 | 加 4 个 `test_*_runtime_standalone` 验证穿透深度 |
 | **B.4** | `docs/05-advanced/kfd-portability-report.md` 更新 | 诚实记录 Tier-1 vs Tier-2（**不夸大**）|
-| **B.5** | SSOT 同步 | post-refactor-architecture.md §1.10 增加 "Tier-1/Tier-2 boundary" 引用本 SSOT |
+| **B.5** | SSOT 同步 | core-architecture.md §1.10 增加 "Tier-1/Tier-2 boundary" 引用本 SSOT |
 
 ### 5.2 显式排除（Tier-2，不在 1.4 范围）
 
@@ -312,7 +312,7 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 | ctest 全量测试 | 63/63 PASS | ✅ | ⚠️ 部分（mmu_notifier callback 未联调）|
 | 源码注释 | "stub" / "deferred" / "TODO" 标记 | — | ✅ 显式标注 |
 | 1.4 PoC report | 5341c3f commit message + kfd-portability-report.md | — | ✅ amdgpu headers 实证 |
-| SSOT 标注 | post-refactor-architecture.md §1.10 | ✅ 4 个子阶段 `[x]` | ✅（[x] 仅代表 Tier-1）|
+| SSOT 标注 | core-architecture.md §1.10 | ✅ 4 个子阶段 `[x]` | ✅（[x] 仅代表 Tier-1）|
 | 编译产物 | kfd_queue.o (6KB) + gpu_ioctl.h + handler .cpp | ✅ | — |
 
 **结论**：Tier-1 与 Tier-2 划分基于**多层证据交叉验证**，不是单点推断。
@@ -353,7 +353,7 @@ Stage 1.4 的原始目标是 **"编译真实 KFD（或 amdgpu 子集），跑通
 
 **维护者**: UsrLinuxEmu Architecture Team
 **最后更新**: 2026-07-14 (v1.3 — ADR-059/060 Accepted 解锁 C-12 sub-project；Tier-2 §3.2/§3.3/§3.4 进入授权实施路径)
-**对应 SSOT 章节**: post-refactor-architecture.md §1.10
+**对应 SSOT 章节**: core-architecture.md §1.10
 **对应 ADR**: ADR-015 (IOCTL unification) + ADR-035 (governance) + ADR-027 (compat strategy) + ADR-036 (3-way principle)
 
 ---

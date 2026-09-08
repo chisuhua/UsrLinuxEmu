@@ -13,7 +13,7 @@
 > **相关文档**:
 > - [ats-cxl-30-implementation-research.md](ats-cxl-30-implementation-research.md) — ATS/CXL 调研（共享协议基础）
 > - [kfd-nvidia-mempool-va-research.md](kfd-nvidia-mempool-va-research.md) — KFD/Nvidia UVM VA 分配模式（参考实现）
-> - [post-refactor-architecture.md §1.10.2](../02_architecture/post-refactor-architecture.md) (HAL 列表) + [ADR-058](../00_adr/adr-058-sim-mem-pool-real-va.md) (sim_mem_pool) + [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md) (BAR 定基址) + [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md) (DMA 独立命名空间) — 节点内架构的现有基线
+> - [core-architecture.md §1.10.2](../02_architecture/core-architecture.md) (HAL 列表) + [ADR-058](../00_adr/adr-058-sim-mem-pool-real-va.md) (sim_mem_pool) + [ADR-069](../00_adr/adr-069-bar-ioremap-emulation.md) (BAR 定基址) + [ADR-073](../00_adr/adr-073-dma-coherent-emulation.md) (DMA 独立命名空间) — 节点内架构的现有基线
 > **目标读者**:
 > - 架构师（评估 scale-up 架构选型）
 > - 高级开发者（未来实施参考）

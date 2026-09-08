@@ -528,8 +528,8 @@ max(6-8, 6-8) + 4-6 + 4-6 + 1 + 阶段集成缓冲(5-7)
 
 ### 阶段 v5.5 Final：文档同步（1 周）
 
-- 同步 SSOT `post-refactor-architecture.md` §1.10
-- 更新 `docs/02_architecture/post-refactor-architecture.md` §1.10.4
+- 同步 SSOT `core-architecture.md` §1.10
+- 更新 `docs/02_architecture/core-architecture.md` §1.10.4
 - 同步 `roadmap.md` v5.5+ 状态
 - 归档 Phase 1-4 临时设计文档
 
@@ -576,7 +576,7 @@ max(6-8, 6-8) + 4-6 + 4-6 + 1 + 阶段集成缓冲(5-7)
 - [ ] 4 个子系统集成测试通过
 - [ ] 真实 vendor driver 全链路 attach
 - [ ] docs-audit.sh cross-doc 验证一致性
-- [ ] SSOT `post-refactor-architecture.md` §1.10 更新
+- [ ] SSOT `core-architecture.md` §1.10 更新
 - [ ] `roadmap.md` v5.5+ 标记完成
 
 ---

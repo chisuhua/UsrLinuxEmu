@@ -66,5 +66,5 @@ PRD.md 引用 ADR-028 但**该 ADR 实际定义什么决策目前未定**。本�
 
 ## 相关文档
 
-- `docs/02_architecture/post-refactor-architecture.md` §3.3
+- `docs/02_architecture/core-architecture.md` §3.3
 - `docs/openspec/changes/cleanup-adr-placeholders/`（本变更的设计与 spec）

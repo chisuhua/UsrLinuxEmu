@@ -72,7 +72,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 | `docs/README.md` | 文档索引 | 🟡 65% 完成度数字失真 | — |
 | [ADR-036](../00_adr/adr-036-three-way-separation.md) | 3 区分架构原则 | ✅ Accepted | 2026-06-23 |
 | [ROADMAP](../roadmap/README.md) | 架构演进路线图（4 阶段 + 蓝图，从 MVP 到终态）| 🔄 进行中 | 2026-06-23 |
-| **本文**（post-refactor-architecture.md）| **重构后架构 SSOT + docs 同步方案** | ✅ Approved（v0.1.7）| — |
+| **本文**（core-architecture.md）| **重构后架构 SSOT + docs 同步方案** | ✅ Approved（v0.1.7）| — |
 | [scale-up-fabric-architecture.md](scale-up-fabric-architecture.md) | Scale-up Fabric 局部架构 SSOT（节点内 L1 Switch + 统一 PA + UVM/PGAS）| 📋 Draft v0.2 | 2026-08-14 |
 | [multi-process-gpu-simulator-integration.md](multi-process-gpu-simulator-integration.md) | Multi-Process GPU Simulator 跨仓集成 SSOT（4 仓 vision × UsrLinuxEmu 局部 SSOT）| 📋 Draft v0.1 | 2026-08-14 |
 
@@ -84,7 +84,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 
 ### 关键事实
 
-- `AGENTS.md` 已通过反向引用 `> **权威架构说明**：[post-refactor-architecture.md]` 与本文建立双向引用闭环（commit `3faa3a7`）
+- `AGENTS.md` 已通过反向引用 `> **权威架构说明**：[core-architecture.md]` 与本文建立双向引用闭环（commit `3faa3a7`）
 - 本文档已升为 ✅ Approved（v0.1.7），实现 SSOT 接管；架构部分反向引用闭环由 AGENTS.md commit `3faa3a7` 完成
 - 修复完成后，AGENTS.md 的架构部分应**反向引用本文**而非重复内容
 
@@ -134,7 +134,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 │                   设备驱动层 (Device Driver)                      │
 │   plugins/gpu_driver/                                             │
 │   • drv/         : GpgpuDevice (table ioctl via getIoctlTablePtr)│
-   │   • hal/         : struct gpu_hal_ops (68 fn-ptrs)             │
+    │   • hal/         : struct gpu_hal_ops (71 fn-ptrs)             │
 │                    + hal_user (mmap heap + buddy + fences)      │
 │                    + hal_mock                                    │
 │   • shared/      : gpu_ioctl.h, gpu_types.h, gpu_queue.h,       │
@@ -328,7 +328,7 @@ UsrLinuxEmu/
 
 v0.1.6 SSOT 深度审计（change `ssot-deep-audit`，commit `211b48c`）确认本 gap 已闭环：
 
-- `post-refactor-architecture.md` 存在（47,232 字节，691 行）
+- `core-architecture.md` 存在（47,232 字节，691 行）
 - 28 个 `docs/` + AGENTS.md + README.md 范围内文件交叉引用本 SSOT
 - 42 个项目全局 `.md` 文件引用本 SSOT
 - 详细审计报告：[`docs/02_architecture/audit-reports/v0.1.6-audit.md`](audit-reports/v0.1.6-audit.md)（25 项偏差：🔴 1 / 🟠 4 / 🟡 14 / 🟢 6）
@@ -561,7 +561,7 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 - **真实 Linux kernel 环境**：driver → HAL → `hal_user.cpp` → 真实硬件
 - driver 代码本身**零修改**即可切换环境
 
-##### `gpu_hal_ops` 函数指针清单（68 个，append-only per ADR-023 §D4；2026-08-14 修订）
+##### `gpu_hal_ops` 函数指针清单（71 个，append-only per ADR-023 §D4；2026-09-07 修订 — ADR-092 追加 3 个 adapter_get_info/open/close）
 
 > **维护**: 函数指针列表见 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h) — 本表为分组摘要。
 
@@ -608,6 +608,8 @@ HAL（[`gpu_hal_ops`](../00_adr/adr-023-hal-interface.md)）位于 ② 和 ③ �
 > | ADR-076 PTX-EMU HAL Backend（kernel_module_load/execute/unload）| +3 | **68** | **69** |
 > | **修正后的总计** | **68 fn-ptrs**（**v4 修订 2026-08-15 Oracle 二次评审修复**：原 v3 措辞 "67 fn-ptrs + 1 inline helper" 不严谨——`heap_ptr` 实际是 struct fn-ptr（line 213），struct 下方有 47+ inline wrappers 而非 1 个。已实测 `struct gpu_hal_ops` 含 **68 个 fn-ptr 成员**，与 file header "65+3=68" 一致）| **68** | — |
 >
+> **历史备注（2026-09-07）**：上述 v0.1.7 修订在 2026-08-14 当时是准确的。**自 2026-09-07 起，HAL fn-ptr 进一步扩展至 71**（ADR-092 追加 3 个：`adapter_get_info`/`adapter_open`/`adapter_close`，对应 `gpu_hal.h:382-384` slots #69/#70/#71）。**当前 SSOT** 是 [`stage-5-5-2-driver-stack-flow.md §-1.3.9`](stage-5-5-2-driver-stack-flow.md) 的 71 fn-ptrs 对照表；本表保留为 2026-08-14 修订日志，不再同步——避免与阶段专项 SSOT 形成事实漂移。
+>
 > **修订说明（2026-08-15）**：v0.1.7 之前描述 "11 → 14 → 33 → 65 → 68" 中间步骤数字有偏差：
 > - "11 → 14 (+3)" 误写为 +3，**实际为 +5**（ADR-061 + ADR-062 各贡献 fn-ptrs）
 > - "14 → 33 (+19)" 误写为 +19，**实际为 +14**（Stage 4.1-4.6 累积）
@@ -644,7 +646,7 @@ for IB jump_stack defer behavior (NOT save/restore — clarifies `archive/2026-0
                   │  - BO/VA Space/Queue/Fence 管理      │
                   │  - 零修改（per ADR-036/072）           │
                   └─────────────────┬───────────────────┘
-                                    │  struct gpu_hal_ops（68 fn-ptrs）
+                                     │  struct gpu_hal_ops（71 fn-ptrs）
                                     ▼
                   ┌─────────────────────────────────────┐
                   │  hal/hal_user.cpp (单 impl in-place)   │
@@ -696,7 +698,7 @@ for IB jump_stack defer behavior (NOT save/restore — clarifies `archive/2026-0
 
 **与现有 ADR-076 关系**：
 - ADR-076 PTX-EMU 是**独立**的 HAL extension（3 个 kernel_module_* fn-ptr，dlsym `libptxemu_device.so`）
-- ADR-088 CppTLM EMU 是**另**一个独立的 dGPU 板卡仿真后端（**23 个 C ABI**，dlopen `libcpptlm_emulator.so`；HAL 68 fn-ptrs 通过 in-place 替换接入，本身不新增 HAL fn-ptr——per ADR-088 §C2 + D6.1）
+- ADR-088 CppTLM EMU 是**另**一个独立的 dGPU 板卡仿真后端（**22 个 C ABI**（19 原始 + 3 adapter open/close/get_adapter_info，per ADR-092 Gate D），dlopen `libcpptlm_emulator.so`；HAL 71 fn-ptrs 通过 in-place 替换接入，本身不新增 HAL fn-ptr——per ADR-088 §C2 + D6.1）
 - 两者**共存**：`hal_user.cpp` 可同时配置 PTX-EMU backend + CppTLM backend，由 env var 决定（per ADR-088 §C2 共存关系）
 - **ADR-076 后续演进**：ADR-076 已 ship 实施（✅ Accepted，144/145 ctest PASS）；ADR-088 升 Accepted 后演进推迟已退出，演进路线图 (a)(b) 已确定维持、(c) ⏳ 待 TaskRunner owner 启动 / (d) ⏳ 待文档化。详见 [ADR-076 §演进路线图](../00_adr/adr-076-gpgpu-kernel-module-ioctl.md)。**演进推迟不等于撤销**：已 ship 的实施产物（3 个 ioctl 0x27/0x28/0x29 + 3 个 HAL fn-ptr #66/#67/#68 + 144 ctest）全部有效。
 
@@ -844,66 +846,14 @@ Stage 1.4 完成 5 个 KFD ioctl handler 穿透到 sim 原语的运行时行为�
 
 #### 1.10.5 Stage 5.5.1 — 4 象限目录布局重构（PCI/IOMMU 驱动迁移 + sim_hardware 顶级目录）
 
-> **状态**: ✅ Accepted（[ADR-091 v0.2](../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) ✅ Accepted v0.2 — Stage 5.5.1 实施后升档；本文件反映该 ADR 已批准后的状态）
-> **触发**: 2026-09-03 用户提案"PC 系统硬件模拟用于和 CppTLM 端的 dGPU 对接" + ADR-091 v0.1 INCONCLUSIVE → v0.2 修复
-> **Change**: [openspec/changes/2026-09-03-pci-driver-refactor/](../../openspec/changes/2026-09-03-pci-driver-refactor/)（已 ship，4 commits 实施 + 3 new tests + 151/151 ctest PASS）
-> **前置 ADR**: [ADR-036 v0.2](../00_adr/adr-036-three-way-separation.md)（3 区分 → 4 象限）、[ADR-072 v0.2](../00_adr/adr-072-portability-validation.md)（L2 build 扩展 pci_driver + iommu_driver）、[ADR-089 v0.6](../00_adr/adr-089-v55-system-hw-simulation.md)（location `src/system_hw/` → `sim_hardware/`）
-
-**关键架构变更**（per ADR-091 §D2.3 SSOT）：
-
-1. **目录模型**：从 3 区分（kernel sim / driver / hardware sim）演进为 4 象限（kernel sim / driver / sim_hardware / HAL bridge），sim_hardware 提升为**顶级目录**（不在 `src/` 或 `include/` 下）
-2. **Q1 kernel sim 收缩**：`src/kernel/pcie/`（648 LOC）+ `src/kernel/iommu/`（1,262 LOC）全部迁出
-3. **Q2 driver 扩张**：新建 `plugins/pci_driver/` + `plugins/iommu_driver/` 两个独立 plugin（per ADR-091 + 真机 Linux `drivers/pci/` + `drivers/iommu/` 对齐）
-4. **Q3 sim_hardware 顶级化**：`sim_hardware/{include,src,topology}/`（Stage 5.5.1 仅骨架占位，Stage 5.5.2+ 填充 Tier 1-8）
-5. **ModuleLoader ABI 变更**：`struct module` 新增 `uint32_t load_priority` 字段（值越小越先加载）；拓扑排序 + 环检测实现于 `src/kernel/module_loader.cpp::topo_sort`
-
-**迁移后目录结构**（与 design.md §D1.1 对齐）：
-
-```
-UsrLinuxEmu/
-├── include/kernel/                  # Q1 kernel env sim（缩减）
-├── src/kernel/                      # Q1 kernel env sim impl（无 pcie/iommu 子目录）
-├── plugins/
-│   ├── pci_driver/                  # 🆕 Q2 PCI subsystem driver
-│   │   ├── probe.cpp / pci_access.cpp / pci_msi.cpp / pci_cap.cpp
-│   │   ├── pci_iommu_integration.cpp
-│   │   └── include/{pcie_emu, pcie_emu_impl, pci_device}.h
-│   ├── iommu_driver/                # 🆕 Q2 IOMMU subsystem driver
-│   │   ├── iommu.cpp / iommu_group.cpp / iommu_domain.cpp
-│   │   ├── ats_protocol.cpp / dma_remap.cpp / ioasid.cpp / invalidate.cpp
-│   │   ├── vfio_bridge.cpp + include/{iommu_internal, vfio_bridge}.h
-│   │   └── invalidate.cpp 暂留 Q2（Q2/Q3 拆分决策推迟 Change-2 显式裁决）
-│   └── gpu_driver/                  # 不变（HAL 桥 + sim + drv + shared）
-├── sim_hardware/                    # 🆕 Q3 顶级目录（Stage 5.5.1 仅骨架）
-│   ├── include/{platform, pcie/host_bridge, pcie/bypass, cpptlm/bridge}.h
-│   ├── src/                         # Stage 5.5.1 占位（Wave 1C 显式 -ENOSYS stub）
-│   └── topology/default_topology.json
-└── tests/plugins/                   # 🆕 Stage 5.5.1 新增
-    ├── test_pci_driver_standalone.cpp    # Wave 1A 验证
-    └── test_iommu_driver_standalone.cpp  # Wave 1B 验证
-```
-
-**实施 commits**（[openspec/changes/2026-09-03-pci-driver-refactor/](../../openspec/changes/2026-09-03-pci-driver-refactor/) Stage 5.5.1 实证）：
-
-| Commit | Wave | 内容 |
-|--------|------|------|
-| `8c4ee2f` | 1A+1B | migrate PCI/IOMMU subsystems to 4-quadrant layout |
-| `485de1e` | 1C | sim_hardware 骨架填充（Q3 INTERFACE library） |
-| `dd70988` | 1D | ModuleLoader load_priority + 拓扑排序 + 环检测 |
-| `1db07d1` | 1E | ADR 升级 + L2 build scripts |
-| (本次) | Gate A/B | 3 新测试 + 151/151 ctest PASS |
-
-**Gate 验证**：
-- **Gate 5.5.1-A**（现有 ctest 全 PASS）：148 → **151** 测试通过，0 regression（23.97 sec）
-- **Gate 5.5.1-B**（ModuleLoader 拓扑排序）：`test_moduleloader_toposort_standalone` 新增（5 test cases：struct layout / load_priority 填充 / load_plugins 成功 / 依赖链可加载 / 环检测 -ELOOP）
-- **Gate 5.5.1-C**（L2 build）：`tools/l2-build/build_pci_driver.sh` + `build_iommu_driver.sh` 创建（commit `1db07d1`）
-- **Gate 5.5.1-D**（Oracle 实施后复审）：待 Change-1 归档前触发 Oracle 实施后复审
-
-**下游解锁**：[Change-2 Stage 5.5.2](../2026-09-03-sim-hardware-foundation-tier1-tier2/)（Tier 1+2 PCIe 仿真实施）— 当前 Change-2 已创建 proposal/design/tasks/specs 但代码未实施（占位 stub 显式 `-ENOSYS`），Change-1 归档后才能启动 Change-2 实施。
+> **状态**: ✅ Accepted（[ADR-091 v0.2](../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) ✅ Accepted v0.2 — Stage 5.5.1 实施后升档）
+> **指向 SSOT**: 4 象限目录布局的完整定义见 [`four-quadrant-architecture.md`](four-quadrant-architecture.md)（该文件自述为 "post-refactor 之后针对 Stage 5.5+ 的目录布局升级"，是本主题的当前 SSOT）；本节仅保留为 2026-09-03 实施时的快照，不再同步——避免与阶段专项 SSOT 形成重复维护。
 
 ---
 
-## §2 docs/ 审计发现
+## §2 docs/ 审计发现（历史章节，2026-06-15 审计）
+
+> **状态**: 🗄️ 历史快照。本节记录 2026-06-15 发现的 32 项偏差及修复建议（§3）。截至 2026-09-08，**多数项目已在 v0.1.7 周期 + 本轮（driver-stack-flow roadmap P3）中闭环**：25 项 v0.1.6 偏差已 100% 闭环（参见 [`audit-reports/v0.1.7-audit.md`](audit-reports/v0.1.7-audit.md)），3 个 pre-v0.1.5 DEPRECATED 文档已归档（git `ff1e913`），5+ 个新文档已归位。当前 §3 修复清单仅保留为治理基线参考，**不视为待办**。
 
 **审计时间**: 2026-06-15
 **审计范围**: 50 个 .md 文件
@@ -1073,7 +1023,7 @@ UsrLinuxEmu/
 | | `0x33-0x35` → `0x40-0x43`（ADR-015/024、taskrunner-index）；`0x01-0x08` → `0x10-0x20`（architecture_design） | | |
 | **P0-6** | **删除 LAUNCH_CB 引用**（3 个文件）| 低 | 3 文件 |
 | | commit `b78edc9` 已删除代码，docs 也要全清；并标注"自 2026-05-13 起不再使用" | | |
-| **P0-7** | **新建 `docs/02_architecture/post-refactor-architecture.md`** 作为权威架构说明 | 中 | 新文件（本文）|
+| **P0-7** | **新建 `docs/02_architecture/core-architecture.md`** 作为权威架构说明 | 中 | 新文件（本文）|
 | | 当前 docs/ 缺乏 SSOT，与 AGENTS.md 分散且冲突；本文是草案 | | |
 | **P0-8** | **重写 README.md**（顶层）| 中 | 单文件 |
 | | v0.1.0 2026-02-10，已被 3 个月的重构抛下；含旧布局图、过期命令、不存在的 CLI 工具；移除"## 开发计划"中的"Q1-Q2 2026"（已过期） | | |
@@ -1145,7 +1095,7 @@ UsrLinuxEmu/
 ### 4.1 SSOT（Single Source of Truth）原则
 
 - `AGENTS.md` 应作为**事实上的权威**（虽非正式）
-- 建议新建 `docs/02_architecture/post-refactor-architecture.md` 作为**正式的权威**（本文即此角色）
+- 建议新建 `docs/02_architecture/core-architecture.md` 作为**正式的权威**（本文即此角色）
 - 所有 docs 应链接到 SSOT，而非各自重复
 - **SSOT 的更新责任**: 每次重大重构（Phase 边界），必须先更新 SSOT
 

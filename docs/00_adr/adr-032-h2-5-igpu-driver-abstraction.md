@@ -154,7 +154,7 @@ private:
 ### Mitigation
 
 - 📚 docs-audit pre-commit hook 36/36 包含 IGpuDriver 抽象检查
-- 📚 `post-refactor-architecture.md` §1.3 文档化 3 个实现的关系（待 H-4 Phase 4 更新）
+- 📚 `core-architecture.md` §1.3 文档化 3 个实现的关系（待 H-4 Phase 4 更新）
 - 📚 H-2.5 README 提供 3 实现的快速对照表
 
 ---

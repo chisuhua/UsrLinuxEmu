@@ -26,7 +26,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 **HAL 不是第 4 层**，HAL 是 ② 调 ③ 的桥接适配器。UsrLinuxEmu 通过 `hal_mock.cpp` 注入 sim，真机通过 `hal_user.cpp` 注入真实硬件。驱动代码本身零修改即可切换环境。
 
 **完整原则**: 见 [ADR-036](docs/00_adr/adr-036-three-way-separation.md) ✅ Accepted
-**当前 SSOT 实现**: 见 [post-refactor-architecture.md §1.10](docs/02_architecture/post-refactor-architecture.md)
+**当前 SSOT 实现**: 见 [core-architecture.md §1.10](docs/02_architecture/core-architecture.md)
 
 ---
 
@@ -125,7 +125,7 @@ Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时�
 ## 跨引用
 
 - [ADR-036](docs/00_adr/adr-036-three-way-separation.md), 3 区分架构原则
-- [SSOT §1.10](docs/02_architecture/post-refactor-architecture.md), 3 区分的当前实现
+- [SSOT §1.10](docs/02_architecture/core-architecture.md), 3 区分的当前实现
 - [ADR-035](docs/00_adr/adr-035-governance-policy.md), 治理规则（ADR/变更/SSOT 维护）
 - [sync-plan.md](docs/sync-plan.md), 跨仓同步点（互补关系）
 

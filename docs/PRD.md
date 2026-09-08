@@ -2,7 +2,7 @@
 
 > **最后验证**: 2026-06-16 (commit `374d463`)
 >
-> **架构 SSOT**: [docs/02_architecture/post-refactor-architecture.md](02_architecture/post-refactor-architecture.md)
+> **架构 SSOT**: [docs/02_architecture/core-architecture.md](02_architecture/core-architecture.md)
 >
 > **当前版本**: v0.5+（post-Phase 2）
 >
@@ -250,5 +250,5 @@ TaskRunner 与 UsrLinuxEmu 的交互边界：
 
 **维护者**: UsrLinuxEmu Architecture Team
 **最后验证**: 2026-06-16 (commit `374d463`)
-**关联 SSOT**: [docs/02_architecture/post-refactor-architecture.md](02_architecture/post-refactor-architecture.md)
+**关联 SSOT**: [docs/02_architecture/core-architecture.md](02_architecture/core-architecture.md)
 **对应版本**: v0.5+（post-Phase 2）

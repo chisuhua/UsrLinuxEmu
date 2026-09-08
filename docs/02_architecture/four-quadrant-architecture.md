@@ -5,7 +5,7 @@
 > **作者**: UsrLinuxEmu Architecture Team
 > **作用**: 把 UsrLinuxEmu 顶层目录按"Linux kernel sim vs portable driver vs PC system sim vs GPU-specific sim"**4 象限**划分，对应真机 Linux 内核目录结构
 >
-> **关系**: 本文是 [post-refactor-architecture.md](post-refactor-architecture.md)（v0.1.7）之后，针对 Stage 5.5+ 系统硬件仿真的**目录布局升级**
+> **关系**: 本文是 [core-architecture.md](core-architecture.md)（v0.1.7）之后，针对 Stage 5.5+ 系统硬件仿真的**目录布局升级**
 
 ---
 
@@ -48,7 +48,7 @@
 | 文档 | 关系 |
 |------|------|
 | [ADR-091](../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) | 本文的 SSOT（Proposed v0.1） |
-| [post-refactor-architecture.md](post-refactor-architecture.md) | 重构后架构 SSOT（v0.1.7） |
+| [core-architecture.md](core-architecture.md) | 重构后架构 SSOT（v0.1.7） |
 | [roadmap.md](../../roadmap.md) | 顶层路线图（4 阶段） |
 | [pcie-bus-bridge-roadmap.md](../../roadmap/pcie-bus-bridge-roadmap.md) | 本方案的实施路线图 |
 

@@ -2,7 +2,7 @@
 
 > **最后验证**: 2026-06-16 (commit `374d463`)
 >
-> **架构 SSOT**: [`docs/02_architecture/post-refactor-architecture.md`](../02_architecture/post-refactor-architecture.md)
+> **架构 SSOT**: [`docs/02_architecture/core-architecture.md`](../02_architecture/core-architecture.md)
 > **状态**: 已重写，对齐 Phase 1.5 / Phase 2 重构后的三层架构
 
 ## 目录
@@ -724,7 +724,7 @@ ioctl → GpgpuDevice::ioctl() → getIoctlTablePtr() → handlePushbufferSubmit
 
 | 主题 | 文档 |
 |------|------|
-| 架构 SSOT（含 32 项修复建议） | [`docs/02_architecture/post-refactor-architecture.md`](../02_architecture/post-refactor-architecture.md) |
+| 架构 SSOT（含 32 项修复建议） | [`docs/02_architecture/core-architecture.md`](../02_architecture/core-architecture.md) |
 | IOCTL 编号完整表 | 同上，附录 A |
 | 仓库物理布局 | 同上，§1.5 |
 | 关键数据流 | 同上，§1.3 |

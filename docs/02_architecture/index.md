@@ -3,13 +3,13 @@
 这里包含理解 UsrLinuxEmu 所必需的核心概念和架构信息。
 
 > **最后更新**: 2026-09-08（归档 3 个 pre-v0.1.5 DEPRECATED 文档；新增 4 个文档导航 + 修复 broken link）
-> **SSOT**: [`post-refactor-architecture.md`](post-refactor-architecture.md)（v0.1.7+，持续维护）
+> **SSOT**: [`core-architecture.md`](core-architecture.md)（v0.1.7+，持续维护）
 
 ## 导航
 
 ### 活跃文档（推荐阅读）
 
-- [**post-refactor-architecture.md**](post-refactor-architecture.md) ⭐ **SSOT** — 重构后架构总览 + H-2.5 + H-3 跨仓架构（v0.1.7+，2026-06-23 更新）
+- [**core-architecture.md**](core-architecture.md) ⭐ **SSOT** — 重构后架构总览 + H-2.5 + H-3 跨仓架构（v0.1.7+，2026-06-23 更新）
 - [**stage-5-5-2-driver-stack-flow.md**](stage-5-5-2-driver-stack-flow.md) ⭐ **Stage 5.5.2 驱动栈** — 控制/数据流完整图谱（Path A Full TLP + Path B Bypass AXI + Command 模式 + Adapter 通道；2026-09-07 新增，commit `bab64dd5` + `6d2ea90`）
 - [**driver-stack-flow-roadmap.md**](../roadmap/driver-stack-flow-roadmap.md) 📋 **修订实施路径图** — 上述文档的 P0-P4 阶段修订计划（2026-09-08 新增）
 - [**four-quadrant-architecture.md**](four-quadrant-architecture.md) — 4 象限目录布局（Q1-Q4，ADR-091 派生 SSOT）
@@ -29,7 +29,7 @@
 | 我想了解... | 阅读这个 |
 |------------|----------|
 | **项目是什么 + 怎么开始** | [README.md](../../README.md) + [AGENTS.md](../../AGENTS.md) |
-| **权威架构（SSOT）** | [post-refactor-architecture.md](post-refactor-architecture.md) |
+| **权威架构（SSOT）** | [core-architecture.md](core-architecture.md) |
 | **Stage 5.5.2 驱动栈数据流/控制流** | [stage-5-5-2-driver-stack-flow.md](stage-5-5-2-driver-stack-flow.md) |
 | **driver-stack-flow 修订计划（P0-P4）** | [driver-stack-flow-roadmap.md](../roadmap/driver-stack-flow-roadmap.md) |
 | **4 象限目录布局（Q1-Q4）** | [four-quadrant-architecture.md](four-quadrant-architecture.md) |
@@ -50,7 +50,7 @@
 3. [overview 归档](../archive/misc/overview-2026-08-deprecated.md)（可选，已 deprecated 但保留供历史参考）
 
 ### 🏛️ 架构理解者
-1. [post-refactor-architecture.md](post-refactor-architecture.md)（**SSOT**）— 重构后权威架构
+1. [core-architecture.md](core-architecture.md)（**SSOT**）— 重构后权威架构
 2. [four-quadrant-architecture.md](four-quadrant-architecture.md) — 4 象限目录布局（Stage 5.5+）
 3. [stage-5-5-2-driver-stack-flow.md](stage-5-5-2-driver-stack-flow.md) — 驱动栈数据流
 4. [driver-stack-flow-roadmap.md](../roadmap/driver-stack-flow-roadmap.md) — 修订实施路径
@@ -58,7 +58,7 @@
 ### 🔧 驱动开发者
 1. [AGENTS.md](../../AGENTS.md) — 编码规范 + IOCTL 编号
 2. `plugins/gpu_driver/shared/gpu_ioctl.h` — System C IOCTL 定义
-3. [post-refactor-architecture.md](post-refactor-architecture.md) §1.6 — IOCTL 体系
+3. [core-architecture.md](core-architecture.md) §1.6 — IOCTL 体系
 
 ### 🌐 跨仓 / 多进程 / Scale-up 架构师
 1. [multi-process-gpu-simulator-integration.md](multi-process-gpu-simulator-integration.md) — 跨仓集成 SSOT

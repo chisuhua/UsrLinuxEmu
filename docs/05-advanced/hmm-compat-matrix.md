@@ -168,4 +168,4 @@
 
 **维护者**：UsrLinuxEmu Architecture Team
 **最后更新**：2026-07-04
-**对应 SSOT**：`docs/02_architecture/post-refactor-architecture.md §1.10`
+**对应 SSOT**：`docs/02_architecture/core-architecture.md §1.10`

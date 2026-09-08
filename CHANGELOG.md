@@ -48,7 +48,7 @@ UsrLinuxEmu v1.0.0 — user-space Linux kernel emulation environment for portabl
 
 ### Documentation
 
-- **Post-refactor architecture SSOT**: `docs/02_architecture/post-refactor-architecture.md` as single source of truth.
+- **Post-refactor architecture SSOT**: `docs/02_architecture/core-architecture.md` as single source of truth.
 - **ADR-036**: 3-way separation architecture principle (Accepted).
 - **ADR-064**: Memory model staging strategy (Accepted).
 - **ADR-038**: Network stack 3-way separation boundary (Accepted).

@@ -515,7 +515,7 @@ TEST_CASE("kernel_thread_base derived dtor must stop before base", "[thread][lif
 
 ### 内部文档
 
-- [post-refactor-architecture.md §1.10](../02_architecture/post-refactor-architecture.md) - 3 区分当前实现
+- [core-architecture.md §1.10](../02_architecture/core-architecture.md) - 3 区分当前实现
 - [kfd-portability-boundary.md v1.2](../05-advanced/kfd-portability-boundary.md) - KFD Tier-1/Tier-2 边界
 - [kfd-portability-report.md §4.2](../05-advanced/kfd-portability-report.md) - **GCC 13 pthread bug 详细记录**
 - [gpu_driver_architecture.md](../05-advanced/gpu_driver_architecture.md) - HardwarePullerEmu std::thread 参考模式

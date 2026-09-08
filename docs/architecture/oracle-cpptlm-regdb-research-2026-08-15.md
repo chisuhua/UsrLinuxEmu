@@ -374,7 +374,7 @@ HAL 68 fn-ptr (hal_user.cpp)
 | 周二 | 写 ADR-088 v4 草案（Oracle 评审格式） | UsrLinuxEmu Architecture | ADL 格式完整 |
 | 周三 | 跨仓评审（per ADR-035 §R6.1）+ CppTLM maintainer 反馈 | 4-owner joint | 3-minus 转 2-minus |
 | 周四 | ADR-088 v4 → Accepted | Oracle session | `ses_<new>` APPROVED |
-| 周五 | `roadmap.md` + `post-refactor-architecture.md` + `ADR-088 v4` 同步 | Doc team | docs-audit.sh PASS |
+| 周五 | `roadmap.md` + `core-architecture.md` + `ADR-088 v4` 同步 | Doc team | docs-audit.sh PASS |
 
 ---
 

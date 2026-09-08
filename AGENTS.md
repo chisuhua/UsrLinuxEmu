@@ -12,9 +12,9 @@ UsrLinuxEmu 是用户态 Linux 内核模拟环境，用于设备驱动开发（�
 > 通过 **3 区分架构**实现：① 内核环境模拟 + ② 可移植驱动代码（用 Linux kernel 习语）+ ③ 硬件模拟 + HAL 桥接层。
 > 完整原则: [ADR-036](docs/00_adr/adr-036-three-way-separation.md) ✅ Accepted。演进路径: [ROADMAP](roadmap.md)。
 
-> **权威架构说明**：[docs/02_architecture/post-refactor-architecture.md](docs/02_architecture/post-refactor-architecture.md)（v0.1.7 ✅ Approved）
+> **权威架构说明**：[docs/02_architecture/core-architecture.md](docs/02_architecture/core-architecture.md)（v0.1.7 ✅ Approved）
 >
-> 本 AGENTS.md 是**开发指南**（构建/编码风格/集成要点），架构权威说明以 post-refactor-architecture.md 为准。
+> 本 AGENTS.md 是**开发指南**（构建/编码风格/集成要点），架构权威说明以 core-architecture.md 为准。
 
 ## 构建命令
 

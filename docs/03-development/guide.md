@@ -2,7 +2,7 @@
 
 > **最后验证**: 2026-06-16 (commit `374d463`)
 >
-> **架构 SSOT**: [`docs/02_architecture/post-refactor-architecture.md`](../02_architecture/post-refactor-architecture.md)
+> **架构 SSOT**: [`docs/02_architecture/core-architecture.md`](../02_architecture/core-architecture.md)
 > **状态**: 已重写，对齐 Phase 1.5 / Phase 2 重构后的三层架构
 
 ## 目录
@@ -105,7 +105,7 @@ make -j$(nproc)
 add_library(kernel SHARED ...)
 ```
 
-**不要改成 STATIC**。`VFS::instance()`、`ModuleLoader` 等使用 Meyers 单例（函数内 `static` 局部变量）；STATIC 库会让可执行文件与插件各自持有独立的单例副本，设备注册/查找完全断裂。修改前请阅读 [post-refactor-architecture.md §4 关键执行原则](../02_architecture/post-refactor-architecture.md)。
+**不要改成 STATIC**。`VFS::instance()`、`ModuleLoader` 等使用 Meyers 单例（函数内 `static` 局部变量）；STATIC 库会让可执行文件与插件各自持有独立的单例副本，设备注册/查找完全断裂。修改前请阅读 [core-architecture.md §4 关键执行原则](../02_architecture/core-architecture.md)。
 
 ---
 
@@ -146,7 +146,7 @@ cd build && ctest --output-on-failure && cd ..
 
 ## §5 项目结构（重构后）
 
-Phase 1.5 / Phase 2 之后，仓库布局如 [`post-refactor-architecture.md` §1.5](../02_architecture/post-refactor-architecture.md) 所述。开发者最关心的几个目录：
+Phase 1.5 / Phase 2 之后，仓库布局如 [`core-architecture.md` §1.5](../02_architecture/core-architecture.md) 所述。开发者最关心的几个目录：
 
 ```
 UsrLinuxEmu/
@@ -266,7 +266,7 @@ ssize_t MyDevice::write(int fd, const void* buf, size_t count) {
 
 ### 6.2 写插件入口：`module mod` 符号
 
-插件通过 `module mod` 符号注册到 `ModuleLoader`。`module` 结构定义在 [`include/kernel/module_loader.h`](../02_architecture/post-refactor-architecture.md)：
+插件通过 `module mod` 符号注册到 `ModuleLoader`。`module` 结构定义在 [`include/kernel/module_loader.h`](../02_architecture/core-architecture.md)：
 
 ```c
 // include/kernel/module_loader.h（节选）
@@ -588,7 +588,7 @@ VFS::instance().register_device(d1);
 
 ### Q: GPU 驱动怎么开始？
 
-读 [`plugins/gpu_driver/plugin.cpp`](../../plugins/gpu_driver/plugin.cpp) 入口（90 行，结构最清晰），再看 [`plugins/gpu_driver/drv/gpgpu_device.h`](../../plugins/gpu_driver/drv/gpgpu_device.h) 的 ioctl 派发表（13 项），最后看 [`post-refactor-architecture.md` 附录 A](../02_architecture/post-refactor-architecture.md) 完整 IOCTL 编号表。
+读 [`plugins/gpu_driver/plugin.cpp`](../../plugins/gpu_driver/plugin.cpp) 入口（90 行，结构最清晰），再看 [`plugins/gpu_driver/drv/gpgpu_device.h`](../../plugins/gpu_driver/drv/gpgpu_device.h) 的 ioctl 派发表（13 项），最后看 [`core-architecture.md` 附录 A](../02_architecture/core-architecture.md) 完整 IOCTL 编号表。
 
 ### Q: 测试应该写到 tests/ 还是 plugins/gpu_driver/test/？
 
@@ -600,7 +600,7 @@ VFS::instance().register_device(d1);
 
 | 想了解什么 | 看哪里 |
 |------------|--------|
-| 三层架构总览 / 仓库布局 / IOCTL 编号表 | [`docs/02_architecture/post-refactor-architecture.md`](../02_architecture/post-refactor-architecture.md) |
+| 三层架构总览 / 仓库布局 / IOCTL 编号表 | [`docs/02_architecture/core-architecture.md`](../02_architecture/core-architecture.md) |
 | Device / VFS / ModuleLoader 完整 API | [`docs/06-reference/api-reference.md`](../06-reference/api-reference.md) |
 | 15 个 GPU_IOCTL_* 的参数与示例 | [`docs/06-reference/ioctl-commands.md`](../06-reference/ioctl-commands.md) |
 | 如何写一个新设备类（Device 完整步骤）| [adding-devices.md](adding-devices.md) |

@@ -16,7 +16,7 @@
 
 ## 背景
 
-PRD.md 与 `docs/02_architecture/post-refactor-architecture.md` §3.3 引用 ADR-025 作为 Phase 3+ roadmap 的一部分，但**该 ADR 实际定义什么决策目前未定**。本文档占位以：
+PRD.md 与 `docs/02_architecture/core-architecture.md` §3.3 引用 ADR-025 作为 Phase 3+ roadmap 的一部分，但**该 ADR 实际定义什么决策目前未定**。本文档占位以：
 
 1. 结束 docs-audit §3.2 中"ADR-025 missing" 的告警
 2. 为未来 owner 提供「接手点」（认领后更新本文档并改 status 为 ✅ 已接受）
@@ -69,5 +69,5 @@ PRD.md 与 `docs/02_architecture/post-refactor-architecture.md` §3.3 引用 ADR
 
 ## 相关文档
 
-- `docs/02_architecture/post-refactor-architecture.md` §3.3（ADR 治理）
+- `docs/02_architecture/core-architecture.md` §3.3（ADR 治理）
 - `docs/openspec/changes/cleanup-adr-placeholders/`（本变更的设计与 spec）

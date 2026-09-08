@@ -2,7 +2,7 @@
 # docs-audit.sh - Validate UsrLinuxEmu documentation against code reality
 #
 # Re-runnable audit script that catches the kind of doc/code drift documented
-# in docs/02_architecture/post-refactor-architecture.md. Designed to be
+# in docs/02_architecture/core-architecture.md. Designed to be
 # invoked manually, in pre-commit, or in CI.
 #
 # Usage:
@@ -34,7 +34,7 @@
 #   - Self-locates REPO_ROOT from SCRIPT_DIR (no hardcoded paths)
 #   - Every check is wrapped in `|| true` so a single failure does not abort
 #     the whole audit; we want the full report.
-#   - Style reference: docs/02_architecture/post-refactor-architecture.md
+#   - Style reference: docs/02_architecture/core-architecture.md
 
 set -e
 
@@ -352,7 +352,7 @@ section_arch() {
     agents_gtest=$(grep -ciE "gtest|google test|catch2" "${REPO_ROOT}/AGENTS.md" 2>/dev/null | head -1 | tr -d '[:space:]')
     agents_gtest="${agents_gtest:-0}"
     if [ "${agents_gtest}" = "0" ]; then
-        check_pass "AGENTS.md does not claim a test framework (matches post-refactor-architecture.md v0.1.1)"
+        check_pass "AGENTS.md does not claim a test framework (matches core-architecture.md v0.1.1)"
     else
         # References are correct if they describe the migration: "we use Catch2, not GTest"
         # See ADR-010 and the AGENTS.md test framework section.
@@ -500,7 +500,7 @@ section_adr() {
     subsection "3.1 ADR-022 missing (documented as 'GPU 计算单元仿真')"
     if [ ! -f "${adr_dir}/adr-022-gpu-core-emulation.md" ] && \
        [ ! -f "${adr_dir}/adr-022-gpu-compute-unit-emulation.md" ]; then
-        check_info "ADR-022 file not present (intentional placeholder; documented in post-refactor-architecture.md)"
+        check_info "ADR-022 file not present (intentional placeholder; documented in core-architecture.md)"
     else
         check_pass "ADR-022 present"
     fi
@@ -565,7 +565,7 @@ section_doc_health() {
     # as part of the cleanup record.
     local core_refs
     core_refs=$(grep -rE "02-core/" "${REPO_ROOT}/docs" \
-        --exclude="post-refactor-architecture.md" \
+        --exclude="core-architecture.md" \
         --exclude="architecture-alignment-report.md" \
         --exclude="refactor-history.md" 2>/dev/null | wc -l | tr -d ' ')
     if [ "${core_refs}" -eq 0 ]; then

@@ -49,7 +49,7 @@ UsrLinuxEmu 项目在 2026-02 提出了 ADR-010 提议"迁移到 GTest"。但在
 
 ## 相关文档
 
-- `docs/02_architecture/post-refactor-architecture.md` §1.7（测试框架：声称 vs 实际）
+- `docs/02_architecture/core-architecture.md` §1.7（测试框架：声称 vs 实际）
 - `tests/catch_amalgamated.hpp`（vendored Catch2 v2.x）
 - `tests/CMakeLists.txt`（实际测试构建配置）
 

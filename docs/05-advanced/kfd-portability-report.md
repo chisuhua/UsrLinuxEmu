@@ -197,7 +197,7 @@
 - **Architecture boundary SSOT**: [kfd-portability-boundary.md](kfd-portability-boundary.md) (detailed Tier-1/Tier-2 boundary)
 - **Tracking plan**: [2026-07-04-stage-1.4-tier1-delivery.md](../superpowers/plans/2026-07-04-stage-1.4-tier1-delivery.md) (B.1-B.5 detailed tasks)
 - **Roadmap**: [stage-1-kernel-emu.md section 1.4](../roadmap/stage-1-kernel-emu.md) (original goal definition)
-- **Architecture SSOT**: [post-refactor-architecture.md section 1.10](../02_architecture/post-refactor-architecture.md) (3-way principle)
+- **Architecture SSOT**: [core-architecture.md section 1.10](../02_architecture/core-architecture.md) (3-way principle)
 - **ADRs**: ADR-027 (compat strategy) + ADR-035 (governance) + ADR-036 (3-way)
 
 ---

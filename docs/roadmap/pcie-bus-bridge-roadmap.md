@@ -14,7 +14,7 @@
 > - [ADR-072](../00_adr/adr-072-portability-validation.md) ✅ Accepted — L2 build（**待扩展目标集**）
 > **关联文档**:
 > - [docs/02_architecture/four-quadrant-architecture.md](../02_architecture/four-quadrant-architecture.md) — 4 象限详细布局
-> - [docs/02_architecture/post-refactor-architecture.md](../02_architecture/post-refactor-architecture.md) — 重构后架构 SSOT
+> - [docs/02_architecture/core-architecture.md](../02_architecture/core-architecture.md) — 重构后架构 SSOT
 > - [ADR-089 关联调研](../05-advanced/system-hw-survey-2026-08-16.md) — v5.5+ 调研报告
 > - [ADR-089 Live Migration 调研](../05-advanced/vfio-live-migration-research.md)
 > **维护者**: UsrLinuxEmu Architecture Team

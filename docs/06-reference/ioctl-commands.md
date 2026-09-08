@@ -3,7 +3,7 @@
 本文档列出 UsrLinuxEmu 模拟的 `/dev/gpgpu0` 设备支持的 **System C**（`GPU_IOCTL_*`）ioctl 命令全集。旧版 ioctl 集已归档至 `archive/system_b_drivers/gpu/`，不再维护，新代码禁止使用。
 
 **最后验证**: 2026-06-16 (commit `374d463`)
-**对应 SSOT**: `docs/02_architecture/post-refactor-architecture.md` 附录 A
+**对应 SSOT**: `docs/02_architecture/core-architecture.md` 附录 A
 **头文件**: `plugins/gpu_driver/shared/gpu_ioctl.h`（Queue 结构在 `gpu_queue.h`）
 **设备路径**: `/dev/gpgpu0`, `/dev/gpgpu1`
 **魔术数**: `'G'`（0x47）
@@ -750,7 +750,7 @@ int main(void) {
 
 ## 10. 相关文档
 
-- SSOT 架构: [`docs/02_architecture/post-refactor-architecture.md`](../02_architecture/post-refactor-architecture.md) 附录 A
+- SSOT 架构: [`docs/02_architecture/core-architecture.md`](../02_architecture/core-architecture.md) 附录 A
 - API 参考: [`docs/06-reference/api-reference.md`](api-reference.md)
 - 队列设计 ADR: `docs/00_adr/adr-024-user-mode-queue-submission.md`
 - IOCTL 统一 ADR: `docs/00_adr/adr-015-gpu-ioctl-unification.md`

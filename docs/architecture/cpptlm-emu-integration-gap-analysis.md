@@ -531,7 +531,7 @@ USR_LINUX_EMU_CPPTLM_REGDB=/path/to/cpptlm_regs/dgpu_v0/registers.yaml \
 - [ ] New 5 Catch2 tests added for: (a) Config Space read (b) BAR2 mmap (c) MSI-X trigger (d) FLR reset (e) Power state transition
 - [ ] ADR-088升档 Accepted after Oracle APPROVED-WITH-CONDITIONS
 - [ ] `roadmap.md` updated with new Stage 5 sub-stage "CppTLM EMU integration"
-- [ ] SSOT `post-refactor-architecture.md` §1.10 references ADR-088
+- [ ] SSOT `core-architecture.md` §1.10 references ADR-088
 
 ---
 

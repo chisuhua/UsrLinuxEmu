@@ -553,7 +553,7 @@ static_assert(sizeof(cpplink_region_descriptor_v1) == 64);
 
 - [scale-up-fabric-architecture.md](../02_architecture/scale-up-fabric-architecture.md) v0.3（§4.6 CppLink 协议 + §9 进程架构 + §12.1 ADR-087 行 + §13.4 Phase 对齐 + §15 风险 #12-15）
 - [multi-process-gpu-simulator-integration.md](../02_architecture/multi-process-gpu-simulator-integration.md) v0.1（Oracle 调研综合）
-- [post-refactor-architecture.md](../02_architecture/post-refactor-architecture.md) v0.1.7（项目级 SSOT）
+- [core-architecture.md](../02_architecture/core-architecture.md) v0.1.7（项目级 SSOT）
 - [AGENTS.md](../../AGENTS.md)（项目治理规则）
 - [ADR-035](adr-035-governance-policy.md) ✅ §R5.1 cross-repo 协议 + §R3 一决策一 ADR
 - [ADR-036](adr-036-three-way-separation.md) ✅ 3 区分原则
@@ -598,7 +598,7 @@ static_assert(sizeof(cpplink_region_descriptor_v1) == 64);
   - 新 TADR / 姊妹 ADR 创建时同步
   - Phase R/1/2/3 ship 状态变化
   - ADR-011 状态迁移（D8）
-- **跨仓同步**: 本 ADR 状态变更必须同步更新 `docs/00_adr/README.md` + `docs/README.md` ADR 数量统计 + `docs/02_architecture/post-refactor-architecture.md` 引用
+- **跨仓同步**: 本 ADR 状态变更必须同步更新 `docs/00_adr/README.md` + `docs/README.md` ADR 数量统计 + `docs/02_architecture/core-architecture.md` 引用
 
 ---
 

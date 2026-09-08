@@ -2,7 +2,7 @@
 
 > **最后验证**: 2026-06-16 (commit `758b39c` — PR #16 后)
 >
-> **SSOT**: 本文档与 [docs/02_architecture/post-refactor-architecture.md §1.5](../02_architecture/post-refactor-architecture.md) 和 [AGENTS.md](../../AGENTS.md) 对齐。如冲突，以 SSOT 为准。
+> **SSOT**: 本文档与 [docs/02_architecture/core-architecture.md §1.5](../02_architecture/core-architecture.md) 和 [AGENTS.md](../../AGENTS.md) 对齐。如冲突，以 SSOT 为准。
 >
 > **状态**: ✅ 与 Phase 1.5 / Phase 2 重构后代码一致
 >
@@ -805,11 +805,11 @@ std::cerr << "load_plugins returned " << rc << "\n";
 
 ## 10. 相关文档
 
-- 架构 SSOT：[docs/02_architecture/post-refactor-architecture.md §1.5](../02_architecture/post-refactor-architecture.md)
+- 架构 SSOT：[docs/02_architecture/core-architecture.md §1.5](../02_architecture/core-architecture.md)
 - 开发指南：[AGENTS.md](../../AGENTS.md)
 - 设备开发：[docs/03-development/adding-devices.md](../03-development/adding-devices.md)
 - 测试框架：[docs/04-building/testing_guide.md](../04-building/testing_guide.md)
-- IOCTL 编号：[docs/02_architecture/post-refactor-architecture.md 附录 A](../02_architecture/post-refactor-architecture.md)
+- IOCTL 编号：[docs/02_architecture/core-architecture.md 附录 A](../02_architecture/core-architecture.md)
 - GPU 插件源码：[plugins/gpu_driver/plugin.cpp](../../plugins/gpu_driver/plugin.cpp)
 - 最小插件源码：[drivers/sample_memory_plugin.cpp](../../drivers/sample_memory_plugin.cpp)
 - 插件清单：[plugins/plugins.json](../../plugins/plugins.json)

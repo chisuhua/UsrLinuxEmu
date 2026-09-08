@@ -135,4 +135,4 @@ if (WARN_ON(!exp_info->priv || !exp_info->ops
 
 **维护者**：UsrLinuxEmu Architecture Team
 **最后更新**：2026-07-02
-**对应 SSOT**：`docs/02_architecture/post-refactor-architecture.md §1.10`
+**对应 SSOT**：`docs/02_architecture/core-architecture.md §1.10`
