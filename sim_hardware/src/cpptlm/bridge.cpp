@@ -89,8 +89,6 @@ struct CpptlmBridgeState {
   CpptlmSymbols syms;
   bool resolved = false;
   bool load_failed = false;
-  std::unordered_map<cpptlm_handle, cpptlm_emulator_t*> emu_map;
-  cpptlm_handle next_handle = 1;
 };
 
 CpptlmBridgeState& bridge_state() {
@@ -261,15 +259,9 @@ int CpptlmBridge::mmio_read(uint8_t bar, uint64_t offset, void* buf, size_t len)
   if (!buf || !valid_mmio(bar, offset, len)) return -EINVAL;
 
   if (impl_->backend == CpptlmBackendKind::kCpptlm) {
-    // For kCpptlm backend, route to CppTLM ABI via dlopen'd symbols.
-    // We don't have a per-bridge emu instance in this iteration — the
-    // backdoor_endpoint.cpp side manages emu lifecycle. For now, kCpptlm
-    // mmio_read/write fall through to mock storage (host-side BAR mirror).
-    // The real CppTLM ABI delegation requires P4.NEW-D (hal_cpptlm.cpp)
-    // to plumb emu through, since CpptlmBridge doesn't own an emu.
-    TlpGuard tlp;
-    std::memcpy(buf, impl_->bars[bar].data() + offset, len);
-    return 0;
+    if (!bridge_state().resolved) return -ENOSYS;
+    // TODO(P4.NEW-D): plumb emu through and call syms.mmio_read
+    return -ENOSYS;
   }
 
   TlpGuard tlp;
@@ -297,16 +289,9 @@ int CpptlmBridge::backdoor_read(uint8_t bar, uint64_t offset, void* buf,
   if (!buf || !valid_mmio(bar, offset, len)) return -EINVAL;
 
   if (impl_->backend == CpptlmBackendKind::kCpptlm) {
-    // kCpptlm backend: bridge.cpp doesn't own an emu instance (emu is owned
-    // by backdoor_endpoint.cpp via live_emulators map). Real CppTLM
-    // backdoor_read requires the emu pointer. For now, return -ENOSYS and
-    // rely on the host_bridge.cpp to use the appropriate path (mmio_* vs
-    // backdoor_*) per bypass_get_mode().
-    // The full path will be wired in P4.NEW-D.
-    return -ENOSYS;
+    if (!bridge_state().resolved) return -ENOSYS;
+    return -ENOSYS;  // TODO(P4.NEW-D): call syms.backdoor_read(emu, ...)
   }
-
-  // kMock backend: backdoor is not supported (no real BAR mirror).
   return -ENOSYS;
 }
 

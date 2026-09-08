@@ -2,17 +2,11 @@
  * sim_hardware/src/cpptlm/backdoor_endpoint.cpp
  * 5.5.6-cpptlm-ep-binding — P4.NEW-A: real CppTLM BackdoorEndpoint implementation
  *
- * Replaces the previous weak-link stubs with a real implementation that binds
- * to CppTLM v0.5.0-MVP via dlopen + dlsym on libcpptlm_emulator.so.
- *
  * Design (see openspec/changes/2026-09-08-5-5-6-cpptlm-ep-binding/design.md §2):
  *   - 5 functions (acquire / release / get_adapter_info / read / write)
  *   - dlopen libcpptlm_emulator.so from dynamic linker path or sibling build path
- *   - dlsym 24 CppTLM ABI symbols (cpptlm_emulator_*)
+ *   - dlsym 22 CppTLM ABI symbols (cpptlm_emulator_*)
  *   - dlopen fails → fall back to -ENOSYS (preserves 164/164 ctest baseline)
- *
- * Field mapping (cpptlm_device_info_s → ule_dgpu_adapter_info):
- *   All 9 fields are 1:1 (see ../include/cpptlm/backdoor_endpoint.h v1.1 ext).
  */
 #include "cpptlm/backdoor_endpoint.h"
 
@@ -50,7 +44,7 @@ struct cpptlm_device_info_s_abi {
 using cpptlm_emulator_t_abi = struct cpptlm_emulator_opaque;
 using cpptlm_emulator_handle_t_abi = uint64_t;
 
-// ── Symbol table (24 ABI) ──
+// ── Symbol table (22 ABI) ──
 
 struct CpptlmSymbols {
   // Lifecycle
@@ -126,48 +120,6 @@ GlobalState& global() {
 
 // ── Load CppTLM symbols ──
 
-bool resolve_symbols(CpptlmSymbols& out_syms) {
-  auto load = [](const char* path) -> void* {
-    return dlopen(path, RTLD_NOW | RTLD_LOCAL);
-  };
-
-  void* h = load("libcpptlm_emulator.so");
-  if (!h) {
-    // Sibling build fallback (development setup)
-    h = load("../CppTLM/build/lib/libcpptlm_emulator.so");
-  }
-  if (!h) {
-    // Absolute path fallback
-    h = load("/workspace/project/CppTLM/build/lib/libcpptlm_emulator.so");
-  }
-  if (!h) {
-    return false;
-  }
-
-  auto sym = [h](const char* name) -> void* {
-    return dlsym(h, name);
-  };
-
-  out_syms.create = reinterpret_cast<decltype(out_syms.create)>(sym("cpptlm_emulator_create"));
-  out_syms.create_by_id = reinterpret_cast<decltype(out_syms.create_by_id)>(sym("cpptlm_emulator_create_by_id"));
-  out_syms.destroy = reinterpret_cast<decltype(out_syms.destroy)>(sym("cpptlm_emulator_destroy"));
-  out_syms.open = reinterpret_cast<decltype(out_syms.open)>(sym("cpptlm_emulator_open"));
-  out_syms.close = reinterpret_cast<decltype(out_syms.close)>(sym("cpptlm_emulator_close"));
-  out_syms.get_adapter_info = reinterpret_cast<decltype(out_syms.get_adapter_info)>(sym("cpptlm_emulator_get_adapter_info"));
-  out_syms.mmio_read = reinterpret_cast<decltype(out_syms.mmio_read)>(sym("cpptlm_emulator_mmio_read"));
-  out_syms.mmio_write = reinterpret_cast<decltype(out_syms.mmio_write)>(sym("cpptlm_emulator_mmio_write"));
-  out_syms.backdoor_read = reinterpret_cast<decltype(out_syms.backdoor_read)>(sym("cpptlm_emulator_backdoor_read"));
-  out_syms.backdoor_write = reinterpret_cast<decltype(out_syms.backdoor_write)>(sym("cpptlm_emulator_pcie_config_read"));  // intentional mismatch: see below
-
-  // Wait — backdoor_read/write need to be remapped. Let me fix this properly:
-  // The above was a copy-paste error; the real CppTLM uses:
-  //   cpptlm_emulator_backdoor_read / cpptlm_emulator_backdoor_write
-  // I'll re-do the symbol table cleanly below.
-
-  return false;  // placeholder, replaced below
-}
-
-// Clean symbol resolution (no copy-paste mistakes)
 bool resolve_symbols_clean(CpptlmSymbols& out_syms) {
   auto load = [](const char* path) -> void* {
     return dlopen(path, RTLD_NOW | RTLD_LOCAL);
