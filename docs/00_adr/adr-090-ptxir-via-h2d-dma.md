@@ -320,7 +320,7 @@ ADR-090 实施保留 4 个 `hal_mock_inject_ptxemu_*` 注入 helper（无 caller
 - [PTX-EMU ADR-0029 §D8](../external/PTX-EMU/docs/adr/ADR-0029-ptxemu-image-executor.md#d8-cp-端集成约定--hal-扩展方案usrlinuxemu--ptx-emu-跨仓契约)（待 amendment）
 - [TaskRunner tadr-307](../external/TaskRunner/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md)（待 Supersede → tadr-308）
 - Oracle Session `ses_ff2106f84ffeM2oItBEa9iu4hL` — 2026-08-17 评审输出
-- [core-architecture.md](../02_architecture/core-architecture.md) — 重构后架构 SSOT
+- [core-architecture.md](../02_architecture/core-architecture.md) — 核心架构 SSOT
 
 ---
 

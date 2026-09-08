@@ -561,7 +561,7 @@ ADR-088 §C2 提出 `src/system_hw/` 概念，ADR-089 v0.5 实施时已部分采
 ## Related Documents
 
 - [docs/02_architecture/four-quadrant-architecture.md](../02_architecture/four-quadrant-architecture.md) — 4 象限详细说明
-- [docs/02_architecture/core-architecture.md](../02_architecture/core-architecture.md) — 重构后架构 SSOT（v0.1.7）
+- [docs/02_architecture/core-architecture.md](../02_architecture/core-architecture.md) — 核心架构 SSOT（v0.1.7）
 - [docs/roadmap/pcie-bus-bridge-roadmap.md](../roadmap/pcie-bus-bridge-roadmap.md) — 实施路线图（4 Wave + Stage）
 - [ADR-036](adr-036-three-way-separation.md) — 3 区分（待更新为 4 象限）
 - [ADR-089](adr-089-v55-system-hw-simulation.md) — v5.5+ 系统硬件（待更新 location）

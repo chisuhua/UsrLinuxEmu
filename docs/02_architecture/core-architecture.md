@@ -1,10 +1,10 @@
-# UsrLinuxEmu 重构后架构与文档同步方案
+# UsrLinuxEmu 核心架构与文档同步方案
 
 > **SSOT** | 最后验证: 2026-09-07（HAL 71 fn-ptrs / ADR-092 Gate D 待触发 / Stage 4 完成修订）| 对应代码 commit: `HEAD`
 >
 > **作者**: UsrLinuxEmu Architecture Team
 > **状态**: ✅ Approved（v0.1.7，2026-08-07 修订 HAL 契约）
-> **作用**: 在 2026-05 ~ 06 期间完成 Phase 1.5 / Phase 2 重大重构后，建立**重构后架构**与**docs 现状**之间的对账，并给出 32 项修复建议
+> **作用**: 在 2026-05 ~ 06 期间完成 Phase 1.5 / Phase 2 重大重构后，建立**核心架构 SSOT**与**docs 现状**之间的对账，并给出 32 项修复建议
 >
 > **2026-08-14 增量修订**: HAL ops 契约从 65 → **68 fn-ptrs**（ADR-076 追加 kernel_module_load/execute/unload；详见 §1.10.2）；Stage 4.7 B-class L2 Phase 1+2 已完成
 >
@@ -15,7 +15,7 @@
 ## 目录
 
 - [§0 文档定位](#0-文档定位)
-- [§1 重构后架构总览](#1-重构后架构总览)
+- [§1 核心架构总览](#1-核心架构总览)
   - [1.1 重构时间轴](#11-重构时间轴)
   - [1.2 架构一张图](#12-架构一张图)
   - [1.3 关键数据流（Phase 2 完整版）](#13-关键数据流phase-2-完整版)
@@ -72,7 +72,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 | `docs/README.md` | 文档索引 | 🟡 65% 完成度数字失真 | — |
 | [ADR-036](../00_adr/adr-036-three-way-separation.md) | 3 区分架构原则 | ✅ Accepted | 2026-06-23 |
 | [ROADMAP](../../roadmap.md) | 架构演进路线图（4 阶段 + 蓝图，从 MVP 到终态）| 🔄 进行中 | 2026-06-23 |
-| **本文**（core-architecture.md）| **重构后架构 SSOT + docs 同步方案** | ✅ Approved（v0.1.7）| — |
+| **本文**（core-architecture.md）| **核心架构 SSOT + docs 同步方案** | ✅ Approved（v0.1.7）| — |
 | [scale-up-fabric-architecture.md](scale-up-fabric-architecture.md) | Scale-up Fabric 局部架构 SSOT（节点内 L1 Switch + 统一 PA + UVM/PGAS）| 📋 Draft v0.2 | 2026-08-14 |
 | [multi-process-gpu-simulator-integration.md](multi-process-gpu-simulator-integration.md) | Multi-Process GPU Simulator 跨仓集成 SSOT（4 仓 vision × UsrLinuxEmu 局部 SSOT）| 📋 Draft v0.1 | 2026-08-14 |
 
@@ -90,7 +90,7 @@ UsrLinuxEmu 通过 **3 区分架构**（[ADR-036](../00_adr/adr-036-three-way-se
 
 ---
 
-## §1 重构后架构总览
+## §1 核心架构总览
 
 ### 1.1 重构时间轴
 

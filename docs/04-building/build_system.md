@@ -653,7 +653,7 @@ make cli                 # 只编译 CLI
 | 文档 | 作用 |
 |------|------|
 | [AGENTS.md](../../AGENTS.md) | 开发指南 + 架构要点 + 构建命令速查 |
-| [docs/02_architecture/core-architecture.md](../02_architecture/core-architecture.md) | 重构后架构 SSOT（必读） |
+| [docs/02_architecture/core-architecture.md](../02_architecture/core-architecture.md) | 核心架构 SSOT（必读） |
 | [docs/01-quickstart/building.md](../01-quickstart/building.md) | 新人快速上手构建 |
 | [docs/04-building/testing_guide.md](testing_guide.md) | 测试编写指南（同样基于 Catch2） |
 | [docs/04-building/ci-cd.md](ci-cd.md) | CI 配置（基于 Catch2） |

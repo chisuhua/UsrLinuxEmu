@@ -9,12 +9,12 @@
 > - [ADR-088](../00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted — dGPU 参考设计（明确 `src/system_hw/` 概念 + CppTLM 23 ABI）
 > - [ADR-089](../00_adr/adr-089-v55-system-hw-simulation.md) ✅ Accepted — v5.5+ 系统硬件仿真（**待更新 location** → `sim_hardware/`）
 > - [ADR-090](../00_adr/adr-090-ptxir-via-h2d-dma-v2.md) ✅ Accepted — H2D DMA PTXIR
-> - [ADR-023](../00_adr/adr-023-hal-interface.md) ✅ Accepted — HAL 68 fn-ptrs append-only
+> - [ADR-023](../00_adr/adr-023-hal-interface.md) ✅ Accepted — HAL 71 fn-ptrs append-only
 > - [ADR-061](../00_adr/adr-061-hal-iommu-extension.md) ✅ Accepted — HAL IOMMU ops
 > - [ADR-072](../00_adr/adr-072-portability-validation.md) ✅ Accepted — L2 build（**待扩展目标集**）
 > **关联文档**:
 > - [docs/02_architecture/four-quadrant-architecture.md](../02_architecture/four-quadrant-architecture.md) — 4 象限详细布局
-> - [docs/02_architecture/core-architecture.md](../02_architecture/core-architecture.md) — 重构后架构 SSOT
+> - [docs/02_architecture/core-architecture.md](../02_architecture/core-architecture.md) — 核心架构 SSOT
 > - [ADR-089 关联调研](../05-advanced/system-hw-survey-2026-08-16.md) — v5.5+ 调研报告
 > - [ADR-089 Live Migration 调研](../05-advanced/vfio-live-migration-research.md)
 > **维护者**: UsrLinuxEmu Architecture Team
@@ -363,7 +363,7 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 | ADR-088 ✅ | location `src/system_hw/` → `sim_hardware/`（Stage 5.5.1）|
 | ADR-089 ✅ | location 更新 + 5.5.x 范围扩展（Stage 5.5.1-5）|
 | ADR-090 v2 ✅ | 依赖 Stage 5.5.2 提供 PCIe bus 通路 |
-| ADR-023 ✅ | HAL 68 fn-ptrs 不动 |
+| ADR-023 ✅ | HAL 71 fn-ptrs 不动 |
 | ADR-061 ✅ | HAL IOMMU ops 不动；IOMMU impl 拆到 plugin |
 | ADR-072 ✅ | L2 build 目标集扩展（Stage 5.5.5）|
 

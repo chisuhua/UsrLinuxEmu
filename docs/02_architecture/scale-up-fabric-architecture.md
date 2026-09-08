@@ -674,7 +674,7 @@ g_node_pa_store.partition(/* static map */);  // per-device 静态分区
 
 ### 8.1 现状
 
-[FACT] `plugins/gpu_driver/hal/gpu_hal.h:4` 明确 **68 fn-ptrs**（65 原 + 3 ADR-076 新增）。Append-only per ADR-023 D4。SSOT §1.10.2 指南：HAL > 50 后应优先**复用现有 fn-ptr**（参数扩展）而非新增。
+[FACT] `plugins/gpu_driver/hal/gpu_hal.h` 含 **71 fn-ptrs**（65 原始 + 3 ADR-076 + 3 ADR-092 追加 adapter_get_info/open/close；2026-09-07 时点快照）。Append-only per ADR-023 D4。SSOT §1.10.2 指南：HAL > 50 后应优先**复用现有 fn-ptr**（参数扩展）而非新增。
 
 ### 8.2 Fabric 扩展序列（H1-H8）
 
