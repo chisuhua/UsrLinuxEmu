@@ -28,9 +28,12 @@
 
 | 文档 | 说明 |
 |------|------|
-| [重构后架构 SSOT](02_architecture/core-architecture.md) | **权威架构说明**（Phase 2 后）|
-| [架构概述](02_architecture/overview.md) | 项目简介、目标与核心功能 |
-| [架构设计](02_architecture/architecture.md) | 系统架构、模块设计、数据流 |
+| [核心架构 SSOT](02_architecture/core-architecture.md) | **权威架构说明**（项目级 SSOT）|
+| [Stage 5.5.2 驱动栈图谱](02_architecture/stage-5-5-2-driver-stack-flow.md) | 控制/数据流完整图谱（⭐ Stage 5.5.2 驱动栈专项）|
+| [4 象限目录布局](02_architecture/four-quadrant-architecture.md) | Stage 5.5+ 目录升级 SSOT |
+| [Scale-up Fabric](02_architecture/scale-up-fabric-architecture.md) | 📋 Draft v0.5 — 节点内 L1 Switch + 统一 PA + UVM/PGAS |
+| [Multi-Process 集成](02_architecture/multi-process-gpu-simulator-integration.md) | 📋 Draft v0.1 — 跨仓集成 SSOT |
+| [Driver Stack Flow 修订路径](roadmap/driver-stack-flow-roadmap.md) | 📋 P0-P4 阶段修订计划 |
 | [重构历史](02_architecture/refactor-history.md) | Phase 0 → 1 → 1.5 → 2 演进记录 |
 
 ### 开发指南（日常开发）
@@ -93,7 +96,7 @@
 
 | 类别 | 说明 |
 |------|------|
-| [架构演进路线图](roadmap/README.md) | 4 阶段路线图 + 终态蓝图（3 区分架构原则）|
+| [架构演进路线图](../roadmap.md) | 4 阶段路线图 + 终态蓝图（3 区分架构原则）|
 | [ADR 索引](00_adr/README.md) | 含 ADR-036（3 区分架构原则，✅ Accepted）|
 | [归档说明](archive/README.md) | 归档文档使用说明 |
 | [规划归档](archive/planning/) | 历史项目路线图与开发计划 |
@@ -106,7 +109,7 @@
 1. [安装指南](01-quickstart/installation.md)
 2. [构建指南](01-quickstart/building.md)
 3. [第一个示例](01-quickstart/first-example.md)
-4. [架构概述](02_architecture/overview.md)
+4. [架构概述（已归档）](../archive/misc/overview-2026-08-deprecated.md)
 
 ### 应用开发者
 
@@ -125,10 +128,10 @@
 
 ### 系统架构师
 
-1. [重构后架构 SSOT](02_architecture/core-architecture.md)
+1. [核心架构 SSOT](02_architecture/core-architecture.md)
 2. [GPU 驱动架构](05-advanced/gpu_driver_architecture.md)
 3. [ADR 索引](00_adr/README.md)
-4. [架构概述](02_architecture/overview.md)
+4. [架构概述（已归档）](../archive/misc/overview-2026-08-deprecated.md)
 
 ### 测试工程师
 
@@ -216,7 +219,7 @@
 - 删除对不存在文件的引用（如 `06-reference/adr.md` → `00_adr/README.md`）
 - 更新完成度数字 65% → 85%
 - 标注 ADR 编号缺失（022 占位）
-- 新增 [重构后架构 SSOT](02_architecture/core-architecture.md) 交叉引用
+- 新增 [核心架构 SSOT](02_architecture/core-architecture.md) 交叉引用
 - 编码规范统一为 snake_case（与 AGENTS.md 对齐）
 - 测试框架声明统一为 Catch2
 

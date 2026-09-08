@@ -2,7 +2,7 @@
 
 这里包含理解 UsrLinuxEmu 所必需的核心概念和架构信息。
 
-> **最后更新**: 2026-09-08（归档 3 个 pre-v0.1.5 DEPRECATED 文档；新增 4 个文档导航 + 修复 broken link）
+> **最后更新**: 2026-09-08（post-refactor-architecture.md → core-architecture.md 重命名 + 全仓引用同步；stage4-cp 归档；docs/README.md 架构表刷新；broken link 修复）
 > **SSOT**: [`core-architecture.md`](core-architecture.md)（v0.1.7+，持续维护）
 
 ## 导航
@@ -15,8 +15,8 @@
 - [**four-quadrant-architecture.md**](four-quadrant-architecture.md) — 4 象限目录布局（Q1-Q4，ADR-091 派生 SSOT）
 - [**scale-up-fabric-architecture.md**](scale-up-fabric-architecture.md) 📋 Draft v0.5 — Scale-up Fabric 局部架构（节点内 L1 Switch + 统一 PA + UVM/PGAS；2026-08-14）
 - [**multi-process-gpu-simulator-integration.md**](multi-process-gpu-simulator-integration.md) 📋 Draft v0.1 — 跨仓集成 SSOT（UsrLinuxEmu ↔ Multi-Process Vision；2026-08-14）
-- [**stage4-cp-complete-gap-analysis.md**](stage4-cp-complete-gap-analysis.md) — Stage 4.4~4.6 差距分析快照（4.3 ✅ 后；2026-07-28）
-- [**ROADMAP**](../roadmap/README.md) ⭐ **演进路线** — 4 阶段 + 蓝图，从 MVP 到 Linux 内核环境模拟
+- [**stage4-cp-complete-gap-analysis.md**](../archive/misc/stage4-cp-gap-analysis-2026-07.md) 🗄️ 已归档 — Stage 4.4~4.6 差距分析快照（4.3 ✅ 后；Stage 4 已 ship 2026-08-05）
+- [**ROADMAP**](../../roadmap.md) ⭐ **演进路线** — 4 阶段 + 蓝图，从 MVP 到 Linux 内核环境模拟
 - [**API 参考**](../06-reference/api-reference.md) — 核心 API 接口文档
 
 ### 历史/参考文档
@@ -35,8 +35,8 @@
 | **4 象限目录布局（Q1-Q4）** | [four-quadrant-architecture.md](four-quadrant-architecture.md) |
 | **Scale-up Fabric 局部架构** | [scale-up-fabric-architecture.md](scale-up-fabric-architecture.md) |
 | **多进程 GPU 仿真跨仓集成** | [multi-process-gpu-simulator-integration.md](multi-process-gpu-simulator-integration.md) |
-| **Stage 4 后续差距分析** | [stage4-cp-complete-gap-analysis.md](stage4-cp-complete-gap-analysis.md) |
-| **架构如何演进（4 阶段）** | [ROADMAP](../roadmap/README.md) |
+| **Stage 4 后续差距分析** | [stage4-cp-complete-gap-analysis.md](../archive/misc/stage4-cp-gap-analysis-2026-07.md)（已归档） |
+| **架构如何演进（4 阶段）** | [ROADMAP](../../roadmap.md) |
 | **API 如何使用** | [API 参考](../06-reference/api-reference.md) |
 | **如何构建项目** | [构建指南](../04-building/build_system.md) |
 | **如何开发** | [开发指南](../03-development/guide.md) |
