@@ -13,7 +13,7 @@
 **关联 Change**:
 - [kcpptlm-backend-binding-with-handle-and-adapter-info](../../openspec/changes/kcpptlm-backend-binding-with-handle-and-adapter-info/)（UsrLinuxEmu 仓）
 - [dgpu-board-adapter-info-extension](../../openspec/changes/dgpu-board-adapter-info-extension/)（CppTLM 仓）
-- [driver-stack-flow-post-stage-5-5-2.md](../02_architecture/driver-stack-flow-post-stage-5-5-2.md)（**Stage 5.5.2 驱动栈数据流/控制流完整图谱** — 本文决策的落地可视化，含 Path A Full TLP / Path B Bypass AXI / Command 模式 / Adapter 通道）
+- [stage-5-5-2-driver-stack-flow.md](../02_architecture/stage-5-5-2-driver-stack-flow.md)（**Stage 5.5.2 驱动栈数据流/控制流完整图谱** — 本文决策的落地可视化，含 Path A Full TLP / Path B Bypass AXI / Command 模式 / Adapter 通道）
 
 ---
 

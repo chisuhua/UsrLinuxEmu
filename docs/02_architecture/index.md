@@ -10,7 +10,7 @@
 ### 活跃文档（推荐阅读）
 
 - [**post-refactor-architecture.md**](post-refactor-architecture.md) ⭐ **SSOT** — 重构后架构总览 + H-2.5 + H-3 跨仓架构（v0.1.7+，2026-06-23 更新）
-- [**driver-stack-flow-post-stage-5-5-2.md**](driver-stack-flow-post-stage-5-5-2.md) ⭐ **Stage 5.5.2 驱动栈** — 控制/数据流完整图谱（Path A Full TLP + Path B Bypass AXI + Command 模式 + Adapter 通道；2026-09-07 新增，commit `bab64dd5` + `6d2ea90`）
+- [**stage-5-5-2-driver-stack-flow.md**](stage-5-5-2-driver-stack-flow.md) ⭐ **Stage 5.5.2 驱动栈** — 控制/数据流完整图谱（Path A Full TLP + Path B Bypass AXI + Command 模式 + Adapter 通道；2026-09-07 新增，commit `bab64dd5` + `6d2ea90`）
 - [**driver-stack-flow-post-stage-5-5-2-roadmap.md**](driver-stack-flow-post-stage-5-5-2-roadmap.md) 📋 **修订实施路径图** — 上述文档的 P0-P4 阶段修订计划（2026-09-08 新增）
 - [**four-quadrant-architecture.md**](four-quadrant-architecture.md) — 4 象限目录布局（Q1-Q4，ADR-091 派生 SSOT）
 - [**scale-up-fabric-architecture.md**](scale-up-fabric-architecture.md) 📋 Draft v0.5 — Scale-up Fabric 局部架构（节点内 L1 Switch + 统一 PA + UVM/PGAS；2026-08-14）
@@ -30,7 +30,7 @@
 |------------|----------|
 | **项目是什么 + 怎么开始** | [README.md](../../README.md) + [AGENTS.md](../../AGENTS.md) |
 | **权威架构（SSOT）** | [post-refactor-architecture.md](post-refactor-architecture.md) |
-| **Stage 5.5.2 驱动栈数据流/控制流** | [driver-stack-flow-post-stage-5-5-2.md](driver-stack-flow-post-stage-5-5-2.md) |
+| **Stage 5.5.2 驱动栈数据流/控制流** | [stage-5-5-2-driver-stack-flow.md](stage-5-5-2-driver-stack-flow.md) |
 | **driver-stack-flow 修订计划（P0-P4）** | [driver-stack-flow-post-stage-5-5-2-roadmap.md](driver-stack-flow-post-stage-5-5-2-roadmap.md) |
 | **4 象限目录布局（Q1-Q4）** | [four-quadrant-architecture.md](four-quadrant-architecture.md) |
 | **Scale-up Fabric 局部架构** | [scale-up-fabric-architecture.md](scale-up-fabric-architecture.md) |
@@ -52,7 +52,7 @@
 ### 🏛️ 架构理解者
 1. [post-refactor-architecture.md](post-refactor-architecture.md)（**SSOT**）— 重构后权威架构
 2. [four-quadrant-architecture.md](four-quadrant-architecture.md) — 4 象限目录布局（Stage 5.5+）
-3. [driver-stack-flow-post-stage-5-5-2.md](driver-stack-flow-post-stage-5-5-2.md) — 驱动栈数据流
+3. [stage-5-5-2-driver-stack-flow.md](stage-5-5-2-driver-stack-flow.md) — 驱动栈数据流
 4. [driver-stack-flow-post-stage-5-5-2-roadmap.md](driver-stack-flow-post-stage-5-5-2-roadmap.md) — 修订实施路径
 
 ### 🔧 驱动开发者
