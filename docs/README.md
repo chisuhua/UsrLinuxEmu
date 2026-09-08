@@ -31,6 +31,8 @@
 | [核心架构 SSOT](02_architecture/core-architecture.md) | **权威架构说明**（项目级 SSOT）|
 | [Stage 5.5.2 驱动栈图谱](02_architecture/stage-5-5-2-driver-stack-flow.md) | 控制/数据流完整图谱（⭐ Stage 5.5.2 驱动栈专项）|
 | [4 象限目录布局](02_architecture/four-quadrant-architecture.md) | Stage 5.5+ 目录升级 SSOT |
+| [GPU PF 驱动虚拟化](02_architecture/gpu-pf-driver-virtualization.md) | 📋 Draft v0.1 — PF 6 大责任 + 4 阶段（5.5.6+ 扩展轨道）|
+| [PCIe Bus Bridge 路径图](roadmap/pcie-bus-bridge-roadmap.md) | 📋 Stage 5.5.1-5.5.5 仿真路径（5 个 Stage，36-54 周）|
 | [Scale-up Fabric](02_architecture/scale-up-fabric-architecture.md) | 📋 Draft v0.5 — 节点内 L1 Switch + 统一 PA + UVM/PGAS |
 | [Multi-Process 集成](02_architecture/multi-process-gpu-simulator-integration.md) | 📋 Draft v0.1 — 跨仓集成 SSOT |
 | [Driver Stack Flow 修订路径](roadmap/driver-stack-flow-roadmap.md) | 📋 P0-P4 阶段修订计划 |

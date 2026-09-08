@@ -78,6 +78,35 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 | **5.5.5** | Tier 8 + VFIO + 真机一致性 | ADR-091 §D5 L8 + VFIO + ADR-072 扩展 | AXI Mapper OOO + VFIO + L2 build 扩展 | 🔄 Proposed | 8-12 周 |
 | **总计** | | | | | **36-54 周** |
 
+### Stage 依赖路径图
+
+```
+5.5.1 4 象限重构（不改功能）
+  │ 创建 plugins/{pci,iommu}_driver/ + sim_hardware/ + ModuleLoader 拓扑排序
+  ↓
+5.5.2 sim_hardware 基础 + Tier 1+2（CpptlmBridge + HostBypass + RC Mirror）
+  │ 依赖: 5.5.1 的目录结构 + ModuleLoader depends
+  ↓
+5.5.3 Tier 3+5+6（Link Layer + SR-IOV 17-port + Completion Tracking）
+  │ 依赖: 5.5.2 的 sim_hardware 基础 + pci_driver 通路
+  ↓
+5.5.4 Tier 4+7（PHY Digital + AXI Adapter）
+  │ 依赖: 5.5.3 的 Link Layer（PHY 位于 Link 之下）
+  ↓
+5.5.5 Tier 8 + VFIO + 真机一致性（AXI Mapper OOO + vfio_driver + L2 build 扩展）
+  │ 依赖: 5.5.4 的 AXI 通路 + 5.5.3 的 SR-IOV（VFIO 强依赖 IOMMU + PCI）
+  ↓
+5.5.6+ GPU PF 虚拟化扩展轨道（[gpu-pf-driver-virtualization.md §3](../02_architecture/gpu-pf-driver-virtualization.md)）
+  （延续编号：VFIO/iommufd 基础设施就绪后启动 PF 驱动虚拟化开发）
+```
+
+**关键依赖要点**：
+- **5.5.1 → 5.5.2**：硬依赖。目录结构 + ModuleLoader 拓扑排序是 sim_hardware 落地前提。
+- **5.5.2 → 5.5.3**：硬依赖。Tier 1+2 建立 pci_driver 调 sim_hardware 的通路后，Link/SR-IOV 才有宿主。
+- **5.5.3 → 5.5.4**：软依赖。PHY Digital 在真实层次中位于 Link Layer 之下，但仿真可并行开发（独立 CppTLM 组件）。
+- **5.5.4 → 5.5.5**：硬依赖。AXI Mapper OOO 建立在 AXI Adapter 之上；VFIO 强依赖 IOMMU + PCI（depends 声明）。
+- **5.5.5 → 5.5.6+**：延续编号衔接。VFIO/iommufd 基础设施就绪后，GPU PF 驱动虚拟化扩展轨道（gpu-pf-driver-virtualization.md）才可启动。
+
 ---
 
 ## Stage 5.5.1: 4 象限重构（不改功能）

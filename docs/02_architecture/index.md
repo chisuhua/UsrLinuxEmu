@@ -12,6 +12,7 @@
 - [**core-architecture.md**](core-architecture.md) ⭐ **SSOT** — 核心架构总览 + H-2.5 + H-3 跨仓架构（v0.1.7+，2026-06-23 更新）
 - [**stage-5-5-2-driver-stack-flow.md**](stage-5-5-2-driver-stack-flow.md) ⭐ **Stage 5.5.2 驱动栈** — 控制/数据流完整图谱（Path A Full TLP + Path B Bypass AXI + Command 模式 + Adapter 通道；2026-09-07 新增，commit `bab64dd5` + `6d2ea90`）
 - [**driver-stack-flow-roadmap.md**](../roadmap/driver-stack-flow-roadmap.md) 📋 **修订实施路径图** — 上述文档的 P0-P4 阶段修订计划（2026-09-08 新增）
+- [**pcie-bus-bridge-roadmap.md**](../roadmap/pcie-bus-bridge-roadmap.md) 📋 **PCIe 子系统仿真路径图** — Stage 5.5.1-5.5.5（4 象限重构 → sim_hardware → SR-IOV/Link → PHY/AXI → VFIO + 真机一致性；36-54 周；ADR-091 v0.2 派生）
 - [**four-quadrant-architecture.md**](four-quadrant-architecture.md) — 4 象限目录布局（Q1-Q4，ADR-091 派生 SSOT）
 - [**scale-up-fabric-architecture.md**](scale-up-fabric-architecture.md) 📋 Draft v0.5 — Scale-up Fabric 局部架构（节点内 L1 Switch + 统一 PA + UVM/PGAS；2026-08-14）
 - [**multi-process-gpu-simulator-integration.md**](multi-process-gpu-simulator-integration.md) 📋 Draft v0.1 — 跨仓集成 SSOT（UsrLinuxEmu ↔ Multi-Process Vision；2026-08-14）
@@ -33,6 +34,7 @@
 | **权威架构（SSOT）** | [core-architecture.md](core-architecture.md) |
 | **Stage 5.5.2 驱动栈数据流/控制流** | [stage-5-5-2-driver-stack-flow.md](stage-5-5-2-driver-stack-flow.md) |
 | **driver-stack-flow 修订计划（P0-P4）** | [driver-stack-flow-roadmap.md](../roadmap/driver-stack-flow-roadmap.md) |
+| **PCIe 子系统仿真路径（Stage 5.5.1-5.5.5）** | [pcie-bus-bridge-roadmap.md](../roadmap/pcie-bus-bridge-roadmap.md) |
 | **4 象限目录布局（Q1-Q4）** | [four-quadrant-architecture.md](four-quadrant-architecture.md) |
 | **Scale-up Fabric 局部架构** | [scale-up-fabric-architecture.md](scale-up-fabric-architecture.md) |
 | **多进程 GPU 仿真跨仓集成** | [multi-process-gpu-simulator-integration.md](multi-process-gpu-simulator-integration.md) |
@@ -55,6 +57,7 @@
 2. [four-quadrant-architecture.md](four-quadrant-architecture.md) — 4 象限目录布局（Stage 5.5+）
 3. [stage-5-5-2-driver-stack-flow.md](stage-5-5-2-driver-stack-flow.md) — 驱动栈数据流
 4. [driver-stack-flow-roadmap.md](../roadmap/driver-stack-flow-roadmap.md) — 修订实施路径
+5. [pcie-bus-bridge-roadmap.md](../roadmap/pcie-bus-bridge-roadmap.md) — PCIe 子系统仿真路径（5.5.1-5.5.5）
 
 ### 🔧 驱动开发者
 1. [AGENTS.md](../../AGENTS.md) — 编码规范 + IOCTL 编号

@@ -7,7 +7,7 @@
 > **性质**: 架构层叙事，描述从当前 MVP 到终态蓝图的演进路径
 > **不绑定**: 本路线图不引用具体 OpenSpec change 编号。后续 OpenSpec change 根据本路线图派生
 > **同步关系**: 与 `docs/sync-plan.md` 互补（sync-plan 负责跨仓同步点，本路线图负责架构演进阶段）
-> **最后更新**: 2026-08-13（adr-076 PTX-EMU HARD gate ✅ cleared 2026-08-13 audit；派生建议表新增 `add-ptxemu-kernel-module-hal-extension`；跨仓评审中 ADRs 状态更新）
+> **最后更新**: 2026-09-08（阶段总览表 + 阶段关系图纳入 Stage 5.5.1-5.5.5 子阶段 + 5.5.6+ GPU PF 虚拟化扩展轨道 + Stage 6+ 蓝图后轨道；HAL 65→71 fn-ptrs 同步；跨引用补充 pcie-bus-bridge-roadmap / driver-stack-flow-roadmap / gpu-pf-driver-virtualization）
 > **维护者**: UsrLinuxEmu Architecture Team
 
 ---
@@ -21,7 +21,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | ① | Linux 内核环境模拟 | `src/kernel/`, `include/kernel/`, `include/linux_compat/` | 提供 Linux 内核 API（VFS, 调度, IOMMU, mmu_notifier, DRM, PCIe, 中断）|
 | ② | 可移植的驱动代码实现 | `plugins/gpu_driver/drv/` | GPGPU 驱动逻辑（KFD 风格），用真实 Linux 内核 API 写，可编译进真实内核模块 |
 | ③ | 硬件模拟 | `plugins/gpu_driver/sim/` | 模拟真实 GPU 硬件（pushbuffer, 调度器, 寄存器, fence, 中断）|
-| HAL | **桥（bridge）** | `plugins/gpu_driver/hal/` | **65 个函数指针**（11 基础 + 22 Stage 4 扩展 + 32 Stage 4.7 B-class L2 Foundation Phase 1+2），append-only per [ADR-023 §D4](docs/00_adr/adr-023-hal-interface.md)；② 与 ③ 之间的依赖反向注入点 |
+| HAL | **桥（bridge）** | `plugins/gpu_driver/hal/` | **71 个函数指针**（65 基础演进 + 3 ADR-090 PTX-EMU + 3 ADR-092 adapter），append-only per [ADR-023 §D4](docs/00_adr/adr-023-hal-interface.md)；② 与 ③ 之间的依赖反向注入点 |
 
 **HAL 不是第 4 层**，HAL 是 ② 调 ③ 的桥接适配器。UsrLinuxEmu 通过 `hal_mock.cpp` 注入 sim，真机通过 `hal_user.cpp` 注入真实硬件。驱动代码本身零修改即可切换环境。
 
@@ -40,7 +40,9 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | **阶段 3** | ✅ 已达成 (2026-07-23) | v1.0 稳定（CUDA E2E ✅、sanitizer ✅、bridge ✅、perf ✅、errno 审计 ✅、文档 ✅、CI ubuntu ✅、Release ✅）| [docs/roadmap/stage-3-v1.0.md](docs/roadmap/stage-3-v1.0.md) |
 | **阶段 4** | ✅ 已完成（4.1-4.7.2 全部 ship + 归档，2026-07-26 ~ 2026-08-05）| 真实 BAR + ioremap 模拟 + GPU CP Phase 4-7 完整化 + B-class L2 违规清理；HAL 11 → 33 → 65 fn-ptrs (append-only per ADR-023 §D4)；5 个 removal 已 ship（drv/ 不再 #include sim/* headers）| [docs/roadmap/stage-4-bar-ioremap.md](docs/roadmap/stage-4-bar-ioremap.md) |
 | **阶段 5** | 📋 规划中（trigger-gated） | 真实多引擎 Puller + PM4 microcode 解析 + 4.6 closeout follow-up；triggered by ADR-049 Phase 6+ / ADR-052 Phase 6.5 条件（详见各 ADR）| [docs/roadmap/stage-5-multi-engine-pm4.md](docs/roadmap/stage-5-multi-engine-pm4.md)（占位，待 trigger 启动）|
-| **阶段 5.5** | ✅ Accepted (2026-08-15) | **CppTLM dGPU 参考设计集成**（完整硬件子系统仿真） — 通过 dlopen `libcpptlm_emulator.so` 把 dGPU 板卡仿真（**23 个 C ABI**：BAR MMIO + PCIe Config Space + MSI-X + 多板卡枚举 + backdoor + DMA translate cb）委托给 CppTLM；系统 IOMMU + CXL.mem 由 UsrLinuxEmu `src/system_hw/` 功能级仿真；dGPU-first；drv/ 零修改；**5 阶段**（**约 24-32 周**，跨团队并行）| [docs/00_adr/adr-088-dgpu-complete-simulation.md](docs/00_adr/adr-088-dgpu-complete-simulation.md) + [docs/architecture/cpptlm-emu-integration-gap-analysis.md](docs/architecture/cpptlm-emu-integration-gap-analysis.md) |
+| **阶段 5.5** | ✅ Accepted (2026-08-15) | **CppTLM dGPU 参考设计集成 + PCIe 子系统仿真** — 通过 dlopen `libcpptlm_emulator.so` 把 dGPU 板卡仿真（**23 个 C ABI**：BAR MMIO + PCIe Config Space + MSI-X + 多板卡枚举 + backdoor + DMA translate cb）委托给 CppTLM；系统 IOMMU + CXL.mem 由 UsrLinuxEmu `sim_hardware/` 功能级仿真；dGPU-first；drv/ 零修改；**细化为 5 个子阶段 5.5.1-5.5.5**（4 象限重构 → sim_hardware 基础 → SR-IOV/Link/Completion → PHY/AXI → VFIO + 真机一致性；36-54 周）| [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md)（路径图）+ [docs/00_adr/adr-088-dgpu-complete-simulation.md](docs/00_adr/adr-088-dgpu-complete-simulation.md) + [ADR-091](docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) |
+| **阶段 5.5.6+** | 📋 规划中（延续编号） | **GPU PF 驱动虚拟化扩展轨道** — PF 6 大责任（基础 PCI / SR-IOV Core / 硬件资源调度 / vGPU 扩展 / Live Migration / 宿主机 I/O + GSP 协同）+ 4 阶段开发路径（46-72 周）；编号延续 pcie-bus-bridge-roadmap（5.5.5 之后）| [docs/02_architecture/gpu-pf-driver-virtualization.md](docs/02_architecture/gpu-pf-driver-virtualization.md) |
+| **阶段 6+** | 📋 蓝图后扩展轨道（未编号） | **蓝图后扩展** — mdev + Trap-and-Emulate + GPU 专属状态快照（Live Migration 完整化）；根 roadmap 仅定义到 5.5.6+，Stage 6+ 属蓝图后未编号轨道 | [docs/02_architecture/gpu-pf-driver-virtualization.md](docs/02_architecture/gpu-pf-driver-virtualization.md) §3.1 |
 | **终态蓝图** | 📋 愿景 | 3 区分成熟形态，可移植驱动可在真实 Linux 内核中编译运行 | [docs/roadmap/blueprint.md](docs/roadmap/blueprint.md) |
 
 ---
@@ -70,8 +72,26 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
    ↓
 阶段 5 (multi-engine Puller + PM4 microcode + 4.6 closeout follow-up；trigger-gated)
    ↓
+阶段 5.5 (CppTLM dGPU 参考设计集成 + PCIe 子系统仿真)
+   ├── 5.5.1 4 象限重构 (🔄 Proposed, 4-6 周)
+   ├── 5.5.2 sim_hardware 基础 + Tier 1+2 (🔄 Proposed, 6-8 周)
+   ├── 5.5.3 Tier 3+5+6 (SR-IOV / Link / Completion, 10-16 周)
+   ├── 5.5.4 Tier 4+7 (PHY / AXI, 8-12 周)
+   └── 5.5.5 Tier 8 + VFIO + 真机一致性 (8-12 周)
+       ↓
+   5.5.6+ (GPU PF 驱动虚拟化扩展轨道 — 延续编号)
+   ├── 阶段 1: 基础 PCI 设备管理
+   ├── 阶段 2: SR-IOV Core 管理
+   ├── 阶段 3: 虚拟化扩展（vGPU 暴露）──────────→ 6+ (蓝图后扩展轨道)
+   └── 阶段 4: 状态保存/恢复（Live Migration）──→ mdev + Trap-and-Emulate + GPU 快照
+       ↓
 终态蓝图（3 区分成熟形态）
 ```
+
+> **编号说明**（per [gpu-pf-driver-virtualization.md §3.1](docs/02_architecture/gpu-pf-driver-virtualization.md)）：
+> - **Stage 5.5.1-5.5.5** = pcie-bus-bridge-roadmap.md 覆盖（PCIe 子系统仿真，5 个 Stage）
+> - **Stage 5.5.6+** = GPU PF 驱动虚拟化扩展轨道延续编号（虚拟化扩展文档）
+> - **Stage 6+** = 蓝图后扩展轨道（根 roadmap 仅到 5.5.6+，Stage 6+ 未定义编号）
 
 ---
 
@@ -86,7 +106,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | [ADR-023](docs/00_adr/adr-023-hal-interface.md) §D4 | 4.7.3 spec 同步：65 fn-ptrs 列入 ADR 表格（取代旧 46 数字） | sync-adr-023-hal-fnp-tr-table | ✅ 可派发（Stage 4 follow-up） |
 | — | L2 残余 `sim/sim_event.h` 清理（独立 proposal，不在 Stage 4 范围） | cleanup-sim-event-h-l2-residual | ✅ 可派发（独立 proposal） |
 | [ADR-076](docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md) | PTX-EMU HARD gate ✅ CLEARED（`libptxemu_device.so` + `cpptlm_module.h` shipped + tag v0.1.0 发布，2026-08-13 audit）；HAL 65 → 68 append-only + 3 ioctls (0x27/0x28/0x29) + `hal_user.cpp` dlsym PTX-EMU | add-ptxemu-kernel-module-hal-extension | ✅ **可派发**（PTX-EMU gate 满足；TaskRunner tadr-307 SOFT gate 独立推进） |
-| [ADR-088](docs/00_adr/adr-088-dgpu-complete-simulation.md) | dGPU 参考设计 — 完整硬件子系统仿真（CppTLM 仅仿真 dGPU 板卡，**23 个 C ABI**；系统 IOMMU + CXL.mem 由 `src/system_hw/` 功能级仿真；仿真拓扑与真硬件一致）；HAL in-place 替换模式；drv/ 零修改；5 阶段（**约 24-32 周**）| add-cpptlm-emu-bridge-integration | ✅ **Accepted**（2026-08-15 Oracle 二次评审通过；2026-08-16 范围收窄：CppTLM 仅 dGPU 板卡） |
+| [ADR-088](docs/00_adr/adr-088-dgpu-complete-simulation.md) | dGPU 参考设计 — 完整硬件子系统仿真（CppTLM 仅仿真 dGPU 板卡，**23 个 C ABI**；系统 IOMMU + CXL.mem 由 `sim_hardware/` 功能级仿真；仿真拓扑与真硬件一致）；HAL in-place 替换模式；drv/ 零修改；5 阶段（**约 24-32 周**）| add-cpptlm-emu-bridge-integration | ✅ **Accepted**（2026-08-15 Oracle 二次评审通过；2026-08-16 范围收窄：CppTLM 仅 dGPU 板卡） |
 
 ## 跨仓评审中 ADRs
 
@@ -118,7 +138,10 @@ Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时�
 3. **[docs/roadmap/stage-3-v1.0.md](docs/roadmap/stage-3-v1.0.md)**，下一步核心工作（v1.0 稳定进行中）
 4. **[docs/roadmap/stage-2-multi-device.md](docs/roadmap/stage-2-multi-device.md)** + **[docs/roadmap/stage-3-v1.0.md](docs/roadmap/stage-3-v1.0.md)**，后续规划
 5. **[docs/roadmap/stage-4-bar-ioremap.md](docs/roadmap/stage-4-bar-ioremap.md)**，长期演进（真实 BAR + GPU CP 完整化）
-6. **[docs/roadmap/blueprint.md](docs/roadmap/blueprint.md)**，终态愿景
+6. **[docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md)**，阶段 5.5.1-5.5.5 PCIe 子系统仿真路径
+7. **[docs/02_architecture/gpu-pf-driver-virtualization.md](docs/02_architecture/gpu-pf-driver-virtualization.md)**，5.5.6+ GPU PF 虚拟化扩展轨道
+8. **[docs/roadmap/driver-stack-flow-roadmap.md](docs/roadmap/driver-stack-flow-roadmap.md)**，Stage 5.5.2 驱动栈图谱修订路径（P0-P4）
+9. **[docs/roadmap/blueprint.md](docs/roadmap/blueprint.md)**，终态愿景
 
 ---
 
@@ -128,6 +151,9 @@ Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时�
 - [SSOT §1.10](docs/02_architecture/core-architecture.md), 3 区分的当前实现
 - [ADR-035](docs/00_adr/adr-035-governance-policy.md), 治理规则（ADR/变更/SSOT 维护）
 - [sync-plan.md](docs/sync-plan.md), 跨仓同步点（互补关系）
+- [pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md), Stage 5.5.1-5.5.5 路径图（PCIe 子系统仿真）
+- [driver-stack-flow-roadmap.md](docs/roadmap/driver-stack-flow-roadmap.md), Stage 5.5.2 驱动栈图谱修订路径（P0-P4）
+- [gpu-pf-driver-virtualization.md](docs/02_architecture/gpu-pf-driver-virtualization.md), 5.5.6+ GPU PF 虚拟化扩展轨道
 
 ---
 
