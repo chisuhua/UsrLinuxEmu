@@ -71,12 +71,12 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 
 | Stage | 主题 | 来源 | 关键交付 | 状态 | 工期 |
 |-------|------|------|----------|------|-----:|
-| **5.5.1** | 4 象限重构（不改功能）| ADR-091 §D1-D2 | `plugins/{pci,iommu}_driver/` + `sim_hardware/` 创建；ModuleLoader 升级 | 🔄 Proposed | 4-6 周 |
-| **5.5.2** | sim_hardware 基础 + Tier 1+2 | ADR-091 §D5 L1+L2 | CpptlmBridge + HostBypass + RC Mirror；`plugins/pci_driver/` 调 sim_hardware | 🔄 Proposed | 6-8 周 |
-| **5.5.3** | Tier 3+5+6 | ADR-091 §D5 L3+L5+L6 | Link Layer + SR-IOV (PcieEndpointIP 17-port) + Completion | 🔄 Proposed | 10-16 周 |
-| **5.5.4** | Tier 4+7 | ADR-091 §D5 L4+L7 | PHY Digital + AXI Adapter | 🔄 Proposed | 8-12 周 |
-| **5.5.5** | Tier 8 + VFIO + 真机一致性 | ADR-091 §D5 L8 + VFIO + ADR-072 扩展 | AXI Mapper OOO + VFIO + L2 build 扩展 | 🔄 Proposed | 8-12 周 |
-| **总计** | | | | | **36-54 周** |
+| **5.5.1** | 4 象限重构（不改功能）| ADR-091 §D1-D2 | `plugins/{pci,iommu}_driver/` + `sim_hardware/` 创建；ModuleLoader 升级 | ✅ 已归档（[Change-1](openspec/changes/archive/2026-09-03-2026-09-03-pci-driver-refactor/) ship + 164/164 ctest PASS）| 4-6 周 |
+| **5.5.2** | sim_hardware 基础 + Tier 1+2 | ADR-091 §D5 L1+L2 | CpptlmBridge + HostBypass + RC Mirror；`plugins/pci_driver/` 调 sim_hardware | ✅ 已归档（[Change-2](openspec/changes/archive/2026-09-04-2026-09-03-sim-hardware-foundation-tier1-tier2/) ship，140/140 tasks）| 6-8 周 |
+| **5.5.3** | Tier 3+5+6 | ADR-091 §D5 L3+L5+L6 | Link Layer + SR-IOV (PcieEndpointIP 17-port) + Completion | 🔄 进行中（前置 backlog 已 ship：[bridge](openspec/changes/archive/2026-09-05-add-gpu-driver-sim-hardware-bridge/) + 6 个稳定性 change；核心 Tier 3+5+6 仿真待启动）| 10-16 周 |
+| **5.5.4** | Tier 4+7 | ADR-091 §D5 L4+L7 | PHY Digital + AXI Adapter | 📋 待启动 | 8-12 周 |
+| **5.5.5** | Tier 8 + VFIO + 真机一致性 | ADR-091 §D5 L8 + VFIO + ADR-072 扩展 | AXI Mapper OOO + VFIO + L2 build 扩展 | 📋 待启动 | 8-12 周 |
+| **总计** | | | | | **已 ship 2/5；进行中 1/5；待启动 2/5** |
 
 ### Stage 依赖路径图
 
@@ -444,6 +444,14 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 ---
 
 ## 修订记录
+
+- **v0.2.1** (2026-09-08, Accepted)：**状态同步 + Stage 依赖路径图**
+  - 5.5.1 → ✅ 已归档（Change-1 ship + 164/164 ctest PASS）
+  - 5.5.2 → ✅ 已归档（Change-2 ship，140/140 tasks）
+  - 5.5.3 → 🔄 进行中（前置 backlog 已 ship：bridge + 6 个稳定性 change）
+  - 5.5.4 / 5.5.5 → 📋 待启动
+  - 新增「Stage 依赖路径图」ASCII 图（5.5.1→5.5.5 顺序依赖 + 关键依赖要点）
+  - **归档勾选审计残留**：Change-1 `tasks.md` 显示 32 项 `- [ ]`（外层 TDD 步骤全 `[x]`，仅 Implement 子步骤未全勾选）；代码本体已 ship，164/164 ctest PASS 验证功能完备，属于归档勾选粒度不一致，非实现缺口
 
 - **v0.2** (2026-09-03, Proposed)：Oracle v0.1 复审 INCONCLUSIVE 修复完成
   - 9 tier → **8 tier PCIe** 命名统一（VFIO 单独列出，不算 PCIe tier）

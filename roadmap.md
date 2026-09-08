@@ -7,7 +7,7 @@
 > **性质**: 架构层叙事，描述从当前 MVP 到终态蓝图的演进路径
 > **不绑定**: 本路线图不引用具体 OpenSpec change 编号。后续 OpenSpec change 根据本路线图派生
 > **同步关系**: 与 `docs/sync-plan.md` 互补（sync-plan 负责跨仓同步点，本路线图负责架构演进阶段）
-> **最后更新**: 2026-09-08（阶段总览表 + 阶段关系图纳入 Stage 5.5.1-5.5.5 子阶段 + 5.5.6+ GPU PF 虚拟化扩展轨道 + Stage 6+ 蓝图后轨道；HAL 65→71 fn-ptrs 同步；跨引用补充 pcie-bus-bridge-roadmap / driver-stack-flow-roadmap / gpu-pf-driver-virtualization）
+> **最后更新**: 2026-09-08（v0.2.1 状态同步：阶段关系图 5.5.1 / 5.5.2 升 ✅ 已归档、5.5.3 标 🔄 进行中；新增「Stage 5 与 5.5 并行」说明；详见 [pcie-bus-bridge-roadmap.md §修订记录 v0.2.1](docs/roadmap/pcie-bus-bridge-roadmap.md)）
 > **维护者**: UsrLinuxEmu Architecture Team
 
 ---
@@ -71,13 +71,13 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
        └── 4.7.2 5 个 removal changes (✅ 2026-08-04~05 全部 ship + 归档)
    ↓
 阶段 5 (multi-engine Puller + PM4 microcode + 4.6 closeout follow-up；trigger-gated)
-   ↓
+   ↘
 阶段 5.5 (CppTLM dGPU 参考设计集成 + PCIe 子系统仿真)
-   ├── 5.5.1 4 象限重构 (🔄 Proposed, 4-6 周)
-   ├── 5.5.2 sim_hardware 基础 + Tier 1+2 (🔄 Proposed, 6-8 周)
-   ├── 5.5.3 Tier 3+5+6 (SR-IOV / Link / Completion, 10-16 周)
-   ├── 5.5.4 Tier 4+7 (PHY / AXI, 8-12 周)
-   └── 5.5.5 Tier 8 + VFIO + 真机一致性 (8-12 周)
+   ├── 5.5.1 4 象限重构 (✅ 已归档, 4-6 周)
+   ├── 5.5.2 sim_hardware 基础 + Tier 1+2 (✅ 已归档, 6-8 周)
+   ├── 5.5.3 Tier 3+5+6 (SR-IOV / Link / Completion, 10-16 周, 🔄 进行中)
+   ├── 5.5.4 Tier 4+7 (PHY / AXI, 8-12 周, 📋 待启动)
+   └── 5.5.5 Tier 8 + VFIO + 真机一致性 (8-12 周, 📋 待启动)
        ↓
    5.5.6+ (GPU PF 驱动虚拟化扩展轨道 — 延续编号)
    ├── 阶段 1: 基础 PCI 设备管理
@@ -87,6 +87,8 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
        ↓
 终态蓝图（3 区分成熟形态）
 ```
+
+> **并行关系说明**：**Stage 5 与 Stage 5.5 并行推进** — Stage 5 由 ADR-049/052 trigger-gated，Stage 5.5 由 ADR-091（v0.2 Accepted 2026-09-03）独立驱动，**5.5 不依赖 Stage 5 trigger**。当前 5.5.1/5.5.2 已 ship + 归档，5.5.3 前置 backlog 已 ship；详见 [pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md) §修订记录 v0.2.1。
 
 > **编号说明**（per [gpu-pf-driver-virtualization.md §3.1](docs/02_architecture/gpu-pf-driver-virtualization.md)）：
 > - **Stage 5.5.1-5.5.5** = pcie-bus-bridge-roadmap.md 覆盖（PCIe 子系统仿真，5 个 Stage）
