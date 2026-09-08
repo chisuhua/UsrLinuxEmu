@@ -11,8 +11,6 @@
 #include "kernel/vfs.h"
 #include "drv/gpgpu_device.h"
 #include "hal/hal_user.h"
-
-void hal_cpptlm_init(struct gpu_hal_ops* hal, void* ctx);
 #include "sim/hardware/doorbell_emu.h"
 #include "sim/scheduler/global_scheduler.h"
 #include "sim/vram_store.h"
@@ -121,13 +119,7 @@ static int plugin_init_internal() {
     auto& h = hal_holders.emplace_back(std::make_unique<HalHolder>());
 
     const char* backend_env = std::getenv("ULE_HAL_BACKEND");
-    const std::string backend = backend_env ? backend_env : "user";
-
-    if (backend == "cpptlm") {
-      hal_cpptlm_init(&h->hal, &h->ctx);
-    } else {
-      hal_user_init(&h->hal, &h->ctx);
-    }
+    gpu_hal_select_backend(backend_env, &h->hal, &h->ctx);
 
     // Create the puller through the HAL opaque-handle API.
     // Stage 4.7.3: drv/ must not hold std::shared_ptr<HardwarePullerEmu>.

@@ -3,6 +3,7 @@
 add_library(gpu_hal STATIC
     hal_user.cpp
     hal_cpptlm.cpp
+    hal_select.cpp
 )
 
 set_target_properties(gpu_hal PROPERTIES POSITION_INDEPENDENT_CODE ON)

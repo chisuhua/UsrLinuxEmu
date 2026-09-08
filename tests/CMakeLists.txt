@@ -234,6 +234,7 @@ set(CATCH2_TESTS
     sim_hardware/test_bridge_kcpptlm_dlopen_standalone.cpp
     sim_hardware/test_host_bridge_bypass_full_dispatch_standalone.cpp
     test_hal_cpptlm_real_standalone.cpp
+    test_backend_selection_standalone.cpp
     # Stage 5.5.1 — Wave 1A (pci_driver 迁移 verification, tasks.md §2 任务 1.2/1.3/1.4/1.5)
     plugins/test_pci_driver_standalone.cpp
     # Stage 5.5.1 — Wave 1B (iommu_driver 迁移 verification, tasks.md §3 任务 2.2/2.3/2.5/2.6)
@@ -460,6 +461,14 @@ target_link_libraries(test_hal_cpptlm_real_standalone PRIVATE
     pci_driver_plugin iommu_driver_plugin)
 target_link_options(test_hal_cpptlm_real_standalone PRIVATE "-Wl,--no-as-needed")
 target_include_directories(test_hal_cpptlm_real_standalone PRIVATE ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal)
+
+# 5.5.6-cpptlm-ep-binding — P4.NEW-D: backend selection (D.3)
+target_link_libraries(test_backend_selection_standalone PRIVATE
+    -Wl,--whole-archive gpu_hal -Wl,--no-whole-archive
+    gpu_hal_mock gpu_sim sim_hardware_mock
+    pci_driver_plugin iommu_driver_plugin)
+target_link_options(test_backend_selection_standalone PRIVATE "-Wl,--no-as-needed")
+target_include_directories(test_backend_selection_standalone PRIVATE ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/hal)
 
 # 为每个 sim 测试源文件创建测试
 foreach(src ${SIM_TESTS})

@@ -753,6 +753,8 @@ static inline int hal_adapter_close(struct gpu_hal_ops *hal,
   return hal->adapter_close(hal->ctx, handle);
 }
 
+int gpu_hal_select_backend(const char* env, struct gpu_hal_ops* hal, void* ctx);
+
 #ifdef __cplusplus
 }
 #endif
