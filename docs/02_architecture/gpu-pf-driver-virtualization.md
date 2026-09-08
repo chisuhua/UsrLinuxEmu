@@ -185,7 +185,7 @@ struct gpu_reg_ops {
 - 错误恢复流程：错误检测 → 状态保存 → 复位 → 状态恢复
 
 **UsrLinuxEmu 实施位置**：
-- `plugins/pci_driver/`（Stage 5.5.1 已建立，含 probe.c / pci_access.c / pci_msi.c / pci_cap.c）
+- `plugins/pci_driver/`（Stage 5.5.1 已建立，含 probe.cpp / pci_access.cpp / pci_msi.cpp / pci_cap.cpp / pci_setup_bus.cpp / pcie_enable_device.cpp / pci_iommu_integration.cpp）
 - `plugins/gpu_driver/drv/gpgpu_device.cpp` 的 ioctl 派发表（41 entry per Oracle 第 1 轮审查）
 
 ### §2.2 SR-IOV Core 管理
@@ -242,8 +242,8 @@ PCIe Extended Capability ID = 0x10（SR-IOV）
 部分 VF 配置空间字段（如 Mailbox 通信）需要 PF 间接读写，PF 实现 `vfio_device_ops` + `pci_user` 回调。
 
 **UsrLinuxEmu 实施位置**：
-- 当前仅在仿真侧（`sim_hardware/pcie/sr_iov.cpp` per pcie-bus-bridge Tier 5）
-- PF driver 侧 **未实施**（属 Stage 5.5.6+ 待规划）
+- **❌ 全未实施**：全仓搜索 `sr_iov` 文件为空；仿真侧亦属 Stage 5.5.3 Tier 5 规划（pcie-bus-bridge-roadmap Change-3 `2026-10-01`，未来日期）
+- PF driver 侧 **未实施**（属 Stage 5.5.6+ 待规划；注：`Stage 5.5.6+` 为本文档延续编号，pcie-bus-bridge-roadmap 覆盖至 Stage 5.5.5，5.5.6+ 是 pcie-bus 之后的扩展轨道）
 
 ### §2.3 硬件资源调度与隔离
 
@@ -275,7 +275,7 @@ PCIe Extended Capability ID = 0x10（SR-IOV）
 
 **UsrLinuxEmu 实施位置**：
 - 当前为整体驱动（GpgpuDevice）独占资源
-- VF 切片**未实施**——属 Stage 5.5.6+ 待规划
+- VF 切片**未实施**——属 Stage 5.5.6+ 待规划（见 §3.1 编号说明：5.5.6+ 为本文档延续编号）
 
 ### §2.4 虚拟化扩展（面向 vGPU）
 
@@ -329,8 +329,8 @@ struct mdev_type gpu_mdev_type_a = {
 - vGPU 实例创建/调度/销毁由 PF + GSP 协同完成
 
 **UsrLinuxEmu 实施位置**：
-- `plugins/vfio_driver/`（Stage 5.5.5 建立，含 vfio.c / vfio_pci.c / vfio_iommufd.c）
-- mdev 注册 **未实施**（当前仅仿真 VFIO 框架，无 vGPU profile）
+- `plugins/vfio_driver/`（**Stage 5.5.5 规划中**，Change-5 `2027-01-15`；将含 vfio.c / vfio_pci.c / vfio_iommufd.c）
+- mdev 注册 **未实施**（`plugins/vfio_driver/` 目录未创建；pcie-bus Stage 5.5.5 Change-5 `2027-01-15` 是未来日期；当前无 vGPU profile）
 - Trap-and-Emulate **未实施**
 
 ### §2.5 状态保存与恢复（Live Migration）
@@ -382,8 +382,8 @@ vGPU 实例状态快照
 - **自适用传输**：网络带宽感知
 
 **UsrLinuxEmu 实施位置**：
-- ADR-089 §D7 调研基础：[vfio-live-migration-research.md](../05-advanced/vfio-live-migration-research.md)（18KB）
-- 实施路径：iommufd 集成（Stage 5.5.5）
+- 调研基础：[vfio-live-migration-research.md](../05-advanced/vfio-live-migration-research.md)（18KB）+ [ADR-089](../00_adr/adr-089-v55-system-hw-simulation.md) 阶段 v5.5.4（Live Migration 仿真，4-6 周）
+- 实施路径：iommufd 集成（Stage 5.5.5，pcie-bus-bridge-roadmap Change-5 `2027-01-15` 未来日期）
 - GPU 专属状态快照 **未实施**
 
 ### §2.6 宿主机原生 I/O + GSP 固件协同
@@ -417,8 +417,8 @@ GSP Firmware (GPU 内部微处理器)
 
 **UsrLinuxEmu 实施位置**：
 - 宿主机原生 I/O：`GpgpuDevice` 已支持（per `core-architecture.md §1.3`）
-- GSP 固件仿真：**当前为 -ENOSYS stub**（per [stage-5-5-2-driver-stack-flow.md §0.1 §2 设计/实现混写标注](../02_architecture/stage-5-5-2-driver-stack-flow.md)）
-- GSP 完整仿真：**待规划**（Stage 6+）
+- GSP 固件仿真：**无 HAL fw 组（非 stub）**——`gpu_hal.h` fw 组 5 个 op 全部缺失（per [stage-5-5-2-driver-stack-flow.md §-1.3.9](stage-5-5-2-driver-stack-flow.md) fw ❌ 全缺），无明确 stub 代码依据
+- GSP 完整仿真：**待规划**（蓝图后扩展轨道，未定义编号；详见 §3.1 编号说明）
 
 ---
 
@@ -435,20 +435,25 @@ GSP Firmware (GPU 内部微处理器)
 ├────────────────────────────────────────────────────────────────────┤
 │ 阶段 2: SR-IOV Core 管理（PF 虚拟化基础）                           │
 │ Capability 解析 / VF 生命周期 / 资源分配策略 / VF Mediated Config  │
-│ ⬇ 当前仅仿真侧 Tier 5（per pcie-bus-bridge Stage 5.5.3）            │
-│ ⬇ 待规划 PF driver 侧实现（Stage 5.5.6+）                          │
+│ ⬇ 全未实施：仿真侧亦属 Stage 5.5.3 Tier 5 规划（Change-3 2026-10-01）│
+│ ⬇ 待规划 PF driver 侧实现（Stage 5.5.6+，延续编号）                │
 ├────────────────────────────────────────────────────────────────────┤
 │ 阶段 3: 虚拟化扩展（vGPU 暴露）                                     │
 │ mdev 注册 / VFIO 设备操作 / Trap-and-Emulate / GSP 协同             │
-│ ⬇ 当前仅 VFIO 框架（Stage 5.5.5）                                  │
-│ ⬇ mdev + Trap-and-Emulate 待规划（Stage 6+）                       │
+│ ⬇ vfio_driver 目录未建；Stage 5.5.5 是 Change-5 2027-01-15 未来日期│
+│ ⬇ mdev + Trap-and-Emulate 待规划（Stage 6+，蓝图后未编号轨道）     │
 ├────────────────────────────────────────────────────────────────────┤
 │ 阶段 4: 状态保存/恢复（Live Migration）                              │
 │ 状态快照 / 增量传输 / 脏页跟踪 / 自适应压缩 / 连接迁移              │
-│ ⬇ ADR-089 §D7 调研基础已就位（iommufd 集成 Stage 5.5.5）              │
-│ ⬇ GPU 专属状态快照 待规划（Stage 6+）                               │
+│ ⬇ 调研基础：ADR-089 阶段 v5.5.4 + vfio-live-migration-research.md  │
+│ ⬇ iommufd 集成属 Stage 5.5.5 规划（pcie-bus-bridge Change-5）       │
+│ ⬇ GPU 专属状态快照 待规划（Stage 6+，蓝图后未编号轨道）             │
 └────────────────────────────────────────────────────────────────────┘
 ```
+
+> **编号说明**：
+> - **Stage 5.5.6+** = 本文档延续编号，pcie-bus-bridge-roadmap 覆盖至 Stage 5.5.5（5 个 Stage），5.5.6+ 是 pcie-bus 之后的扩展轨道
+> - **Stage 6+** = 蓝图后扩展轨道（根 roadmap.md 仅到 Stage 5 + 蓝图，无 Stage 6 定义）
 
 ### 3.2 各阶段交付物与验收
 
@@ -486,15 +491,15 @@ GSP Firmware (GPU 内部微处理器)
 | **SR-IOV** | `pci_enable_sriov()` / `pci_disable_sriov()` | Linux SR-IOV 框架 | ❌ Stage 5.5.6+ |
 | **SR-IOV** | `numvfs` sysfs / `sriov_totalvfs` / `sriov_numvfs` | 用户态（libvirt） | ❌ Stage 5.5.6+ |
 | **mdev** | `mdev_register_driver()` + `supported_type_groups` | Linux mdev 框架 | ❌ Stage 6+ |
-| **VFIO** | `vfio_device_ops` → `open` / `release` / `ioctl` / `mmap` | QEMU / 用户态 | ⚠️ Stage 5.5.5 框架 |
-| **VFIO** | `vfio_pci_open()` / `vfio_pci_ioctl()` / `vfio_pci_mmap()` | QEMU | ⚠️ Stage 5.5.5 |
+| **VFIO** | `vfio_device_ops` → `open` / `release` / `ioctl` / `mmap` | QEMU / 用户态 | ❌ 待 Stage 5.5.5（Change-5 2027-01-15 未启动） |
+| **VFIO** | `vfio_pci_open()` / `vfio_pci_ioctl()` / `vfio_pci_mmap()` | QEMU | ❌ 待 Stage 5.5.5 |
 | **硬件通信** | MMIO 读写 / Mailbox / GSP RPC | PF Driver | ✅ 已实施 |
 | **中断处理** | ISR / tasklet / workqueue / threaded IRQ | Linux IRQ 子系统 | ✅ 已实施 |
 | **DMA** | `dma_map_single()` / `dma_unmap_*()` / IOMMU | Linux DMA 子系统 | ✅ 已实施 |
 
 **符号说明**：
 - ✅ 已实施
-- ⚠️ 框架在位，PF 专属细节待补
+- ⚠️ 框架在位指 Stage 5.5.5 计划中（**非已 ship**，vfio_driver 目录未建）；PF 专属细节待补
 - ❌ 未实施（属未来阶段）
 
 ---
@@ -506,24 +511,23 @@ GSP Firmware (GPU 内部微处理器)
 | PF 责任 | 4 象限位置 | 当前状态 |
 |---|---|---|
 | §2.1 基础 PCI 设备管理 | Q2 `plugins/pci_driver/` + Q4 `plugins/gpu_driver/drv/` | ✅ Stage 5.5.1 |
-| §2.1.4 电源管理 | Q4 `plugins/gpu_driver/sim/` | ⚠️ -ENOSYS stub（[stage-5-5-2-driver-stack-flow.md §0.1 §1.10.5 提及](../02_architecture/stage-5-5-2-driver-stack-flow.md)） |
+| §2.1.4 电源管理 | Q4 `plugins/gpu_driver/sim/` | ❌ 未实施（无电源域；[stage-5-5-2-driver-stack-flow.md §-1.2](stage-5-5-2-driver-stack-flow.md) 明确"本项目用户态仿真无需 D0/D3 状态切换"） |
 | §2.1.5 AER 错误处理 | Q2 `plugins/pci_driver/` + Q1 `src/kernel/` | ⚠️ ADR-055 ⏸️ Deferred-Never |
-| §2.2 SR-IOV Core | Q3 `sim_hardware/pcie/sr_iov.cpp`（仿真） + Q2 `plugins/pci_driver/`（driver） | ⚠️ 仿真侧 Tier 5 Stage 5.5.3，driver 侧 ❌ |
+| §2.2 SR-IOV Core | Q3 `sim_hardware/pcie/sr_iov.cpp`（**未建立**；Stage 5.5.3 Change-3 `2026-10-01` 未来日期） + Q2 `plugins/pci_driver/`（driver） | ❌ 全未实施 |
 | §2.3 资源调度隔离 | Q4 `plugins/gpu_driver/sim/` | ❌ 待规划 |
 | §2.4 mdev | Q2 `plugins/gpu_driver/drv/` | ❌ Stage 6+ |
-| §2.4 VFIO | Q2 `plugins/vfio_driver/`（Stage 5.5.5） | ⚠️ 框架在位 |
+| §2.4 VFIO | Q2 `plugins/vfio_driver/`（**未建立**；Stage 5.5.5 Change-5 `2027-01-15` 未来日期） | ❌ 待规划 |
 | §2.4 Trap-and-Emulate | Q4 `plugins/gpu_driver/sim/` | ❌ Stage 6+ |
-| §2.5 Live Migration | Q2 `plugins/vfio_driver/`（iommufd） + Q4（GPU state） | ⚠️ ADR-089 §D7 调研完成，实施 ❌ |
+| | §2.5 Live Migration | Q2 `plugins/vfio_driver/`（**未建立**；iommufd 属 Stage 5.5.5 规划） + Q4（GPU state） | ⚠️ ADR-089 阶段 v5.5.4 + vfio-live-migration-research.md 调研完成，实施 ❌ |
 | §2.6 宿主机原生 I/O | Q4 `GpgpuDevice` | ✅ 已实施 |
-| §2.6 GSP 固件协同 | Q4 `plugins/gpu_driver/sim/` | ⚠️ -ENOSYS stub |
-| §2.6 GSP 完整仿真 | Q4 + CppTLM 扩展 | ❌ Stage 6+ |
+| §2.6 GSP 固件协同 | Q4 `plugins/gpu_driver/sim/` | ❌ 无 HAL fw 组（stage-5-5-2 §-1.3.9 fw ❌ 全缺） |
+| §2.6 GSP 完整仿真 | Q4 + CppTLM 扩展 | ❌ Stage 6+（蓝图后未编号轨道） |
 
 ### 5.2 已 ship 实施 vs 待规划
 
 **已 ship**（与本文档对应）：
 - Stage 5.5.1：Q2 `plugins/pci_driver/` + `iommu_driver/` 建立（基础 PCI 框架）
 - Stage 5.5.2：Q3 `sim_hardware/` 顶级目录 + Tier 1+2 PCIe Bypass
-- Stage 5.5.5：Q2 `plugins/vfio_driver/` 建立（VFIO 框架）
 
 **待规划**（与本文档对应）：
 - 阶段 1 完整化：GPU PF 专属 probe/AER/电源管理
@@ -570,10 +574,9 @@ GSP Firmware (GPU 内部微处理器)
 |---|---|---|---|
 | §2.1 基础 PCI | probe / BAR | ✅ Stage 5.5.1 | — |
 | §2.1 基础 PCI | MSI-X | ✅ Stage 5.5.1 | — |
-| §2.1 基础 PCI | 固件加载（GSP） | ⚠️ stub（-ENOSYS） | GSP 仿真完整化 |
-| §2.1 基础 PCI | 电源管理（D0/D3） | ⚠️ stub（-ENOSYS） | 电源域仿真 |
-| §2.1 基础 PCI | AER 错误恢复 | ⚠️ ADR-055 Deferred-Never | 真实硬件挂起场景 |
-| §2.2 SR-IOV | Capability 解析 | ⚠️ 仿真侧 Tier 5 | driver 侧实施 |
+| §2.1 基础 PCI | 固件加载（GSP） | ❌ 无 HAL fw 组（stage-5-5-2 §-1.3.9 fw ❌ 全缺） | GSP 仿真完整化 |
+| §2.1 基础 PCI | 电源管理（D0/D3） | ❌ 未实施（无电源域；stage-5-5-2 §-1.2 明确不实施） | 电源域仿真 |
+| §2.2 SR-IOV | Capability 解析 | ❌ 未实施（全仓 sr_iov 文件为空；Stage 5.5.3 规划） | driver 侧实施 |
 | §2.2 SR-IOV | VF 生命周期 | ❌ | Stage 5.5.6+ |
 | §2.2 SR-IOV | 资源分配策略 | ❌ | Stage 5.5.6+ |
 | §2.2 SR-IOV | VF Mediated Config | ❌ | Stage 5.5.6+ |
@@ -582,9 +585,9 @@ GSP Firmware (GPU 内部微处理器)
 | §2.3 队列隔离 | per-VF ring buffer | ❌ | Stage 6+ |
 | §2.3 带宽 QoS | PCIe bandwidth | ⚠️ Tier 1+2 部分 | Tier 4+7 完整化 |
 | §2.4 mdev | profile 注册 | ❌ | Stage 6+ |
-| §2.4 VFIO | open/release/ioctl/mmap | ⚠️ Stage 5.5.5 框架 | GPU 专属回调 |
+| §2.4 VFIO | open/release/ioctl/mmap | ❌ 待 Stage 5.5.5（Change-5 `2027-01-15` 未启动） | GPU 专属回调 |
 | §2.4 Trap-and-Emulate | 敏感寄存器拦截 | ❌ | Stage 6+ |
-| §2.5 Live Migration | state save/restore | ⚠️ ADR-089 调研 | iommufd 集成后 |
+| §2.5 Live Migration | state save/restore | ⚠️ ADR-089 阶段 v5.5.4 + vfio-live-migration-research.md 调研完成 | iommufd 集成后（Stage 5.5.5） |
 | §2.6 GSP 完整仿真 | RPC + Mailbox | ❌ | Stage 6+ |
 
 ---
@@ -597,7 +600,7 @@ GSP Firmware (GPU 内部微处理器)
 - ❌ **GPU 编译器栈**（LLVM/PTX/NVVM）：不在 UsrLinuxEmu 范围
 - ❌ **GPU 性能优化**（per-kernel 优化、调度策略）：属 Stage 5+ 触发门控
 - ❌ **GPU 计算引擎微架构仿真**（SM 内部调度、warp scheduler）：属 GSP 仿真完整化（Stage 6+）
-- ❌ **多 GPU 拓扑**（NVLink / Infinity Fabric）：不在阶段 1-4 范围
+- ❌ **多 GPU 拓扑**（NVLink / Infinity Fabric）：不在阶段 1-4 范围，属 [`scale-up-fabric-architecture.md`](scale-up-fabric-architecture.md) Scale-up 轨道（节点内 L1 Switch + 统一 PA）
 
 ---
 
@@ -606,7 +609,7 @@ GSP Firmware (GPU 内部微处理器)
 | 风险 | 概率 | 影响 | 缓解 |
 |---|---|---|---|
 | GSP 完整仿真工作量大 | 高 | 高 | 分阶段：基础 RPC → Mailbox → 完整固件协议 |
-| mdev 注册与 VFIO 集成复杂 | 中 | 中 | 复用 Stage 5.5.5 VFIO 框架 + 参考真机 amdgpu mdev 实现 |
+| mdev 注册与 VFIO 集成复杂 | 中 | 中 | 待 Stage 5.5.5 VFIO 框架落地后 + 参考真机 amdgpu mdev 实现 |
 | Live Migration 状态快照粒度难定 | 中 | 高 | 先实现基本快照，再优化增量跟踪 |
 | 真机 SR-IOV 测试环境搭建成本高 | 高 | 中 | L2 build 提供真机一致性 + CppTLM 仿真提供功能验证 |
 | 4 阶段实施周期长（46-72 周） | 中 | 中 | 与 pcie-bus-bridge-roadmap Stage 5.5.x 并行 |
