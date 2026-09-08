@@ -7,7 +7,7 @@
 > **性质**: 架构层叙事，描述从当前 MVP 到终态蓝图的演进路径
 > **不绑定**: 本路线图不引用具体 OpenSpec change 编号。后续 OpenSpec change 根据本路线图派生
 > **同步关系**: 与 `docs/sync-plan.md` 互补（sync-plan 负责跨仓同步点，本路线图负责架构演进阶段）
-> **最后更新**: 2026-09-08（v0.2.1 状态同步：阶段关系图 5.5.1 / 5.5.2 升 ✅ 已归档、5.5.3 标 🔄 进行中；新增「Stage 5 与 5.5 并行」说明；详见 [pcie-bus-bridge-roadmap.md §修订记录 v0.2.1](docs/roadmap/pcie-bus-bridge-roadmap.md)）
+> **最后更新**: 2026-09-08（v0.2.2 路线方针调整：5 个 Stage 总览表新增 5.5.6-5.5.9 dGPU E2E 主线 P0 + 5.5.3-5.5.5 降级后台轨道 P1 + 5.5.6+ → 5.5.10+ PF 虚拟化改名；阶段关系图重画为双轨道；前置 [kcpptlm-archive-audit](openspec/changes/2026-09-08-kcpptlm-archive-audit/) 识别 5 项虚假完成（33%），5.5.6 工期重估 4-6 周；详见 [pcie-bus-bridge-roadmap.md §修订记录 v0.2.2](docs/roadmap/pcie-bus-bridge-roadmap.md)）
 > **维护者**: UsrLinuxEmu Architecture Team
 
 ---
@@ -40,9 +40,13 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | **阶段 3** | ✅ 已达成 (2026-07-23) | v1.0 稳定（CUDA E2E ✅、sanitizer ✅、bridge ✅、perf ✅、errno 审计 ✅、文档 ✅、CI ubuntu ✅、Release ✅）| [docs/roadmap/stage-3-v1.0.md](docs/roadmap/stage-3-v1.0.md) |
 | **阶段 4** | ✅ 已完成（4.1-4.7.2 全部 ship + 归档，2026-07-26 ~ 2026-08-05）| 真实 BAR + ioremap 模拟 + GPU CP Phase 4-7 完整化 + B-class L2 违规清理；HAL 11 → 33 → 65 fn-ptrs (append-only per ADR-023 §D4)；5 个 removal 已 ship（drv/ 不再 #include sim/* headers）| [docs/roadmap/stage-4-bar-ioremap.md](docs/roadmap/stage-4-bar-ioremap.md) |
 | **阶段 5** | 📋 规划中（trigger-gated） | 真实多引擎 Puller + PM4 microcode 解析 + 4.6 closeout follow-up；triggered by ADR-049 Phase 6+ / ADR-052 Phase 6.5 条件（详见各 ADR）| [docs/roadmap/stage-5-multi-engine-pm4.md](docs/roadmap/stage-5-multi-engine-pm4.md)（占位，待 trigger 启动）|
-| **阶段 5.5** | ✅ Accepted (2026-08-15) | **CppTLM dGPU 参考设计集成 + PCIe 子系统仿真** — 通过 dlopen `libcpptlm_emulator.so` 把 dGPU 板卡仿真（**23 个 C ABI**：BAR MMIO + PCIe Config Space + MSI-X + 多板卡枚举 + backdoor + DMA translate cb）委托给 CppTLM；系统 IOMMU + CXL.mem 由 UsrLinuxEmu `sim_hardware/` 功能级仿真；dGPU-first；drv/ 零修改；**细化为 5 个子阶段 5.5.1-5.5.5**（4 象限重构 → sim_hardware 基础 → SR-IOV/Link/Completion → PHY/AXI → VFIO + 真机一致性；36-54 周）| [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md)（路径图）+ [docs/00_adr/adr-088-dgpu-complete-simulation.md](docs/00_adr/adr-088-dgpu-complete-simulation.md) + [ADR-091](docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) |
-| **阶段 5.5.6+** | 📋 规划中（延续编号） | **GPU PF 驱动虚拟化扩展轨道** — PF 6 大责任（基础 PCI / SR-IOV Core / 硬件资源调度 / vGPU 扩展 / Live Migration / 宿主机 I/O + GSP 协同）+ 4 阶段开发路径（46-72 周）；编号延续 pcie-bus-bridge-roadmap（5.5.5 之后）| [docs/02_architecture/gpu-pf-driver-virtualization.md](docs/02_architecture/gpu-pf-driver-virtualization.md) |
-| **阶段 6+** | 📋 蓝图后扩展轨道（未编号） | **蓝图后扩展** — mdev + Trap-and-Emulate + GPU 专属状态快照（Live Migration 完整化）；根 roadmap 仅定义到 5.5.6+，Stage 6+ 属蓝图后未编号轨道 | [docs/02_architecture/gpu-pf-driver-virtualization.md](docs/02_architecture/gpu-pf-driver-virtualization.md) §3.1 |
+| **阶段 5.5** | ✅ Accepted (2026-08-15) | **CppTLM dGPU 参考设计集成 + PCIe 子系统仿真** — 通过 dlopen `libcpptlm_emulator.so` 把 dGPU 板卡仿真（**23 个 C ABI**：BAR MMIO + PCIe Config Space + MSI-X + 多板卡枚举 + backdoor + DMA translate cb）委托给 CppTLM；系统 IOMMU + CXL.mem 由 UsrLinuxEmu `sim_hardware/` 功能级仿真；dGPU-first；drv/ 零修改；**细化为 5 个子阶段 5.5.1-5.5.5 + 4 个 E2E 主线 5.5.6-5.5.9 + PF 虚拟化 5.5.10+**（双轨道：E2E 主线 P0 + PCIe 底层 P1 + PF/VF 完善后置）| [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md)（路径图）+ [docs/00_adr/adr-088-dgpu-complete-simulation.md](docs/00_adr/adr-088-dgpu-complete-simulation.md) + [ADR-091](docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) |
+| **阶段 5.5.6** | 📋 主线 P0（新插入） | **dGPU E2E 主线 #1 — 真实 CppTLM EP** — `backdoor_endpoint.cpp` 真实现 + `bridge.cpp` kCpptlm dlopen 22 ABI + `hal_cpptlm.cpp` 3 op 真化 + `plugin.cpp` backend 切换（工期 4-6 周）| [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md) §修订记录 v0.2.2 + 前置审计 [kcpptlm-archive-audit](openspec/changes/2026-09-08-kcpptlm-archive-audit/) |
+| **阶段 5.5.7** | 📋 主线 P0 | **dGPU E2E 主线 #2 — CommandProcessor 真实化** — puller/queue submit 经 CppTLM TLP + doorbell | [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md) |
+| **阶段 5.5.8** | 📋 主线 P0 | **dGPU E2E 主线 #3 — kernel dispatch + DMA** — ioctl 表穿透 + CppTLM backdoor DMA | [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md) |
+| **阶段 5.5.9** | 📋 主线 P0 | **dGPU E2E 主线 #4 — 真机双轨验证** — drv/ 零修改 L2 build + 真机 CppTLM 对拍 | [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md) |
+| **阶段 5.5.10+** | 📋 PF/VF 完善（E2E 之后） | **GPU PF 驱动虚拟化扩展轨道**（**原 5.5.6+ 改名**）— PF 6 大责任（基础 PCI / SR-IOV Core / 硬件资源调度 / vGPU 扩展 / Live Migration / 宿主机 I/O + GSP 协同）+ 4 阶段开发路径（46-72 周）；编号重排避免与 E2E 主线 5.5.6-5.5.9 占位冲突 | [docs/02_architecture/gpu-pf-driver-virtualization.md](docs/02_architecture/gpu-pf-driver-virtualization.md) |
+| **阶段 6+** | 📋 蓝图后扩展轨道（未编号） | **蓝图后扩展** — mdev + Trap-and-Emulate + GPU 专属状态快照（Live Migration 完整化）；根 roadmap 仅定义到 5.5.10+，Stage 6+ 属蓝图后未编号轨道 | [docs/02_architecture/gpu-pf-driver-virtualization.md](docs/02_architecture/gpu-pf-driver-virtualization.md) §3.1 |
 | **终态蓝图** | 📋 愿景 | 3 区分成熟形态，可移植驱动可在真实 Linux 内核中编译运行 | [docs/roadmap/blueprint.md](docs/roadmap/blueprint.md) |
 
 ---
@@ -72,14 +76,27 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
    ↓
 阶段 5 (multi-engine Puller + PM4 microcode + 4.6 closeout follow-up；trigger-gated)
    ↘
-阶段 5.5 (CppTLM dGPU 参考设计集成 + PCIe 子系统仿真)
+阶段 5.5 (CppTLM dGPU 参考设计集成 + PCIe 子系统仿真 — 双轨道 P0/P1)
    ├── 5.5.1 4 象限重构 (✅ 已归档, 4-6 周)
-   ├── 5.5.2 sim_hardware 基础 + Tier 1+2 (✅ 已归档, 6-8 周)
-   ├── 5.5.3 Tier 3+5+6 (SR-IOV / Link / Completion, 10-16 周, 🔄 进行中)
-   ├── 5.5.4 Tier 4+7 (PHY / AXI, 8-12 周, 📋 待启动)
-   └── 5.5.5 Tier 8 + VFIO + 真机一致性 (8-12 周, 📋 待启动)
-       ↓
-   5.5.6+ (GPU PF 驱动虚拟化扩展轨道 — 延续编号)
+   ├── 5.5.2 sim_hardware 基础 + Tier 1+2 mock (✅ 已归档, 6-8 周)
+   │   │
+   │   ├──[E2E 主线 P0 — 真实 CppTLM binding]──→
+   │   │   5.5.6 真实 EP (4-6 周)
+   │   │      ↓ 真实 CppTLM TLP 通路
+   │   │   5.5.7 CommandProcessor (6-8 周)
+   │   │      ↓
+   │   │   5.5.8 kernel dispatch + DMA (6-8 周)
+   │   │      ↓
+   │   │   5.5.9 真机双轨验证 (4-6 周)
+   │   │
+   │   └──[后台轨道 P1 — PCIe Tier 细节深化, 非 E2E 阻塞]──→
+   │       5.5.3 Tier 3+5+6 (SR-IOV/Link/Completion, 10-16 周)
+   │          ↓
+   │       5.5.4 Tier 4+7 (PHY/AXI, 8-12 周)
+   │          ↓
+   │       5.5.5 Tier 8 + VFIO + 真机一致性 (8-12 周)
+   │          ↓
+   5.5.10+ PF 虚拟化扩展轨道（原 5.5.6+ 改名；E2E 之后启动）
    ├── 阶段 1: 基础 PCI 设备管理
    ├── 阶段 2: SR-IOV Core 管理
    ├── 阶段 3: 虚拟化扩展（vGPU 暴露）──────────→ 6+ (蓝图后扩展轨道)
@@ -88,12 +105,15 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 终态蓝图（3 区分成熟形态）
 ```
 
-> **并行关系说明**：**Stage 5 与 Stage 5.5 并行推进** — Stage 5 由 ADR-049/052 trigger-gated，Stage 5.5 由 ADR-091（v0.2 Accepted 2026-09-03）独立驱动，**5.5 不依赖 Stage 5 trigger**。当前 5.5.1/5.5.2 已 ship + 归档，5.5.3 前置 backlog 已 ship；详见 [pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md) §修订记录 v0.2.1。
+> **并行关系说明**：**Stage 5 与 Stage 5.5 并行推进** — Stage 5 由 ADR-049/052 trigger-gated，Stage 5.5 由 ADR-091（v0.2 Accepted 2026-09-03）独立驱动，**5.5 不依赖 Stage 5 trigger**。
+>
+> **5.5 双轨道并行**（2026-09-08 v0.2.2 路线方针调整）：**E2E 主线 P0**（5.5.6-5.5.9，真实 CppTLM binding 优先打通 dGPU 端到端）与 **后台轨道 P1**（5.5.3-5.5.5，PCIe Tier 细节深化，非 E2E 阻塞）并行；主线与后台**互不耦合**（5.5.6-5.5.9 不依赖 Link/PHY/AXI/SR-IOV 任何 Tier，5.5.3-5.5.5 也不依赖主线）。当前 5.5.1/5.5.2 已 ship + 归档，5.5.3-5.5.5 进入"主线阻塞期插空推进"模式，5.5.6 立项以 [kcpptlm-archive-audit](openspec/changes/2026-09-08-kcpptlm-archive-audit/) 为前置基线（识别 kcpptlm 归档中 5 项虚假完成）。
 
-> **编号说明**（per [gpu-pf-driver-virtualization.md §3.1](docs/02_architecture/gpu-pf-driver-virtualization.md)）：
-> - **Stage 5.5.1-5.5.5** = pcie-bus-bridge-roadmap.md 覆盖（PCIe 子系统仿真，5 个 Stage）
-> - **Stage 5.5.6+** = GPU PF 驱动虚拟化扩展轨道延续编号（虚拟化扩展文档）
-> - **Stage 6+** = 蓝图后扩展轨道（根 roadmap 仅到 5.5.6+，Stage 6+ 未定义编号）
+> **编号说明**（v0.2.2 更新，per [pcie-bus-bridge-roadmap.md §修订记录](docs/roadmap/pcie-bus-bridge-roadmap.md) + [gpu-pf-driver-virtualization.md §3.1](docs/02_architecture/gpu-pf-driver-virtualization.md)）：
+> - **Stage 5.5.1-5.5.5** = pcie-bus-bridge-roadmap.md 覆盖（PCIe 子系统仿真，5 个 Stage；1/2 已归档，3-5 后台 P1）
+> - **Stage 5.5.6-5.5.9** = dGPU E2E 主线 P0（4 个 Stage：EP → CP → kernel/DMA → 真机验证）
+> - **Stage 5.5.10+** = GPU PF 驱动虚拟化扩展轨道（原 5.5.6+ 改名，避免与主线编号占位冲突；E2E 之后启动）
+> - **Stage 6+** = 蓝图后扩展轨道（根 roadmap 仅到 5.5.10+，Stage 6+ 未定义编号）
 
 ---
 
@@ -153,9 +173,10 @@ Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时�
 - [SSOT §1.10](docs/02_architecture/core-architecture.md), 3 区分的当前实现
 - [ADR-035](docs/00_adr/adr-035-governance-policy.md), 治理规则（ADR/变更/SSOT 维护）
 - [sync-plan.md](docs/sync-plan.md), 跨仓同步点（互补关系）
-- [pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md), Stage 5.5.1-5.5.5 路径图（PCIe 子系统仿真）
+- [pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md), Stage 5.5.1-5.5.9 路径图（PCIe 仿真 + dGPU E2E 主线）
 - [driver-stack-flow-roadmap.md](docs/roadmap/driver-stack-flow-roadmap.md), Stage 5.5.2 驱动栈图谱修订路径（P0-P4）
-- [gpu-pf-driver-virtualization.md](docs/02_architecture/gpu-pf-driver-virtualization.md), 5.5.6+ GPU PF 虚拟化扩展轨道
+- [gpu-pf-driver-virtualization.md](docs/02_architecture/gpu-pf-driver-virtualization.md), 5.5.10+ GPU PF 虚拟化扩展轨道（PF/VF 完善）
+- [kcpptlm-archive-audit](openspec/changes/2026-09-08-kcpptlm-archive-audit/), 5.5.6 dGPU E2E 主线前置基线审计（5 项虚假完成识别）
 
 ---
 

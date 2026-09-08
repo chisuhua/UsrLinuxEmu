@@ -451,18 +451,21 @@ GSP Firmware (GPU 内部微处理器)
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-> **编号说明**：
-> - **Stage 5.5.6+** = 本文档延续编号，pcie-bus-bridge-roadmap 覆盖至 Stage 5.5.5（5 个 Stage），5.5.6+ 是 pcie-bus 之后的扩展轨道
-> - **Stage 6+** = 蓝图后扩展轨道（根 roadmap.md 仅到 Stage 5 + 蓝图，无 Stage 6 定义）
+> **编号说明**（2026-09-08 v0.2.2 更新）：
+> - **Stage 5.5.6+** = 原命名，本文档 2026-09-08 v0.2.2 路线方针调整后**改名为 5.5.10+**（详见 [pcie-bus-bridge-roadmap.md §修订记录 v0.2.2](../roadmap/pcie-bus-bridge-roadmap.md)），避免与 dGPU E2E 主线 5.5.6-5.5.9 编号占位冲突
+> - **Stage 5.5.6-5.5.9** = **dGPU E2E 主线 P0**（新插入：[PCIe EP → CommandProcessor → kernel dispatch + DMA → 真机验证](https://github.com)），与 5.5.10+ 先后顺序——E2E 主线 P0 优先打通后再启动 5.5.10+ PF/VF 完善
+> - **Stage 6+** = 蓝图后扩展轨道（根 roadmap.md 仅到 Stage 5.5.10+，Stage 6+ 未定义编号）
 
 ### 3.2 各阶段交付物与验收
 
+> **v0.2.2 更新**：阶段 1 验收标准新增"**E2E 跑通**"（在 CppTLM backend 上跑通提交→执行→fence 完成），与 dGPU E2E 主线 5.5.6-5.5.9 同步；真机一致性（L2 build）延后到阶段 2-3 之后（用户优先级：PF/VF 完善排在 E2E 后）。
+
 | 阶段 | 核心交付物 | 验收标准 | 预计工期 |
 |---|---|---|---|
-| **阶段 1：基础 PCI** | `plugins/pci_driver/` 完整版（含 GPU PF probe/BAR/MSI-X/AER） | 真机一致性 + ctest 全 PASS | 8-12 周 |
+| **阶段 1：基础 PCI + E2E 跑通** | `plugins/pci_driver/` 完整版（含 GPU PF probe/BAR/MSI-X/AER） + 真实 CppTLM backend 切换（5.5.6-5.5.9 主线交付） | CppTLM backend 上跑通提交→执行→fence 完成（E2E）+ 164/164 ctest PASS；真机一致性延后 | 8-12 周（含 E2E 主线联动） |
 | **阶段 2：SR-IOV Core** | GPU PF sriov_configure/sriov_enable + 资源分配策略 | VF 创建/销毁 100% PASS + 资源隔离验证 | 10-16 周 |
 | **阶段 3：vGPU 暴露** | `gpu_mdev_driver` + Trap-and-Emulate + GSP 仿真 | mdev type profile 创建 + QEMU 启动 vGPU VM | 12-20 周 |
-| **阶段 4：Live Migration** | vGPU state save/restore + 增量传输 + 自适应压缩 | 端到端 VM 跨节点迁移验证 | 16-24 周 |
+| **阶段 4：Live Migration** | vGPU state save/restore + 增量传输 + 自适应压缩 | 端到端 VM 跨节点迁移验证 + 真机 CppTLM 对拍 | 16-24 周 |
 
 **总计**：46-72 周（约 11-18 月）
 

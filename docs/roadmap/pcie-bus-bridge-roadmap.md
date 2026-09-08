@@ -73,39 +73,54 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 |-------|------|------|----------|------|-----:|
 | **5.5.1** | 4 象限重构（不改功能）| ADR-091 §D1-D2 | `plugins/{pci,iommu}_driver/` + `sim_hardware/` 创建；ModuleLoader 升级 | ✅ 已归档（[Change-1](openspec/changes/archive/2026-09-03-2026-09-03-pci-driver-refactor/) ship + 164/164 ctest PASS）| 4-6 周 |
 | **5.5.2** | sim_hardware 基础 + Tier 1+2 | ADR-091 §D5 L1+L2 | CpptlmBridge + HostBypass + RC Mirror；`plugins/pci_driver/` 调 sim_hardware | ✅ 已归档（[Change-2](openspec/changes/archive/2026-09-04-2026-09-03-sim-hardware-foundation-tier1-tier2/) ship，140/140 tasks）| 6-8 周 |
-| **5.5.3** | Tier 3+5+6 | ADR-091 §D5 L3+L5+L6 | Link Layer + SR-IOV (PcieEndpointIP 17-port) + Completion | 🔄 进行中（前置 backlog 已 ship：[bridge](openspec/changes/archive/2026-09-05-add-gpu-driver-sim-hardware-bridge/) + 6 个稳定性 change；核心 Tier 3+5+6 仿真待启动）| 10-16 周 |
-| **5.5.4** | Tier 4+7 | ADR-091 §D5 L4+L7 | PHY Digital + AXI Adapter | 📋 待启动 | 8-12 周 |
-| **5.5.5** | Tier 8 + VFIO + 真机一致性 | ADR-091 §D5 L8 + VFIO + ADR-072 扩展 | AXI Mapper OOO + VFIO + L2 build 扩展 | 📋 待启动 | 8-12 周 |
-| **总计** | | | | | **已 ship 2/5；进行中 1/5；待启动 2/5** |
+| **5.5.3** | Tier 3+5+6 | ADR-091 §D5 L3+L5+L6 | Link Layer + SR-IOV (PcieEndpointIP 17-port) + Completion | 📋 后台轨道 P1（降频，非 E2E 阻塞）| 10-16 周 |
+| **5.5.4** | Tier 4+7 | ADR-091 §D5 L4+L7 | PHY Digital + AXI Adapter | 📋 后台轨道 P1 | 8-12 周 |
+| **5.5.5** | Tier 8 + VFIO + 真机一致性 | ADR-091 §D5 L8 + VFIO + ADR-072 扩展 | AXI Mapper OOO + VFIO + L2 build 扩展 | 📋 后台轨道 P1 | 8-12 周 |
+| **5.5.6** | **dGPU E2E 主线 #1 — 真实 CppTLM EP** | ADR-091 §D5 + Oracle 路线图分析 | `backdoor_endpoint.cpp` 真实现 + `bridge.cpp` kCpptlm dlopen 22 ABI + `hal_cpptlm.cpp` 3 op 真化 + `plugin.cpp` backend 切换 | 🔄 **主线 P0**（[kcpptlm-archive-audit](openspec/changes/2026-09-08-kcpptlm-archive-audit/) 产出基线；从零实现 4 组件）| 4-6 周 |
+| **5.5.7** | **dGPU E2E 主线 #2 — CommandProcessor 真实化** | 5.5.6 依赖 | puller/queue submit 经 CppTLM TLP + doorbell；`HardwarePullerEmu` / CmdProcessor 双轨 | 📋 主线 P0 | 6-8 周 |
+| **5.5.8** | **dGPU E2E 主线 #3 — kernel dispatch + DMA** | 5.5.7 依赖 | gpgpu_device ioctl 表经 hal_cpptlm 全量穿透 + CppTLM backdoor DMA | 📋 主线 P0 | 6-8 周 |
+| **5.5.9** | **dGPU E2E 主线 #4 — 真机双轨验证** | 5.5.8 依赖 | drv/ 零修改 L2 build + 真机 CppTLM 对拍 | 📋 主线 P0 | 4-6 周 |
+| **总计** | | | | **已 ship 2/9；主线 P0 4 个新增；后台 P1 3 个降频** |
 
-### Stage 依赖路径图
+### Stage 依赖路径图（双轨道：E2E 主线 P0 + PCIe 底层 P1）
 
 ```
-5.5.1 4 象限重构（不改功能）
-  │ 创建 plugins/{pci,iommu}_driver/ + sim_hardware/ + ModuleLoader 拓扑排序
-  ↓
-5.5.2 sim_hardware 基础 + Tier 1+2（CpptlmBridge + HostBypass + RC Mirror）
-  │ 依赖: 5.5.1 的目录结构 + ModuleLoader depends
-  ↓
-5.5.3 Tier 3+5+6（Link Layer + SR-IOV 17-port + Completion Tracking）
-  │ 依赖: 5.5.2 的 sim_hardware 基础 + pci_driver 通路
-  ↓
-5.5.4 Tier 4+7（PHY Digital + AXI Adapter）
-  │ 依赖: 5.5.3 的 Link Layer（PHY 位于 Link 之下）
-  ↓
-5.5.5 Tier 8 + VFIO + 真机一致性（AXI Mapper OOO + vfio_driver + L2 build 扩展）
-  │ 依赖: 5.5.4 的 AXI 通路 + 5.5.3 的 SR-IOV（VFIO 强依赖 IOMMU + PCI）
-  ↓
-5.5.6+ GPU PF 虚拟化扩展轨道（[gpu-pf-driver-virtualization.md §3](../02_architecture/gpu-pf-driver-virtualization.md)）
-  （延续编号：VFIO/iommufd 基础设施就绪后启动 PF 驱动虚拟化开发）
+[基础层] 5.5.1 (4 象限重构, ✅)
+            ↓
+       5.5.2 (sim_hardware mock-first 基础, ✅)
+            │
+            ├──[E2E 主线 P0 — 真实 CppTLM binding]──→
+            │   5.5.6 (真实 EP + BackdoorEndpoint + bridge kCpptlm + hal_cpptlm 3 op)
+            │        ↓ 真实 CppTLM TLP 通路
+            │   5.5.7 (CommandProcessor — puller/queue 经 CppTLM TLP)
+            │        ↓
+            │   5.5.8 (kernel dispatch + DMA — ioctl 表穿透 + CppTLM backdoor DMA)
+            │        ↓
+            │   5.5.9 (真机双轨验证 — drv/ 零修改 L2 build)
+            │
+            └──[后台轨道 P1 — PCIe Tier 细节深化，非 E2E 阻塞]──→
+                5.5.3 (Tier 3+5+6 Link/SR-IOV/Completion)
+                    ↓
+                5.5.4 (Tier 4+7 PHY/AXI Adapter)
+                    ↓
+                5.5.5 (Tier 8 + VFIO + 真机一致性)
+                    ↓
+                5.5.10+ (PF 虚拟化扩展轨道 — 原 5.5.6+ 改名，PF/VF 完善排在 E2E 之后)
 ```
 
 **关键依赖要点**：
-- **5.5.1 → 5.5.2**：硬依赖。目录结构 + ModuleLoader 拓扑排序是 sim_hardware 落地前提。
-- **5.5.2 → 5.5.3**：硬依赖。Tier 1+2 建立 pci_driver 调 sim_hardware 的通路后，Link/SR-IOV 才有宿主。
-- **5.5.3 → 5.5.4**：软依赖。PHY Digital 在真实层次中位于 Link Layer 之下，但仿真可并行开发（独立 CppTLM 组件）。
-- **5.5.4 → 5.5.5**：硬依赖。AXI Mapper OOO 建立在 AXI Adapter 之上；VFIO 强依赖 IOMMU + PCI（depends 声明）。
-- **5.5.5 → 5.5.6+**：延续编号衔接。VFIO/iommufd 基础设施就绪后，GPU PF 驱动虚拟化扩展轨道（gpu-pf-driver-virtualization.md）才可启动。
+
+**E2E 主线（P0，硬依赖）**：
+- **5.5.2 → 5.5.6**：硬依赖。`sim_hardware/` 目录结构 + CpptlmBridge 框架 + `pci_probe_enumerate_from_sim_hardware` 是 5.5.6 真实 CppTLM binding 的基础设施。
+- **5.5.6 → 5.5.7**：硬依赖。真实 EP binding（backdoor_endpoint.cpp + bridge.cpp kCpptlm + hal_cpptlm.cpp 3 op 真化）必须先完成，CommandProcessor 才能走 CppTLM TLP 而非 mock FSM。
+- **5.5.7 → 5.5.8**：硬依赖。puller/queue submit 经 CppTLM TLP 跑通后，kernel dispatch + DMA 才能在真实通路验证。
+- **5.5.8 → 5.5.9**：硬依赖。ioctl 表全量穿透 hal_cpptlm + DMA backdoor 真机验证后，drv/ 零修改 L2 build 才能保证。
+
+**后台轨道（P1，软依赖；仅在主线阻塞期插空推进）**：
+- **5.5.3 → 5.5.4 → 5.5.5**：顺序软依赖。Tier 3/5/6 完成后 PHY/AXI Adapter 才有宿主，最终 Tier 8 + VFIO + L2 build 是 PF/VF 完善（5.5.10+）的仿真基础。
+- **5.5.5 → 5.5.10+**：硬依赖。VFIO + IOMMU + PCI 底层就绪后，PF 虚拟化扩展轨道（[gpu-pf-driver-virtualization.md §3](../02_architecture/gpu-pf-driver-virtualization.md)）才有仿真底层支持。
+
+**跨轨道独立性**：E2E 主线与后台轨道的依赖**互不耦合**——主线 5.5.6-5.5.9 不依赖 Link/PHY/AXI/SR-IOV/VFIO 任何 Tier（真实 CppTLM binding 通过 `backdoor_endpoint` + `bridge.cpp` kCpptlm 直连 CppTLM `.so`，不经过 5.5.3-5.5.5 的 PCIe 协议栈）；后台轨道 5.5.3-5.5.5 也不依赖主线（PCIe Tier 细节深化是 mock 通路足够）。
 
 ---
 
@@ -444,6 +459,19 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 ---
 
 ## 修订记录
+
+- **v0.2.2** (2026-09-08, Accepted)：**路线方针调整 — E2E 主线优先（P0）+ PCIe 底层降频（P1）+ 编号规范化**
+  - 用户优先级调整：尽快打通 dGPU E2E（PCIe EP → CommandProcessor → kernel dispatch + DMA），再 PF/VF 完善
+  - 新增 **5.5.6-5.5.9 dGPU E2E 主线**（P0）：
+    - **5.5.6**：真实 CppTLM EP — `backdoor_endpoint.cpp` 真实现 + `bridge.cpp` kCpptlm dlopen 22 ABI + `hal_cpptlm.cpp` 3 op 真化 + `plugin.cpp` backend 切换（工期 4-6 周，从零实现 4 组件）
+    - **5.5.7**：CommandProcessor 真实化（puller/queue 经 CppTLM TLP + doorbell）
+    - **5.5.8**：kernel dispatch + DMA（ioctl 表穿透 + CppTLM backdoor DMA）
+    - **5.5.9**：真机双轨验证（drv/ 零修改 L2 build）
+  - **5.5.3-5.5.5 降级为后台轨道 P1**（PCIe Tier 细节深化，非 E2E 阻塞；仅在主线阻塞期插空推进）
+  - 5.5.3 状态从"🔄 进行中"改为"📋 后台轨道 P1"（语义修正：原"进行中"暗示核心 Tier 仿真即将启动，实际为后台轨道）
+  - **5.5.6+ → 5.5.10+ 编号改名**（PF 虚拟化扩展轨道，避免与新主线 5.5.6-5.5.9 编号占位冲突）
+  - Stage 依赖路径图改为双轨道（E2E 主线 P0 硬依赖 + 后台 P1 软依赖；明确跨轨道独立性）
+  - **前置审计**：[openspec/changes/2026-09-08-kcpptlm-archive-audit/](openspec/changes/2026-09-08-kcpptlm-archive-audit/) 识别 kcpptlm-backend-binding 归档中 5 项虚假完成（33%），5.5.6 工期重估 4-6 周（vs 原始"增量"假设 1-2 周）
 
 - **v0.2.1** (2026-09-08, Accepted)：**状态同步 + Stage 依赖路径图**
   - 5.5.1 → ✅ 已归档（Change-1 ship + 164/164 ctest PASS）
