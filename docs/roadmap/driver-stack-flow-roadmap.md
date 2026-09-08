@@ -98,7 +98,7 @@
 **目标**：所有引用本文档或与其冲突的文件完成同步，消除指针漂移。
 
 - 任务 P3.1：**与 core-architecture.md 对齐**
-  比对 L560-561（双后端）、L617（ADR-092 增补）、L700（后端共存）与本文档 §12 新章节；差异最小化（post-refactor 为 SSOT，本文档补充细节，不重复主文）。
+  比对 L560-561（双后端）、L617（ADR-092 增补）、L700（后端共存）与本文档 §12 新章节；差异最小化（core-architecture 为 SSOT，本文档补充细节，不重复主文）。
 - 任务 P3.2：**与 four-quadrant-architecture.md 对齐**
   ① §6 BypassMode 与四象限 §4.5 逐字核对（已在两轮中确认一致）；② §-1.4/§13 的 SR-IOV 口径互链（P2.3）。
 - 任务 P3.3：**与 AGENTS.md 同步**
@@ -159,7 +159,7 @@ flowchart LR
     end
 
     subgraph P3[P3 跨文档对账]
-        P3_1[P3.1 post-refactor 对齐]
+        P3_1[P3.1 core-architecture 对齐]
         P3_2[P3.2 four-quadrant 对齐]
         P3_3[P3.3 AGENTS.md 同步]
         P3_4[P3.4 gpu_hal.h 头注释]
@@ -208,7 +208,7 @@ flowchart LR
 - P0：`stage-5-5-2-driver-stack-flow.md` v0.1.3（纯纠错 diff）
 - P1：本文档 v0.2.0（+§-1.2.1、§-1.6、§12；§-1.2/§-1.3.9 修订）
 - P2：本文档 v0.2.1（+§13；§-1.4 加注）
-- P3：四象限/post-refactor/AGENTS.md/gpu_hal.h/ADR-092 各一份修订 diff + 对账差异清单
+- P3：四象限/core-architecture/AGENTS.md/gpu_hal.h/ADR-092 各一份修订 diff + 对账差异清单
 - P4：ADR-092 §D3 笔误修正 + stub 测试 + hal_cpptlm.cpp 更新 + gpu_hal.h 注释修正
 
 ### 3.3 风险点与回退方案
@@ -217,7 +217,7 @@ flowchart LR
 |------|------|------------|
 | §3 偏差的"哪边是对的"争议（ADR-092 §D3 vs header） | 中 | Oracle 已建议：改 ADR 不改 header（成本最低、无跨仓风险）；P4.1 任务已据此设计 |
 | 占比口径（8 模块 115% vs 六主体 105%）与既有 ADR-088 表述冲突 | 中 | §-1.2 保留旧口径注释作为脚注，主表采用 8 模块口径；若 ADR-088 有正式占比，以其为准并反向修订本文 |
-| "真相源"与 core-architecture.md（SSOT）定位冲突 | 中 | §0 明确分工：post-refactor = 全局 SSOT；本文 = PF 阶段（Stage 5.5.2+）驱动栈专项真相源；冲突时 post-refactor 优先，本文负责细节与演进锚点 |
+| "真相源"与 core-architecture.md（SSOT）定位冲突 | 中 | §0 明确分工：core-architecture = 全局 SSOT；本文 = PF 阶段（Stage 5.5.2+）驱动栈专项真相源；冲突时 core-architecture 优先，本文负责细节与演进锚点 |
 | P4 ADR 笔误修订波及 ADR-092 治理流程 | 中 | ADR-092 升 Accepted v0.2 时一并合并笔误修订；如不可行则回退为"仅文档标注偏差" |
 | 修订幅度过大拖长评审 | 低 | 分 4 个 PR（P0/P1/P2+P3 文档/P4），每个独立可合并 |
 
@@ -255,7 +255,7 @@ flowchart LR
 | v0.1.3 | 2026-09-08 | P0：§3 API 对齐 header、§2 态标注、数字修正（41 op / 22 ABI）、ioctl 名、§9 空行；§11 增补 API 偏差遗留 | P0 |
 | v0.2.0 | 2026-09-08 | P1：新增 §-1.2.1 模块矩阵、§-1.6 后端演进机制、§12 后端契约；§-1.2 占比 8 模块化、§-1.3.9 分组视图；验收链路落图 | P1 |
 | v0.2.1 | 2026-09-08 | P2：新增 §13 SR-IOV VF 锚点；§-1.4 口径加注；append-only 预案 | P2 |
-| v0.3.0 | 待 P3 | 跨文档对账 diff 合入（post-refactor/四象限/AGENTS.md/gpu_hal.h/ADR-092 升档） | P3 |
+| v0.3.0 | 待 P3 | 跨文档对账 diff 合入（core-architecture/四象限/AGENTS.md/gpu_hal.h/ADR-092 升档） | P3 |
 | v1.0.0 | 待 P4 | ADR-092 §D3 笔误修正 + stub 测试 + 头注释修正 | P4 |
 
 **重大决策记录**（本节为决策锚点，正式决议走 ADR 流程）：
