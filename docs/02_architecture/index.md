@@ -15,6 +15,7 @@
 - [**four-quadrant-architecture.md**](four-quadrant-architecture.md) — 4 象限目录布局（Q1-Q4，ADR-091 派生 SSOT）
 - [**scale-up-fabric-architecture.md**](scale-up-fabric-architecture.md) 📋 Draft v0.5 — Scale-up Fabric 局部架构（节点内 L1 Switch + 统一 PA + UVM/PGAS；2026-08-14）
 - [**multi-process-gpu-simulator-integration.md**](multi-process-gpu-simulator-integration.md) 📋 Draft v0.1 — 跨仓集成 SSOT（UsrLinuxEmu ↔ Multi-Process Vision；2026-08-14）
+- [**gpu-pf-driver-virtualization.md**](gpu-pf-driver-virtualization.md) 📋 Draft v0.1 — GPU PF 驱动虚拟化职责全景（6 大责任 + 4 阶段：基础 PCI → SR-IOV Core → vGPU 暴露 → Live Migration；2026-09-08 新增）
 - [**stage4-cp-complete-gap-analysis.md**](../archive/misc/stage4-cp-gap-analysis-2026-07.md) 🗄️ 已归档 — Stage 4.4~4.6 差距分析快照（4.3 ✅ 后；Stage 4 已 ship 2026-08-05）
 - [**ROADMAP**](../../roadmap.md) ⭐ **演进路线** — 4 阶段 + 蓝图，从 MVP 到 Linux 内核环境模拟
 - [**API 参考**](../06-reference/api-reference.md) — 核心 API 接口文档
