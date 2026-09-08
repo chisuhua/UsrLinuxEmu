@@ -486,8 +486,8 @@ GSP Firmware (GPU 内部微处理器)
 |---|---|---|---|
 | **PCI 基础** | `pci_register_driver()` / `probe` / `remove` | Linux PCI 子系统 | ✅ Stage 5.5.1 |
 | **PCI 基础** | `pci_enable_device()` / `pci_set_master()` | Linux PCI 子系统 | ✅ Stage 5.5.1 |
-| **电源管理** | `suspend` / `resume` / `runtime_suspend` | Linux PM 子系统 | ⚠️ Stage 5.5.1 部分 |
-| **错误处理** | `pci_error_handlers` → `error_detected` / `mmio_enabled` / `slot_reset` | Linux AER 子系统 | ⚠️ Stage 5.5.1 部分 |
+| **电源管理** | `suspend` / `resume` / `runtime_suspend` | Linux PM 子系统 | ❌ 框架接口位 / 功能未实施（无电源域；stage-5-5-2 §-1.2 排除） |
+| **错误处理** | `pci_error_handlers` → `error_detected` / `mmio_enabled` / `slot_reset` | Linux AER 子系统 | ❌ 框架接口位 / 功能未实施（ADR-055 Deferred-Never） |
 | **SR-IOV** | `pci_enable_sriov()` / `pci_disable_sriov()` | Linux SR-IOV 框架 | ❌ Stage 5.5.6+ |
 | **SR-IOV** | `numvfs` sysfs / `sriov_totalvfs` / `sriov_numvfs` | 用户态（libvirt） | ❌ Stage 5.5.6+ |
 | **mdev** | `mdev_register_driver()` + `supported_type_groups` | Linux mdev 框架 | ❌ Stage 6+ |
