@@ -276,6 +276,12 @@ int CpptlmBridge::mmio_write(uint8_t bar, uint64_t offset, const void* buf,
   if (!impl_->initialized) return -ENODEV;
   if (!buf || !valid_mmio(bar, offset, len)) return -EINVAL;
 
+  if (impl_->backend == CpptlmBackendKind::kCpptlm) {
+    if (!bridge_state().resolved) return -ENOSYS;
+    // TODO(P4.NEW-D): plumb emu through and call syms.mmio_write
+    return -ENOSYS;
+  }
+
   TlpGuard tlp;
   std::memcpy(impl_->bars[bar].data() + offset, buf, len);
   return 0;

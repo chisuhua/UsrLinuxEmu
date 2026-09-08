@@ -2,6 +2,7 @@
 
 add_library(gpu_hal STATIC
     hal_user.cpp
+    hal_cpptlm.cpp
 )
 
 set_target_properties(gpu_hal PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -12,11 +13,13 @@ target_include_directories(gpu_hal PUBLIC
     ${PROJECT_SOURCE_DIR}/include/kernel
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/shared
     ${PROJECT_SOURCE_DIR}/plugins/gpu_driver/sim    # Stage 4.5: SemaphoreManager
+    ${PROJECT_SOURCE_DIR}/sim_hardware/include/cpptlm  # 5.5.6 P4.NEW-D: backdoor_endpoint.h
     ${PROJECT_SOURCE_DIR}/libgpu_core/include
 )
 
 target_link_libraries(gpu_hal PUBLIC
     gpu_core
+    sim_hardware_mock                                # 5.5.6 P4.NEW-D: ule_dgpu_* for hal_cpptlm composition
 )
 
 # HAL mock 库（仅测试用）
