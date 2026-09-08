@@ -83,18 +83,30 @@ int host_bridge_enumerate(DiscoveredDevice* devices, std::size_t max_devices,
 
 int host_bridge_bypass_write(uint8_t bar, uint64_t offset,
                              const void* src, std::size_t len) {
-    // Per design §5.3 + §10: delegate to active CpptlmBridge.
     CpptlmBridge* bridge = CpptlmBridge_get();
     if (!bridge) return -EINVAL;
-    return bridge->mmio_write(bar, offset, src, len);
+    switch (bypass_get_mode()) {
+        case BypassMode::kFull:
+        case BypassMode::kPartial:
+            return bridge->mmio_write(bar, offset, src, len);
+        case BypassMode::kBypass:
+            return bridge->backdoor_write(bar, offset, src, len);
+    }
+    return -EINVAL;
 }
 
 int host_bridge_bypass_read(uint8_t bar, uint64_t offset,
                             void* dst, std::size_t len) {
-    // Per design §5.3 + §10: delegate to active CpptlmBridge.
     CpptlmBridge* bridge = CpptlmBridge_get();
     if (!bridge) return -EINVAL;
-    return bridge->mmio_read(bar, offset, dst, len);
+    switch (bypass_get_mode()) {
+        case BypassMode::kFull:
+        case BypassMode::kPartial:
+            return bridge->mmio_read(bar, offset, dst, len);
+        case BypassMode::kBypass:
+            return bridge->backdoor_read(bar, offset, dst, len);
+    }
+    return -EINVAL;
 }
 
 }  // namespace usr_linux_emu::sim_hardware::pcie
