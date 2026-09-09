@@ -18,7 +18,7 @@
 > - [ADR-089 关联调研](../05-advanced/system-hw-survey-2026-08-16.md) — v5.5+ 调研报告
 > - [ADR-089 Live Migration 调研](../05-advanced/vfio-live-migration-research.md)
 > **维护者**: UsrLinuxEmu Architecture Team
-> **最后更新**: 2026-09-03（v0.1 初版）
+> **最后更新**: 2026-09-09（**v0.2.3 战略调整 — PCIe EP 优先 + CppTLM 跨仓前置阻塞**；详见 [§修订记录](#修订记录) v0.2.3 条目）
 
 ---
 
@@ -76,11 +76,11 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 | **5.5.3** | Tier 3+5+6 | ADR-091 §D5 L3+L5+L6 | Link Layer + SR-IOV (PcieEndpointIP 17-port) + Completion | 📋 后台轨道 P1（降频，非 E2E 阻塞）| 10-16 周 |
 | **5.5.4** | Tier 4+7 | ADR-091 §D5 L4+L7 | PHY Digital + AXI Adapter | 📋 后台轨道 P1 | 8-12 周 |
 | **5.5.5** | Tier 8 + VFIO + 真机一致性 | ADR-091 §D5 L8 + VFIO + ADR-072 扩展 | AXI Mapper OOO + VFIO + L2 build 扩展 | 📋 后台轨道 P1 | 8-12 周 |
-| **5.5.6** | **dGPU E2E 主线 #1 — 真实 CppTLM EP** | ADR-091 §D5 + Oracle 路线图分析 | `backdoor_endpoint.cpp` 真实现 + `bridge.cpp` kCpptlm dlopen 22 ABI + `hal_cpptlm.cpp` 3 op 真化 + `plugin.cpp` backend 切换 | 🔄 **主线 P0**（[kcpptlm-archive-audit](openspec/changes/2026-09-08-kcpptlm-archive-audit/) 产出基线；从零实现 4 组件）| 4-6 周 |
-| **5.5.7** | **dGPU E2E 主线 #2 — CommandProcessor 真实化** | 5.5.6 依赖 | puller/queue submit 经 CppTLM TLP + doorbell；`HardwarePullerEmu` / CmdProcessor 双轨 | 📋 主线 P0 | 6-8 周 |
-| **5.5.8** | **dGPU E2E 主线 #3 — kernel dispatch + DMA** | 5.5.7 依赖 | gpgpu_device ioctl 表经 hal_cpptlm 全量穿透 + CppTLM backdoor DMA | 📋 主线 P0 | 6-8 周 |
-| **5.5.9** | **dGPU E2E 主线 #4 — 真机双轨验证** | 5.5.8 依赖 | drv/ 零修改 L2 build + 真机 CppTLM 对拍 | 📋 主线 P0 | 4-6 周 |
-| **总计** | | | | **已 ship 2/9；主线 P0 4 个新增；后台 P1 3 个降频** |
+| **5.5.6** | **dGPU E2E 主线 #1 — 真实 CppTLM EP** | ADR-091 §D5 + Oracle 路线图分析 | `backdoor_endpoint.cpp` 真实现 + `bridge.cpp` kCpptlm dlopen 22 ABI + `hal_cpptlm.cpp` 3 op 真化 + `plugin.cpp` backend 切换 | ✅ **主线 P0 Archived**（commit `c263867` + Oracle 9.5/10；**接线真实但语义空转**，7 根本错误见 CppTLM change） | 4-6 周（已完成；需 follow-up 验证） |
+| **5.5.7** | **dGPU E2E 主线 #2 — CommandProcessor 真实化** | 5.5.6 依赖 + **CppTLM PCIe EP 基础补完前置** | puller/queue submit 经 CppTLM TLP + doorbell；`HardwarePullerEmu` / CmdProcessor 双轨 | ⏸️ **Deferred**（[commit `2cf4bc5` 5.5.7.1 P5.NEW-A](openspec/changes/2026-09-09-5-5-7-cpptlm-cp-real-ification/) 验证 CP attach 假设错位；待 CppTLM [2026-09-09-cpptlm-pcie-ep-foundation](https://example/cpptlm-pcie-ep-foundation) 阶段 1.1-1.4 完成后启动） | 6-8 周 |
+| **5.5.8** | **dGPU E2E 主线 #3 — kernel dispatch + DMA** | 5.5.7 依赖 + **CppTLM PCIe EP 基础补完前置** | gpgpu_device ioctl 表经 hal_cpptlm 全量穿透 + CppTLM backdoor DMA | ⏸️ **Deferred**（[commit `d4a98f7` 5.5.8 立项](openspec/changes/2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma/) Oracle 8.7/10；阶段 1 cp_attach 待删除，需 CppTLM 修复 #1/#2/#4/#5/#6/#7 后重启） | 6-8 周 |
+| **5.5.9** | **dGPU E2E 主线 #4 — 真机双轨验证** | 5.5.8 依赖 | drv/ 零修改 L2 build + 真机 CppTLM 对拍 | 📋 主线 P0（待 5.5.8 重启后启动） | 4-6 周 |
+| **总计** | | | | **已 ship 2/9；主线 P0 4 个新增；2 个 Deferred 等 CppTLM 基础补完；后台 P1 3 个降频** |
 
 ### Stage 依赖路径图（双轨道：E2E 主线 P0 + PCIe 底层 P1）
 
@@ -121,6 +121,8 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 - **5.5.5 → 5.5.10+**：硬依赖。VFIO + IOMMU + PCI 底层就绪后，PF 虚拟化扩展轨道（[gpu-pf-driver-virtualization.md §3](../02_architecture/gpu-pf-driver-virtualization.md)）才有仿真底层支持。
 
 **跨轨道独立性**：E2E 主线与后台轨道的依赖**互不耦合**——主线 5.5.6-5.5.9 不依赖 Link/PHY/AXI/SR-IOV/VFIO 任何 Tier（真实 CppTLM binding 通过 `backdoor_endpoint` + `bridge.cpp` kCpptlm 直连 CppTLM `.so`，不经过 5.5.3-5.5.5 的 PCIe 协议栈）；后台轨道 5.5.3-5.5.5 也不依赖主线（PCIe Tier 细节深化是 mock 通路足够）。
+
+**🚀 v0.2.3 新增跨仓硬依赖**：5.5.6/5.5.7/5.5.8 实际依赖 [CppTLM `2026-09-09-cpptlm-pcie-ep-foundation`](https://example/cpptlm-pcie-ep-foundation) change 完成（PCIe EP 基础必备 4 步：config space 真实化 + MSI-X 中断链 + DMA translate cb + 电源管理）。**原因**：Oracle 2026-09-09 三轮审查揭示 22 ABI 中 7 个根本性错误——`register_backdoor_cb` NO-OP / `register_dma_translate_cb` 硬编码 pa=0 / `pcie_config_read/write` -ENOSYS stub / `msix_update_pending` 中断链断裂 / `mmio_read` 数据缺口 + race / `backdoor_read` 返 len 伪装成功 / `mmio_write` 数据丢弃——5.5.6 ship 时仅验证接线真实未验证语义（5 个新测试仅断言 `ret != -ENOSYS`，对数据正确性零覆盖）；5.5.7 D.1 决策 X + 5.5.8 阶段 1 cp_attach 因果链错位（-ETIMEDOUT 根因是 sim_loop 调度 race，与 callback 注册无关，实测 2000 次 race 率仅 0.55%）。**后续路径**：① CppTLM 5 步实施（阶段 1.1-1.4 + 阶段 2.1，2-3 周）；② UsrLinuxEmu 端 follow-up（测试断言升级 `CHECK → REQUIRE + buf 内容验证`，独立 change）；③ 5.5.7 重启；④ 5.5.8 重启（cp_attach 阶段 1 删除）；⑤ 5.5.9 真机双轨验证。
 
 ---
 
@@ -459,6 +461,21 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 ---
 
 ## 修订记录
+
+- **v0.2.3** (2026-09-09, Accepted)：**🚀 战略调整 — PCIe EP 优先 + CppTLM 跨仓前置阻塞**
+  - **用户决策（2026-09-09）**：先打通 CppTLM PCIe EP 协同流程，再考虑 CommandProcessor；在完全实现 PCIe EP 协同的情况下，再启动 5.5.7。
+  - **Oracle 三轮审查揭示的 7 个根本性错误**（PCIe EP 评审 3.5/10 + CP attach 评审 3.5/10 + 5.5.8 评审 8.7/10）：5.5.6 ship 时"接线真实但语义空转"，7 个 ABI 函数为 NO-OP/stub/死路；5.5.7 D.1 决策 X + 5.5.8 阶段 1 cp_attach 因果链错位（-ETIMEDOUT 根因是 sim_loop race，与 callback 注册无关，实测 2000 次 race 率 0.55%）
+  - **新增跨仓硬依赖**：[CppTLM `2026-09-09-cpptlm-pcie-ep-foundation`](https://example/cpptlm-pcie-ep-foundation) change（PCIe EP 基础必备 4 步 + 性能增强 1 步 + 7 错误修复 + 14 ADDED Requirements）—— 本路线图 5.5.7/5.5.8 必须等该 change 完成后启动
+  - **5.5.6 状态调整**：🔄 主线 P0 → ✅ **主线 P0 Archived**（接线真实，调用真实化后行为自动生效）
+  - **5.5.7 状态调整**：📋 主线 P0 → ⏸️ **Deferred**（commit `2cf4bc5` 5.5.7.1 P5.NEW-A 验证 CP attach 假设错位；D.1 决策 X 锁定"5.5.8 启动时 attach CP"但根因不在 callback）
+  - **5.5.8 状态调整**：📋 主线 P0 → ⏸️ **Deferred**（commit `d4a98f7` 5.5.8 立项 Oracle 8.7/10；阶段 1 cp_attach 待删除）
+  - **5.5.9 状态不变**：📋 主线 P0（待 5.5.8 重启后启动）
+  - **3 个决策确认**（per Oracle 5.5.8 立项审查 + commit `d4a98f7` 修正）：
+    - D.1 ✅ Accepted（选项 X：接受 -ETIMEDOUT 为正常返回，需 CppTLM 修复 race）
+    - D.2 ✅ Accepted（选项 P：TaskRunner 直调 `gpu_hal_ops.adapter_*`，HAL 契约层直调）
+    - D.3 ✅ Accepted（选项 D：保持 ctest opt-in 模式，零 169 baseline 影响）
+  - **后续规划路径**：① CppTLM 5 步实施（阶段 1.1-1.4 + 阶段 2.1，2-3 周）；② UsrLinuxEmu 端 follow-up（测试断言升级 `CHECK → REQUIRE + buf 内容验证`，独立 change）；③ 5.5.7 重启；④ 5.5.8 重启（cp_attach 阶段 1 删除）；⑤ 5.5.9 真机双轨验证
+  - **同步**：openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/（CppTLM 仓）+ openspec/changes/2026-09-09-5-5-7-cpptlm-cp-real-ification/ + openspec/changes/2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma/
 
 - **v0.2.2** (2026-09-08, Accepted)：**路线方针调整 — E2E 主线优先（P0）+ PCIe 底层降频（P1）+ 编号规范化**
   - 用户优先级调整：尽快打通 dGPU E2E（PCIe EP → CommandProcessor → kernel dispatch + DMA），再 PF/VF 完善
