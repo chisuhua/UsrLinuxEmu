@@ -5,6 +5,7 @@
 > **范围**: 驱动侧（UsrLinuxEmu）+ 硬件仿真侧（CppTLM，跨仓引用）
 > **关联**:
 > - CppTLM 硬件侧 SSOT: [CppTLM/docs/02_architecture/pcie-endpoint-architecture.md](https://github.com/CppTLM/docs/02_architecture/pcie-endpoint-architecture.md)
+> - **CppTLM SDMA 引擎内部设计**: [CppTLM/docs/02_architecture/sdma-engine-design.md](https://github.com/CppTLM/docs/02_architecture/sdma-engine-design.md)（Ring Buffer + RPTR/WPTR + Doorbell + Packet + 状态机 + 地址翻译 + Fence + D2D + CmdProc 集成）
 > - CppTLM 5 步实施 roadmap: [CppTLM/docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md](https://github.com/CppTLM/docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md)
 > - UsrLinuxEmu roadmap: [docs/roadmap/pcie-bus-bridge-roadmap.md](pcie-bus-bridge-roadmap.md) — v0.2.3
 
@@ -235,6 +236,29 @@ hal->adapter_close(hal, handle)
 - TaskRunner include `gpu_hal.h`（跨子模块）
 - `external/TaskRunner/UsrLinuxEmu` 符号链接缺失（5.5.8 P5.NEW-X.5.0 setup 二选一）
 - HAL struct 71 fn-ptrs 真实可用（hal_user / hal_mock / hal_cpptlm 三后端填充同一 struct）
+
+#### §2.4.1 SDMA 接入点（驱动侧）
+
+驱动通过 HAL `cmd_submit` / `doorbell_ring` / `fence_wait` fn-ptr 提交 SDMA 命令。完整 SDMA 内部协议（Ring Buffer / RPTR/WPTR / Doorbell / Packet 格式 / 状态机 / 地址翻译 / 完成通知 / D2D 路径）由 CppTLM 实现，详见 [CppTLM/docs/02_architecture/sdma-engine-design.md](https://github.com/CppTLM/docs/02_architecture/sdma-engine-design.md)。
+
+| HAL fn-ptr | 驱动调用 | CppTLM 对应（5 端口）| 状态 |
+|------------|----------|---------------------|------|
+| `cmd_submit` | 推 SDMA descriptor 到 Ring Buffer WPTR | desc_in[0] | 阶段 1.3a 后真实 |
+| `doorbell_ring` | 写 Doorbell 寄存器触发 SDMA fetch | BAR0+0x10010000 | 阶段 1.3a 后真实 |
+| `fence_wait` | 阻塞等待 fence_id 触发 | fence_table_[id] | 阶段 1.3d 后真实 |
+| `dma_translate_cb` | 注册 IOMMU 翻译回调 | board->dma_translate_callback | 阶段 1.3c 后真实（#2 修复）|
+
+**驱动提交 SDMA 命令流程**（5 步）：
+1. `hal->cmd_submit(hal, &DmaCmdArgs{src_pa, dst_pa, size, flags, fence_id})`
+2. CppTLM SDMA 推 `SdmaRingEntry` 到 Ring Buffer（WPTR 推进）
+3. `hal->doorbell_ring(stream_id, wptr_value)` 触发 SDMA fetch
+4. SDMA EXECUTE 态：地址翻译（dma_translate_cb）+ PCIe TLP（H2D/D2H）或 NoC bypass（D2D）
+5. SDMA COMPLETE 态：`done_out → CompletionRing → MSI-X（flags[INTERRUPT]）+ fence_table_[id]（flags[FENCE]）`
+
+**约束**：
+- D2D（同 GPU 内）路径不经过 PCIe host_out，验证断言 `host_out events = 0`
+- driver 内 Doorbell 写入前必须 memory barrier（`std::atomic_thread_fence(std::memory_order_release)`）
+- 22 ABI 函数签名不变，HAL 71 fn-ptrs append-only（ADR-023 §D4）
 
 ### §2.5 电源管理数据流（驱动侧 — 待实现）
 
