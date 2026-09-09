@@ -7,7 +7,8 @@
 > - CppTLM 硬件侧 SSOT: [CppTLM/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md](https://github.com/CppTLM/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md)
 > - **CppTLM SDMA 引擎内部设计**: [CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md](https://github.com/CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md)（Ring Buffer + RPTR/WPTR + Doorbell + Packet + 状态机 + 地址翻译 + Fence + D2D + CmdProc 集成）
 > - CppTLM 5 步实施 roadmap: [CppTLM/docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md](https://github.com/CppTLM/docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md)
-> - UsrLinuxEmu roadmap: [docs/roadmap/pcie-bus-bridge-roadmap.md](pcie-bus-bridge-roadmap.md) — v0.2.3
+> - UsrLinuxEmu 总 roadmap: [`../roadmap/pcie-bus-bridge-roadmap.md`](../roadmap/pcie-bus-bridge-roadmap.md) — v0.2.3
+> - 5+4 步聚焦实施路径: [`../roadmap/pcie-ep-cross-repo-implementation-path.md`](../roadmap/pcie-ep-cross-repo-implementation-path.md)
 
 ---
 
@@ -17,17 +18,20 @@
 
 | 层级 | 状态 | 驱动侧接入点 |
 |------|------|-------------|
-| **基础必备** | 🎯 **本文档覆盖** | `GpgpuDevice` ioctl 派发表 + HAL 71 fn-ptrs + `CpptlmBridge` |
+| **基础必备** | 🎯 **本文档覆盖** | `GpgpuDevice` ioctl 派发表 + HAL 71 fn-ptrs（ADR-076+ADR-092 append-only） + `CpptlmBridge` |
 | **性能增强** | 🎯 §3.4 | P2P DMA + Resizable BAR 接入点待实现 |
 | **虚拟化必备** | ❌ 排除 | SR-IOV VF 路径不在 UsrLinuxEmu 范围（移交 VFIO） |
 | **高级可选** | ❌ 排除 | — |
 
 ### §0.2 关键术语
 
-- **CpptlmBridge**: `sim_hardware/src/cpptlm/bridge.cpp` — 22 ABI dlopen + dlsym 包装
-- **HAL struct**: `struct gpu_hal_ops` — 71 fn-ptrs（ADR-023 append-only）
+- **CpptlmBridge**: `sim_hardware/src/cpptlm/bridge.cpp` — **23 ABI** dlopen + dlsym 包装（5.5.6 实际绑定 22 符号子集；契约 = 23 = ADR-088 §D5 冻结）
+- **HAL struct**: `struct gpu_hal_ops` — 71 fn-ptrs（ADR-023 append-only；演进链：65 → 68（ADR-076 +3 PTX-EMU HAL Backend） → 71（ADR-092 +3 adapter））
 - **BackdoorEndpoint**: `sim_hardware/src/cpptlm/backdoor_endpoint.cpp` — 5 个 ule_dgpu_* 函数
+- **Endpoint**: `sim_hardware/src/cpptlm/endpoint.cpp` — PcieEndpointIP 接入点（18 行）
+- **host_bridge**: `sim_hardware/src/pcie/host_bridge.cpp` — bypass/full dispatch（111 行，**位于 pcie/ 而非 cpptlm/**）
 - **HAL 后端**: hal_user / hal_mock / hal_cpptlm（三选一填充同一 struct）
+- **ADR-092**: 🔄 Proposed v0.1（实施已 ship，Gate D 待 Oracle 复审升档）
 
 ---
 
@@ -63,18 +67,24 @@
 ┌─────────────────────────────────────────────────────────┐
 │  sim_hardware/src/cpptlm/ — CppTLM 包装层                  │
 │  • backdoor_endpoint.cpp — ule_dgpu_* 5 functions        │
-│  • bridge.cpp — CpptlmBridge (22 ABI dlopen + dlsym)     │
-│  • host_bridge.cpp — bypass/full dispatch                  │
+│  • bridge.cpp — CpptlmBridge (23 ABI dlopen + dlsym)     │
 │  • endpoint.cpp — PcieEndpointIP 接入                      │
 └───────────────────────────┬─────────────────────────────┘
                             │ dlopen("libcpptlm_emulator.so")
                             ▼
 ┌─────────────────────────────────────────────────────────┐
+│  sim_hardware/src/pcie/ — PCIe bus + host_bridge         │
+│  • host_bridge.cpp — bypass/full dispatch (Tier 1+2)    │
+│  • bypass.cpp — 3 态裁决（Bypass/Partial/Full）            │
+└───────────────────────────┬─────────────────────────────┘
+                            │ dlopen("libcpptlm_emulator.so")
+                            ▼
+┌─────────────────────────────────────────────────────────┐
 │  CppTLM (硬件仿真, 跨仓)                                  │
-│  • 22 ABI functions (cpptlm_emulator.cc)                  │
+│  • 23 ABI functions (cpptlm_emulator.cc)                  │
 │  • DGpuBoard / PcieEndpointIP / SDMA engine               │
-│  → 详见 CppTLM/docs/02_architecture/pcie-endpoint-         │
-│     architecture.md (硬件侧 SSOT)                          │
+│  → 详见 [CppTLM/docs/soc_arch/architecture/16-           │
+│     pcie-endpoint-architecture.md](https://github.com/CppTLM/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md) (硬件侧 SSOT) │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -258,7 +268,7 @@ hal->adapter_close(hal, handle)
 **约束**：
 - D2D（同 GPU 内）路径不经过 PCIe host_out，验证断言 `host_out events = 0`
 - driver 内 Doorbell 写入前必须 memory barrier（`std::atomic_thread_fence(std::memory_order_release)`）
-- 22 ABI 函数签名不变，HAL 71 fn-ptrs append-only（ADR-023 §D4）
+- 23 ABI 函数签名不变，HAL 71 fn-ptrs append-only（ADR-023 §D4；22 = 5.5.6 绑定子集快照）
 
 ### §2.5 电源管理数据流（驱动侧 — 待实现）
 
@@ -282,7 +292,7 @@ hal->adapter_close(hal, handle)
 
 ### §3.1 Driver 操作 × HAL fn-ptr × CppTLM ABI 映射
 
-| Driver 操作 (GpgpuDevice ioctl) | HAL fn-ptr (71 fn-ptrs) | CppTLM ABI (22 fns) | 状态 |
+| Driver 操作 (GpgpuDevice ioctl) | HAL fn-ptr (71 fn-ptrs) | CppTLM ABI（**23 契约 / 5.5.6 绑定 22 符号子集**）| 状态 |
 |---------------------------------|------------------------|---------------------|------|
 | GPU_IOCTL_GET_DEVICE_INFO | adapter_get_info | cpptlm_emulator_get_adapter_info | ✅ 真实 |
 | GPU_IOCTL_ALLOC_BO | mem_alloc_vram | （待实现）| ❌ mock |
@@ -353,7 +363,7 @@ hal->adapter_close(hal, handle)
 
 ### §4.3 跨仓 ABI 不变约束
 
-- CppTLM 22 ABI 函数签名不变（5 步实施仅修改 CppTLM 内部实现）
+- CppTLM 23 ABI 函数签名不变（5 步实施仅修改 CppTLM 内部实现；22 = 5.5.6 绑定子集快照）
 - UsrLinuxEmu `sim_hardware/src/cpptlm/` 接线不变（5.5.6 P4.NEW-A/B/C/D + B.5 + 5.5.7.1 ship）
 - 实施后行为自动从"语义空转"变为"真实数据/中断/DMA"
 
