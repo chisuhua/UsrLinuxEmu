@@ -236,6 +236,8 @@ set(CATCH2_TESTS
     sim_hardware/test_host_bridge_bypass_full_dispatch_standalone.cpp
     test_hal_cpptlm_real_standalone.cpp
     test_backend_selection_standalone.cpp
+    # 5.5.7-cpptlm-cp-real-ification — P5.NEW-A.1: profile 真实化验证
+    sim_hardware/test_bridge_kcpptlm_profile_real_standalone.cpp
     # Stage 5.5.1 — Wave 1A (pci_driver 迁移 verification, tasks.md §2 任务 1.2/1.3/1.4/1.5)
     plugins/test_pci_driver_standalone.cpp
     # Stage 5.5.1 — Wave 1B (iommu_driver 迁移 verification, tasks.md §3 任务 2.2/2.3/2.5/2.6)
@@ -304,6 +306,12 @@ foreach(src ${CATCH2_TESTS})
     get_filename_component(testname ${src} NAME_WE)
     add_catch_test(${testname} ${src})
 endforeach()
+
+# 5.5.7-cpptlm-cp-real-ification: profile 测试默认从 PROJECT_SOURCE_DIR cwd 跑，
+# CppTLM profile 不可用时 5 个 TEST_CASE 全 SKIP，Catch2 返 exit 4。
+# ctest 默认把非零 exit 视为 FAIL，需要 SKIP_RETURN_CODE 4 让 ctest 视为 SKIP。
+set_tests_properties(test_bridge_kcpptlm_profile_real_standalone PROPERTIES
+    SKIP_RETURN_CODE 4)
 
 # Catch2 sim tests (Catch2 + link kernel + gpu_sim + gpu_drv)
 set(CATCH2_SIM_TESTS

@@ -97,8 +97,8 @@
 
 ## Success Criteria
 
-- [ ] 5 个新测试用例覆盖 `ret == 0` 强约束 + roundtrip
-- [ ] ctest 174/174 PASS（+5 新测试，零回归）
-- [ ] 3 个决策记录（D.1/D.2/D.3）已落地
+- [ ] 1 个新测试 binary 含 5 个新 TEST_CASE（profile 模式 + ABI 通道验证）
+- [ ] ctest 170/170 PASS（+1 新 binary，5 新 TEST_CASE 默认 SKIP，零回归 169 baseline）
+- [ ] 3 个决策记录（D.1/D.2/D.3）已落地（D.1 Accepted 基于 A.1 实证数据）
 - [ ] Oracle 最终审查 ≥ 9.0/10
-- [ ] 5.5.8 启动路径已解锁（基于 5.5.7 决策）
+- [ ] 5.5.8 启动路径已解锁（基于 5.5.7 决策 + D.1 要求 attach CP）

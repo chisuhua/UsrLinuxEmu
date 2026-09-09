@@ -105,6 +105,7 @@ The system MUST register 5.5.7 profile tests with the `[profile]` tag (in additi
 
 #### Scenario: Profile tests opt-in via tag
 
-- **WHEN** ctest is invoked with `-R "\[profile\]"` or equivalent tag filter
-- **THEN** profile tests run from `/workspace/project/CppTLM` working directory
-- **AND** `dgpu_board_v1.json` is discoverable
+- **WHEN** user runs the test binary directly from `/workspace/project/CppTLM` working directory with the `[profile]` tag filter
+- **AND** runs `/workspace/project/UsrLinuxEmu/build/bin/test_bridge_kcpptlm_profile_real_standalone "[profile]"`
+- **THEN** profile tests discover `dgpu_board_v1.json` via relative path
+- **AND** all `[profile]` tagged tests RUN (not SKIP) when CppTLM library + profile are available

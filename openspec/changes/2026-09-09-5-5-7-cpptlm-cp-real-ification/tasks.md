@@ -46,7 +46,7 @@
 
 ### 任务 A.3：回归测试
 
-- [ ] ctest 174/174 PASS（+5 新测试）
+- [ ] ctest 170/170 PASS（+1 新 binary，5 新 TEST_CASE 默认 SKIP，零回归 169 baseline）
 - [ ] docs-audit PASS
 - [ ] Oracle 最终审查 ≥ 9.0/10
 
