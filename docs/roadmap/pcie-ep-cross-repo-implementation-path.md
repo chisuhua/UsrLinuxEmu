@@ -1,9 +1,9 @@
 # PCIe EP 双仓打通实施路径（Stage 1 聚焦）
 
-> **> **定位**: 本文档是 **UsrLinuxEmu ↔ CppTLM 双仓 PCIe EP 打通**（dGPU E2E 主线 #1，Stage 5.5.6 + Stage 1.1-1.4 + Stage 2.1）的**聚焦实施路径**。
-> **> **与 pcie-bus-bridge-roadmap.md 关系**: 本文档**只覆盖 PCIe EP打通**（Stage 1 聚焦）；pcie-bus-bridge-roadmap.md 是**总 roadmap**（5.5.1-5.5.5 + 5.5.6-5.5.9 + 5.5.10+，500 行）。本文档<300 行，专注可执行。
-> **> **状态**: Draft v0.1 (2026-09-09)
-> **> **关联索引**: [pcie-bus-bridge-roadmap.md](pcie-bus-bridge-roadmap.md)（总 roadmap）+ [CppTLM/docs/soc_arch/architecture/18-pcie-endpoint-entry.md](https://github.com/CppTLM/docs/soc_arch/architecture/18-pcie-endpoint-entry.md)（双仓入口）
+> **定位**: 本文档是 **UsrLinuxEmu ↔ CppTLM 双仓 PCIe EP 打通**（dGPU E2E 主线 #1，Stage 5.5.6 + Stage 1.1-1.4 + Stage 2.1）的**聚焦实施路径**。
+> **与 pcie-bus-bridge-roadmap.md 关系**: 本文档**只覆盖 PCIe EP打通**（Stage 1 聚焦）；pcie-bus-bridge-roadmap.md 是**总 roadmap**（5.5.1-5.5.5 + 5.5.6-5.5.9 + 5.5.10+，500 行）。本文档<300 行，专注可执行。
+> **状态**: Draft v0.1 (2026-09-09)
+> **关联索引**: [pcie-bus-bridge-roadmap.md](pcie-bus-bridge-roadmap.md)（总 roadmap）+ [CppTLM/docs/soc_arch/architecture/18-pcie-endpoint-entry.md](https://github.com/CppTLM/docs/soc_arch/architecture/18-pcie-endpoint-entry.md)（双仓入口）
 
 ---
 
