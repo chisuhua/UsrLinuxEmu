@@ -1,6 +1,6 @@
 # D.3: CTest WORKING_DIRECTORY 决策
 
-> **状态**: 🔄 Proposed（5.5.7 P5.NEW-C.1）
+> **状态**: ✅ **Accepted**（5.5.7 P5.NEW-C.1 落地 + Oracle 5.5.8 立项审查确认）
 > **决策日期**: 2026-09-09
 > **影响范围**: 5.5.7 profile 测试运行模式 + 全部 ctest baseline
 > **关联**: [proposal.md](../proposal.md) §Why / [design.md](../design.md) §3.2
@@ -134,7 +134,7 @@ $ cd /workspace/project/CppTLM && \
 | **主题** | ctest WORKING_DIRECTORY |
 | **推荐选项** | D |
 | **影响范围** | 5.5.7 profile 测试运行模式 + 全部 ctest baseline |
-| **决策状态** | 🔄 Proposed（待 Oracle 确认） |
+| **决策状态** | ✅ **Accepted**（5.5.7 P5.NEW-C.1 + Oracle 5.5.8 立项审查确认） |
 | **决策人** | Sisyphus (主对话 agent) |
 | **决策日期** | 2026-09-09 |
 

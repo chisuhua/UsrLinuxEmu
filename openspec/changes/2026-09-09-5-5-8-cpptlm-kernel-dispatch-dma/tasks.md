@@ -62,8 +62,14 @@
 
 ### 任务 X.2.2：回归测试
 
-- [ ] ctest 170/170 PASS（含 P5.NEW-X.1 的 1 个新 binary）
+- [ ] ctest 170/170 PASS（+1 新 binary，含 P5.NEW-X.1 的 test_cp_attach_standalone）
 - [ ] 3 次连续从 CppTLM cwd 跑 profile 测试全 PASS（验证 CP attach 消除 -ETIMEDOUT）
+- [ ] **Opt-in 模式运行命令（独立复现）**：
+  ```bash
+  cd /workspace/project/CppTLM && \
+    LD_PRELOAD=$(gcc -print-file-name=libasan.so) ASAN_OPTIONS=detect_leaks=0 \
+    /workspace/project/UsrLinuxEmu/build/bin/test_bridge_kcpptlm_profile_real_standalone "[profile]"
+  ```
 - [ ] Oracle P5.NEW-X.2 审查 ≥ 9.0/10
 
 ---
@@ -121,6 +127,14 @@
 ---
 
 ## §6 P5.NEW-X.5: TaskRunner 集成（D.2 决策 P 落地）
+
+### 任务 X.5.0：TaskRunner 子模块 setup（前置于 X.5.1）
+
+- [ ] **前置检查**: `ls -la external/TaskRunner/UsrLinuxEmu` 确认符号链接是否存在
+- [ ] **若不存在**，二选一：
+  - (a) 创建符号链接：`cd external/TaskRunner && ln -s ../../ UsrLinuxEmu`
+  - (b) TaskRunner CMakeLists 显式加 `include_directories(${UsrLinuxEmu_SOURCE_DIR}/plugins/gpu_driver/hal)`
+- [ ] **Verify**: 任务 X.5.1 编译通过
 
 ### 任务 X.5.1：TaskRunner 直调 3 adapter op
 

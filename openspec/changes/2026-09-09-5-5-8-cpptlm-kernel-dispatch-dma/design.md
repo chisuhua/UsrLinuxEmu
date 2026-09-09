@@ -74,17 +74,19 @@ int cp_attach(cpptlm_emulator_t* emu) {
 
 **修改文件**：`tests/sim_hardware/test_bridge_kcpptlm_profile_real_standalone.cpp`
 
-```cpp
-// 5.5.7.1 (软约束)
-CHECK(ret != -ENOSYS);
+**按函数定型断言**（基于 5.5.7.1 A.1 实证 byte-count 约定）：
 
-// 5.5.8 (强约束, CP attach 后 ABI 稳定成功)
-REQUIRE(ret == 0);
-```
+| 函数 | 5.5.7.1（软约束） | 5.5.8（强约束） | 依据 |
+|------|------------------|----------------|------|
+| `mmio_read` | `CHECK(ret != -ENOSYS)` | `REQUIRE(ret == 0)` | 实证仅 0/-110，attach 后应恒 0 |
+| `mmio_write` | `CHECK(ret != -ENOSYS)` | `REQUIRE(ret == 0)` | 同上 |
+| `backdoor_read` | `CHECK(ret != -ENOSYS)` | `REQUIRE(ret >= 0)` + `INFO(ret)` | 0 或 4 均合法（byte-count） |
+| `backdoor_write` | `CHECK(ret != -ENOSYS)` | `REQUIRE(ret == 0)` | 实证恒 0 |
+| gate probe | `CHECK(ret != -ENOSYS)` | `REQUIRE(ret >= 0)` | 含 backdoor_read，按 byte-count 约定 |
 
-**5 个 TEST_CASE 全部升级**（mmio_read / mmio_write / backdoor_read / backdoor_write / gate probe）
+**关键不变量**：CP attach 消除 -ETIMEDOUT(-110)，不改变 byte-count 约定。backdoor_read 返 4（4 bytes transferred）= 成功，不应误判为失败。
 
-**5.5.9 真机验证前置**：ret == 0 强约束是 5.5.9 端到端真实 ABI 验证的 baseline
+**5.5.9 真机验证前置**：ret 强约束 baseline（mmio/wbackdoor_write 0；backdoor_read >= 0）
 
 ### §3.3 阶段 3: CommandProcessor + DMA Engine
 
@@ -131,7 +133,7 @@ REQUIRE(ret == 0);
 |------|------|------|
 | CppTLM callback 签名不匹配 | 中 | 阶段 1 实施前先 `dlsym` 验证 `register_backdoor_cb` / `register_dma_translate_cb` 签名 |
 | CP attach 后 -ETIMEDOUT 仍偶发 | 中 | 5.5.8 启动条件失败 → 重新决策 D.1（Y 跨仓修复路径） |
-| TaskRunner 跨子模块 include gpu_hal.h 编译失败 | 低 | TaskRunner 已是 UsrLinuxEmu 外部子模块，符号链接已就位 |
+| TaskRunner 跨子模块 include gpu_hal.h 编译失败 | 低 | X.5 启动前**必须**执行：① 创建 `external/TaskRunner/UsrLinuxEmu` 符号链接 `ln -s ../../ .` 或 ② 在 TaskRunner CMakeLists 显式加 `include_directories(${UsrLinuxEmu_SOURCE_DIR}/plugins/gpu_driver/hal)`（任选其一；当前仓内该链接缺失） |
 | 169 ctest baseline 回归 | 低 | 零 drv/ 改动 + HAL append-only 实证保持 |
 
 ---

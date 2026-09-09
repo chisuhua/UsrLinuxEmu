@@ -47,7 +47,7 @@ D.3 反馈（ctest WORKING_DIRECTORY 决策 D）：profile-aware 测试沿用 op
 ### 修改文件
 
 - **`sim_hardware/src/cpptlm/bridge.cpp`**：init() 增加 CP attach helper 调用（D.1 反馈前置）
-- **`sim_hardware/src/cpptlm/bridge.h`**：增加 `attach_command_processor()` 公开接口
+- **`sim_hardware/include/cpptlm/bridge.h`**：增加 `attach_command_processor()` 公开接口
 - **`sim_hardware/src/cpptlm/CMakeLists.txt`**：注册 3 个新 .cpp 文件到 sim_hardware_mock
 - **`tests/CMakeLists.txt`**：注册 3 个新测试 binary
 - **`tests/sim_hardware/test_bridge_kcpptlm_profile_real_standalone.cpp`**：升级 `CHECK(ret != -ENOSYS)` → `REQUIRE(ret == 0)` 强约束（D.1 反馈：CP attach 后 ABI 稳定成功）
@@ -89,7 +89,7 @@ D.3 反馈（ctest WORKING_DIRECTORY 决策 D）：profile-aware 测试沿用 op
 
 - [ ] CP attach helper 实现：3 个测试 binary (test_cp_attach / test_command_processor / test_dma_engine) 全 PASS
 - [ ] `ret == 0` 强约束回归：5.5.7.1 的 5 个 TEST_CASE 从 `CHECK(ret != -ENOSYS)` 升级为 `REQUIRE(ret == 0)`，3 次稳定 PASS
-- [ ] ctest 173/173 PASS（+3 新 binary：test_cp_attach + test_command_processor + test_dma_engine，169 + 5.5.7.1 + 3 = 173）
+- [ ] ctest 174/174 PASS（+4 新 binary：test_cp_attach + test_command_processor + test_dma_engine + test_taskrunner_adapter_integration，169 + 5.5.7.1 + 4 = 174）
 - [ ] D.2 决策 P 落地：TaskRunner `integrate_usrlx_emu.cpp` 直调 3 op 通过
 - [ ] Oracle 最终审查 ≥ 9.0/10
 - [ ] 5.5.9 启动路径已解锁（基于 5.5.8 ret==0 强约束 + D.2 TaskRunner 集成）

@@ -1,6 +1,6 @@
 # D.2: Adapter Op 接入点决策
 
-> **状态**: 🔄 Proposed（5.5.7 P5.NEW-B.1）
+> **状态**: ✅ **Accepted**（5.5.7 P5.NEW-B.1 落地 + Oracle 5.5.8 立项审查确认）
 > **决策日期**: 2026-09-09
 > **影响范围**: 5.5.8 TaskRunner 集成 + drv/ 边界契约
 > **关联**: [proposal.md](../proposal.md) §Why / [design.md](../design.md) §3.4
@@ -113,7 +113,7 @@ $ grep -r "adapter_get_info\|adapter_open\|adapter_close" plugins/gpu_driver/drv
 | **主题** | adapter op 接入点 |
 | **推荐选项** | P |
 | **影响范围** | 5.5.8 TaskRunner 集成 + drv/ 边界契约 |
-| **决策状态** | 🔄 Proposed（待 Oracle 确认） |
+| **决策状态** | ✅ **Accepted**（5.5.7 P5.NEW-B.1 + Oracle 5.5.8 立项审查确认） |
 | **决策人** | Sisyphus (主对话 agent) |
 | **决策日期** | 2026-09-09 |
 

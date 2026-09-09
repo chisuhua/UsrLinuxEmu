@@ -63,8 +63,9 @@ The system MUST upgrade the 5.5.7.1 profile tests from `CHECK(ret != -ENOSYS)` s
 #### Scenario: backdoor_read returns 0 or positive byte count with CP attach
 
 - **WHEN** `bridge.backdoor_read(0, 0, buf, 4)` is invoked after CP attach
-- **THEN** the call returns 0 (no -ETIMEDOUT)
-- **AND** `REQUIRE(ret == 0)` passes consistently
+- **THEN** the call returns `ret >= 0` (no -ETIMEDOUT, no -ENOSYS)
+- **AND** `ret` is either 0 (status success, 0 bytes transferred) or 4 (byte-count convention, 4 bytes transferred)
+- **AND** `REQUIRE(ret >= 0)` passes consistently
 
 #### Scenario: backdoor_write returns 0 with CP attach
 
