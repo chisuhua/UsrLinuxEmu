@@ -39,7 +39,7 @@
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ 入口（SSOT for navigation）                                │
-│ CppTLM/docs/02_architecture/pcie-endpoint-entry.md         │
+│ CppTLM/docs/soc_arch/architecture/18-pcie-endpoint-entry.md         │
 │ UsrLinuxEmu/docs/02_architecture/pcie-endpoint-entry.md    │
 └────────┬───────────────────────────────────────────────────┘
          │
@@ -302,7 +302,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 ### §8.3 我是 UsrLinuxEmu 开发者，要升级测试断言
 
 1. **必读**：[`pcie-endpoint-architecture.md`](pcie-endpoint-architecture.md) §2.4.1（SDMA 接入点）
-2. **必读**：[CppTLM/docs/02_architecture/sdma-engine-design.md](https://github.com/CppTLM/docs/02_architecture/sdma-engine-design.md) §6（Packet 格式）
+2. **必读**：[CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md](https://github.com/CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md) §6（Packet 格式）
 3. **修改**：`tests/sim_hardware/test_bridge_kcpptlm_profile_real_standalone.cpp`：
    - `CHECK(ret != -ENOSYS)` → `REQUIRE(ret == 0)` + `INFO("ret=" << ret)`
    - 加 buf 内容断言（写入 0xDEADBEEF → 读回相等）

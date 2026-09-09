@@ -4,8 +4,8 @@
 > **状态**: Draft v0.1 (2026-09-09)
 > **范围**: 驱动侧（UsrLinuxEmu）+ 硬件仿真侧（CppTLM，跨仓引用）
 > **关联**:
-> - CppTLM 硬件侧 SSOT: [CppTLM/docs/02_architecture/pcie-endpoint-architecture.md](https://github.com/CppTLM/docs/02_architecture/pcie-endpoint-architecture.md)
-> - **CppTLM SDMA 引擎内部设计**: [CppTLM/docs/02_architecture/sdma-engine-design.md](https://github.com/CppTLM/docs/02_architecture/sdma-engine-design.md)（Ring Buffer + RPTR/WPTR + Doorbell + Packet + 状态机 + 地址翻译 + Fence + D2D + CmdProc 集成）
+> - CppTLM 硬件侧 SSOT: [CppTLM/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md](https://github.com/CppTLM/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md)
+> - **CppTLM SDMA 引擎内部设计**: [CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md](https://github.com/CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md)（Ring Buffer + RPTR/WPTR + Doorbell + Packet + 状态机 + 地址翻译 + Fence + D2D + CmdProc 集成）
 > - CppTLM 5 步实施 roadmap: [CppTLM/docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md](https://github.com/CppTLM/docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md)
 > - UsrLinuxEmu roadmap: [docs/roadmap/pcie-bus-bridge-roadmap.md](pcie-bus-bridge-roadmap.md) — v0.2.3
 
@@ -239,7 +239,7 @@ hal->adapter_close(hal, handle)
 
 #### §2.4.1 SDMA 接入点（驱动侧）
 
-驱动通过 HAL `cmd_submit` / `doorbell_ring` / `fence_wait` fn-ptr 提交 SDMA 命令。完整 SDMA 内部协议（Ring Buffer / RPTR/WPTR / Doorbell / Packet 格式 / 状态机 / 地址翻译 / 完成通知 / D2D 路径）由 CppTLM 实现，详见 [CppTLM/docs/02_architecture/sdma-engine-design.md](https://github.com/CppTLM/docs/02_architecture/sdma-engine-design.md)。
+驱动通过 HAL `cmd_submit` / `doorbell_ring` / `fence_wait` fn-ptr 提交 SDMA 命令。完整 SDMA 内部协议（Ring Buffer / RPTR/WPTR / Doorbell / Packet 格式 / 状态机 / 地址翻译 / 完成通知 / D2D 路径）由 CppTLM 实现，详见 [CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md](https://github.com/CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md)。
 
 | HAL fn-ptr | 驱动调用 | CppTLM 对应（5 端口）| 状态 |
 |------------|----------|---------------------|------|
