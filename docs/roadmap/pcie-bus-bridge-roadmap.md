@@ -4,14 +4,16 @@
 > **目标**: 把 UsrLinuxEmu 顶层目录从"模糊 3 区分"重构为"清晰 4 象限布局"（ADR-091 v0.2），并对接 CppTLM Phase 0-7 14 个 PCIe 组件，实现 **8 tier PCIe bus** 仿真（v0.2 修正：原文误写 9 tier，实为 8 tier + VFIO 模块），最终让 `drv/` 代码**逻辑零修改**即可在 UsrLinuxEmu + CppTLM dGPU 仿真、真机 Linux + 真实 GPU 双目标运行
 > **前置依赖**: Stage 4（4.1-4.7.2）✅ 已完成（2026-08-05）+ ADR-090 v2（PTXIR via H2D DMA）✅ Accepted
 > **关联 ADR**:
-> - [ADR-091](../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) 🔄 Proposed — **本路线图 SSOT**
+> - [ADR-091](../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) ✅ **Accepted v0.2**（2026-09-03 — Stage 5.5.1 实施升档 + 4 commits ship + 151/151 ctest PASS + Gate A/B/C 全部通过；Gate D Oracle 复审待触发）— **本路线图 SSOT**
 > - [ADR-036](../00_adr/adr-036-three-way-separation.md) ✅ Accepted — 3 区分（**待更新为 4 象限**）
-> - [ADR-088](../00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted — dGPU 参考设计（明确 `src/system_hw/` 概念 + CppTLM 23 ABI）
+> - [ADR-088](../00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted — dGPU 参考设计（明确 `src/system_hw/` 概念 + **CppTLM 23 ABI** = ADR-088 §D5 冻结）
 > - [ADR-089](../00_adr/adr-089-v55-system-hw-simulation.md) ✅ Accepted — v5.5+ 系统硬件仿真（**待更新 location** → `sim_hardware/`）
-> - [ADR-090](../00_adr/adr-090-ptxir-via-h2d-dma-v2.md) ✅ Accepted — H2D DMA PTXIR
-> - [ADR-023](../00_adr/adr-023-hal-interface.md) ✅ Accepted — HAL 71 fn-ptrs append-only
+> - [ADR-090 v2](../00_adr/adr-090-ptxir-via-h2d-dma-v2.md) ✅ Accepted — H2D DMA PTXIR
+> - [ADR-076 v3](../00_adr/adr-076-gpgpu-kernel-module-ioctl.md) 🚫 Superseded by ADR-090 v2 — PTX-EMU HAL Backend（**HAL 65→68 fn-ptrs append-only** = `kernel_module_load/execute/unload`）
+> - [ADR-023](../00_adr/adr-023-hal-interface.md) ✅ Accepted — HAL append-only 规则（**68 → 71 fn-ptrs = ADR-076 +3 + ADR-092 +3**）
 > - [ADR-061](../00_adr/adr-061-hal-iommu-extension.md) ✅ Accepted — HAL IOMMU ops
 > - [ADR-072](../00_adr/adr-072-portability-validation.md) ✅ Accepted — L2 build（**待扩展目标集**）
+> - [ADR-092](../00_adr/adr-092-hal-adapter-and-bypass-binding.md) 🔄 **Proposed v0.1**（2026-09-07 — 实施已 ship 71 fn-ptrs 含 `adapter_get_info/open/close`，**Gate D Oracle 复审待触发升档**）
 > **关联文档**:
 > - [docs/02_architecture/four-quadrant-architecture.md](../02_architecture/four-quadrant-architecture.md) — 4 象限详细布局
 > - [docs/02_architecture/core-architecture.md](../02_architecture/core-architecture.md) — 核心架构 SSOT
@@ -76,7 +78,7 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 | **5.5.3** | Tier 3+5+6 | ADR-091 §D5 L3+L5+L6 | Link Layer + SR-IOV (PcieEndpointIP 17-port) + Completion | 📋 后台轨道 P1（降频，非 E2E 阻塞）| 10-16 周 |
 | **5.5.4** | Tier 4+7 | ADR-091 §D5 L4+L7 | PHY Digital + AXI Adapter | 📋 后台轨道 P1 | 8-12 周 |
 | **5.5.5** | Tier 8 + VFIO + 真机一致性 | ADR-091 §D5 L8 + VFIO + ADR-072 扩展 | AXI Mapper OOO + VFIO + L2 build 扩展 | 📋 后台轨道 P1 | 8-12 周 |
-| **5.5.6** | **dGPU E2E 主线 #1 — 真实 CppTLM EP** | ADR-091 §D5 + Oracle 路线图分析 | `backdoor_endpoint.cpp` 真实现 + `bridge.cpp` kCpptlm dlopen 22 ABI + `hal_cpptlm.cpp` 3 op 真化 + `plugin.cpp` backend 切换 | ✅ **主线 P0 Archived**（commit `c263867` + Oracle 9.5/10；**接线真实但语义空转**，7 根本错误见 CppTLM change） | 4-6 周（已完成；需 follow-up 验证） |
+| **5.5.6** | **dGPU E2E 主线 #1 — 真实 CppTLM EP** | ADR-091 §D5 + Oracle 路线图分析 | `backdoor_endpoint.cpp` 真实现 + `bridge.cpp` kCpptlm dlopen **23 ABI（5.5.6 dlsym 绑定 22 符号子集）** + `hal_cpptlm.cpp` 3 op 真化 + `plugin.cpp` backend 切换 | ✅ **主线 P0 Archived**（commit `c263867` + Oracle 9.5/10；**接线真实但语义空转**，7 根本错误见 CppTLM change） | 4-6 周（已完成；需 follow-up 验证） |
 | **5.5.7** | **dGPU E2E 主线 #2 — CommandProcessor 真实化** | 5.5.6 依赖 + **CppTLM PCIe EP 基础补完前置** | puller/queue submit 经 CppTLM TLP + doorbell；`HardwarePullerEmu` / CmdProcessor 双轨 | ⏸️ **Deferred**（[commit `2cf4bc5` 5.5.7.1 P5.NEW-A](openspec/changes/2026-09-09-5-5-7-cpptlm-cp-real-ification/) 验证 CP attach 假设错位；待 CppTLM [2026-09-09-cpptlm-pcie-ep-foundation](https://example/cpptlm-pcie-ep-foundation) 阶段 1.1-1.4 完成后启动） | 6-8 周 |
 | **5.5.8** | **dGPU E2E 主线 #3 — kernel dispatch + DMA** | 5.5.7 依赖 + **CppTLM PCIe EP 基础补完前置** | gpgpu_device ioctl 表经 hal_cpptlm 全量穿透 + CppTLM backdoor DMA | ⏸️ **Deferred**（[commit `d4a98f7` 5.5.8 立项](openspec/changes/2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma/) Oracle 8.7/10；阶段 1 cp_attach 待删除，需 CppTLM 修复 #1/#2/#4/#5/#6/#7 后重启） | 6-8 周 |
 | **5.5.9** | **dGPU E2E 主线 #4 — 真机双轨验证** | 5.5.8 依赖 | drv/ 零修改 L2 build + 真机 CppTLM 对拍 | 📋 主线 P0（待 5.5.8 重启后启动） | 4-6 周 |
@@ -122,7 +124,7 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 
 **跨轨道独立性**：E2E 主线与后台轨道的依赖**互不耦合**——主线 5.5.6-5.5.9 不依赖 Link/PHY/AXI/SR-IOV/VFIO 任何 Tier（真实 CppTLM binding 通过 `backdoor_endpoint` + `bridge.cpp` kCpptlm 直连 CppTLM `.so`，不经过 5.5.3-5.5.5 的 PCIe 协议栈）；后台轨道 5.5.3-5.5.5 也不依赖主线（PCIe Tier 细节深化是 mock 通路足够）。
 
-**🚀 v0.2.3 新增跨仓硬依赖**：5.5.6/5.5.7/5.5.8 实际依赖 [CppTLM `2026-09-09-cpptlm-pcie-ep-foundation`](https://example/cpptlm-pcie-ep-foundation) change 完成（PCIe EP 基础必备 4 步：config space 真实化 + MSI-X 中断链 + DMA translate cb + 电源管理）。**原因**：Oracle 2026-09-09 三轮审查揭示 22 ABI 中 7 个根本性错误——`register_backdoor_cb` NO-OP / `register_dma_translate_cb` 硬编码 pa=0 / `pcie_config_read/write` -ENOSYS stub / `msix_update_pending` 中断链断裂 / `mmio_read` 数据缺口 + race / `backdoor_read` 返 len 伪装成功 / `mmio_write` 数据丢弃——5.5.6 ship 时仅验证接线真实未验证语义（5 个新测试仅断言 `ret != -ENOSYS`，对数据正确性零覆盖）；5.5.7 D.1 决策 X + 5.5.8 阶段 1 cp_attach 因果链错位（-ETIMEDOUT 根因是 sim_loop 调度 race，与 callback 注册无关，实测 2000 次 race 率仅 0.55%）。**后续路径**：① CppTLM 5 步实施（阶段 1.1-1.4 + 阶段 2.1，2-3 周）；② UsrLinuxEmu 端 follow-up（测试断言升级 `CHECK → REQUIRE + buf 内容验证`，独立 change）；③ 5.5.7 重启；④ 5.5.8 重启（cp_attach 阶段 1 删除）；⑤ 5.5.9 真机双轨验证。
+**🚀 v0.2.3 新增跨仓硬依赖**：5.5.6/5.5.7/5.5.8 实际依赖 [CppTLM `2026-09-09-cpptlm-pcie-ep-foundation`](https://github.com/CppTLM/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/) change 完成（PCIe EP 基础必备 4 步：config space 真实化 + MSI-X 中断链 + DMA translate cb + 电源管理）。**原因**：Oracle 2026-09-09 三轮审查揭示 **23 ABI 契约中 7 个根本性错误**（5.5.6 dlsym 实际触及 22 符号子集）——`register_backdoor_cb` NO-OP / `register_dma_translate_cb` 硬编码 pa=0 / `pcie_config_read/write` -ENOSYS stub / `msix_update_pending` 中断链断裂 / `mmio_read` 数据缺口 + race / `backdoor_read` 返 len 伪装成功 / `mmio_write` 数据丢弃——5.5.6 ship 时仅验证接线真实未验证语义（5 个新测试仅断言 `ret != -ENOSYS`，对数据正确性零覆盖）；5.5.7 D.1 决策 X + 5.5.8 阶段 1 cp_attach 因果链错位（-ETIMEDOUT 根因是 sim_loop 调度 race，与 callback 注册无关，实测 2000 次 race 率仅 0.55%）。**后续路径**：① CppTLM 5 步实施（阶段 1.1-1.4 + 阶段 2.1，**5.0-6.0 周**）；② UsrLinuxEmu 端 follow-up（测试断言升级 `CHECK → REQUIRE + buf 内容验证`，独立 change）；③ 5.5.7 重启；④ 5.5.8 重启（cp_attach 阶段 1 删除）；⑤ 5.5.9 真机双轨验证。
 
 ---
 
@@ -480,7 +482,7 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 - **v0.2.2** (2026-09-08, Accepted)：**路线方针调整 — E2E 主线优先（P0）+ PCIe 底层降频（P1）+ 编号规范化**
   - 用户优先级调整：尽快打通 dGPU E2E（PCIe EP → CommandProcessor → kernel dispatch + DMA），再 PF/VF 完善
   - 新增 **5.5.6-5.5.9 dGPU E2E 主线**（P0）：
-    - **5.5.6**：真实 CppTLM EP — `backdoor_endpoint.cpp` 真实现 + `bridge.cpp` kCpptlm dlopen 22 ABI + `hal_cpptlm.cpp` 3 op 真化 + `plugin.cpp` backend 切换（工期 4-6 周，从零实现 4 组件）
+    - **5.5.6**：真实 CppTLM EP — `backdoor_endpoint.cpp` 真实现 + `bridge.cpp` kCpptlm dlopen **23 ABI**（5.5.6 绑定 22 符号子集） + `hal_cpptlm.cpp` 3 op 真化 + `plugin.cpp` backend 切换（工期 4-6 周，从零实现 4 组件）
     - **5.5.7**：CommandProcessor 真实化（puller/queue 经 CppTLM TLP + doorbell）
     - **5.5.8**：kernel dispatch + DMA（ioctl 表穿透 + CppTLM backdoor DMA）
     - **5.5.9**：真机双轨验证（drv/ 零修改 L2 build）
@@ -488,7 +490,7 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
   - 5.5.3 状态从"🔄 进行中"改为"📋 后台轨道 P1"（语义修正：原"进行中"暗示核心 Tier 仿真即将启动，实际为后台轨道）
   - **5.5.6+ → 5.5.10+ 编号改名**（PF 虚拟化扩展轨道，避免与新主线 5.5.6-5.5.9 编号占位冲突）
   - Stage 依赖路径图改为双轨道（E2E 主线 P0 硬依赖 + 后台 P1 软依赖；明确跨轨道独立性）
-  - **前置审计**：[openspec/changes/2026-09-08-kcpptlm-archive-audit/](openspec/changes/2026-09-08-kcpptlm-archive-audit/) 识别 kcpptlm-backend-binding 归档中 5 项虚假完成（33%），5.5.6 工期重估 4-6 周（vs 原始"增量"假设 1-2 周）
+  - **前置审计**：[openspec/changes/archive/2026-09-08-2026-09-08-kcpptlm-archive-audit/](openspec/changes/archive/2026-09-08-2026-09-08-kcpptlm-archive-audit/) 识别 kcpptlm-backend-binding 归档中 5 项虚假完成（33%），5.5.6 工期重估 4-6 周（vs 原始"增量"假设 1-2 周）
 
 - **v0.2.1** (2026-09-08, Accepted)：**状态同步 + Stage 依赖路径图**
   - 5.5.1 → ✅ 已归档（Change-1 ship + 164/164 ctest PASS）
@@ -514,4 +516,4 @@ CppTLM 已交付 **Phase 0~7 共 14 个 PCIe 组件**（~3,684 LOC），覆盖 T
 
 ---
 
-**状态**: 🔄 Proposed v0.1（待 Oracle Phase A.4 复审）
+**状态**: ✅ **Accepted v0.2.3**（Oracle v0.2.3 复审 PASS；2026-09-09 战略调整 v0.2.3 已合入）

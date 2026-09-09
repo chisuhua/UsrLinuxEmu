@@ -18,7 +18,7 @@
 
 5.5.6 dGPU E2E 主线 P0 已 ship（Oracle 9.5/10），完成 **真实 ABI 通道** 打通：
 - `backdoor_endpoint.cpp` 5 函数真实 CppTLM binding（ule_dgpu_acquire/get_info/read/write/release）
-- `bridge.cpp` 22 ABI dlopen + 4 数据通路函数串通（mmio_read/write/backdoor_read/write）
+- `bridge.cpp` **23 ABI** dlopen（5.5.6 dlsym 实际绑定 22 符号子集，per ADR-088 §D5 契约）+ 4 数据通路函数串通（mmio_read/write/backdoor_read/write）
 - `host_bridge.cpp` bypass/full/partial 自动分发
 - `hal_cpptlm.cpp` 真实 backend 组合策略 + 3 adapter op 真化
 - `plugin.cpp` ULE_HAL_BACKEND env 选择点

@@ -243,9 +243,11 @@ UsrLinuxEmu/
 │   ├── include/topology.h         (BDF 编码 + Topology/Device/Bar POD 类型)
 │   ├── include/pcie/host_bridge.h (BAR 标量包装 + bypass 接口契约)
 │   ├── src/topology.cpp           (nlohmann/json 严格 schema 校验)
-│   ├── src/host_bridge.cpp        (host_bridge_enumerate + bypass_read/write)
+│   ├── src/pcie/host_bridge.cpp   (host_bridge_enumerate + bypass_read/write)
+│   ├── src/pcie/bypass.cpp        (3-state FSM + atomic in-flight + drain)
 │   ├── src/cpptlm/bridge.cpp      (CpptlmBridge mock + RAII TlpGuard + MSI-X cb)
-│   ├── src/cpptlm/bypass.cpp      (3-state FSM + atomic in-flight + drain)
+│   ├── src/cpptlm/backdoor_endpoint.cpp (5 个 ule_dgpu_* functions)
+│   ├── src/cpptlm/endpoint.cpp    (PcieEndpointIP 接入点)
 │   ├── topology/default_topology.json (合法默认拓扑)
 │   └── CMakeLists.txt             (INTERFACE target + sim_hardware_mock STATIC)
 │   └── Change-3 (2026-09-05 已归档 add-gpu-driver-sim-hardware-bridge)：
@@ -698,7 +700,7 @@ for IB jump_stack defer behavior (NOT save/restore — clarifies `archive/2026-0
 
 **与现有 ADR-076 关系**：
 - ADR-076 PTX-EMU 是**独立**的 HAL extension（3 个 kernel_module_* fn-ptr，dlsym `libptxemu_device.so`）
-- ADR-088 CppTLM EMU 是**另**一个独立的 dGPU 板卡仿真后端（**22 个 C ABI**（19 原始 + 3 adapter open/close/get_adapter_info，per ADR-092 Gate D），dlopen `libcpptlm_emulator.so`；HAL 71 fn-ptrs 通过 in-place 替换接入，本身不新增 HAL fn-ptr——per ADR-088 §C2 + D6.1）
+- ADR-088 CppTLM EMU 是**另**一个独立的 dGPU 板卡仿真后端（**23 ABI 契约**（5.5.6 绑定 22 符号子集 = 19 原始 + 3 adapter open/close/get_adapter_info，per ADR-092 Gate D），dlopen `libcpptlm_emulator.so`；HAL 71 fn-ptrs 通过 in-place 替换接入，本身不新增 HAL fn-ptr——per ADR-088 §C2 + D6.1）
 - 两者**共存**：`hal_user.cpp` 可同时配置 PTX-EMU backend + CppTLM backend，由 env var 决定（per ADR-088 §C2 共存关系）
 - **ADR-076 后续演进**：ADR-076 已 ship 实施（✅ Accepted，144/145 ctest PASS）；ADR-088 升 Accepted 后演进推迟已退出，演进路线图 (a)(b) 已确定维持、(c) ⏳ 待 TaskRunner owner 启动 / (d) ⏳ 待文档化。详见 [ADR-076 §演进路线图](../00_adr/adr-076-gpgpu-kernel-module-ioctl.md)。**演进推迟不等于撤销**：已 ship 的实施产物（3 个 ioctl 0x27/0x28/0x29 + 3 个 HAL fn-ptr #66/#67/#68 + 144 ctest）全部有效。
 

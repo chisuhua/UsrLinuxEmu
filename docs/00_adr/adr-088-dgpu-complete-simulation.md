@@ -39,7 +39,7 @@ UsrLinuxEmu 同时模拟**两层**，底层硬件行为层**按真实硬件拓�
 
 **CppTLM 仿真范围**：
 
-- ✅ **dGPU 板卡**（22 ABI：基础 11（BAR MMIO + 寄存器元数据 + 4 callback + register_callbacks）+ 板卡扩展 8（多板卡枚举 2 + create_by_id 1 + PCIe Config Space 2 + backdoor 3）+ MSI-X 3——MSI-X 是 dGPU 板卡自身的 PCIe capability，归板卡仿真）
+- ✅ **dGPU 板卡**（**23 ABI 契约** = 基础 11（BAR MMIO + 寄存器元数据 + 4 callback + register_callbacks）+ 板卡扩展 8（多板卡枚举 2 + create_by_id 1 + PCIe Config Space 2 + backdoor 3）+ MSI-X 3 + **DMA translate 1** = 23；MSI-X 是 dGPU 板卡自身的 PCIe capability，归板卡仿真；5.5.6 dlsym 实际绑定 22 符号子集）
 - ✅ **DMA 地址转换 callback**（1 ABI：`cpptlm_emulator_register_dma_translate_cb`）——dGPU 做 DMA 时回调 UsrLinuxEmu 系统 IOMMU 翻译 IOVA→PA（对齐真硬件 PCIe DMA remapping 语义）
 - ❌ **系统级 IOMMU**——由 UsrLinuxEmu `src/system_hw/iommu/` 内部模块提供（非 dlopen ABI；复用 `src/kernel/iommu/` 已有 `iommu_domain` / `dma_remap` / `ats_protocol` / `ioasid` 框架基础）
 - ❌ **CXL.mem 设备**——由 UsrLinuxEmu `src/system_hw/cxl_memdev/` 内部模块提供（真实硬件中 CXL.mem 为独立 PCIe 设备，本设计与真硬件拓扑一致）

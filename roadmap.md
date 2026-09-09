@@ -7,7 +7,7 @@
 > **性质**: 架构层叙事，描述从当前 MVP 到终态蓝图的演进路径
 > **不绑定**: 本路线图不引用具体 OpenSpec change 编号。后续 OpenSpec change 根据本路线图派生
 > **同步关系**: 与 `docs/sync-plan.md` 互补（sync-plan 负责跨仓同步点，本路线图负责架构演进阶段）
-> **最后更新**: 2026-09-08（v0.2.2 路线方针调整：5 个 Stage 总览表新增 5.5.6-5.5.9 dGPU E2E 主线 P0 + 5.5.3-5.5.5 降级后台轨道 P1 + 5.5.6+ → 5.5.10+ PF 虚拟化改名；阶段关系图重画为双轨道；前置 [kcpptlm-archive-audit](openspec/changes/2026-09-08-kcpptlm-archive-audit/) 识别 5 项虚假完成（33%），5.5.6 工期重估 4-6 周；详见 [pcie-bus-bridge-roadmap.md §修订记录 v0.2.2](docs/roadmap/pcie-bus-bridge-roadmap.md)）
+> **最后更新**: 2026-09-08（v0.2.2 路线方针调整：5 个 Stage 总览表新增 5.5.6-5.5.9 dGPU E2E 主线 P0 + 5.5.3-5.5.5 降级后台轨道 P1 + 5.5.6+ → 5.5.10+ PF 虚拟化改名；阶段关系图重画为双轨道；前置 [kcpptlm-archive-audit](openspec/changes/archive/2026-09-08-2026-09-08-kcpptlm-archive-audit/) 识别 5 项虚假完成（33%），5.5.6 工期重估 4-6 周；详见 [pcie-bus-bridge-roadmap.md §修订记录 v0.2.2](docs/roadmap/pcie-bus-bridge-roadmap.md)）
 > **维护者**: UsrLinuxEmu Architecture Team
 
 ---
@@ -21,7 +21,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | ① | Linux 内核环境模拟 | `src/kernel/`, `include/kernel/`, `include/linux_compat/` | 提供 Linux 内核 API（VFS, 调度, IOMMU, mmu_notifier, DRM, PCIe, 中断）|
 | ② | 可移植的驱动代码实现 | `plugins/gpu_driver/drv/` | GPGPU 驱动逻辑（KFD 风格），用真实 Linux 内核 API 写，可编译进真实内核模块 |
 | ③ | 硬件模拟 | `plugins/gpu_driver/sim/` | 模拟真实 GPU 硬件（pushbuffer, 调度器, 寄存器, fence, 中断）|
-| HAL | **桥（bridge）** | `plugins/gpu_driver/hal/` | **71 个函数指针**（65 基础演进 + 3 ADR-090 PTX-EMU + 3 ADR-092 adapter），append-only per [ADR-023 §D4](docs/00_adr/adr-023-hal-interface.md)；② 与 ③ 之间的依赖反向注入点 |
+| HAL | **桥（bridge）** | `plugins/gpu_driver/hal/` | **71 个函数指针**（65 基础演进 + 3 **ADR-076** PTX-EMU 已 ship + 3 ADR-092 adapter），append-only per [ADR-023 §D4](docs/00_adr/adr-023-hal-interface.md)；② 与 ③ 之间的依赖反向注入点 |
 
 **HAL 不是第 4 层**，HAL 是 ② 调 ③ 的桥接适配器。UsrLinuxEmu 通过 `hal_mock.cpp` 注入 sim，真机通过 `hal_user.cpp` 注入真实硬件。驱动代码本身零修改即可切换环境。
 
@@ -41,7 +41,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | **阶段 4** | ✅ 已完成（4.1-4.7.2 全部 ship + 归档，2026-07-26 ~ 2026-08-05）| 真实 BAR + ioremap 模拟 + GPU CP Phase 4-7 完整化 + B-class L2 违规清理；HAL 11 → 33 → 65 fn-ptrs (append-only per ADR-023 §D4)；5 个 removal 已 ship（drv/ 不再 #include sim/* headers）| [docs/roadmap/stage-4-bar-ioremap.md](docs/roadmap/stage-4-bar-ioremap.md) |
 | **阶段 5** | 📋 规划中（trigger-gated） | 真实多引擎 Puller + PM4 microcode 解析 + 4.6 closeout follow-up；triggered by ADR-049 Phase 6+ / ADR-052 Phase 6.5 条件（详见各 ADR）| [docs/roadmap/stage-5-multi-engine-pm4.md](docs/roadmap/stage-5-multi-engine-pm4.md)（占位，待 trigger 启动）|
 | **阶段 5.5** | ✅ Accepted (2026-08-15) | **CppTLM dGPU 参考设计集成 + PCIe 子系统仿真** — 通过 dlopen `libcpptlm_emulator.so` 把 dGPU 板卡仿真（**23 个 C ABI**：BAR MMIO + PCIe Config Space + MSI-X + 多板卡枚举 + backdoor + DMA translate cb）委托给 CppTLM；系统 IOMMU + CXL.mem 由 UsrLinuxEmu `sim_hardware/` 功能级仿真；dGPU-first；drv/ 零修改；**细化为 5 个子阶段 5.5.1-5.5.5 + 4 个 E2E 主线 5.5.6-5.5.9 + PF 虚拟化 5.5.10+**（双轨道：E2E 主线 P0 + PCIe 底层 P1 + PF/VF 完善后置）| [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md)（路径图）+ [docs/00_adr/adr-088-dgpu-complete-simulation.md](docs/00_adr/adr-088-dgpu-complete-simulation.md) + [ADR-091](docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) |
-| **阶段 5.5.6** | 📋 主线 P0（新插入） | **dGPU E2E 主线 #1 — 真实 CppTLM EP** — `backdoor_endpoint.cpp` 真实现 + `bridge.cpp` kCpptlm dlopen 22 ABI + `hal_cpptlm.cpp` 3 op 真化 + `plugin.cpp` backend 切换（工期 4-6 周）| [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md) §修订记录 v0.2.2 + 前置审计 [kcpptlm-archive-audit](openspec/changes/2026-09-08-kcpptlm-archive-audit/) |
+| **阶段 5.5.6** | 📋 主线 P0（新插入） | **dGPU E2E 主线 #1 — 真实 CppTLM EP** — `backdoor_endpoint.cpp` 真实现 + `bridge.cpp` kCpptlm dlopen **23 ABI（5.5.6 绑定 22 子集）** + `hal_cpptlm.cpp` 3 op 真化 + `plugin.cpp` backend 切换（工期 4-6 周）| [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md) §修订记录 v0.2.2 + 前置审计 [kcpptlm-archive-audit](openspec/changes/archive/2026-09-08-2026-09-08-kcpptlm-archive-audit/) |
 | **阶段 5.5.7** | 📋 主线 P0 | **dGPU E2E 主线 #2 — CommandProcessor 真实化** — puller/queue submit 经 CppTLM TLP + doorbell | [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md) |
 | **阶段 5.5.8** | 📋 主线 P0 | **dGPU E2E 主线 #3 — kernel dispatch + DMA** — ioctl 表穿透 + CppTLM backdoor DMA | [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md) |
 | **阶段 5.5.9** | 📋 主线 P0 | **dGPU E2E 主线 #4 — 真机双轨验证** — drv/ 零修改 L2 build + 真机 CppTLM 对拍 | [docs/roadmap/pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md) |
@@ -107,7 +107,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 
 > **并行关系说明**：**Stage 5 与 Stage 5.5 并行推进** — Stage 5 由 ADR-049/052 trigger-gated，Stage 5.5 由 ADR-091（v0.2 Accepted 2026-09-03）独立驱动，**5.5 不依赖 Stage 5 trigger**。
 >
-> **5.5 双轨道并行**（2026-09-08 v0.2.2 路线方针调整）：**E2E 主线 P0**（5.5.6-5.5.9，真实 CppTLM binding 优先打通 dGPU 端到端）与 **后台轨道 P1**（5.5.3-5.5.5，PCIe Tier 细节深化，非 E2E 阻塞）并行；主线与后台**互不耦合**（5.5.6-5.5.9 不依赖 Link/PHY/AXI/SR-IOV 任何 Tier，5.5.3-5.5.5 也不依赖主线）。当前 5.5.1/5.5.2 已 ship + 归档，5.5.3-5.5.5 进入"主线阻塞期插空推进"模式，5.5.6 立项以 [kcpptlm-archive-audit](openspec/changes/2026-09-08-kcpptlm-archive-audit/) 为前置基线（识别 kcpptlm 归档中 5 项虚假完成）。
+> **5.5 双轨道并行**（2026-09-08 v0.2.2 路线方针调整）：**E2E 主线 P0**（5.5.6-5.5.9，真实 CppTLM binding 优先打通 dGPU 端到端）与 **后台轨道 P1**（5.5.3-5.5.5，PCIe Tier 细节深化，非 E2E 阻塞）并行；主线与后台**互不耦合**（5.5.6-5.5.9 不依赖 Link/PHY/AXI/SR-IOV 任何 Tier，5.5.3-5.5.5 也不依赖主线）。当前 5.5.1/5.5.2 已 ship + 归档，5.5.3-5.5.5 进入"主线阻塞期插空推进"模式，5.5.6 立项以 [kcpptlm-archive-audit](openspec/changes/archive/2026-09-08-2026-09-08-kcpptlm-archive-audit/) 为前置基线（识别 kcpptlm 归档中 5 项虚假完成）。
 
 > **编号说明**（v0.2.2 更新，per [pcie-bus-bridge-roadmap.md §修订记录](docs/roadmap/pcie-bus-bridge-roadmap.md) + [gpu-pf-driver-virtualization.md §3.1](docs/02_architecture/gpu-pf-driver-virtualization.md)）：
 > - **Stage 5.5.1-5.5.5** = pcie-bus-bridge-roadmap.md 覆盖（PCIe 子系统仿真，5 个 Stage；1/2 已归档，3-5 后台 P1）
@@ -127,7 +127,7 @@ UsrLinuxEmu 的所有工作围绕三个清晰分离的层面 + 一个桥接适�
 | [ADR-052](docs/00_adr/adr-052-aql-pm4-native-support.md) | Phase 6.5 PM4 microcode 解析完整实现 | implement-pm4-microcode-full | ⏸️ trigger 未满足 |
 | [ADR-023](docs/00_adr/adr-023-hal-interface.md) §D4 | 4.7.3 spec 同步：65 fn-ptrs 列入 ADR 表格（取代旧 46 数字） | sync-adr-023-hal-fnp-tr-table | ✅ 可派发（Stage 4 follow-up） |
 | — | L2 残余 `sim/sim_event.h` 清理（独立 proposal，不在 Stage 4 范围） | cleanup-sim-event-h-l2-residual | ✅ 可派发（独立 proposal） |
-| [ADR-076](docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md) | PTX-EMU HARD gate ✅ CLEARED（`libptxemu_device.so` + `cpptlm_module.h` shipped + tag v0.1.0 发布，2026-08-13 audit）；HAL 65 → 68 append-only + 3 ioctls (0x27/0x28/0x29) + `hal_user.cpp` dlsym PTX-EMU | add-ptxemu-kernel-module-hal-extension | ✅ **可派发**（PTX-EMU gate 满足；TaskRunner tadr-307 SOFT gate 独立推进） |
+| [ADR-076 v3](docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md) | 🚫 **Superseded by ADR-090 v2**（2026-08-17）— PTX-EMU HARD gate ✅ CLEARED（`libptxemu_device.so` + `cpptlm_module.h` shipped + tag v0.1.0 发布，2026-08-13 audit）；**历史价值**：HAL 65 → 68 append-only + 3 ioctls (0x27/0x28/0x29) + `hal_user.cpp` dlsym PTX-EMU（已 ship 实施产物保留）| add-ptxemu-kernel-module-hal-extension | ✅ **已派发并归档**（PTX-EMU gate 满足 + ADR-090 v2 Supersede 替代；TaskRunner tadr-307 STALE → tadr-308 接管） |
 | [ADR-088](docs/00_adr/adr-088-dgpu-complete-simulation.md) | dGPU 参考设计 — 完整硬件子系统仿真（CppTLM 仅仿真 dGPU 板卡，**23 个 C ABI**；系统 IOMMU + CXL.mem 由 `sim_hardware/` 功能级仿真；仿真拓扑与真硬件一致）；HAL in-place 替换模式；drv/ 零修改；5 阶段（**约 24-32 周**）| add-cpptlm-emu-bridge-integration | ✅ **Accepted**（2026-08-15 Oracle 二次评审通过；2026-08-16 范围收窄：CppTLM 仅 dGPU 板卡） |
 
 ## 跨仓评审中 ADRs
@@ -176,7 +176,7 @@ Stage 5 仅在 ADR-049 / ADR-052 的 Phase 6+ / Phase 6.5 触发条件满足时�
 - [pcie-bus-bridge-roadmap.md](docs/roadmap/pcie-bus-bridge-roadmap.md), Stage 5.5.1-5.5.9 路径图（PCIe 仿真 + dGPU E2E 主线）
 - [driver-stack-flow-roadmap.md](docs/roadmap/driver-stack-flow-roadmap.md), Stage 5.5.2 驱动栈图谱修订路径（P0-P4）
 - [gpu-pf-driver-virtualization.md](docs/02_architecture/gpu-pf-driver-virtualization.md), 5.5.10+ GPU PF 虚拟化扩展轨道（PF/VF 完善）
-- [kcpptlm-archive-audit](openspec/changes/2026-09-08-kcpptlm-archive-audit/), 5.5.6 dGPU E2E 主线前置基线审计（5 项虚假完成识别）
+- [kcpptlm-archive-audit](openspec/changes/archive/2026-09-08-2026-09-08-kcpptlm-archive-audit/), 5.5.6 dGPU E2E 主线前置基线审计（5 项虚假完成识别）
 
 ---
 

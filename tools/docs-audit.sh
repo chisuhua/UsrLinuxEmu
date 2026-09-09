@@ -255,15 +255,20 @@ section_arch() {
     #          -> 62 (+27: graph/mem_pool/stream_capture/gpu_queue_emu/hardware_puller_emu, stage4-7 Phase 2 foundation)
     #          -> 64 (+2: puller_create + puller_destroy, stage4-7.3 hardware_puller_emu removal)
     # Count = unique (*name) tokens inside the struct, excluding nested fn-ptr params (callback/handler).
-    subsection "1.5 struct gpu_hal_ops has 68 function pointers"
+    # 1.5 struct gpu_hal_ops function pointer count
+    # Per ADR-023 (append-only) + ADR-076 (PTX-EMU +3 = 65→68) + ADR-092 (adapter +3 = 68→71)
+    # Current canonical SSOT = 71 (2026-09-07 ship). Historical note: 11→14→33→65→68→71.
+    subsection "1.5 struct gpu_hal_ops has 71 function pointers (post-ADR-092)"
     if [ -f "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" ]; then
         local hal_count
         hal_count=$(awk '/^struct gpu_hal_ops {/,/^};/' "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" \
           | grep -oE "\(\*[a-z_]+\)" | grep -vE "callback|handler" | sort -u | wc -l | tr -d ' ')
-        if [ "${hal_count}" -eq 68 ]; then
-            check_pass "gpu_hal.h has ${hal_count} fn-ptrs (matches doc)"
+        if [ "${hal_count}" -eq 71 ]; then
+            check_pass "gpu_hal.h has ${hal_count} fn-ptrs (matches canonical SSOT post-ADR-092)"
+        elif [ "${hal_count}" -eq 68 ]; then
+            check_warn "gpu_hal.h has ${hal_count} fn-ptrs (pre-ADR-092, expected 71 post-2026-09-07)"
         else
-            check_warn "gpu_hal.h has ${hal_count} fn-ptrs (doc claims 68)"
+            check_warn "gpu_hal.h has ${hal_count} fn-ptrs (canonical SSOT = 71 post-ADR-092)"
         fi
     else
         check_warn "plugins/gpu_driver/hal/gpu_hal.h not found"
@@ -1105,11 +1110,12 @@ section_cross_doc() {
         check_pass "No forbidden CppTLM modules in current scope (cpptlm_iommu_domain / cpptlm_cxl_memdev)"
     fi
 
-    # 11.8 HAL fn-ptr count consistency: 68
-    subsection "11.8 HAL fn-ptr count '68' consistent across ADR-088 + Handoff"
-    if grep -qE "\\b68 fn-ptr\\b|68 fn-ptrs|HAL 68" "${adr_088}" 2>/dev/null && \
-       grep -qE "\\b68 fn-ptr\\b|68 fn-ptrs|HAL 68" "${handoff}" 2>/dev/null; then
-        check_pass "Both ADR-088 and Handoff reference HAL 68 fn-ptrs"
+    # 11.8 HAL fn-ptr count consistency: 68 (pre-ADR-092) or 71 (post-ADR-092, 2026-09-07 ship)
+    # ADR-088 + Handoff still reference historical 68 as pre-ADR-092 baseline. Check accepts both.
+    subsection "11.8 HAL fn-ptr count '68' (pre-ADR-092) or '71' (post-ADR-092) consistent across ADR-088 + Handoff"
+    if grep -qE "\\b68 fn-ptr\\b|68 fn-ptrs|HAL 68|\\b71 fn-ptr\\b|71 fn-ptrs|HAL 71" "${adr_088}" 2>/dev/null && \
+       grep -qE "\\b68 fn-ptr\\b|68 fn-ptrs|HAL 68|\\b71 fn-ptr\\b|71 fn-ptrs|HAL 71" "${handoff}" 2>/dev/null; then
+        check_pass "Both ADR-088 and Handoff reference HAL fn-ptr count (68 historical or 71 post-ADR-092)"
     else
         check_warn "HAL 68 fn-ptr reference missing in one or both docs (may be in summary form)"
     fi

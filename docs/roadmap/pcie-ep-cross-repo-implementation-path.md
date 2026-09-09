@@ -13,7 +13,7 @@
 
 | 类别 | 范围 | 本文档 |
 |------|------|--------|
-| **本文档覆盖** | CppTLM 5+4 步（4.5-6.5 周）+ UsrLinuxEmu 5.5.7/8 重启 | ✅ |
+| **本文档覆盖** | CppTLM 5+4 步（5.0-6.0 周）+ UsrLinuxEmu 5.5.7/8 重启 | ✅ |
 | 不在本文档 | 5.5.1-5.5.5（已 ship 归档）、5.5.10+（PF 虚拟化）、SOC 内部架构细节 | 见 pcie-bus-bridge-roadmap.md |
 
 ### §1.2 用户战略决策（2026-09-09）
@@ -24,12 +24,12 @@
 
 ---
 
-## §2 实施路径（5+4 步 + 4.5-6.5 周）
+## §2 实施路径（5+4 步 + 5.0-6.0 周）
 
 ### §2.1 总览
 
 ```
-阶段 1 基础必备（2.5-3 周，跨仓 blocker）        阶段 2 性能增强（1 周）
+阶段 1 基础必备（4.0-5.0 周，跨仓 blocker）        阶段 2 性能增强（1 周）
 ┌───────────────┬───────────────┬─────────────────────┐
 │  阶段 1.1 PCIe │  阶段 1.2      │  阶段 1.3 DMA 引擎    │
 │  EP 基础      │  MSI-X 中断    │  (1.3a/1.3b/1.3c/1.3d)│
@@ -56,7 +56,7 @@
 ### §2.3 关键路径（双仓同步）
 
 ```
-CppTLM 5+4 步完成（4.5-6.5 周）
+CppTLM 5+4 步完成（5.0-6.0 周）
   ↓ ↓ ↓ 每子阶段 commit
 UsrLinuxEmu 端 follow-up（同步 commit）
   ├─→ 阶段 1.1 后: profile 测试升级 (data assertion)
@@ -120,7 +120,7 @@ UsrLinuxEmu 端 follow-up（同步 commit）
 - [ ] CppTLM `tests/abi/test_cpptlm_emulator_abi.cc` 全 PASS
 - [ ] UsrLinuxEmu `test_bridge_kcpptlm_profile_real_standalone` 5/5 + data assertion
 - [ ] ctest 双向全绿 + docs-audit PASS
-- [ ] drv/ 零修改 + HAL append-only + 22 ABI 不变 + 5 端口 wire-format 冻结
+    - [ ] drv/ 零修改 + HAL append-only + **23 ABI** 不变（22 = 5.5.6 绑定子集）+ 5 端口 wire-format 冻结
 
 ---
 
@@ -161,11 +161,11 @@ UsrLinuxEmu 端 follow-up（同步 commit）
 
 ---
 
-##§8 修订记录
+## §8 修订记录
 
 - **v0.1** (2026-09-09, Draft): 初版,聚焦 Stage 1（PCIe EP打通）实施路径
   - §1 范围与目标（PCIe EP打通 = Stage 1）
-  - §2 实施路径（5+4 步 + 4.5-6.5 周）
+  - §2 实施路径（5+4 步 + 5.0-6.0 周）
   - §3 跨仓同步点（8 个时序检查清单）
   - §4 关键决策（D.1-D.6 6 条固化）
   - §5 验证清单（阶段完成 + 跨仓集成）

@@ -46,7 +46,7 @@
 - `sim_hardware/include/cpptlm/backdoor_endpoint.h`（与 ADR-092 §D3 偏差，二选一）⚠️ 按决策
 - `plugins/gpu_driver/hal/hal_cpptlm.cpp`（**Phase 2.2 真实实现已挂钩 5.5.6 主线 P0**；前置审计识别 stub 状态 + 5.5.6 工期 4-6 周）🔜
 - `sim_hardware/src/cpptlm/backdoor_endpoint.cpp`（**5.5.6 主线创建新文件**——当前只有 stub，需从零实现 5 函数 + PendingReq + future 跨线程）🔜
-- `sim_hardware/src/cpptlm/bridge.cpp:65-67`（**5.5.6 主线修复** kCpptlm dlopen 22 ABI，当前 `return -ENOSYS`）🔜
+- `sim_hardware/src/cpptlm/bridge.cpp:65-67`（**5.5.6 主线修复** kCpptlm dlopen 23 ABI 契约（5.5.6 绑定 22 符号子集），当前 `return -ENOSYS`）🔜
 - `sim_hardware/src/pcie/host_bridge.cpp`（**5.5.6 主线新增** bypass/full 自动分发，当前无 `bypass_get_mode` 引用）🔜
 - `plugins/gpu_driver/plugin.cpp:119`（**5.5.6 主线新增** backend 选择点，当前硬编码 `hal_user_init`）🔜
 - `sim_hardware/src/cpptlm/backdoor_endpoint_stub.cpp`（补 -ENOSYS 行为测试）🔜 可选
@@ -129,7 +129,7 @@
 - 任务 P4.2：**补 backdoor_endpoint weak stub 测试**——为 `backdoor_endpoint_stub.cpp` 的 5 个 -ENOSYS weak 符号补 Catch2 行为测试（返回 -ENOSYS、参数校验），锁定契约
 - 任务 P4.3：**gpu_hal.h 头注释修正**（68 + 3 = 71 vs 当前 65 + 3 = 68 陈旧）
 - 任务 P4.NEW-A：**5.5.6 主线 #1 — `backdoor_endpoint.cpp` 真实现**（从零创建 5 函数 + PendingReq + future 跨线程 + 100ms 超时；工期 1-2 周）
-- 任务 P4.NEW-B：**5.5.6 主线 #2 — `bridge.cpp:65-67` kCpptlm dlopen 22 ABI**（工期 1-2 周）
+- 任务 P4.NEW-B：**5.5.6 主线 #2 — `bridge.cpp:65-67` kCpptlm dlopen 23 ABI 契约（5.5.6 绑定 22 符号子集）**（工期 1-2 周）
 - 任务 P4.NEW-C：**5.5.6 主线 #3 — `host_bridge.cpp` bypass/full 分发**（新增 `bypass_get_mode()` 调用；工期 0.5-1 周）
 - 任务 P4.NEW-D：**5.5.6 主线 #4 — `hal_cpptlm.cpp` 真实 backend + `plugin.cpp:119` backend 选择点**（组合而非替代：hal_cpptlm 仅填 3 op + 其余 68 fn-ptr 委托 hal_user/hal_mock；工期 1 周）
 

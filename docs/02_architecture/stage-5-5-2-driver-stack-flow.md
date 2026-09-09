@@ -365,12 +365,12 @@ struct gpu_hal_ops {
 ┌─────────────────────────────────────────────────────────────────────┐
 │  sim_hardware/ (Q3 象限：PC 系统硬件仿真)                         │
 │  ─────────────────────────────────────                              │
-│  • CpptlmBridge 统一封装 22 ABI + handle 映射表                    │
+│  • CpptlmBridge 统一封装 23 ABI 契约（5.5.6 绑定 22 符号子集）+ handle 映射表 │
 │  • BackdoorEndpoint（First-touch Handle + Command 注入）           │
 │  • PcieBypassController（3 态裁决：kFull/kBypass/kPartial）       │
 │  • host_bridge_bypass_read/write（按 mode 路由）                  │
 └─────────────────────────┬───────────────────────────────────────────┘
-                          │ 22 ABI（19 原始 + 3 新增 open/close/get_adapter_info）
+                          │ 23 ABI 契约（5.5.6 dlsym 绑定 22 符号子集 = 19 原始 + 3 新增 open/close/get_adapter_info）
                           ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │  CppTLM (外部库) DGpuBoard 仿真                                  │
@@ -442,11 +442,11 @@ struct gpu_hal_ops {
 │     kPartial → cpptlm_emulator_mmio_*     (跳过 PHY，保留 FC)         │
 │     kBypass  → cpptlm_emulator_backdoor_* (跳过 PCIe EP，直插 AXI/VRAM)│
 └───────────────────────────────────┬─────────────────────────────────────────┘
-                                    │ 调用 CppTLM 22 ABI
+                                    │ 调用 CppTLM 23 ABI（5.5.6 绑定 22 符号子集）
 ┌───────────────────────────────────▼─────────────────────────────────────────┐
 │  CpptlmBridge 桥接层 (Q3 sim_hardware/cpptlm/)                             │
 │   ──────────────────────────────────                                       │
-│   • init(params) → 加载 libcpptlm_emulator.so，绑定 22 ABI（当前 mock）   │
+│   • init(params) → 加载 libcpptlm_emulator.so，绑定 23 ABI 契约（5.5.6 dlsym 触及 22 符号子集，当前 mock）   │
 │   • CpptlmBridge_set_active(&bridge) → 设置全局 active 指针                │
 │   • Handle 管理表：std::unordered_map<handle, emu*> + std::mutex            │
 │     ⚠ Oracle 防死锁：cpptlm_emulator_close 在锁外 destroy (per ADR-092 D2)│
@@ -500,7 +500,7 @@ struct gpu_hal_ops {
 └───────────────────────────────────┬─────────────────────────────────────────┘
                                     │ 委托 CpptlmBridge
                                     ▼
-   CpptlmBridge → CppTLM 22 ABI（同 Path A）
+   CpptlmBridge → CppTLM 23 ABI 契约（5.5.6 绑定 22 符号子集，同 Path A）
 ```
 
 ---
