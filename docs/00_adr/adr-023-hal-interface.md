@@ -431,7 +431,7 @@ ADR-064 修订 1 引入了 HAL 边界禁止规则（决策 5），但只禁止 d
 
 截至 2026-08-07，`struct gpu_hal_ops` 的 canonical source 是 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h)。**撰写时点**契约包含 **64 个函数指针字段**。其中，`hal_heap_ptr` 是一个 `static inline` helper，通过 `heap_ptr` 函数指针提供 GPU VA 到主机指针的访问；因此，文档 shorthand 记为 **65 个 total callable entries**（64 个 fn-ptrs + 1 个 helper），不把 helper 计入结构体字段数量。
 
-> **📅 演进注记（2026-09-09）**：当前代码 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h) 实测含 **73 个 fn-ptrs 字段**（增量包含 [ADR-092](../00_adr/adr-092-hal-adapter-and-bypass-binding.md) 提出的 `adapter_get_info/open/close` 3 项 + Stage 4 追加项；`hal_heap_ptr` helper 保持）。下次 ADR-023 v3 修订时直接更新本段为 73 字段。当前数据已登记到 [`docs/02_architecture/pcie-endpoint-entry.md` §11.1/§11.3](../../02_architecture/pcie-endpoint-entry.md)。
+> **📅 演进注记（2026-09-09；v0.2.1 修订 2026-09-09）**：原始 v0 注记写 73，**已回滚为 71**。当前代码 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h) 按 docs-audit §1.5 权威方法（`grep -oE "\(\*[a-z_]+\)" | grep -vE "callback|handler" | sort -u | wc -l`）实测 = **71 个 fn-ptrs 字段**（含 [ADR-092](../00_adr/adr-092-hal-adapter-and-bypass-binding.md) 提出的 `adapter_get_info/open/close` 3 项 + Stage 4 追加项；`hal_heap_ptr` helper 保持）。原 73 来自宽泛 `grep -c "(\*"` 错算（包含 `(*callback)`/`(*handler)` 2 个嵌套参数名）。下次 ADR-023 v3 修订时直接更新本段为 71。当前数据已登记到 [`docs/02_architecture/pcie-endpoint-entry.md` §11.1/§11.3](../../02_architecture/pcie-endpoint-entry.md)。
 
 当前 15 个接口组的契约计数如下。表中的组计数按 ADR-023 的文档 shorthand 记录，其中 `fence/method` 组列出 4 个 fn-ptr 与 `hal_heap_ptr` helper 1 项，memory pool 的 9 项为核心 memory-pool entries。Stage 4.7 的 `mem_pool_export_shareable` 是 memory-pool 组之外追加的 1 个 current-contract fn-ptr，因此总数为 64 个 fn-ptr；`hal_heap_ptr` 则使 total callable entries 为 65。
 

@@ -213,7 +213,7 @@ CppTLM 5+4 步 (5.0-6.0 周)
 UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
   GpgpuDevice (drv/ioctl)              23 ABI functions
     ↓                                     ↑
-  HAL struct (73 fn-ptrs)              cpptlm_emulator_*
+  HAL struct (71 fn-ptrs)              cpptlm_emulator_*
     ↓                                     ↑
   CpptlmBridge (23 ABI dlopen)         DGpuBoard / PcieEndpointIP / SDMA / CmdProc
                                          ↑
@@ -223,7 +223,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 **核心约束**：23 ABI 函数签名不变（5 端口 wire-format 冻结，HAL append-only）
 
 > **🚧 可改 / 禁改边界（全局，非仅验证项）**：
-> - ❌ **禁改**：本仓 `plugins/gpu_driver/drv/`（ADR-036 三区分：驱动代码须可零修改移植内核，5+4 步全程含完成后）；23 ABI 签名；5 端口 wire-format；HAL 既有 73 fn-ptrs 签名（append-only per ADR-023）
+> - ❌ **禁改**：本仓 `plugins/gpu_driver/drv/`（ADR-036 三区分：驱动代码须可零修改移植内核，5+4 步全程含完成后）；23 ABI 签名；5 端口 wire-format；HAL 既有 71 fn-ptrs 签名（append-only per ADR-023）
 > - ✅ **可改**：`tests/`（断言升级）、`hal/hal_cpptlm.cpp`（backend 组合）、CppTLM 侧 `src/tlm/` + `test/`
 
 ---
@@ -418,7 +418,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 | [ADR-023 HAL append-only](../../00_adr/adr-023-hal-interface.md) | HAL fn-ptrs append-only（ADR-023 文本记 64+1；代码 2026-09-09 实测 73）| §4 §6 D.4 |
 | [ADR-088 dGPU 完整仿真](../../00_adr/adr-088-dgpu-complete-simulation.md) | dGPU 仿真边界 + 23 ABI | §4 §1 |
 | [ADR-091 4 象限布局](../../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) | 4 象限 + PCIe tier | §4.2 |
-| [ADR-092 HAL adapter + bypass binding](../../00_adr/adr-092-hal-adapter-and-bypass-binding.md) | 🔄 **Proposed v0.1**（2026-09-07 — 实施已 ship 73 fn-ptrs，含 `adapter_get_info/open/close`；ADR-092 记录时点为 68→71，后续 +2 待 ADR-023 文本同步；Gate D Oracle 复审待触发升 Accepted v0.2） | §4.3 |
+| [ADR-092 HAL adapter + bypass binding](../../00_adr/adr-092-hal-adapter-and-bypass-binding.md) | 🔄 **Proposed v0.1**（2026-09-07 — 实施已 ship 71 fn-ptrs，含 `adapter_get_info/open/close`；ADR-092 记录时点为 68→71，后续 +2 待 ADR-023 文本同步；Gate D Oracle 复审待触发升 Accepted v0.2） | §4.3 |
 
 ### §11.2 spec（功能规范）
 
@@ -466,7 +466,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
     - §8.2 测试路径 `tests/sim_hardware/test_sdma_ring_rptr_wptr_standalone.cpp` → `test/test_sdma_ring_rptr_wptr.cc`（与 §8.1 单数 `test/` + `.cc` 约定一致）
   - **cosmetic**:
     - §1.1 SDMA "（11 章节）" → "（§1-§14 全 14 章节）"
-    - §4.3 图内 "71 fn-ptrs" → "73 fn-ptrs"（与同节 73 一致；71 是 ADR-092 记录时点旧值）
+    - §4.3 图内 "73 fn-ptrs" → 回滚为 "71 fn-ptrs"（**错误修正**：73 来自 `grep -c "(\*"` 错算嵌套参数名；canonical SSOT = 71，以 UsrLinuxEmu `tools/docs-audit.sh §1.5` 强制值为准）
     - §9 风险行 2 回退字段 "阶段 1.3c 过渡期" → "阶段 1.3a 双轨过渡"（per §6 D.5）
     - §12 §8 描述 "5 个常见场景" → "6 个常见场景" + 列举 §8.0-§8.5
     - §12 §3 描述 "UsrLinuxEmu 3 已 ship + Deferred" → "1 Archived + 2 Deferred"
