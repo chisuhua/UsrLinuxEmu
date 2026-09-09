@@ -1,13 +1,13 @@
 # PCIe Endpoint 实施入口文档（双仓 SSOT）
 
 > **定位**: 本文档是 UsrLinuxEmu ↔ CppTLM 双仓 **PCIe EP 驱动到硬件链路**所有实施工作的**集中入口**（Single Source of Truth Entry Point）。
-> **状态**: Draft v0.1 (2026-09-09)
+> **状态**: v0.2 (2026-09-09, post-Oracle 复审修订)
 > **维护**: CppTLM + UsrLinuxEmu 架构组（跨仓同步）
 > **目的**: 让任何进入 PCIe EP / dGPU E2E 主线工作的工程师，能够**从这里找到所有需要的文档、openspec change、实施路径、同步点、验证清单**，而不需要在双仓搜索
 > **关联索引**:
-> - 本文档**不是**架构 SSOT——架构 SSOT 见 [`https://github.com/CppTLM/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md`](https://github.com/CppTLM/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md)（**CppTLM 硬件侧**）+ [`pcie-endpoint-architecture.md`](pcie-endpoint-architecture.md)（**UsrLinuxEmu 驱动侧**，本地相对路径）
+> - 本文档**不是**架构 SSOT——架构 SSOT 见 [`https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md`](https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md)（**CppTLM 硬件侧**）+ [`pcie-endpoint-architecture.md`](pcie-endpoint-architecture.md)（**UsrLinuxEmu 驱动侧**，本地相对路径）
 > - 本文档**不是**roadmap——roadmap 见 [`pcie-bus-bridge-roadmap.md`](../roadmap/pcie-bus-bridge-roadmap.md)（总 roadmap，5.5.1-5.5.10+ 全覆盖）+ [`pcie-ep-cross-repo-implementation-path.md`](../roadmap/pcie-ep-cross-repo-implementation-path.md)（5+4 步聚焦实施路径）
-> - 本文档**不是**SDMA 内部设计——见 [`https://github.com/CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md`](https://github.com/CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md)（CppTLM 仓，17-编号）
+> - 本文档**不是**SDMA 内部设计——见 [`https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/17-sdma-engine-design.md`](https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/17-sdma-engine-design.md)（CppTLM 仓，17-编号）
 > - 本文档**是**索引 + 路径图 + 同步点 + 验证清单的"导航器"
 
 ---
@@ -16,15 +16,15 @@
 
 ### §1.1 CppTLM 仓文档（5 核心文档）
 
-> **路径约定**：CppTLM 仓文档路径使用 `https://github.com/CppTLM/docs/soc_arch/architecture/NN-*.md` 编号式（NN = 16/17/18 连续），与 UsrLinuxEmu 仓无编号 `docs/02_architecture/` 风格不同。openspec change 用 `https://github.com/CppTLM/openspec/changes/...`。
+> **路径约定**：CppTLM 仓文档路径使用 `https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/NN-*.md` 编号式（NN = 16/17/18 连续），与 UsrLinuxEmu 仓无编号 `docs/02_architecture/` 风格不同。openspec change 用 `https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/...`。
 
 | 文档 | 路径 | 角色 | 何时读 |
 |------|------|------|-------|
-| **pcie-endpoint-entry.md** | [`https://github.com/CppTLM/docs/soc_arch/architecture/18-pcie-endpoint-entry.md`](https://github.com/CppTLM/docs/soc_arch/architecture/18-pcie-endpoint-entry.md) | **入口（SSOT for navigation）** | 任何 PCIe EP 工作的**起点** |
-| **pcie-endpoint-architecture.md** | [`https://github.com/CppTLM/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md`](https://github.com/CppTLM/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md) | **架构 SSOT（硬件侧）** | 了解跨仓架构 + 数据流/控制流时 |
-| **sdma-engine-design.md** | [`https://github.com/CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md`](https://github.com/CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md) | **SDMA 内部设计**（11 章节）| 阶段 1.3a-1.3d 实施时 |
-| **pcie-ep-cpptlm-collaboration-roadmap.md** | [`https://github.com/CppTLM/docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md`](https://github.com/CppTLM/docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md) | **5+4 步实施 roadmap** | 路径规划 + 工期估算时 |
-| **openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/** | [`https://github.com/CppTLM/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/`](https://github.com/CppTLM/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/) | **openspec change**（proposal + design + tasks + spec）| change 提案 + 13 ADDED Requirements 时 |
+| **pcie-endpoint-entry.md** | [`https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/18-pcie-endpoint-entry.md`](https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/18-pcie-endpoint-entry.md) | **入口（SSOT for navigation）** | 任何 PCIe EP 工作的**起点** |
+| **pcie-endpoint-architecture.md** | [`https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md`](https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md) | **架构 SSOT（硬件侧）** | 了解跨仓架构 + 数据流/控制流时 |
+| **sdma-engine-design.md** | [`https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/17-sdma-engine-design.md`](https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/17-sdma-engine-design.md) | **SDMA 内部设计**（§1-§14 全 14 章节）| 阶段 1.3a-1.3d 实施时 |
+| **pcie-ep-cpptlm-collaboration-roadmap.md** | [`https://github.com/chisuhua/CppTLM/blob/main/docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md`](https://github.com/chisuhua/CppTLM/blob/main/docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md) | **5+4 步实施 roadmap** | 路径规划 + 工期估算时 |
+| **openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/** | [`https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/`](https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/) | **openspec change**（proposal + design + tasks + spec）| change 提案 + 13 ADDED Requirements 时 |
 
 ### §1.2 UsrLinuxEmu 仓文档（3 文档 + 2 openspec change = 5 条目）
 
@@ -128,7 +128,7 @@ CppTLM 5+4 步 (5.0-6.0 周)
 
 | Change | 范围 | 阶段覆盖 | 状态 |
 |--------|------|---------|------|
-| [`2026-09-09-cpptlm-pcie-ep-foundation`](https://github.com/CppTLM/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/) | CppTLM PCIe EP 基础必备 + 性能增强 + 电源管理 + 完成通知 | **§1.1-1.4 + §2.1**（8 步全覆盖）| 🔄 Proposed |
+| [`2026-09-09-cpptlm-pcie-ep-foundation`](https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/) | CppTLM PCIe EP 基础必备 + 性能增强 + 电源管理 + 完成通知 | **§1.1-1.4 + §2.1**（8 步全覆盖）| 🔄 Proposed |
 
 **关键文档**：
 - `proposal.md` — Why / What / Capabilities / Impact（含 7 修复 + 5 步建议）
@@ -213,7 +213,7 @@ CppTLM 5+4 步 (5.0-6.0 周)
 UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
   GpgpuDevice (drv/ioctl)              23 ABI functions
     ↓                                     ↑
-  HAL struct (71 fn-ptrs)              cpptlm_emulator_*
+  HAL struct (73 fn-ptrs)              cpptlm_emulator_*
     ↓                                     ↑
   CpptlmBridge (23 ABI dlopen)         DGpuBoard / PcieEndpointIP / SDMA / CmdProc
                                          ↑
@@ -296,7 +296,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 - [ ] UsrLinuxEmu `drv/` 零修改（5+4 步实施期间 + 完成后）
 - [ ] UsrLinuxEmu HAL append-only（ADR-023 §D4 不变）
 - [ ] 23 ABI 函数签名不变（仅行为从 stub → 真实；22 = 5.5.6 绑定子集快照，见 §4.3 脚注）
-- [ ] CppTLM `src/abi/cpptlm_emulator.h` 不变
+- [ ] CppTLM `include/abi/cpptlm_emulator.h` 不变（声明冻结；`src/abi/cpptlm_emulator.cc` 实现可改）
 - [ ] 5 端口 wire-format 冻结（D.4）
 - [ ] Ring Buffer 作为 desc_in 前端双轨过渡后 5 端口 wire-format 不变（D.5）
 
@@ -318,23 +318,23 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 ### §8.1 我是 CppTLM 开发者，要实施阶段 1.1（PCIe EP 基础）
 
 1. **先读**：[`pcie-endpoint-architecture.md`](pcie-endpoint-architecture.md) §2.1-2.2（数据流）
-2. **再读**：[`https://github.com/CppTLM/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/specs/cpptlm-pcie-ep-foundation/spec.md`](https://github.com/CppTLM/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/specs/cpptlm-pcie-ep-foundation/spec.md)（13 ADDED Requirements 中关于 PCIe EP 基础的部分）
+2. **再读**：[`https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/specs/cpptlm-pcie-ep-foundation/spec.md`](https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/specs/cpptlm-pcie-ep-foundation/spec.md)（13 ADDED Requirements 中关于 PCIe EP 基础的部分）
 3. **实施**：`src/tlm/gpu/dgpu_board_shell.cc`（修复 #3 + #5 + #6 + #7）
 4. **测试**：新建 `test/test_cpptlm_emulator_abi_*.cc`（CppTLM 测试目录为单数 `test/`，无 `abi/` 子目录）
 5. **验证**：从 UsrLinuxEmu 仓跑 `ctest -R profile_real`
 
 ### §8.2 我是 CppTLM 开发者，要实施阶段 1.3a（SDMA Ring Buffer）
 
-1. **必读**：[`https://github.com/CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md`](https://github.com/CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md) §2-§6（核心 5 章节）
-2. **对照**：[`https://github.com/CppTLM/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/design.md`](https://github.com/CppTLM/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/design.md) §3.3（阶段 1.3 细分）
+1. **必读**：[`https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/17-sdma-engine-design.md`](https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/17-sdma-engine-design.md) §2-§6（核心 5 章节）
+2. **对照**：[`https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/design.md`](https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/design.md) §3.3（阶段 1.3 细分）
 3. **实施**：`src/tlm/gpu/sdma_engine_tlm.cc` 扩展 + 新建 `sdma_ring_buffer.h/cc`
-4. **测试**：新建 `tests/sim_hardware/test_sdma_ring_rptr_wptr_standalone.cpp`
+4. **测试**：新建 `test/test_sdma_ring_rptr_wptr.cc`（CppTLM 测试目录为单数 `test/`，扩展名 `.cc`，无 `_standalone` 后缀——与 §8.1 约定一致）
 5. **验证**：5 端口 wire-format 不变 + Ring→descriptor 转换内部完成
 
 ### §8.3 我是 UsrLinuxEmu 开发者，要升级测试断言
 
 1. **必读**：[`pcie-endpoint-architecture.md`](pcie-endpoint-architecture.md) §2.4.1（SDMA 接入点）
-2. **必读**：[CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md](https://github.com/CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md) §6（Packet 格式）
+2. **必读**：[CppTLM/docs/soc_arch/architecture/17-sdma-engine-design.md](https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/17-sdma-engine-design.md) §6（Packet 格式）
 3. **修改**：`tests/sim_hardware/test_bridge_kcpptlm_profile_real_standalone.cpp`：
    - `CHECK(ret != -ENOSYS)` → `REQUIRE(ret == 0)` + `INFO("ret=" << ret)`
    - 加 buf 内容断言（写入 0xDEADBEEF → 读回相等）
@@ -344,7 +344,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 
 1. **入口**：本文档（`pcie-endpoint-entry.md`）
 2. **双仓架构 SSOT**：
-   - CppTLM: [`https://github.com/CppTLM/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md`](https://github.com/CppTLM/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md)（硬件侧）
+   - CppTLM: [`https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md`](https://github.com/chisuhua/CppTLM/blob/main/docs/soc_arch/architecture/16-pcie-endpoint-architecture.md)（硬件侧）
    - UsrLinuxEmu: [`pcie-endpoint-architecture.md`](pcie-endpoint-architecture.md)（驱动侧，本地相对）
 3. **跨仓引用**：两个 SSOT 互相 cross-reference（⚠️ 已知问题：CppTLM 16-doc L10 回指误写为 CppTLM 自身路径 `docs/soc_arch/architecture/16-...`，正确目标为本仓 `docs/02_architecture/pcie-endpoint-architecture.md`，根治需 CppTLM 侧提交）
 4. **变更影响评估**：任何 PCIe EP 改动需同步更新两个 SSOT
@@ -374,12 +374,12 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 | 风险 | 等级 | 回退 |
 |------|:----:|------|
 | 阶段 1.1 mmio race 修复影响 5.5.7.1 profile 测试 | 中 | timeout 延长 + sim_loop tick 频率提升 |
-| 阶段 1.3 SDMA 实施量大（现有 descriptor 直投 → Ring Buffer 重构）| 高 | 阶段 1.3c 过渡期保留 5 端口 wire-format |
+| 阶段 1.3 SDMA 实施量大（现有 descriptor 直投 → Ring Buffer 重构）| 高 | 阶段 1.3a 双轨过渡保留 5 端口 wire-format（per §6 D.5）|
 | 阶段 1.3c dma_translate_cb 真实调用触发 UsrLinuxEmu cb 错误处理 | 中 | cb 失败 fallback（phys = iova identity）|
 | 阶段 1.3d 中断链修复后 msix 测试不稳定 | 中 | 测试用 200ms 超时 + retry 1（对齐 §5.1/§7.1"200ms 内 ≥1"） |
 | 阶段 1.4 电源管理状态切换影响 profile 加载 | 低 | profile 加载时强制 D0 |
 | 跨仓协调延迟（CppTLM 实施 → UsrLinuxEmu 升级断言）| 中 | 每子阶段独立 commit，可异步同步 |
-| Oracle 复审不通过 | 低 | 9.0+ 门槛已通过三轮验证（5.5.6 9.5/10 + 5.5.7.1 9.4/10 + PCIe EP 协同 3.5/10 → 补 SDMA 设计后预期 7.5+）|
+| Oracle 复审不通过 | 中 | 5+4 步全部交付 + 5.5.7/5.5.8/5.5.9 三轮终审达 9.0+。**现状**：5.5.6 9.5/10 与 5.5.7.1 P5.NEW-A 9.4/10 已过 9.0 门槛（属 5.5.x 工作线，非本 PCIe EP 协同线）；PCIe EP 协同线三轮 Oracle 评审（PCIe EP 评审 3.5/10 + CP attach 评审 3.5/10 + 5.5.8 评审 8.7/10，见 `pcie-bus-bridge-roadmap.md` L469 修订记录）当前最佳 8.7/10，仍 < 9.0 门槛；本轮预期：补 SDMA 内部设计（`17-sdma-engine-design.md`，§1-§14 完整章节)后该工作线下一轮评审有望突破 9.0；如仍未达 9.0 则升级为"高"并触发 §10.3 文档回退预案（归档本 change → 启 v0.3 修订）|
 
 ---
 
@@ -393,7 +393,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 4. **命名规范**：
    - `pcie-*.md` — PCIe EP 相关
    - `sdma-*.md` — SDMA 相关
-   - 跨仓引用用完整 URL（`https://github.com/CppTLM/docs/...`）
+   - 跨仓引用用完整 URL（`https://github.com/chisuhua/CppTLM/blob/main/docs/...`）
 
 ### §10.2 修改现有 PCIe EP 文档时
 
@@ -424,7 +424,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 
 | spec | 内容 |
 |------|------|
-| [`cpptlm-pcie-ep-foundation/spec.md`](https://github.com/CppTLM/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/specs/cpptlm-pcie-ep-foundation/spec.md) | 13 ADDED Requirements（CppTLM 仓）|
+| [`cpptlm-pcie-ep-foundation/spec.md`](https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/specs/cpptlm-pcie-ep-foundation/spec.md) | 13 ADDED Requirements（CppTLM 仓）|
 | [`kcpptlm-backend-binding`](../../openspec/specs/kcpptlm-backend-binding/) | UsrLinuxEmu 仓 ABI 契约扩展（5.5.6 已 ship）|
 
 ### §11.3 代码事实
@@ -448,17 +448,31 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 - **v0.1** (2026-09-09, Draft): 初版,基于 2026-09-08 文档重命名 + 2026-09-09 战略调整 + 5+4 步 roadmap + SDMA 内部设计
    - §1 双仓文档地图（5 CppTLM + 5 UsrLinuxEmu 条目）
   - §2 实施路径图（5+4 步 + 5.0-6.0 周）
-  - §3 openspec change 全景（CppTLM 1 + UsrLinuxEmu 3 已 ship + Deferred）
+  - §3 openspec change 全景（CppTLM 1 + UsrLinuxEmu 1 Archived + 2 Deferred）
   - §4 架构核心概念（双层 DMA + 4 层 PCIe + 23 ABI 边界）
   - §5 跨仓同步点（9 个时序检查清单）
   - §6 关键决策（6 条固化决策）
   - §7 验证清单（阶段完成 + 跨仓集成 + 架构约束）
-  - §8 工作场景速查（5 个常见场景）
+  - §8 工作场景速查（6 个常见场景：§8.0 新人 / §8.1 CppTLM 1.1 / §8.2 CppTLM 1.3a / §8.3 UsrLinuxEmu 断言升级 / §8.4 架构师对齐 / §8.5 PM 进度）
   - §9 风险与回退（7 条）
   - §10 文档维护规则
    - §11 关联资源（4 ADR + 2 spec + 9 代码模块）
 
-- **待 v0.2**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准）
+- **v0.2** (2026-09-09, post-Oracle 复审): 双轮评审后修订（Oracle 评分 6.5 → 目标 8.5+）
+  - **must-fix**:
+    - §7.3 冻结约束路径 `src/abi/cpptlm_emulator.h` → `include/abi/cpptlm_emulator.h`（声明冻结；`.cc` 实现可改）
+    - §9 Oracle 风险行: 重写回退字段，区分两条评审线（5.5.x 已过 9.0 vs PCIe EP 协同线当前 8.7/10 < 9.0），风险等级"低"→"中"
+    - §1.1 / §3.1 / §8.2 / §11.2 共 16 处跨仓 URL `github.com/CppTLM/...` → `github.com/chisuhua/CppTLM/blob/main/...`（owner = `chisuhua`，与 git remote 一致），并更新 §1.1 路径约定说明 + §10.1 命名规范
+    - §8.2 测试路径 `tests/sim_hardware/test_sdma_ring_rptr_wptr_standalone.cpp` → `test/test_sdma_ring_rptr_wptr.cc`（与 §8.1 单数 `test/` + `.cc` 约定一致）
+  - **cosmetic**:
+    - §1.1 SDMA "（11 章节）" → "（§1-§14 全 14 章节）"
+    - §4.3 图内 "71 fn-ptrs" → "73 fn-ptrs"（与同节 73 一致；71 是 ADR-092 记录时点旧值）
+    - §9 风险行 2 回退字段 "阶段 1.3c 过渡期" → "阶段 1.3a 双轨过渡"（per §6 D.5）
+    - §12 §8 描述 "5 个常见场景" → "6 个常见场景" + 列举 §8.0-§8.5
+    - §12 §3 描述 "UsrLinuxEmu 3 已 ship + Deferred" → "1 Archived + 2 Deferred"
+  - **已知遗留（需 CppTLM 仓侧提交）**: 见 CppTLM 16-doc / 18-doc（"14 ADDED" 实际 13；18-doc §1.2 UsrLinuxEmu 路径错写；18-doc 头部 markdown `> **> **` bug；16-doc L10 UsrLinuxEmu 回指错误）
+
+- **待 v0.3**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准 + 5.5.7 Oracle 复审反馈）
 
 ---
 
