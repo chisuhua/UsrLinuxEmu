@@ -1,7 +1,7 @@
 # PCIe Endpoint 实施入口文档（双仓 SSOT）
 
 > **定位**: 本文档是 UsrLinuxEmu ↔ CppTLM 双仓 **PCIe EP 驱动到硬件链路**所有实施工作的**集中入口**（Single Source of Truth Entry Point）。
-> **状态**: v0.2.2 (2026-09-09, post-Oracle 复审修订 + v0.2.1 rollback 补全)
+> **状态**: v0.2.3 (2026-09-09, post-CppTLM v0.4 闭环登记)
 > **维护**: CppTLM + UsrLinuxEmu 架构组（跨仓同步）
 > **目的**: 让任何进入 PCIe EP / dGPU E2E 主线工作的工程师，能够**从这里找到所有需要的文档、openspec change、实施路径、同步点、验证清单**，而不需要在双仓搜索
 > **关联索引**:
@@ -439,7 +439,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 | Endpoint（UsrLinuxEmu 已 ship）| `sim_hardware/src/cpptlm/endpoint.cpp` | 18 | PcieEndpointIP 接入点 |
 | host_bridge（UsrLinuxEmu 已 ship）| `sim_hardware/src/pcie/host_bridge.cpp` | 111 | bypass/full dispatch（位于 pcie/ 而非 cpptlm/）|
 | HAL cpptlm（UsrLinuxEmu 已 ship）| `plugins/gpu_driver/hal/hal_cpptlm.cpp` | 79 | 3 adapter op 真化 |
-| GpgpuDevice（UsrLinuxEmu 已 ship）| `plugins/gpu_driver/drv/gpgpu_device.cpp` | 1137 | ioctl 派发表（38 IOCTL）|
+| GpgpuDevice（UsrLinuxEmu 已 ship）| `plugins/gpu_driver/drv/gpgpu_device.cpp` | 1137 | ioctl 派发表（**41** IOCTL，per `gpgpu_device.h:27 kNumIoctls = 41`）|
 
 ---
 
@@ -470,7 +470,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
     - §9 风险行 2 回退字段 "阶段 1.3c 过渡期" → "阶段 1.3a 双轨过渡"（per §6 D.5）
     - §12 §8 描述 "5 个常见场景" → "6 个常见场景" + 列举 §8.0-§8.5
     - §12 §3 描述 "UsrLinuxEmu 3 已 ship + Deferred" → "1 Archived + 2 Deferred"
-  - **已知遗留（需 CppTLM 仓侧提交）**: 见 CppTLM 16-doc / 18-doc（"14 ADDED" 实际 13；18-doc §1.2 UsrLinuxEmu 路径错写；18-doc 头部 markdown `> **> **` bug；16-doc L10 UsrLinuxEmu 回指错误）
+  - **已知遗留（需 CppTLM 仓侧提交）**: 见 CppTLM 16-doc / 18-doc（"14 ADDED" 实际 13；18-doc §1.2 UsrLinuxEmu 路径错写；18-doc 头部 markdown `> **> **` bug；16-doc L10 UsrLinuxEmu 回指错误）→ **全部已闭环**: CppTLM `dca050a2` (v0.3.1) 完成 73→71 错误链闭环登记 + 死 spec 替换；`84350648` (v0.4) 完成 §8/§9/§1.3/§2.2/§4/§11.3 全套镜像同步（详见 CppTLM 18-doc §12 v0.4 条目 + 本仓 v0.2.3 闭环登记）。
 
 - **v0.2.1** (2026-09-09, commit `12a3e4b`): 回滚 HAL fn-ptr 73 → 71（grep 错算修正）
   - §4.3 图内 "73 fn-ptrs" → "71 fn-ptrs"
@@ -488,6 +488,20 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
   - 文档头部状态 v0.2 → v0.2.2（与 commit message + ADR-023 注记一致）
   - **跨仓闭环**: CppTLM `300ddc45` (v0.3) 独立完成相同回滚；本 commit 引用该 commit 标记双仓对齐 71
   - **Oracle 复审 session**: `bg_0eca263a`（Oracle 独立确认 71 为 SSOT + 指出 v0.2.1 三处遗漏）
+
+- **v0.2.3** (2026-09-09, post-CppTLM v0.4 闭环登记): CppTLM `84350648` (v0.4) 已完成本仓镜像同步
+  - **CppTLM 18-doc 已镜像**:
+    - §8.0 新人场景（mirror UE entry）
+    - §8.1/§8.2 测试路径 → 单数 `test/` + `.cc`（实测 CppTLM 真实路径）
+    - §8.3 验证指令 → `cd /workspace/project/UsrLinuxEmu && ./build/bin/...`（该二进制仅在 UE 仓）
+    - §8.5 里程碑 → M1-M9 累计周格式 + M9 (5.5.9 完成 12-17 周)
+    - §9 Oracle 风险 → "中 / 协同线当前最佳 8.7/10 < 9.0"
+    - §4.1 目标态注记 / §4.3 边界框 / §6 X/P/D 决策图例
+    - §2.2 执行仓列 / §1.3 图 host_bridge 归 `src/pcie/`
+    - §11.3 行数 + IOCTL 41（实测）/ URL owner → `chisuhua/CppTLM/...`
+  - **本仓同步修正**: §11.3 GpgpuDevice "38 IOCTL" → **41**（per `gpgpu_device.h:27 kNumIoctls = 41`）
+  - **§12 v0.2 已知遗留 4 项全部闭环**：CppTLM `dca050a2` (v0.3.1) + `84350648` (v0.4) 已完成 §11.1 ADR-023 行 71 / §11.2 死 spec 替换 / §12 历史还原 / 跨仓镜像全套
+  - **剩余 0 项已知遗留**
 
 - **待 v0.3**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准 + 5.5.7 Oracle 复审反馈）
 
