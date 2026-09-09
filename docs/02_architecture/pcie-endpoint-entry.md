@@ -1,7 +1,7 @@
 # PCIe Endpoint 实施入口文档（双仓 SSOT）
 
 > **定位**: 本文档是 UsrLinuxEmu ↔ CppTLM 双仓 **PCIe EP 驱动到硬件链路**所有实施工作的**集中入口**（Single Source of Truth Entry Point）。
-> **状态**: v0.2 (2026-09-09, post-Oracle 复审修订)
+> **状态**: v0.2.2 (2026-09-09, post-Oracle 复审修订 + v0.2.1 rollback 补全)
 > **维护**: CppTLM + UsrLinuxEmu 架构组（跨仓同步）
 > **目的**: 让任何进入 PCIe EP / dGPU E2E 主线工作的工程师，能够**从这里找到所有需要的文档、openspec change、实施路径、同步点、验证清单**，而不需要在双仓搜索
 > **关联索引**:
@@ -415,7 +415,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 
 | ADR | 内容 | 关联 |
 |-----|------|------|
-| [ADR-023 HAL append-only](../../00_adr/adr-023-hal-interface.md) | HAL fn-ptrs append-only（ADR-023 文本记 64+1；代码 2026-09-09 实测 73）| §4 §6 D.4 |
+| [ADR-023 HAL append-only](../../00_adr/adr-023-hal-interface.md) | HAL fn-ptrs append-only（ADR-023 文本记 64+1；代码 2026-09-09 实测 **71**，per `tools/docs-audit.sh §1.5` 权威 SSOT；73 错算已撤回）| §4 §6 D.4 |
 | [ADR-088 dGPU 完整仿真](../../00_adr/adr-088-dgpu-complete-simulation.md) | dGPU 仿真边界 + 23 ABI | §4 §1 |
 | [ADR-091 4 象限布局](../../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) | 4 象限 + PCIe tier | §4.2 |
 | [ADR-092 HAL adapter + bypass binding](../../00_adr/adr-092-hal-adapter-and-bypass-binding.md) | 🔄 **Proposed v0.1**（2026-09-07 — 实施已 ship 71 fn-ptrs，含 `adapter_get_info/open/close`；ADR-092 记录时点为 68→71，后续 +2 待 ADR-023 文本同步；Gate D Oracle 复审待触发升 Accepted v0.2） | §4.3 |
@@ -466,11 +466,28 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
     - §8.2 测试路径 `tests/sim_hardware/test_sdma_ring_rptr_wptr_standalone.cpp` → `test/test_sdma_ring_rptr_wptr.cc`（与 §8.1 单数 `test/` + `.cc` 约定一致）
   - **cosmetic**:
     - §1.1 SDMA "（11 章节）" → "（§1-§14 全 14 章节）"
-    - §4.3 图内 "73 fn-ptrs" → 回滚为 "71 fn-ptrs"（**错误修正**：73 来自 `grep -c "(\*"` 错算嵌套参数名；canonical SSOT = 71，以 UsrLinuxEmu `tools/docs-audit.sh §1.5` 强制值为准）
+    - §4.3 图内 "71 fn-ptrs" → "73 fn-ptrs"（与同节 73 一致；71 是 ADR-092 记录时点旧值）
     - §9 风险行 2 回退字段 "阶段 1.3c 过渡期" → "阶段 1.3a 双轨过渡"（per §6 D.5）
     - §12 §8 描述 "5 个常见场景" → "6 个常见场景" + 列举 §8.0-§8.5
     - §12 §3 描述 "UsrLinuxEmu 3 已 ship + Deferred" → "1 Archived + 2 Deferred"
   - **已知遗留（需 CppTLM 仓侧提交）**: 见 CppTLM 16-doc / 18-doc（"14 ADDED" 实际 13；18-doc §1.2 UsrLinuxEmu 路径错写；18-doc 头部 markdown `> **> **` bug；16-doc L10 UsrLinuxEmu 回指错误）
+
+- **v0.2.1** (2026-09-09, commit `12a3e4b`): 回滚 HAL fn-ptr 73 → 71（grep 错算修正）
+  - §4.3 图内 "73 fn-ptrs" → "71 fn-ptrs"
+  - §4.3 边界框 "HAL 既有 73 fn-ptrs" → "71"
+  - §11.1 ADR-092 行 "ship 73 fn-ptrs" → "ship 71 fn-ptrs"
+  - ADR-023 L434 演进注记 "73" → "71" + 加 `grep -c "(\*"` 错算说明 + 引用 `tools/docs-audit.sh §1.5`
+  - AGENTS.md CODE MAP "73 函数指针" → "71"
+  - 错误链溯源：`8cc29c3 F-4 → 58a89b0 ADR-023 → 570b977 §4.3 图 → 8461887 AGENTS.md → 7f4d26a4 CppTLM 镜像 → 300ddc45 CppTLM v0.3 自愈`
+  - **Oracle 复审发现遗漏（本仓 v0.2.2 补）**: §11.1 ADR-023 行 L418 仍写"实测 73"——rollback 半成品
+
+- **v0.2.2** (2026-09-09, 本 commit): 补全 v0.2.1 rollback + 流程纪律修复
+  - §11.1 ADR-023 行 L418 "实测 73" → "实测 71" + 引用 §1.5 SSOT（mirror CppTLM `300ddc45` L391 措辞）
+  - §12 还原 v0.2 原 bullet 文本（"71 → 73"叙事 + "71 是 ADR-092 记录时点旧值" rationale），恢复历史真实性
+  - §12 新增独立 v0.2.1 条目（如上），记录 12a3e4b 的全部变更
+  - 文档头部状态 v0.2 → v0.2.2（与 commit message + ADR-023 注记一致）
+  - **跨仓闭环**: CppTLM `300ddc45` (v0.3) 独立完成相同回滚；本 commit 引用该 commit 标记双仓对齐 71
+  - **Oracle 复审 session**: `bg_0eca263a`（Oracle 独立确认 71 为 SSOT + 指出 v0.2.1 三处遗漏）
 
 - **待 v0.3**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准 + 5.5.7 Oracle 复审反馈）
 
