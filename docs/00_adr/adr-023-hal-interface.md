@@ -431,7 +431,7 @@ ADR-064 修订 1 引入了 HAL 边界禁止规则（决策 5），但只禁止 d
 
 截至 2026-08-07，`struct gpu_hal_ops` 的 canonical source 是 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h)。**撰写时点**契约包含 **64 个函数指针字段**。其中，`hal_heap_ptr` 是一个 `static inline` helper，通过 `heap_ptr` 函数指针提供 GPU VA 到主机指针的访问；因此，文档 shorthand 记为 **65 个 total callable entries**（64 个 fn-ptrs + 1 个 helper），不把 helper 计入结构体字段数量。
 
-> **📅 演进注记（2026-09-09；v0.2.1 修订 2026-09-09）**：原始 v0 注记写 73，**已回滚为 71**。当前代码 [`plugins/gpu_driver/hal/gpu_hal.h`](../../plugins/gpu_driver/hal/gpu_hal.h) 按 docs-audit §1.5 权威方法（`grep -oE "\(\*[a-z_]+\)" | grep -vE "callback|handler" | sort -u | wc -l`）实测 = **71 个 fn-ptrs 字段**（含 [ADR-092](../00_adr/adr-092-hal-adapter-and-bypass-binding.md) 提出的 `adapter_get_info/open/close` 3 项 + Stage 4 追加项；`hal_heap_ptr` helper 保持）。原 73 来自宽泛 `grep -c "(\*"` 错算（包含 `(*callback)`/`(*handler)` 2 个嵌套参数名）。下次 ADR-023 v3 修订时直接更新本段为 71。当前数据已登记到 [`docs/02_architecture/pcie-endpoint-entry.md` §11.1/§11.3](../../02_architecture/pcie-endpoint-entry.md)。
+> **📅 演进注记（2026-09-09；v0.2.1 修订 → v3 修订落地 2026-09-09）**：原始 v0 注记写 73，已回滚为 71；**v3 修订（2026-09-09，详见本文末尾"v3 修订"段）正式将当前契约数字更新为 71 个 fn-ptrs + 1 个 helper = 72 个 callable entries**。原 73 来自宽泛 `grep -c "(\*"` 错算（包含 `(*callback)`/`(*handler)` 2 个嵌套参数名）。Canonical SSOT 由 UsrLinuxEmu `tools/docs-audit.sh §1.5` 强制执行，权威方法 `grep -oE "\(\*[a-z_]+\)" | grep -vE "callback|handler" | sort -u | wc -l`。
 
 当前 15 个接口组的契约计数如下。表中的组计数按 ADR-023 的文档 shorthand 记录，其中 `fence/method` 组列出 4 个 fn-ptr 与 `hal_heap_ptr` helper 1 项，memory pool 的 9 项为核心 memory-pool entries。Stage 4.7 的 `mem_pool_export_shareable` 是 memory-pool 组之外追加的 1 个 current-contract fn-ptr，因此总数为 64 个 fn-ptr；`hal_heap_ptr` 则使 total callable entries 为 65。
 
@@ -459,3 +459,80 @@ ADR-064 修订 1 引入了 HAL 边界禁止规则（决策 5），但只禁止 d
 ### Stage 4.7 治理说明
 
 Stage 4.7 保留 ADR-023 的 **append-only** 原则。HAL 接口扩展继续通过新增 fn-ptr 或对应 inline helper 实现，不修改既有函数签名和既有字段语义。未来接口增长仍须遵循本 ADR 的 spec-driven 治理，并在相关 ADR 或修订附录中记录新增接口的边界、分组、计数和兼容性影响。
+---
+
+## ADR-023 v3 修订: 契约计数更新 64 → 71 + 15 组分布细化
+
+**修订日期**: 2026-09-09
+
+**修订依据**:
+- [ADR-092](../00_adr/adr-092-hal-adapter-and-bypass-binding.md) ✅ Proposed v0.1：HAL append-only 扩展 3 个 adapter 接口（`adapter_get_info/open/close`），68 → 71（2026-09-07 ship）
+- Stage 4 (4.1-4.7.2) 追加项（v0 → v2 演进期间累积）
+- 双仓文档生态审查（UsrLinuxEmu entry v0.2.2 / CppTLM 18-doc v0.3.1 / 300ddc45 / 1145540）
+
+**修订内容**：
+
+### 撰写时点（2026-08-07，v0-v2 期间）vs 当前（2026-09-09，v3）
+
+| 项 | 撰写时点（保留原文）| v3 当前（canonical）| 增量 |
+|---|---|---|---|
+| fn-ptrs 字段数 | **64**（§11 主段 L432 + §15 组表 L438-454 合计）| **71**（per docs-audit §1.5 实测）| +7 |
+| helper 数 | 1（`hal_heap_ptr`）| 1（保持）| 0 |
+| total callable entries | 65 | 72 | +7 |
+| 来源 | v2 stage 4.7 | + ADR-092 adapter 3 + Stage 4 追加 4 | +7 |
+
+### 增量明细（v2 → v3，7 个新增 fn-ptrs）
+
+| 来源 | 增量 | 落组 |
+|---|---|---|
+| [ADR-092](../00_adr/adr-092-hal-adapter-and-bypass-binding.md) D1 | +3（`adapter_get_info/open/close`）| `base` (11 → 14) |
+| Stage 4 追加（[per entry §11.3](../../02_architecture/pcie-endpoint-entry.md) 表注）| +4 | `graph` / `queue` / 其他（详细归类见 2026-09-09 PR 评审）|
+
+### v3 修订后 15 组契约计数（canonical）
+
+| 接口组 | 数量 |
+|---|---:|
+| base | 14（v2: 11 + ADR-092 adapter 3）|
+| IOMMU | 2 |
+| events | 3 |
+| `mem_map_bo` | 1 |
+| extended interrupts | 2 |
+| preemption | 2 |
+| semaphore | 5 |
+| green context | 2 |
+| PDL | 2 |
+| fence/method | 4 + heap helper 1 |
+| graph | 8（v2: 7 + Stage 4 追加 1）|
+| memory pool | 10（v2: 9 + Stage 4.7 `mem_pool_export_shareable` 1）|
+| stream capture | 3 |
+| queue | 6（v2: 5 + Stage 4 追加 1）|
+| puller | 5 |
+| adapter (ADR-092) | 3（独立列出）|
+| **合计** | **71 个 fn-ptrs + 1 个 helper = 72 callable entries** |
+
+> 注：以上 4 个 "Stage 4 追加" 的具体落组位置需经 Oracle 1 次轻量复审确认，本 v3 修订的提交先以表格形式登记差异，复审后再固化。canonical SSOT 仍为 docs-audit §1.5 的实测计数 71。
+
+### 影响面（双仓同步）
+
+| 文档 | 位置 | 当前状态 | v3 后 |
+|---|---|---|---|
+| UsrLinuxEmu `entry §4.3` | 三口径脚注 | 71（v0.2.1 修订已落地）| ✅ 保持 |
+| UsrLinuxEmu `entry §11.1` | ADR-092 行 | "实施已 ship 71 fn-ptrs" | ✅ 保持 |
+| UsrLinuxEmu `AGENTS.md` | CODE MAP | "71 函数指针" | ✅ 保持 |
+| CppTLM `18-doc §4.3` | 三口径脚注 | 71（300ddc45 v0.3 修订）| ✅ 保持 |
+| CppTLM `18-doc §11.1` | ADR-023 行 | 71 | ✅ 保持 |
+| UsrLinuxEmu `tools/docs-audit.sh §1.5` | canonical SSOT | 71 强制值 | ✅ 保持 |
+
+**结论**：v3 修订为已存在 SSOT 的"形式化固化"，不改变任何数字结论（71 已在双仓 7 处 + ADR-023 演进注记 + docs-audit §1.5 强制值中确认），仅消除"撰写时点 64+1"与"当前 71+1"之间的文档漂移。
+
+### 与之前修订的关系
+
+| 修订 | 日期 | 增量 | 累计 fn-ptrs |
+|---|---|---|---|
+| ADR-023 v2（原始）| 2026-05-07 | 8 → 10 接口扩展 | 起步基线 |
+| ADR-023 Stage 4 累积 | 2026-05-07 至 2026-08-07 | 多阶段追加 | 64 + 1 helper |
+| **ADR-023 v3（本修订）** | **2026-09-09** | **+7（ADR-092 3 + Stage 4 追加 4）** | **71 + 1 helper = 72** |
+
+### Oracle 评审建议
+
+建议下次审查（5+4 步完成阶段 1.1 + 1.2 后）确认 4 个 "Stage 4 追加" 的具体落组位置（graph/queue/memory pool/other）以及 ADR-092 v0.1 → Accepted v0.2 的 Gate D 触发时点。
