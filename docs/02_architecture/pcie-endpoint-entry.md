@@ -540,7 +540,40 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
   - **§12 v0.2 已知遗留 4 项全部闭环**：CppTLM `dca050a2` (v0.3.1) + `84350648` (v0.4) 已完成 §11.1 ADR-023 行 71 / §11.2 死 spec 替换 / §12 历史还原 / 跨仓镜像全套
   - **剩余 0 项已知遗留**
 
-- **待 v0.3**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准 + 5.5.7 Oracle 复审反馈）
+- **v0.3** (2026-09-09, post-Sprint C 治理闭环): Sprint C 全套治理修订落地 + P1.1 量化 AC 复审
+  - **ADR-023 v3 修订** (UE `b9df3d1`):
+    - 文末追加 "## v3 修订 2026-09-09" 段（per ADR-024/064 修订格式）
+    - 主段 64+1 → 71+1 = **72 callable entries**
+    - 15 组契约分布细化（base 11→14, graph 7→8, memory pool 9→10, queue 5→6, adapter 独立列 3）
+    - L434 演进注记更新为指向 v3 修订段
+    - 影响面登记：双仓 7 处 SSOT 全部已对齐 71（无需修改）
+  - **tasks.md §4 拆分** (CppTLM `c9ce049c`):
+    - 3 任务 → 4 子阶段（1.3a PCIe SDMA 基础 / 1.3b D2D 路径 / 1.3c dma_translate_cb+GART/IOMMU+CP→SDMA / 1.3d SDMA 完成通知）
+    - 总 checkbox 41 → 55（+14）；总工期 3-4 周 → **4-5 周**
+    - 量化 AC 标注"待复审确认"
+  - **CppTLM 18-doc v0.4.1 cleanup** (CppTLM `aa1a22a6`):
+    - 删除 §8.5 L362 残留旧 M8 格式行
+  - **§10.4 双仓镜像规则** (UE `0ef42ff` + CppTLM `b1814313`):
+    - 双仓 entry §10 新增"结构性章节镜像规则"段（mirror 同步）
+    - 镜像清单 9 项 + 触发条件 + CI 检查绑定 docs-audit + 失败处理 + 例外
+    - 防 v0.4 (84350648) + dca050a2 半成品教训复发
+  - **P1.1 量化 AC 复审** (CppTLM `d99ab2e0`, Oracle `ses_f77b67eb6ffe4bhFqs4qQJ3Woy`):
+    - 9 项量化 AC 复审裁决：**7 ACCEPT + 5 AMEND + 2 REJECT**
+    - 5 AMEND 应用到 §4.1-§4.4：
+      - Ring Buffer 256KB → `cfg.ring_size ∈ {4KB, 8KB, 16KB, 64KB}` 最大 1024 entries @64B
+      - Doorbell `0x18` → `BAR1 + 0x10010000`（per §3.3 / §5.1 L296）
+      - SG 链长 ≥16 → ≥8（per §2 / §13 MAX_SG_ENTRIES=8）
+      - NoC ≥32 GB/s → ≥100 GB/s（per §10.4 "数百 GB/s" 保守下限）
+      - cb fallback: "0 错误码（IOMMU 失败）" 0=成功 语义颠倒 → identity 模式 pa=iova 返回 0；IOMMU 模式传播负 errno（-ENOSYS/-EIO）至 error_cb
+    - 2 REJECT 改为非量化：
+      - MSI-X ≤1ms → "200ms 超时窗口内触发 ≥1 次"（引用链断裂 + TLM wall-clock 无可重复性）
+      - vector 0-3 → "vector 由 entry/驱动指定 + msix_init table_size 合法范围"
+    - 任务清单同步对齐（6 处子任务描述修订）
+    - **实施就绪度**：阶段 1.1 可立即启动；阶段 1.3a 在此 commit 后启动
+  - **§10.4 镜像规则首次应用**: 本次 P1.4 commit 按 §10.4 镜像规则双仓同步落地
+  - **剩余 0 项已知遗留**
+
+- **待 v0.4**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准 + 5.5.7 Oracle 复审反馈）
 
 ---
 
