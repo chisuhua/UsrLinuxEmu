@@ -10,7 +10,7 @@
 > **前置基线**:
 > - [2026-09-09-5-5-7-cpptlm-cp-real-ification](../2026-09-09-5-5-7-cpptlm-cp-real-ification/) 🔄 Active（5.5.7.1 P5.NEW-A commit `2cf4bc5` + D.1 Accepted）
 > - [5.5.6-archive](../archive/2026-09-08-2026-09-08-5-5-6-cpptlm-ep-binding/) ✅ Archived（Oracle 9.5/10）
-> - 5.5.7 D.1 Accepted: CppTLM profile 返回非确定性，需 attach CP 消除 -ETIMEDOUT
+> - 5.5.7 D.1 Accepted: CppTLM profile 返回非确定性，需 attach CP 防御性 cb 注册 + CppTLM 修复 sim_loop race（per R6 因果链）
 > **后续**: 5.5.9-cpptlm-real-hw-verify
 
 ---
@@ -25,7 +25,7 @@
 
 1. **CP attach helper**（Oracle 5.5.7.1 反馈 D.1 前置）：实现 `bridge.cpp` init 时调 `cpptlm_emulator_register_backdoor_cb` + `cpptlm_emulator_register_dma_translate_cb` **noop 注册（防御性）**。⚠️ 注意：**不是**根因修复（实测 cp_attach 不调 cb）；真正消除 -ETIMEDOUT 依赖 CppTLM fixes §3（sim_loop drain）ship
 2. **`ret == 0` 强约束回归**：将 5.5.7.1 的 `CHECK(ret != -ENOSYS)` 软约束升级为 `REQUIRE(ret == 0)` 强约束，验证 CppTLM fixes ship 后 ABI 调用稳定成功（对账：bridge-sync 的 `test_dgpu_mmio_real_data` 等 5 新 binary 先行 ship）
-3. **Kernel Dispatch + DMA 实现**：基于 5.5.6 P4.NEW-A 的 `backdoor_endpoint.cpp` 5 函数，扩展实现 CommandProcessor（PM4 microcode 提交 + ring buffer 消费）+ DMA 引擎（注册回调 + transfer 发起/完成）。⚠️ **阶段 3 额外 gate = CppTLM 阶段 1.3c ship**（CP→SDMA PM4 opcode 0x4600-0x4900 dispatch + dma_translate_cb 真实化）
+3. **Kernel Dispatch + DMA 实现**：基于 5.5.6 P4.NEW-A 的 `backdoor_endpoint.cpp` 5 函数，扩展实现 CommandProcessor（PM4 microcode 提交 + ring buffer 消费）+ DMA 引擎（注册回调 + transfer 发起/完成）。⚠️ **阶段 3 额外 gate = CppTLM `cpptlm-stage-1-3-sdma` 1.3c + 1.3d (指 cpptlm-stage-1-3-sdma tasks.md §3/§4) ship 后**（CP→SDMA PM4 opcode 0x4600-0x4900 dispatch + dma_translate_cb 真实化 + SDMA Fence/CompletionRing 完成通知）
 
 D.2 反馈（adapter op 接入点决策 P）：TaskRunner 直调 `gpu_hal_ops.adapter_*` 作为 3 op 唯一生产路径。
 D.3 反馈（ctest WORKING_DIRECTORY 决策 D）：profile-aware 测试沿用 opt-in 模式（`cd /workspace/project/CppTLM && 直接跑 binary [profile]`）。
@@ -63,7 +63,7 @@ D.3 反馈（ctest WORKING_DIRECTORY 决策 D）：profile-aware 测试沿用 op
 - **下游 5.5.9 真机验证**：依赖 5.5.8 ret==0 强约束 + CP attach 后 ABI 稳定
 - **TaskRunner 集成**：依赖 D.2 决策 P（adapter op 直调）
 - **CTest CI**：profile-aware 测试沿用 opt-in 模式（D.3 决策 D）
-- **性能影响**：CP attach 消除 -ETIMEDOUT 后，profile 测试从 flaky 变稳定，CI 噪声降低
+- **性能影响**：CP attach 注册防御性 cb 后，profile 测试稳定性提升；真正消除 -ETIMEDOUT 依赖 CppTLM stage-1-1-pcie-ep-fixes §3（修复 #5 mmio_read drain 真实化）
 
 ## Alternatives Considered
 
