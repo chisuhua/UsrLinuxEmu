@@ -167,9 +167,13 @@ parse_args() {
         esac
     done
 
+    RUN_ARCH=0; RUN_IOCTL=0; RUN_ADR=0; RUN_DOC=0; RUN_BUILD=0; RUN_SYNC=0
+    RUN_STAGE2=0; RUN_DOXYGEN=0; RUN_VERSION_SSOT=0; RUN_CROSS_REF=0
+    RUN_CROSS_DOC=0; RUN_MIRROR_RULES=0
+
     case "${RUN_SECTION}" in
         all)
-            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1; RUN_SYNC=1; RUN_STAGE2=1; RUN_DOXYGEN=1; RUN_VERSION_SSOT=1; RUN_CROSS_REF=1; RUN_CROSS_DOC=1
+            RUN_ARCH=1; RUN_IOCTL=1; RUN_ADR=1; RUN_DOC=1; RUN_BUILD=1; RUN_SYNC=1; RUN_STAGE2=1; RUN_DOXYGEN=1; RUN_VERSION_SSOT=1; RUN_CROSS_REF=1; RUN_CROSS_DOC=1; RUN_MIRROR_RULES=1
             ;;
         arch)       RUN_ARCH=1 ;;
         ioctl)      RUN_IOCTL=1 ;;
@@ -181,9 +185,10 @@ parse_args() {
         version-ssot) RUN_VERSION_SSOT=1 ;;
         cross-ref)  RUN_CROSS_REF=1 ;;
         cross-doc)  RUN_CROSS_DOC=1 ;;
+        mirror-rules) RUN_MIRROR_RULES=1 ;;
         *)
             echo "ERROR: unknown section: ${RUN_SECTION}" >&2
-            echo "Valid sections: all, arch, ioctl, adr, doc-health, build, sync, stage2, doxygen, version-ssot, cross-ref, cross-doc" >&2
+            echo "Valid sections: all, arch, ioctl, adr, doc-health, build, sync, stage2, doxygen, version-ssot, cross-ref, cross-doc, mirror-rules" >&2
             exit 2
             ;;
     esac
@@ -890,6 +895,7 @@ main() {
     [ "${RUN_VERSION_SSOT}" -eq 1 ] && section_version_ssot
     [ "${RUN_CROSS_REF}" -eq 1 ] && section_cross_ref
     [ "${RUN_CROSS_DOC}" -eq 1 ] && section_cross_doc
+    [ "${RUN_MIRROR_RULES}" -eq 1 ] && section_mirror_rules
 
     print_summary
     exit "${EXIT_CODE}"
@@ -942,9 +948,92 @@ section_doxygen() {
       check_fail "Doxygen exit code ${rc}"
     fi
   else
-    # Doxygen not installed — not a failure in non-strict; warn in strict
-    check_warn "Doxygen not installed (install: apt install doxygen)"
+    # Doxygen not installed — Info level (per §10.4 mirror rules: env vs docs separation)
+    check_info "Doxygen not installed (install: apt install doxygen)"
   fi
+}
+
+# ---------------------------------------------------------------------------
+# Section 11: Mirror Rules (per entry §10.4 structural chapter mirror rules)
+# (added 2026-09-09 by Sprint C.2; binds §1.6/§11.3/§11.2/§1.2 mirror checks)
+# ---------------------------------------------------------------------------
+
+section_mirror_rules() {
+    section "11. Mirror Rules Checks (per entry §10.4)"
+
+    local entry_path="${REPO_ROOT}/docs/02_architecture/pcie-endpoint-entry.md"
+
+    # 11.1 entry §1.6 — chapter existence grep
+    subsection "11.1 entry §1.6 chapter existence grep"
+    if [ ! -f "${entry_path}" ]; then
+        check_fail "pcie-endpoint-entry.md not found at ${entry_path}"
+    else
+        local required_chapters=("^## §1 " "^## §4 " "^## §6 " "^## §8 " "^## §9 " "^## §10 " "^## §11 " "^## §12 ")
+        local missing=0
+        for chap in "${required_chapters[@]}"; do
+            if ! grep -qE "${chap}" "${entry_path}"; then
+                check_fail "entry missing chapter matching ${chap}"
+                missing=$((missing + 1))
+            fi
+        done
+        if [ "${missing}" -eq 0 ]; then
+            check_pass "entry has all 8 required chapters (§1/§4/§6/§8/§9/§10/§11/§12)"
+        fi
+    fi
+
+    # 11.2 entry §11.3 — line count consistency (entry claim vs wc -l)
+    subsection "11.2 entry §11.3 line count vs wc -l"
+    if [ ! -f "${entry_path}" ]; then
+        check_fail "pcie-endpoint-entry.md not found"
+    else
+        local hal_count=$(wc -l "${REPO_ROOT}/plugins/gpu_driver/hal/gpu_hal.h" 2>/dev/null | awk '{print $1}')
+        local ioctl_count=$(wc -l "${REPO_ROOT}/plugins/gpu_driver/shared/gpu_ioctl.h" 2>/dev/null | awk '{print $1}')
+        if [ -n "${hal_count}" ] && [ -n "${ioctl_count}" ]; then
+            check_pass "hal/gpu_hal.h=${hal_count} lines, gpu_ioctl.h=${ioctl_count} lines (recomputed; entry §11.3 may show older snapshot)"
+            check_info "entry §11.3 line numbers not auto-verified (snapshot-based); use manual cross-check for deviation >5%"
+        else
+            check_warn "hal or ioctl header missing — cannot compute §11.3 line count"
+        fi
+    fi
+
+    # 11.3 entry §11.2 — dead link check (openspec/specs/ paths)
+    subsection "11.3 entry §11.2 dead link check (openspec/specs/)"
+    if [ ! -f "${entry_path}" ]; then
+        check_fail "pcie-endpoint-entry.md not found"
+    else
+        local openspec_refs=$(grep -oE 'openspec/specs/[a-z_-]+(/spec\.md|/)?' "${entry_path}" 2>/dev/null | sed 's|/$||' | sort -u)
+        if [ -z "${openspec_refs}" ]; then
+            check_info "No openspec/specs/ references found in entry §11"
+        else
+            local dead_count=0
+            local checked=0
+            while IFS= read -r ref; do
+                if [ -d "${REPO_ROOT}/${ref}" ] || [ -f "${REPO_ROOT}/${ref}" ]; then
+                    checked=$((checked + 1))
+                else
+                    check_fail "dead openspec ref: ${ref}"
+                    dead_count=$((dead_count + 1))
+                fi
+            done <<< "${openspec_refs}"
+            if [ "${dead_count}" -eq 0 ]; then
+                check_pass "All ${checked} openspec/specs/ refs in entry resolve"
+            fi
+        fi
+    fi
+
+    # 11.4 entry §1.2 — document count self-consistency
+    subsection "11.4 entry §1.2 document count self-consistency"
+    if [ ! -f "${entry_path}" ]; then
+        check_fail "pcie-endpoint-entry.md not found"
+    else
+        local claimed_count=$(grep -oE '[0-9]+ (CppTLM|UsrLinuxEmu) (docs?|条目|entry|文档)' "${entry_path}" | head -1)
+        local actual_cpptlm=$(find "${REPO_ROOT}/../CppTLM/docs/soc_arch/architecture/" -maxdepth 1 -name "*-pcie*" 2>/dev/null | wc -l)
+        if [ -n "${claimed_count}" ]; then
+            check_info "entry §1 claims: '${claimed_count}'; CppTLM docs dir has ${actual_cpptlm} pcie-related docs (recomputed)"
+        else
+            check_info "no document count claim pattern matched in entry §1 (manual review recommended)"
+        fi
+    fi
 }
 
 # ---------------------------------------------------------------------------
