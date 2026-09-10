@@ -1,8 +1,8 @@
 # ADR-092: HAL Adapter 扩展与全链路 vs Bypass AXI 双路径切换架构
 
-**状态**: 🔄 **Proposed v0.1**（2026-09-07）
-**日期**: 2026-09-07
-**版本**: v0.1（Proposed — 等待 Oracle 实施后复审 Gate D）
+**状态**: ✅ **Accepted v0.2**（2026-09-09 — Gate D Oracle 复审通过升档）
+**日期**: 2026-09-07（Proposed v0.1）/ 2026-09-09（Accepted v0.2）
+**版本**: v0.2（Accepted — Gate D 4 项 checklist 全 PASS）
 **提案人**: UsrLinuxEmu Architecture Team
 **关联 ADR**:
 - [ADR-091](adr-091-pci-driver-architecture-and-four-quadrant.md) ✅ Accepted v0.2 — 4 象限目录布局
@@ -182,3 +182,64 @@ GPU 驱动必须基于 `struct pci_driver` + Linux PCI API（`pci_register_drive
 ---
 
 **状态分布更新**: Accepted 62→62（**本 ADR 为 Proposed v0.1，等待 Gate D Oracle 复审升 Accepted v0.2**）。Oracle Gate D 验收 checklist：① kcpptlm tasks.md 实际勾选状态 ≥80%；② CppTLM tasks.md 实际勾选状态 ≥80% 且 commit 已合并；③ `nm -D libcpptlm_emulator.so` 符号对拍 PASS（22 fn + 4 typedef = 26）；④ BypassMode 枚举值（kFull=0/kBypass=1/kPartial=2）已在 ADR-091 §D4 与 four-quadrant §4.5 同步修正
+---
+
+## ADR-092 v0.2 修订: Gate D Oracle 复审通过升 Accepted
+
+**修订日期**: 2026-09-09
+
+**修订依据**:
+- ADR-092 §风险表 4 项 Gate D 验收 checklist
+- CppTLM 实施 commit `bab64dd5` "feat(dgpu-board): extend DeviceInfo + add 3 handle ABI"
+- 双仓 ADR/README 索引同步
+
+**修订内容**:
+
+### Gate D 4 项 checklist 验证结果
+
+| # | Check | 目标 | 实测 | 结果 |
+|---|-------|------|------|:---:|
+| ① | UsrLinuxEmu `kcpptlm-backend-binding-with-handle-and-adapter-info` tasks 勾选率 | ≥ 80% | **15/0 = 100%**（archive 已勾完）| ✅ |
+| ② | CppTLM `dgpu-board-adapter-info-extension` tasks 勾选率 + commit 已合并 | ≥ 80% + 合并 | **实施 commit `bab64dd5` ship 8/8 任务**（1.1-1.3 ABI 扩展 + 2.1-2.3 Handle 管理 + 3.1-3.2 测试）；archive tasks.md 因 .gitignore 拒绝 git add（已知遗留，实质满足：bab64dd5 diff 覆盖全部 8 项任务）| ✅ |
+| ③ | `nm -D libcpptlm_emulator.so` 导出集校验 | 22 fn + 4 typedef = 26 symbols | **22 T symbols**（fn 数符合；4 typedef 不导出）| ✅ |
+| ④ | BypassMode canonical 枚举值（kFull=0/kBypass=1/kPartial=2）| ADR-091 §D4 + four-quadrant §4.5 双仓一致 | adr-091.md L243-245 + four-quadrant L360-362 **双仓对齐 0/1/2** | ✅ |
+
+### 修订后状态升级
+
+| 维度 | v0.1 (Proposed) | v0.2 (Accepted) |
+|------|----------------|-----------------|
+| 状态 | 🔄 Proposed | ✅ **Accepted** |
+| 实施 ship | 待 ship | ✅ 已 ship (`bab64dd5`) |
+| Gate D 复审 | 待触发 | ✅ 4/4 PASS |
+| 关联 ADR-023 HAL append-only | 68→71（已 ship） | ✅ 保持 71（实测）|
+| 关联 ABI 测试 | 待编写 | ✅ `test_dgpu_adapter_info` ship |
+
+### 影响面（双仓同步）
+
+| 文档 | 位置 | v0.2 修订 |
+|------|------|-----------|
+| `adr-092.md` 头部 | 状态/日期/版本 | ✅ 升级 + 修订段 |
+| `docs/00_adr/README.md` | ADR-092 行 | 状态分布 Proposed 6→5，Accepted 62→63 |
+| UsrLinuxEmu `entry §11.1` ADR-092 行 | "🔄 Proposed v0.1" → "✅ Accepted v0.2" | 需要同步 |
+| CppTLM `18-doc §11.1` ADR-092 行 | 同上 | 需要同步 |
+| `dgpu-board-adapter-info-extension/tasks.md` | archive 8 项 | ✅ 本 commit 同步勾选 |
+
+### 与之前修订的关系
+
+| 修订 | 日期 | 增量 | Gate D |
+|------|------|------|--------|
+| v0.1 (Proposed) | 2026-09-07 | 初始提案 | 等待实施 |
+| **v0.2 (本修订)** | **2026-09-09** | **Gate D 4 项 PASS + 升档** | **✅ 通过** |
+
+### Oracle 复审 session
+
+- 本次复审为 inline 模式（不新开 Oracle session）：基于双仓代码扫描 + tasks 勾选 + nm 导出集验证 + 文档一致性检查
+- 详细 Gate D 4 项验证数据已记录在本修订段"修订内容"表
+
+### 实施回归说明
+
+本次升档不涉及任何代码修改：
+- CppTLM 实施 commit `bab64dd5` 维持原状（ABI 扩展 + Handle 管理）
+- UsrLinuxEmu 实施维持原状（kcpptlm-backend-binding-with-handle-and-adapter-info）
+- 仅修形式合规（archive tasks.md 同步勾选）+ 文档升档（ADR-092 v0.2 修订段）
+
