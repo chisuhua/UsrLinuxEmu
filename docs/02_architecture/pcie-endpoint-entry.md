@@ -455,7 +455,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 | [ADR-023 HAL append-only](../../00_adr/adr-023-hal-interface.md) | HAL fn-ptrs append-only（ADR-023 文本记 64+1；代码 2026-09-09 实测 **71**，per `tools/docs-audit.sh §1.5` 权威 SSOT；73 错算已撤回）| §4 §6 D.4 |
 | [ADR-088 dGPU 完整仿真](../../00_adr/adr-088-dgpu-complete-simulation.md) | dGPU 仿真边界 + 23 ABI | §4 §1 |
 | [ADR-091 4 象限布局](../../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) | 4 象限 + PCIe tier | §4.2 |
-| [ADR-092 HAL adapter + bypass binding](../../00_adr/adr-092-hal-adapter-and-bypass-binding.md) | 🔄 **Proposed v0.1**（2026-09-07 — 实施已 ship 71 fn-ptrs，含 `adapter_get_info/open/close`；ADR-092 记录时点为 68→71，后续 +2 待 ADR-023 文本同步；Gate D Oracle 复审待触发升 Accepted v0.2） | §4.3 |
+| [ADR-092 HAL adapter + bypass binding](../../00_adr/adr-092-hal-adapter-and-bypass-binding.md) | ✅ **Accepted v0.2**（2026-09-09 — Gate D Oracle 复审通过升档：4/4 checklist PASS ① UE tasks 100% ② CppTLM `bab64dd5` ship 8 项 ③ nm 22 fn ④ BypassMode canonical 双仓对齐；详见 ADR-092 §v0.2 修订段 + commit `ec672ab`） | §4.3 |
 
 ### §11.2 spec（功能规范）
 
