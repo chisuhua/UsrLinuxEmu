@@ -23,7 +23,7 @@ CppTLM 端 4 bug 修复完成后，**UsrLinuxEmu 侧需要同步验证**：
 3. **5.5.7 启动 gate 解锁**：5.5.7 dGPU E2E 主线 #2 CommandProcessor 启动条件 = 阶段 1.1 + 1.2 + 1.3a 全部 ship + UE 侧同步
 
 **Why 单独 change**（不合并到 5.5.7 change）：
-1. **依赖明确**：5.5.7 change 被 CppTLM 5+4 步整体阻塞（per entry §2.5），本 change 只依赖阶段 1.1 4 bug 修复，粒度更细
+1. **依赖明确**：5.5.7 change 被 CppTLM 5+4 步整体阻塞（per entry §2.3 关键路径），本 change 只依赖阶段 1.1 4 bug 修复，粒度更细
 2. **独立推进**：新会话里可以独立 worktree 推进 UE 侧验证 + 桥接层断言升级
 3. **明确分工**：CppTLM change 修实现，UE change 修测试 + 桥接
 
