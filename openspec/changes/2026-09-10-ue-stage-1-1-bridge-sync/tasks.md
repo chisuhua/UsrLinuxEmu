@@ -53,14 +53,16 @@
 
 ## §4 桥接层错误处理细节（如需要）
 
+> **边界（Oracle R8 修订 2026-09-10）**: 本 §4 仅允许**错误码映射 + timeout 处理区域**修改。**禁止修改 `bridge.cpp` init() / 注册路径**（CP attach helper 注册属于 5.5.8 change 所有）。Verify-only 优先；Modify 仅在 verify 失败时。
+
 ### 任务 4.1: bridge.cpp 错误码映射
 - [ ] **Verify**: 桥接层错误码与 CppTLM 错误码一致
-- [ ] **Modify** (如需要): `plugins/gpu_driver/sim_hardware/src/cpptlm/bridge.cpp`
+- [ ] **Modify** (如需要, 仅错误码映射区域): `plugins/gpu_driver/sim_hardware/src/cpptlm/bridge.cpp`
 - [ ] **Oracle review**: 错误码映射变更需复审
 
 ### 任务 4.2: timeout 处理
 - [ ] **Verify**: mmio_read timeout 映射到 UE ETIMEDOUT
-- [ ] **Modify** (如需要): bridge.cpp timeout 处理
+- [ ] **Modify** (如需要, 仅 timeout/错误处理区域): bridge.cpp timeout 处理
 
 ## §5 Oracle 复审
 
