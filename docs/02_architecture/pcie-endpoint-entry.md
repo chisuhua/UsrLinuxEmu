@@ -584,6 +584,21 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
   - **§10.4 镜像规则首次应用**: 本次 P1.4 commit 按 §10.4 镜像规则双仓同步落地
   - **剩余 0 项已知遗留**
 
+- **v0.3.1** (2026-09-09, post-Gate-Review 跨仓同步登记, Oracle `ses_f76ad2e6effeBzU10vj2ruu0Pm` + Metis `ses_f76acfffaffeNN0jWV9GMOXORn`): 登记 2 个聚焦 changes + 关键路径补 bridge-sync + M5.5 插入
+  - **聚焦 changes 登记**（双仓 entry §1 + §3 同 PR 镜像, per §10.4 镜像规则）:
+    - CppTLM `2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`（阶段 1.1 4 bug 修复聚焦子集, 4 ADDED Requirements, 0.5-1 周）
+    - UsrLinuxEmu `2026-09-10-ue-stage-1-1-bridge-sync`（UE 侧桥接层断言升级 + 跨仓集成测试, 6 ADDED Requirements, 0.5-1 周, 🚧 Blocked-by `cpptlm-stage-1-1-pcie-ep-fixes`）
+  - **关键路径补全**（§2.3 + §8.5）: 插入 `[cpptlm-stage-1-1-pcie-ep-fixes]` 聚焦节点 + `[ue-stage-1-1-bridge-sync]` UE 侧 gate; 5.5.7 启动条件 Q1 裁决 = 阶段 1.1+1.2+1.3a + bridge-sync 全部 ship
+  - **里程碑 M5.5 插入**（§8.5）: M5 + 0.5-1 周 = bridge-sync gate; M6 (5.5.7 启动) = M5.5 完成时
+  - **Q-A-A 决策**（Oracle Gate Review Q1/Q2/Q3）: gate 口径 = 宽松（1.1+1.2+1.3a+bridge-sync ship）; 工期口径 = entry 优先（5.0-6.0 周）; 聚焦 changes 登记 = 是（§10.4 触发）
+  - **Commit 链**:
+    - UE `375cad5` docs(pcie-ep): v0.3.1 cross-repo entry sync — register 2 focused changes + key path
+    - CppTLM `d8f39276` docs(cpptlm): v0.5.1 cross-repo entry sync — mirror UsrLinuxEmu v0.3.1
+  - **跨仓 commit**（Oracle 评审复审后落地）:
+    - CppTLM `cb82146c` fix(cpptlm): ADR-092 baseline + timeline alignment + cross-repo URL fix
+    - UE `3a7f7b3` fix(ue-stage-1-1-bridge-sync): correct §2.5 dangling reference → §2.3
+  - **0 项已知遗留**
+
 - **待 v0.4**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准 + 5.5.7 Oracle 复审反馈）
 
 ---
