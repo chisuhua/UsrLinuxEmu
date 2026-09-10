@@ -8,58 +8,60 @@
 
 ## Purpose
 
-UE 侧 SDMA 引擎跨仓集成测试，验证 CppTLM 阶段 1.3 4 子阶段实施后，从 UsrLinuxEmu 进程端到端调用 SDMA 接口（Ring Buffer / D2D NoC / dma_translate / completion）。
+UE 侧 SDMA 引擎跨仓集成测试，验证 CppTLM 阶段 1.3 4 子阶段实施后，从 UsrLinuxEmu 进程通过 23 ABI 端到端验证 SDMA 行为。
+
+> **Oracle O7 修订**：原 spec 用了 C++ 内部类 API（`SdmaRingBuffer` / `d2d_noc_forward`）和虚构 ABI（`dma_translate(0x, mode=identity)`），23 ABI 冻结面无这些。本 spec 全部改写为 ABI 层观测。
 
 ## ADDED Requirements
 
-### Requirement: UE SDMA Ring Buffer Integration (1.3a)
+### Requirement: UE SDMA Ring Buffer Integration via ABI (1.3a)
 
-The system MUST provide UE-side integration test for SDMA Ring Buffer with 4 config sizes, BAR1+0x10010000 Doorbell, and SG descriptor chain ≥ 8.
+The system MUST allow UE to trigger SDMA Ring Buffer via `cpptlm_emulator_mmio_write(emu, bar=1, offset=0x10010000, wptr, len=4)` (per doorbell spec design §3.3) and verify via `cpptlm_emulator_backdoor_read` (roundtrip read of processed descriptor).
 
-#### Scenario: Ring Buffer 4 config sizes
-- **WHEN** `SdmaRingBuffer(cfg_size=64KB, entry_size=64)` constructed via UE dlopen
-- **THEN** capacity matches 64KB
-- **AND** entry count = 1024
-- **AND** WPTR write to `BAR1+0x10010000` triggers Doorbell
+#### Scenario: UE triggers doorbell via mmio_write
+- **WHEN** `cpptlm_emulator_mmio_write(emu, 1, 0x10010000, &wptr, 4)` (write wptr to doorbell BAR1+0x10010000)
+- **THEN** mmio_write returns 0 (async)
+- **AND** CppTLM sdma_engine processes the descriptor indexed by wptr
+- **AND** descriptor result observable via `cpptlm_emulator_backdoor_read` roundtrip
 
-#### Scenario: SG descriptor chain 8
-- **WHEN** packet has 8 SG descriptors
-- **THEN** chain valid, all 8 descriptors processed
+### Requirement: UE D2D NoC Integration via ABI (1.3b)
 
-### Requirement: UE D2D NoC Integration (1.3b)
+The system MUST verify D2D NoC via host_out port counter + payload integrity roundtrip (no `d2d_noc_forward` direct call — that is C++ internal).
 
-The system MUST support D2D NoC payload forwarding via UE bridge with ≥ 100 GB/s bandwidth and host_out zero transactions.
+#### Scenario: D2D payload integrity via backdoor_read
+- **WHEN** SDMA descriptor with D2D payload submitted via doorbell write
+- **THEN** payload transferred VRAM-to-VRAM (bypassing host_out)
+- **AND** `cpptlm_emulator_backdoor_read` returns 0 with destination buffer filled (data integrity)
+- **AND** host_out transaction counter == 0
 
-#### Scenario: D2D payload forward ≥ 100 GB/s
-- **WHEN** `d2d_noc_forward(src_va, dst_va, len=1MB)` called via UE
-- **THEN** payload transferred with simulated bandwidth ≥ 100 GB/s
+#### Scenario: D2D simulated bandwidth ≥ 100 GB/s (per R11 测量定义)
+- **WHEN** D2D payload transfer of 1MB
+- **THEN** simulated_throughput_GBps = payload_bytes / simulated_latency_s ≥ 100
 
-#### Scenario: host_out zero transactions
-- **WHEN** D2D path used
-- **THEN** host_out port has 0 transactions
+### Requirement: UE dma_translate Integration via ABI (1.3c, 修复 #2)
 
-### Requirement: UE dma_translate Integration (1.3c, 修复 #2)
+The system MUST support `cpptlm_emulator_register_dma_translate_cb` (per L110, void* cb + user_ctx) and verify identity/IOMMU modes through ABI calls.
 
-The system MUST support identity and IOMMU modes with correct return values (修复 #2 real implementation).
+#### Scenario: identity mode returns pa=iova via register_dma_translate_cb
+- **WHEN** `cpptlm_emulator_register_dma_translate_cb(emu, identity_cb, ctx)` then `dma_translate_request(emu, 0x1000, identity)` (via internal board trigger)
+- **THEN** identity_cb called with iova=0x1000
+- **AND** cb returns pa=iova (0x1000)
 
-#### Scenario: identity mode pa=iova
-- **WHEN** identity mode cb registered
-- **THEN** `dma_translate(0x1000, identity)` returns 0, pa=0x1000
+#### Scenario: IOMMU mode cb failure propagates negative errno
+- **WHEN** IOMMU mode cb returns -EIO
+- **THEN** error_cb invoked with -ENOSYS/-EIO propagated
 
-#### Scenario: IOMMU mode cb failure → negative errno
-- **WHEN** IOMMU mode cb fails
-- **THEN** error_cb invoked with -ENOSYS/-EIO
+### Requirement: UE SDMA Completion Integration via MSI-X ABI (1.3d)
 
-### Requirement: UE SDMA Completion Integration (1.3d)
+The system MUST verify SDMA Fence completion via MSI-X intr_cb triggered through UE bridge.
 
-The system MUST support SDMA Fence + MSI-X wiring with 200ms intr_cb verification window.
-
-#### Scenario: Fence triggers completion within 200ms
-- **WHEN** Fence descriptor submitted
-- **THEN** CompletionRing → MSI-X → intr_cb within 200ms
+#### Scenario: Fence triggers MSI-X intr_cb within 200ms
+- **WHEN** Fence descriptor submitted + `cpptlm_emulator_register_callbacks(intr_cb)` (per L103-106, 4 cb bundle)
+- **THEN** intr_cb invoked within 200ms timeout
+- **AND** captured_vector == fence-related vector
 
 ## Cross-References
 
 - 上游 `cpptlm-stage-1-3-sdma`
 - 父 change `5.5.7-cpptlm-cp-real-ification`（5.5.7 gate 解锁条件）
-- 父 change `5.5.8-cpptlm-kernel-dispatch-dma`（阶段 3 gate = 1.3c ship）
+- 父 change `5.5.8-cpptlm-kernel-dispatch-dma`（阶段 3 gate = 1.3c ship，Oracle O11 加严含 1.3d）

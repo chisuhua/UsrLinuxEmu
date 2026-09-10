@@ -27,6 +27,9 @@
 - [ ] **CppTLM 18-doc mirror** v0.6-v0.9
 
 ## §6 Oracle 复审（1 次轻量）
+
+> **Oracle 复审位置（Metis M6 修订 2026-09-10）**：实施 commit 后、docs mirror commit **前**进行。复审发现问题需追加 commit 而非 amend docs。
+
 - [ ] 跨仓集成测试通过
 
 ## §7 总计

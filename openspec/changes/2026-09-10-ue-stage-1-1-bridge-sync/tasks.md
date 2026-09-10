@@ -66,6 +66,9 @@
 
 ## §5 Oracle 复审
 
+> **Oracle 复审位置（Metis M6 修订 2026-09-10）**：实施 commit 后、docs mirror commit **前**进行。复审发现问题需追加 commit 而非 amend docs。
+
+
 ### 任务 5.1: 1 次轻量复审
 - [ ] **Oracle review**: UE 侧桥接同步质量
 - [ ] **Verify**: ADR-035 §R2 v1.0 → v1.1 升档流程通过

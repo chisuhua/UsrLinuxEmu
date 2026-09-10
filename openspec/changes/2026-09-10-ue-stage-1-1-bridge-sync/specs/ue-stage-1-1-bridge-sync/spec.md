@@ -34,7 +34,7 @@ The bridge layer test MUST assert that `cpptlm_emulator_backdoor_read` returns -
 #### Scenario: Backdoor miss returns -ENOENT via bridge
 
 - **WHEN** `backdoor_read(0xDEADBEEF, buf, 64)` is called with unregistered offset
-- **THEN** the function returns -ENOENT (-38)
+- **THEN** the function returns -ENOENT
 - **AND** buf is NOT modified
 
 #### Scenario: Backdoor hit returns 0 via bridge

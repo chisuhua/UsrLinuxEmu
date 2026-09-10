@@ -18,6 +18,9 @@
 
 ## §4 Oracle 复审（1 次轻量）
 
+> **Oracle 复审位置（Metis M6 修订 2026-09-10）**：实施 commit 后、docs mirror commit **前**进行。复审发现问题需追加 commit 而非 amend docs。
+
+
 ## §5 总计
 
 - **UE commits**: 4（2 测试 + 2 entry sync）

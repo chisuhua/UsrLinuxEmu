@@ -27,10 +27,13 @@
 - [ ] **Verify**: UE 端 dlopen 重新链接 `libcpptlm_emulator.so`
 
 ### 任务 2.2: 验证测试通过
-- [ ] **Run**: `cd build && ./bin/cpptlm_tests "[ue][msix][integration]"`
+- [ ] **Run**: `cd /workspace/project/UsrLinuxEmu && cd build && ./bin/test_dgpu_msix_real_trigger_ue`（UE 仓独立 standalone binary；非 CppTLM 仓 `cpptlm_tests`）
 - [ ] **Verify pass**: 测试通过（200ms 内 intr_cb ≥1，payload = 0xDEADBEEF）
 
 ## §3 Oracle 复审
+
+> **Oracle 复审位置（Metis M6 修订 2026-09-10）**：实施 commit 后、docs mirror commit **前**进行。复审发现问题需追加 commit 而非 amend docs。
+
 
 ### 任务 3.1: 1 次轻量复审
 - [ ] **Oracle review**: UE 集成测试质量 + 跨仓端到端验证

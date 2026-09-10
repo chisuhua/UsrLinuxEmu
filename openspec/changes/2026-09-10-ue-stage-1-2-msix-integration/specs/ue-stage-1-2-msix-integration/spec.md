@@ -16,27 +16,26 @@ UE 侧 MSI-X 跨仓集成测试，验证 CppTLM 阶段 1.2 修复 #4 后，从 U
 
 The system MUST provide a cross-repo integration test that loads CppTLM plugin via `ModuleLoader::load_plugins` and verifies MSI-X interrupt triggering end-to-end from UE process.
 
-#### Scenario: intr_cb called within 200ms
+#### Scenario: intr_cb called within 200ms (Oracle O6 + O7 修订：UE 端通过 ABI 调用 + 无 payload)
 
-- **WHEN** `ModuleLoader::load_plugins("plugins")` + `VFS::open("/dev/gpgpu0")` + `register_msix_callback(mock_cb)` + `trigger_msix_async(0, 0xDEADBEEF)`
-- **THEN** the function `trigger_msix_async` returns 0
-- **AND** mock intr_cb is invoked within 200ms timeout
+- **WHEN** `ModuleLoader::load_plugins("plugins")` + `VFS::open("/dev/gpgpu0")` + UE bridge 调用 `cpptlm_emulator_register_callbacks(intr_cb, msix_cb, dma_cb, ...)` (per L103-106, UE 桥桥接 4 cb bundle) + `cpptlm_emulator_msix_update_pending(emu, 0)` (per L96)
+- **THEN** `msix_update_pending` returns 0
+- **AND** mock intr_cb invoked within 200ms timeout (per detached std::thread + entry §9 retry 1)
 - **AND** mock_cb called count ≥ 1
 - **AND** captured_vector == 0
-- **AND** captured_payload == 0xDEADBEEF
+- **NOTE**: payload 不在 23 ABI 范围（UE 桥不传 payload）；原 `trigger_msix_async(0, 0xDEADBEEF)` 是**虚构 API**
 
 #### Scenario: Out-of-range vector returns -EINVAL via UE bridge
 
-- **WHEN** `trigger_msix_async(999, 0)` is called with msix_init table_size=4
+- **WHEN** `cpptlm_emulator_msix_update_pending(emu, 999)` is called with table_size=4
 - **THEN** the function returns -EINVAL
 - **AND** no intr_cb invocation
 
-#### Scenario: Already pending returns -EAGAIN via UE bridge
+#### Scenario: Already pending may coalesce via UE bridge
 
-- **WHEN** `trigger_msix_async(0, X)` called twice rapidly without drain
-- **THEN** first call returns 0
-- **AND** second call returns -EAGAIN
-- **AND** only one intr_cb invocation (after drain)
+- **WHEN** `msix_update_pending(emu, 0)` called twice rapidly without drain
+- **THEN** both calls return 0 (or second returns -EAGAIN)
+- **AND** intr_cb invocation count ≥ 1 (may coalesce)
 
 ### Requirement: 5.5.7 Gate Partial Unlock Condition
 

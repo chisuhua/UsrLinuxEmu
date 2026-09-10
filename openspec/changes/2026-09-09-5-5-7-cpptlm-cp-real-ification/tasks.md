@@ -8,11 +8,26 @@
 
 ---
 
+## §0 Gate 检查（Metis M1 修订 2026-09-10）
+
+> **5.5.7 启动条件（cb82146c Q1 裁决 宽松口径）**：5.5.7 verify 任务执行**前**必须满足：
+
+- [ ] **Verify**: CppTLM `2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes` 已 archive（阶段 1.1 4 bug 修复）
+- [ ] **Verify**: CppTLM `2026-09-10-cpptlm-stage-1-2-msix` 已 archive（阶段 1.2 MSI-X 修复 #4）
+- [ ] **Verify**: CppTLM `2026-09-10-cpptlm-stage-1-3-sdma` §1 (1.3a) ship（Ring Buffer 实施 commit 已 merge to main）
+- [ ] **Verify**: UsrLinuxEmu `2026-09-10-ue-stage-1-1-bridge-sync` 已 archive（stage 1.1 桥接同步）
+- [ ] **STOP** if any above fails（避免绕过 gate 直接跑 verify，导致 P5.NEW-A/B/C 与实际 ABI 不一致）
+- **检查命令**: `openspec list` + `git log --oneline cpptlm/main | grep -E 'cpptlm-stage-1-3-sdma'` (1.3a commit 标识)
+
+> **ctest 数字**：以 CI 实际为准（与 `5.5.8` proposal:92 已采用的对账模式一致）。R7 Oracle 修订注记：bridge-sync ship 后新增 5 binary，5.5.7 verify 前总数 = 170 + 5 = 175。
+
+---
+
 ## §1 任务总览
 
 | Wave | 子任务 | 工期 | 依赖 |
 |------|--------|:---:|------|
-| **P5.NEW-A** | `test_bridge_kcpptlm_profile_real_standalone` 5 用例 + 决策 D.1 落地 | 0.5-1 周 | 5.5.6 ABI 通道 |
+| **P5.NEW-A** | `test_bridge_kcpptlm_profile_real_standalone` 5 用例 + 决策 D.1 落地 | 0.5-1 周 | §0 Gate + 5.5.6 ABI 通道 |
 | **P5.NEW-B** | 决策 D.2 adapter op 接入点 + TaskRunner 集成路径 | 0.5 周 | D.1 |
 | **P5.NEW-C** | 决策 D.3 ctest WORKING_DIRECTORY 策略 | 0.5 周 | D.1 + D.2 |
 | **总计** | | **1.5-2 周** | |

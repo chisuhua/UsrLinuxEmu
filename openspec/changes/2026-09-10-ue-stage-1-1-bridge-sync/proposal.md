@@ -2,9 +2,9 @@
 
 > **状态**: 🔄 Proposed v1.0（2026-09-10）
 > **优先级**: P0（前置 UsrLinuxEmu 5.5.7 dGPU E2E 主线 #2 解锁）
-> **工期**: 阶段 1.1 同步 0.5-1 周；**全阶段跟随 CppTLM 5.0-6.0 周**（Oracle R9 修订 2026-09-10：本 change 已扩展 §7-§15 覆盖阶段 1.2-2.1 UE 集成 + 5.5.7 gate，非单阶段 change）
+> **工期**: 阶段 1.1 同步 0.5-1 周；**UE 阶段 1.2-2.1 集成由独立 change 跟踪**（Oracle R9 修订 + 方案 B 拆分 2026-09-10：本 change 仅覆盖 stage 1.1 桥接同步；阶段 1.2-2.1 UE 集成已拆分为 `ue-stage-1-2-msix-integration` / `ue-stage-1-3-sdma-integration` / `ue-stage-1-4-2-1-extensions`）
 > **前置依赖**:
-> - CppTLM `2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes` ship（4 bug 修复完成 + Oracle Gate E 复审通过；§7-§13 后续阶段逐段 ship）
+> - CppTLM `2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes` ship（4 bug 修复完成 + Oracle Gate E 复审通过）
 > - 双仓 ABI 边界稳定（per UE entry §7.3 23 ABI 冻结）
 > - 5.5.7 gate 解锁（宽松口径 per cb82146c Q1：阶段 1.1+1.2+1.3a + bridge-sync ship）
 > **关联 change**:

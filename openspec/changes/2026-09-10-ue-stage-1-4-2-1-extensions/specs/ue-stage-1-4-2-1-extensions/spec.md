@@ -10,38 +10,46 @@
 
 UE 侧电源管理 + P2P + Resizable BAR 跨仓集成测试，验证 CppTLM 1.4+2.1 实施后的端到端行为。
 
+> **Oracle O7 修订**：原 spec 用了 3 个不存在的 ABI（`set_power_state` / `p2p_dma_route` / `resize_bar`），23 ABI 头文件无此三者。本 spec 全部改写为 `pcie_config_read/write` 观测（PMCSR / LNKCTL ASPM bits / ReBAR Extended Cap）。P2P 从 UE 侧无 ABI 观测面，降级为 "CppTLM 侧验证，UE 仅验证 config cap 存在性"。
+
 ## ADDED Requirements
 
-### Requirement: UE PM Integration (1.4)
+### Requirement: UE PM Integration via config space (1.4)
 
-The system MUST support UE-side PM state transitions (D0/D3hot/D3cold) and ASPM.
+The system MUST support UE-side PM state transitions (D0/D3hot/D3cold) and ASPM via `pcie_config_read/write` of PMCSR / LNKCTL registers.
 
-#### Scenario: D0 to D3hot transition via UE bridge
-- **WHEN** `set_power_state(D3hot)` via UE bridge
-- **THEN** PMCSR = D3
-- **AND** MMIO disabled
-- **AND** can wake to D0
+#### Scenario: D0 to D3hot transition via PMCSR write
+- **WHEN** `cpptlm_emulator_pcie_config_write(emu, PMCSR_offset, 2, D3hot_value)` then `pcie_config_read(emu, PMCSR_offset, 2, &val)`
+- **THEN** val reflects D3 state (PowerState bits = 0b10)
+- **AND** subsequent `mmio_read` returns -EIO (MMIO disabled in D3)
 
-#### Scenario: ASPM L1 entry
-- **WHEN** `enable_aspm(L1)` + idle
-- **THEN** link enters L1 state
+#### Scenario: Wake from D3 to D0
+- **WHEN** PMCSR write with D0 value
+- **THEN** val reflects D0 state (PowerState bits = 0b00)
+- **AND** MMIO operations resume
 
-### Requirement: UE P2P + Resizable BAR Integration (2.1)
+#### Scenario: ASPM L1 entry via LNKCTL bits
+- **WHEN** `pcie_config_write(LNKCTL_offset, 2, ASPM_L1_enable_bits)`
+- **THEN** LNKCTL register reflects ASPM L1 enabled
+- **AND** link state machine transitions to L1 after idle period
 
-The system MUST support Peer-to-Peer DMA with ACS and Resizable BAR.
+### Requirement: UE P2P Capability Presence Check (2.1)
 
-#### Scenario: P2P DMA routed successfully
-- **WHEN** `p2p_dma_route(src, dst, addr, len)` via UE bridge
-- **THEN** DMA routed without host hop
+The system MUST support verifying P2P capability presence via PCI Extended Capabilities read (P2P from UE side has no direct ABI observation; downgraded to capability check).
 
-#### Scenario: ACS denies peer request
-- **WHEN** ACS deny
-- **THEN** returns -EPERM
+#### Scenario: P2P ACS capability register readable
+- **WHEN** `pcie_config_read(ACS_extended_cap_offset, ...)` (where ACS Ext Cap ID = 0x0D)
+- **THEN** val contains ACS capability structure (vendor-specific bits)
+- **AND** P2P routing policy is observable (read-only)
 
-#### Scenario: Resizable BAR adjustment
-- **WHEN** `resize_bar(0, 256MB)` called
-- **THEN** BAR0 size updated to 256MB
-- **AND** MMIO mapping updated
+### Requirement: UE Resizable BAR Integration via config space (2.1)
+
+The system MUST support Resizable BAR via PCI Express Extended Capability read.
+
+#### Scenario: Resizable BAR capability register readable
+- **WHEN** `pcie_config_read(ReBAR_extended_cap_offset, ...)` (where ReBAR Ext Cap ID = 0x0020)
+- **THEN** val contains ReBAR capability structure (BAR size encoding)
+- **AND** bar_sizes[0] reflects current BAR0 size (up to 256MB or larger as configured)
 
 ## Cross-References
 
