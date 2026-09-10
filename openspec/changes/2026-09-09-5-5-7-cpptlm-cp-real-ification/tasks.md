@@ -21,6 +21,11 @@
 
 > **ctest 数字**：以 CI 实际为准（与 `5.5.8` proposal:92 已采用的对账模式一致）。R7 Oracle 修订注记：bridge-sync ship 后新增 5 binary，5.5.7 verify 前总数 = 170 + 5 = 175。
 
+> **Wave 5a/5b/6 拆分（Oracle Wave 顺序审查 ses_f75067676ffeoQP5d8u4UVVtsR 2026-09-10）**：
+> - **Wave 5a**（本 change）: §1-§3 verify 任务。Gate = §0 上述 4 条件全 archive。**最早启动**: Wave 2 (stage-1-2-msix) + 1.3a commit + Wave 1 (bridge-sync) 后即可，不必等 1.3b-d / 1.4 / 2.1
+> - **Wave 5b**（5.5.8 阶段 1+2）: CP attach + ret==0 强约束回归。Gate = Wave 5a archive + fixes §3 ship。可与 Wave 3 (1.3a-d) **并行启动**
+> - **Wave 6**（5.5.8 阶段 3）: CP→SDMA dispatch + dma_translate 真实化 + SDMA Fence/Completion。Gate = 1.3c + 1.3d ship（AND 语义）
+
 ---
 
 ## §1 任务总览

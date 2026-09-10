@@ -21,9 +21,17 @@
 
 > **D.1 最终口径（Oracle R6 修订 2026-09-10）**：接受 -ETIMEDOUT 语义 + **CppTLM 修复 sim_loop race 为真正根因修复**（per foundation proposal 实测：race 率 0.55%，与 callback 注册无关，cp_attach 实测不调 cb）。CP attach helper 保留为 **noop cb 注册（防御性）**，非根因修复；真正消除 -ETIMEDOUT 依赖 CppTLM [`2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`](https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/proposal.md) §3（修复 #5 mmio_read drain 真实化）。
 
-5.5.8 是 dGPU E2E 主线第三步：**CommandProcessor 真实化 + Kernel Dispatch + DMA**。具体三阶段：
+5.5.8 是 dGPU E2E 主线第三步：**CommandProcessor 真实化 + Kernel Dispatch + DMA**。具体三阶段（按 Oracle Wave 拆分 2026-09-10）：
 
-1. **CP attach helper**（Oracle 5.5.7.1 反馈 D.1 前置）：实现 `bridge.cpp` init 时调 `cpptlm_emulator_register_backdoor_cb` + `cpptlm_emulator_register_dma_translate_cb` **noop 注册（防御性）**。⚠️ 注意：**不是**根因修复（实测 cp_attach 不调 cb）；真正消除 -ETIMEDOUT 依赖 CppTLM fixes §3（sim_loop drain）ship
+| 阶段 | 内容 | Wave | 启动 Gate | 工期 |
+|------|------|------|-----------|------|
+| **阶段 1** | CP attach helper（noop 防御性 cb 注册） | Wave 5b | 5.5.7 archive + fixes §3 ship | 0.5 周 |
+| **阶段 2** | `ret == 0` 强约束回归 | Wave 5b | 阶段 1 完成 | 0.5 周 |
+| **阶段 3** | Kernel Dispatch + DMA 真实化 | Wave 6 | 1.3c + 1.3d ship（AND） | 1-1.5 周 |
+
+**Wave 5b**（阶段 1+2）可与 Wave 3 (stage-1-3-sdma 1.3a-d 实施) **并行启动**，不需等 1.3c+d。**Wave 6**（阶段 3）需 1.3c+d ship 后。
+
+1. **CP attach helper**（Oracle 5.5.7.1 反馈 D.1 前置）→ **Wave 5b 阶段 1**：实现 `bridge.cpp` init 时调 `cpptlm_emulator_register_backdoor_cb` + `cpptlm_emulator_register_dma_translate_cb` **noop 注册（防御性）**。⚠️ 注意：**不是**根因修复（实测 cp_attach 不调 cb）；真正消除 -ETIMEDOUT 依赖 CppTLM fixes §3（sim_loop drain）ship
 2. **`ret == 0` 强约束回归**：将 5.5.7.1 的 `CHECK(ret != -ENOSYS)` 软约束升级为 `REQUIRE(ret == 0)` 强约束，验证 CppTLM fixes ship 后 ABI 调用稳定成功（对账：bridge-sync 的 `test_dgpu_mmio_real_data` 等 5 新 binary 先行 ship）
 3. **Kernel Dispatch + DMA 实现**：基于 5.5.6 P4.NEW-A 的 `backdoor_endpoint.cpp` 5 函数，扩展实现 CommandProcessor（PM4 microcode 提交 + ring buffer 消费）+ DMA 引擎（注册回调 + transfer 发起/完成）。⚠️ **阶段 3 额外 gate = CppTLM `cpptlm-stage-1-3-sdma` 1.3c + 1.3d (指 cpptlm-stage-1-3-sdma tasks.md §3/§4) ship 后**（CP→SDMA PM4 opcode 0x4600-0x4900 dispatch + dma_translate_cb 真实化 + SDMA Fence/CompletionRing 完成通知）
 
