@@ -241,5 +241,10 @@ GPU 驱动必须基于 `struct pci_driver` + Linux PCI API（`pci_register_drive
 本次升档不涉及任何代码修改：
 - CppTLM 实施 commit `bab64dd5` 维持原状（ABI 扩展 + Handle 管理）
 - UsrLinuxEmu 实施维持原状（kcpptlm-backend-binding-with-handle-and-adapter-info）
-- 仅修形式合规（archive tasks.md 同步勾选）+ 文档升档（ADR-092 v0.2 修订段）
+- 仅文档升档（ADR-092 v0.2 修订段）
+
+### 已知遗留（不阻断 Gate D）
+
+- CppTLM `openspec/changes/archive/2026-09-07-dgpu-board-adapter-info-extension/tasks.md` 因 .gitignore 拒绝 git add（archive 目录约定）；Gate D ② 项基于 bab64dd5 commit diff 实质验证（8 任务全部 ship），形式合规待后续非 archive change 重新激活时补登
+- 双仓 entry §11.1 ADR-092 行（"🔄 Proposed v0.1" → "✅ Accepted v0.2"）将在紧接 commit 中同步
 
